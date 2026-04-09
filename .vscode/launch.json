@@ -1,0 +1,35 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "hadirin",
+            "request": "launch",
+            "type": "dart"
+        },
+        {
+            "name": "hadirin (profile mode)",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "profile"
+        },
+        {
+            "name": "hadirin (release mode)",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "release"
+        },
+        {
+            "name": "Hadirin - Dev",
+            "request": "launch",
+            "type": "dart",
+            "args": [
+                "--dart-define=GAS_ENDPOINT=https://script.google.com/macros/s/AKfycbyV2KrJddqHizRDdlwgCT-00XdTyIrfZo4kULOccaHk6Y4-tjHQfZdZzVLxxHrQ6G2p/exec",
+                "--dart-define=API_TOKEN=SUPER_SECRET_UMKM001_8xZ2",
+                "--dart-define=CLIENT_ID=umkm_warung_bu_siti"
+            ]
+        }
+    ]
+}
