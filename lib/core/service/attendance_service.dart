@@ -8,8 +8,8 @@ import 'package:image_picker/image_picker.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'dart:math';
-import 'package:flutter_image_compress/flutter_image_compress.dart'; // <-- IMPORT TAMBAHAN
-
+import 'package:flutter_image_compress/flutter_image_compress.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:hadirin/core/config/app_config.dart';
 
 abstract class _Config {
@@ -71,7 +71,30 @@ class AttendanceService {
         ),
       );
 
-      // 4. AMBIL FOTO SELFIE
+      // ========================================================
+      // 4. CEK IZIN KAMERA (Pencegahan Force Close)
+      // ========================================================
+      var cameraStatus = await Permission.camera.status;
+
+      if (cameraStatus.isDenied) {
+        // Minta izin jika belum pernah ditanya atau baru sekali ditolak
+        cameraStatus = await Permission.camera.request();
+      }
+
+      if (cameraStatus.isPermanentlyDenied) {
+        // Jika user klik "Jangan tanya lagi", arahkan ke Settings
+        throw Exception(
+          "Izin kamera ditolak permanen. Harap aktifkan di pengaturan HP.",
+        );
+      }
+
+      if (!cameraStatus.isGranted) {
+        throw Exception(
+          "Aplikasi butuh izin kamera untuk melakukan absen wajah.",
+        );
+      }
+
+      // 4b. AMBIL FOTO SELFIE
       final image = await _picker.pickImage(
         source: ImageSource.camera,
         imageQuality:
