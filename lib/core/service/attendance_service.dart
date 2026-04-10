@@ -290,6 +290,57 @@ class AttendanceService {
     }
   }
 
+  // =================================================================
+  // FUNGSI BARU: AUTO ENROLL DEVICE
+  // =================================================================
+  Future<Map<String, dynamic>> enrollDevice(String idKaryawan) async {
+    try {
+      // Ambil Device ID
+      final androidInfo = await _deviceInfo.androidInfo;
+      final deviceId = androidInfo.id;
+
+      final payload = {
+        "api_token": _Config.apiToken,
+        "action": "enroll_device",
+        "client_id": AppConfig.clientId,
+        "id_karyawan": idKaryawan,
+        "device_id": deviceId,
+      };
+
+      var response = await http
+          .post(
+            Uri.parse(_Config.gasEndpoint),
+            headers: {"Content-Type": "application/json"},
+            body: jsonEncode(payload),
+          )
+          .timeout(const Duration(seconds: 15));
+
+      if (response.statusCode == 302 || response.statusCode == 303) {
+        final redirectUrl = _extractRedirectUrl(response);
+        if (redirectUrl != null) {
+          response = await http
+              .get(Uri.parse(redirectUrl))
+              .timeout(const Duration(seconds: 15));
+        }
+      }
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['code'] == 200) {
+          return {"success": true, "message": data['message']};
+        } else {
+          throw Exception(data['message']);
+        }
+      }
+      throw Exception("Gagal terhubung ke server.");
+    } catch (e) {
+      return {
+        "success": false,
+        "message": e.toString().replaceAll("Exception: ", ""),
+      };
+    }
+  }
+
   /// Ekstrak URL redirect dari header atau body HTML
   String? _extractRedirectUrl(http.Response response) {
     var url = response.headers['location'];
