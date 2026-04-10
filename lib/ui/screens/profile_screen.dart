@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:hadirin/core/config/app_config.dart';
 import 'package:hadirin/core/providers/auth_provider.dart';
 import 'package:hadirin/core/service/attendance_service.dart';
+import 'package:hadirin/core/service/export_service.dart';
 import 'package:hadirin/ui/screens/add_karyawan_screen.dart';
 import 'package:hadirin/ui/screens/set_location_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:hadirin/core/theme/fluid_theme.dart';
 import 'package:intl/intl.dart';
-import 'package:intl/date_symbol_data_local.dart'; // <-- Jangan lupa import ini
+import 'package:intl/date_symbol_data_local.dart';
+import 'package:hadirin/ui/screens/leave_request_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -19,19 +22,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
   final AttendanceService _service = AttendanceService();
   bool _isLoading = true;
   bool _isRegisteringFace = false;
+  bool _isExporting = false;
   String _errorMsg = "";
 
   List<dynamic> _allHistory = [];
   List<dynamic> _filteredHistory = [];
   String _filterTipe = "Semua";
 
-  // Filter Tanggal
   DateTimeRange? _selectedDateRange;
 
   @override
   void initState() {
     super.initState();
-    // Inisialisasi locale bahasa Indonesia untuk format tanggal
     initializeDateFormatting('id_ID', null).then((_) {
       _fetchHistory();
     });
@@ -59,15 +61,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
   void _applyFilter() {
     setState(() {
       _filteredHistory = _allHistory.where((log) {
-        // 1. Filter Tipe (Masuk/Pulang/Semua)
         bool passTipe = _filterTipe == "Semua" || log['tipe'] == _filterTipe;
 
-        // 2. Filter Tanggal
         bool passTanggal = true;
         if (_selectedDateRange != null && log['waktu'] != null) {
           final dt = DateTime.tryParse(log['waktu'].toString())?.toLocal();
           if (dt != null) {
-            // Hilangkan jam/menit/detik untuk perbandingan tanggal yang akurat
             final logDate = DateTime(dt.year, dt.month, dt.day);
             final startDate = DateTime(
               _selectedDateRange!.start.year,
@@ -90,7 +89,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     });
   }
 
-  // Memunculkan pemilih rentang tanggal bawaan Flutter
   Future<void> _pickDateRange() async {
     final DateTimeRange? picked = await showDateRangePicker(
       context: context,
@@ -119,12 +117,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
-  // Format tanggal menjadi "Senin, 10 April 2026"
   String _formatTanggalIndo(DateTime dt) {
     return DateFormat('EEEE, d MMMM yyyy', 'id_ID').format(dt);
   }
 
-  // Format jam menjadi "08:15"
   String _formatJam(DateTime dt) {
     return DateFormat('HH:mm').format(dt);
   }
@@ -137,7 +133,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return originalUrl;
   }
 
-  // Menampilkan Dialog Foto
   void _tampilkanFoto(
     BuildContext context,
     String url,
@@ -226,6 +221,165 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
+  // =================================================================
+  // DIALOG PEMILIHAN BULAN & TAHUN
+  // =================================================================
+  void _tampilkanDialogPilihBulan() {
+    int selectedMonth = DateTime.now().month;
+    int selectedYear = DateTime.now().year;
+
+    final List<String> namaBulan = [
+      "Januari",
+      "Februari",
+      "Maret",
+      "April",
+      "Mei",
+      "Juni",
+      "Juli",
+      "Agustus",
+      "September",
+      "Oktober",
+      "November",
+      "Desember",
+    ];
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(FluidRadii.md),
+              ),
+              title: const Text(
+                "Pilih Bulan Rekap",
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+              ),
+              content: Row(
+                children: [
+                  Expanded(
+                    flex: 3,
+                    child: DropdownButtonFormField<int>(
+                      value: selectedMonth,
+                      isExpanded: true,
+                      decoration: const InputDecoration(
+                        border: OutlineInputBorder(),
+                        contentPadding: EdgeInsets.symmetric(horizontal: 12),
+                      ),
+                      items: List.generate(12, (index) {
+                        return DropdownMenuItem(
+                          value: index + 1,
+                          child: Text(namaBulan[index]),
+                        );
+                      }),
+                      onChanged: (val) =>
+                          setDialogState(() => selectedMonth = val!),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    flex: 2,
+                    child: DropdownButtonFormField<int>(
+                      value: selectedYear,
+                      isExpanded: true,
+                      decoration: const InputDecoration(
+                        border: OutlineInputBorder(),
+                        contentPadding: EdgeInsets.symmetric(horizontal: 12),
+                      ),
+                      items: List.generate(5, (index) {
+                        int year =
+                            DateTime.now().year -
+                            index; // Menampilkan 5 tahun terakhir
+                        return DropdownMenuItem(
+                          value: year,
+                          child: Text(year.toString()),
+                        );
+                      }),
+                      onChanged: (val) =>
+                          setDialogState(() => selectedYear = val!),
+                    ),
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text(
+                    "Batal",
+                    style: TextStyle(color: Colors.grey),
+                  ),
+                ),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: FluidColors.primary,
+                    foregroundColor: Colors.white,
+                  ),
+                  onPressed: () {
+                    Navigator.pop(context);
+                    // Format parameter untuk Backend (contoh: "04-2026")
+                    String strBulan = selectedMonth.toString().padLeft(2, '0');
+                    String bulanTahun = "$strBulan-$selectedYear";
+
+                    // Format nama untuk file Excel (contoh: "April 2026")
+                    String bulanNama =
+                        "${namaBulan[selectedMonth - 1]} $selectedYear";
+
+                    _downloadLaporan(bulanTahun, bulanNama);
+                  },
+                  child: const Text("Download"),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  // =================================================================
+  // EKSEKUSI DOWNLOAD EXCEL (DIPANGGIL DARI DIALOG)
+  // =================================================================
+  void _downloadLaporan(String bulanTahun, String bulanNama) async {
+    setState(() => _isExporting = true);
+    final auth = context.read<AuthProvider>();
+
+    try {
+      final dataMentah = await _service.getMonthlyReport(
+        AppConfig.clientId,
+        bulanTahun,
+      );
+
+      if (dataMentah.isEmpty) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("Belum ada data absen di bulan $bulanNama."),
+            backgroundColor: Colors.orange,
+          ),
+        );
+        setState(() => _isExporting = false);
+        return;
+      }
+
+      await ExportService().generateMonthlyExcel(
+        auth.namaKaryawan ?? "UMKM",
+        bulanNama,
+        dataMentah,
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Gagal mengunduh: $e"),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _isExporting = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
@@ -251,9 +405,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         child: ListView(
           padding: const EdgeInsets.all(24.0),
           children: [
-            // ==========================================
             // KARTU PROFIL
-            // ==========================================
             Card(
               color: FluidColors.surfaceContainerLow,
               elevation: 0,
@@ -333,9 +485,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
             const SizedBox(height: 16),
 
-            // ==========================================
             // TOMBOL PENDAFTARAN WAJAH
-            // ==========================================
             SizedBox(
               width: double.infinity,
               height: 50,
@@ -367,8 +517,76 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
             ),
 
+            // ==========================================
+            // TOMBOL PENGAJUAN CUTI / IZIN / SAKIT
+            // ==========================================
+            SizedBox(
+              width: double.infinity,
+              height: 50,
+              child: ElevatedButton.icon(
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const LeaveRequestScreen()),
+                ),
+                icon: const Icon(Icons.edit_calendar_rounded),
+                label: const Text(
+                  "Pengajuan Cuti / Izin / Sakit",
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: FluidColors.surfaceContainerLow,
+                  foregroundColor: FluidColors.primary,
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(FluidRadii.sm),
+                  ),
+                ),
+              ),
+            ),
+
+            // MENU KHUSUS ADMIN
             if (auth.isAdmin) ...[
               const SizedBox(height: 12),
+
+              // TOMBOL DOWNLOAD EXCEL
+              SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: ElevatedButton.icon(
+                  onPressed: _isExporting ? null : _tampilkanDialogPilihBulan,
+                  icon: _isExporting
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.green,
+                          ),
+                        )
+                      : Icon(
+                          Icons.download_rounded,
+                          color: Colors.green.shade700,
+                        ),
+                  label: Text(
+                    _isExporting
+                        ? "Menyiapkan Excel..."
+                        : "Download Rekap Absensi",
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.green.shade700,
+                    ),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green.shade50,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(FluidRadii.sm),
+                    ),
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 8),
               SizedBox(
                 width: double.infinity,
                 height: 50,
@@ -406,11 +624,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                   ),
                   icon: const Icon(Icons.person_add_alt_1),
-                  label: const Text("Tambah Karyawan Baru"),
+                  label: const Text(
+                    "Tambah Karyawan Baru",
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: FluidColors.surfaceContainerLow,
                     foregroundColor: FluidColors.primary,
                     elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(FluidRadii.sm),
+                    ),
                   ),
                 ),
               ),
@@ -418,9 +642,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
             const SizedBox(height: FluidSpacing.section),
 
-            // ==========================================
             // HEADER RIWAYAT & FILTER TANGGAL
-            // ==========================================
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -447,7 +669,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ],
             ),
 
-            // Info Tanggal Terpilih (Muncul jika ada filter tanggal aktif)
             if (_selectedDateRange != null)
               Padding(
                 padding: const EdgeInsets.only(bottom: 12.0),
@@ -481,7 +702,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
               ),
 
-            // Filter Tipe (Masuk/Pulang/Semua)
+            // Filter Tipe
             SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: Row(
@@ -517,9 +738,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
             const SizedBox(height: 24),
 
-            // ==========================================
             // LIST RIWAYAT
-            // ==========================================
             if (_isLoading)
               const Center(
                 child: CircularProgressIndicator(color: FluidColors.primary),
@@ -561,7 +780,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   final isTerlambat = log['status'] == "Terlambat";
                   final isMasuk = log['tipe'] == "Masuk";
 
-                  // Format Tanggal Modern
                   final formatTgl = _formatTanggalIndo(dt);
                   final formatJam = _formatJam(dt);
 
@@ -574,7 +792,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                     child: Row(
                       children: [
-                        // Ikon Kiri
                         Container(
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
@@ -591,8 +808,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           ),
                         ),
                         const SizedBox(width: 16),
-
-                        // Detail Tengah
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -615,8 +830,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             ],
                           ),
                         ),
-
-                        // Tombol Lihat Foto
                         if (log['foto'] != null &&
                             log['foto'].toString().isNotEmpty)
                           IconButton(
@@ -634,8 +847,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               );
                             },
                           ),
-
-                        // Badge Status Kanan (Hanya untuk Masuk)
                         if (isMasuk)
                           Container(
                             padding: const EdgeInsets.symmetric(

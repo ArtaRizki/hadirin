@@ -219,6 +219,85 @@ class AttendanceService {
   }
 
   // =================================================================
+  // FUNGSI BARU: PENGAJUAN IZIN / SAKIT / CUTI
+  // =================================================================
+  Future<Map<String, dynamic>> submitIzin({
+    required String idKaryawan,
+    required String tipeIzin,
+    required String rentangTanggal,
+    required String alasan,
+    String? imagePath, // Path foto surat dokter (opsional)
+  }) async {
+    try {
+      String base64Image = "";
+
+      // Jika user memilih Sakit dan melampirkan foto
+      if (imagePath != null && imagePath.isNotEmpty) {
+        final String targetPath = "${imagePath}_compressed_doc.jpg";
+        final XFile? compressedFile =
+            await FlutterImageCompress.compressAndGetFile(
+              imagePath,
+              targetPath,
+              quality: 40, // Kompresi khusus dokumen
+              minWidth: 800,
+              minHeight: 800,
+              format: CompressFormat.jpeg,
+            );
+
+        if (compressedFile != null) {
+          final imageBytes = await compressedFile.readAsBytes();
+          base64Image = base64Encode(imageBytes);
+          try {
+            File(targetPath).deleteSync();
+          } catch (_) {}
+        }
+      }
+
+      final payload = {
+        "api_token": _Config.apiToken,
+        "action": "ajukan_izin",
+        "client_id": AppConfig.clientId,
+        "id_karyawan": idKaryawan,
+        "tipe_izin": tipeIzin,
+        "rentang_tanggal": rentangTanggal,
+        "alasan": alasan,
+        "foto_base64": base64Image,
+      };
+
+      var response = await http
+          .post(
+            Uri.parse(_Config.gasEndpoint),
+            headers: {"Content-Type": "application/json"},
+            body: jsonEncode(payload),
+          )
+          .timeout(_Config.httpTimeout);
+
+      if (response.statusCode == 302 || response.statusCode == 303) {
+        final redirectUrl = _extractRedirectUrl(response);
+        if (redirectUrl != null) {
+          response = await http
+              .get(Uri.parse(redirectUrl))
+              .timeout(_Config.httpTimeout);
+        }
+      }
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['code'] == 200)
+          return {"success": true, "message": data['message']};
+        throw Exception(data['message']);
+      }
+      throw Exception("Gagal terhubung ke server.");
+    } catch (e) {
+      d.log('==== ERROR SUBMIT IZIN ==== $e');
+      return {
+        "success": false,
+        "message": e.toString().replaceAll("Exception: ", ""),
+      };
+    }
+  }
+
+  // =================================================================
   // SKENARIO A: DAFTAR WAJAH PERTAMA KALI (ENROLLMENT)
   // =================================================================
   Future<Map<String, dynamic>> daftarWajahMaster(String idKaryawan) async {
@@ -569,6 +648,54 @@ class AttendanceService {
       d.log("==== ERROR DARI NATIVE KOTLIN TFLITE ====");
       d.log(e.toString());
       return [];
+    }
+  }
+
+  // =================================================================
+  // FUNGSI BARU: AMBIL REKAP BULANAN (UNTUK EXCEL)
+  // =================================================================
+  Future<List<dynamic>> getMonthlyReport(
+    String clientId,
+    String bulanTahun,
+  ) async {
+    try {
+      final payload = {
+        "api_token": _Config.apiToken,
+        "action": "get_monthly_report",
+        "client_id": clientId,
+        "bulan_tahun": bulanTahun, // Format: "04-2026"
+      };
+
+      var response = await http
+          .post(
+            Uri.parse(_Config.gasEndpoint),
+            headers: {"Content-Type": "application/json"},
+            body: jsonEncode(payload),
+          )
+          .timeout(
+            const Duration(seconds: 30),
+          ); // Timeout agak lama karena data banyak
+
+      if (response.statusCode == 302 || response.statusCode == 303) {
+        final redirectUrl = _extractRedirectUrl(response);
+        if (redirectUrl != null) {
+          response = await http
+              .get(Uri.parse(redirectUrl))
+              .timeout(const Duration(seconds: 30));
+        }
+      }
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['code'] == 200) {
+          return data['message'] as List<dynamic>;
+        }
+        throw Exception(data['message']);
+      }
+      throw Exception("Gagal terhubung ke server.");
+    } catch (e) {
+      d.log('==== ERROR GET MONTHLY REPORT ==== $e');
+      throw Exception("Gagal mengambil data bulanan: $e");
     }
   }
 
