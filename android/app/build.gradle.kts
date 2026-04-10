@@ -11,34 +11,50 @@ android {
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
+        // FIX 1: Use isCoreLibraryDesugaringEnabled and the = sign
+        isCoreLibraryDesugaringEnabled = true
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
 
-    kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_17.toString()
+    // FIX 2: Modern way to set jvmTarget to avoid the deprecation warning
+//    kotlinOptions {
+//        jvmTarget = "17"
+//    }
+    kotlin {
+        jvmToolchain(17)
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
         applicationId = "com.example.hadirin"
-        // You can update the following values to match your application needs.
-        // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+
+        // FIX 3: Use the = sign for multiDexEnabled
+        multiDexEnabled = true
     }
 
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
             signingConfig = signingConfigs.getByName("debug")
         }
     }
-}
 
+    androidResources {
+        noCompress.add("tflite")
+    }
+}
 flutter {
     source = "../.."
+}
+
+// ========================================================
+// PERBAIKAN 2: Gunakan tanda kurung () dan kutip ganda ""
+// ========================================================
+dependencies {
+    implementation("org.tensorflow:tensorflow-lite:2.17.0")
+    implementation("org.tensorflow:tensorflow-lite-support:0.5.0")
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")
 }

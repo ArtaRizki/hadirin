@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart'; // Pengganti LatLng dari Google Maps
 import 'package:hadirin/core/service/attendance_service.dart';
+import 'package:hadirin/core/theme/fluid_theme.dart';
 
 class AdminRegisterScreen extends StatefulWidget {
   const AdminRegisterScreen({super.key});
@@ -11,37 +14,55 @@ class AdminRegisterScreen extends StatefulWidget {
 
 class _AdminRegisterScreenState extends State<AdminRegisterScreen> {
   final _namaController = TextEditingController();
-  final _latController = TextEditingController();
-  final _lngController = TextEditingController();
-  final _radiusController = TextEditingController(text: "100");
-  
+
+  // State untuk Map & Lokasi menggunakan latlong2
+  LatLng _pickedLocation = const LatLng(-7.9713634, 112.5847634); // Titik awal
+  double _radius = 100.0;
+  final MapController _mapController = MapController();
+
   bool _isLoading = false;
   String? _newClientId;
 
   void _submitDaftar() async {
-    if (_namaController.text.isEmpty || _latController.text.isEmpty || _lngController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Harap isi semua kolom")));
+    if (_namaController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text("Nama UMKM tidak boleh kosong"),
+          backgroundColor: Colors.red,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(FluidRadii.sm),
+          ),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
       return;
     }
 
     setState(() => _isLoading = true);
 
     final result = await AttendanceService().registerKlien(
-      namaUmkm: _namaController.text,
-      lat: double.tryParse(_latController.text) ?? 0.0,
-      lng: double.tryParse(_lngController.text) ?? 0.0,
-      radius: double.tryParse(_radiusController.text) ?? 100.0,
+      namaUmkm: _namaController.text.trim(),
+      lat: _pickedLocation.latitude,
+      lng: _pickedLocation.longitude,
+      radius: _radius,
     );
 
     setState(() => _isLoading = false);
 
     if (result['success']) {
-      setState(() {
-        _newClientId = result['client_id'];
-      });
+      setState(() => _newClientId = result['client_id']);
     } else {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(result['message']), backgroundColor: Colors.red));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(result['message']),
+            backgroundColor: Colors.red,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(FluidRadii.sm),
+            ),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
       }
     }
   }
@@ -49,52 +70,201 @@ class _AdminRegisterScreenState extends State<AdminRegisterScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Dashboard SaaS Admin"), backgroundColor: Colors.blueGrey),
-      body: Padding(
-        padding: const EdgeInsets.all(20),
-        child: _newClientId != null 
-          ? _buildSuccessCard() 
-          : _buildForm(),
+      backgroundColor: FluidColors.background,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        iconTheme: const IconThemeData(color: FluidColors.onSurface),
+        title: const Text(
+          "Pendaftaran UMKM Baru",
+          style: TextStyle(
+            color: FluidColors.onSurface,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
       ),
+      body: _newClientId != null ? _buildSuccessCard() : _buildForm(),
     );
   }
 
   Widget _buildForm() {
     return ListView(
+      padding: const EdgeInsets.all(24.0),
       children: [
-        const Text("Daftarkan UMKM Baru", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-        const SizedBox(height: 8),
-        const Text("Sistem akan otomatis membuat Spreadsheet & Folder Drive untuk klien ini."),
-        const SizedBox(height: 20),
-        TextField(
-          controller: _namaController,
-          decoration: const InputDecoration(labelText: "Nama UMKM", border: OutlineInputBorder()),
-        ),
-        const SizedBox(height: 16),
-        Row(
-          children: [
-            Expanded(child: TextField(controller: _latController, decoration: const InputDecoration(labelText: "Latitude", border: OutlineInputBorder()), keyboardType: TextInputType.number)),
-            const SizedBox(width: 16),
-            Expanded(child: TextField(controller: _lngController, decoration: const InputDecoration(labelText: "Longitude", border: OutlineInputBorder()), keyboardType: TextInputType.number)),
-          ],
-        ),
-        const SizedBox(height: 16),
-        TextField(
-          controller: _radiusController,
-          decoration: const InputDecoration(labelText: "Radius Toleransi (Meter)", border: OutlineInputBorder()),
-          keyboardType: TextInputType.number,
-        ),
-        const SizedBox(height: 30),
-        SizedBox(
-          width: double.infinity, height: 50,
-          child: ElevatedButton(
-            onPressed: _isLoading ? null : _submitDaftar,
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.blueGrey, foregroundColor: Colors.white),
-            child: _isLoading 
-                ? const CircularProgressIndicator(color: Colors.white)
-                : const Text("Buat Database Klien Otomatis", style: TextStyle(fontSize: 16)),
+        const Text(
+          "Detail UMKM",
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: FluidColors.onSurface,
           ),
         ),
+        const SizedBox(height: 8),
+        Text(
+          "Masukkan nama dan tentukan titik lokasi kantor.",
+          style: TextStyle(color: Colors.grey.shade600),
+        ),
+        const SizedBox(height: 24),
+
+        // Input Nama UMKM
+        TextFormField(
+          controller: _namaController,
+          decoration: const InputDecoration(
+            labelText: "Nama UMKM / Klien",
+            prefixIcon: Icon(Icons.business),
+          ),
+          textInputAction: TextInputAction.done,
+        ),
+
+        const SizedBox(height: FluidSpacing.section),
+        const Text(
+          "Lokasi & Radius Absensi",
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: FluidColors.onSurface,
+          ),
+        ),
+        const SizedBox(height: 16),
+
+        // KARTU MAP INTERAKTIF (OPEN STREET MAP)
+        Card(
+          color: FluidColors.surfaceContainerLow,
+          child: Column(
+            children: [
+              // Area flutter_map
+              ClipRRect(
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(FluidRadii.md),
+                ),
+                child: SizedBox(
+                  height: 300,
+                  width: double.infinity,
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      FlutterMap(
+                        mapController: _mapController,
+                        options: MapOptions(
+                          initialCenter: _pickedLocation,
+                          initialZoom: 16.0,
+                          // Update posisi state saat map digeser
+                          onPositionChanged:
+                              (MapCamera position, bool hasGesture) {
+                                setState(() {
+                                  _pickedLocation = position.center;
+                                });
+                              },
+                        ),
+                        children: [
+                          TileLayer(
+                            urlTemplate:
+                                'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                            userAgentPackageName:
+                                'com.example.hadirin', // Ganti dengan nama package Anda
+                          ),
+                          CircleLayer(
+                            circles: [
+                              CircleMarker(
+                                point: _pickedLocation,
+                                color: FluidColors.primary.withOpacity(0.15),
+                                borderStrokeWidth: 2,
+                                borderColor: FluidColors.primary,
+                                useRadiusInMeter:
+                                    true, // Radius akurat sesuai meter
+                                radius: _radius,
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                      // PIN Merah Statis di Tengah Layar
+                      const Padding(
+                        padding: EdgeInsets.only(bottom: 40.0),
+                        child: Icon(
+                          Icons.location_on,
+                          size: 50,
+                          color: Colors.redAccent,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              // Area Kontrol Radius di bawah Peta
+              Padding(
+                padding: const EdgeInsets.all(24.0),
+                child: Column(
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          "Radius Absensi:",
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: FluidColors.onSurface,
+                          ),
+                        ),
+                        Text(
+                          "${_radius.toInt()} meter",
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: FluidColors.primary,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Slider(
+                      value: _radius,
+                      min: 20,
+                      max: 500,
+                      divisions: 48,
+                      activeColor: FluidColors.primary,
+                      inactiveColor: FluidColors.primaryGhost,
+                      onChanged: (val) => setState(() => _radius = val),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        const SizedBox(height: FluidSpacing.section),
+
+        // TOMBOL SUBMIT
+        SizedBox(
+          width: double.infinity,
+          height: 56,
+          child: ElevatedButton(
+            onPressed: _isLoading ? null : _submitDaftar,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: FluidColors.primary,
+              foregroundColor: Colors.white,
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(FluidRadii.sm),
+              ),
+            ),
+            child: _isLoading
+                ? const SizedBox(
+                    height: 24,
+                    width: 24,
+                    child: CircularProgressIndicator(
+                      color: Colors.white,
+                      strokeWidth: 2,
+                    ),
+                  )
+                : const Text(
+                    "Daftarkan & Buat Database",
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+          ),
+        ),
+        const SizedBox(height: 40),
       ],
     );
   }
@@ -102,41 +272,95 @@ class _AdminRegisterScreenState extends State<AdminRegisterScreen> {
   Widget _buildSuccessCard() {
     return Center(
       child: Card(
-        elevation: 8,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        color: FluidColors.surfaceContainerLow,
         child: Padding(
-          padding: const EdgeInsets.all(30.0),
+          padding: const EdgeInsets.all(32.0),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.check_circle, color: Colors.green, size: 80),
-              const SizedBox(height: 20),
-              const Text("UMKM Berhasil Didaftarkan!", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-              const SizedBox(height: 10),
-              const Text("Berikan Client ID ini kepada klien untuk dimasukkan ke aplikasi mereka:", textAlign: TextAlign.center),
-              const SizedBox(height: 20),
+              const Icon(
+                Icons.check_circle_rounded,
+                color: FluidColors.primary,
+                size: 80,
+              ),
+              const SizedBox(height: 24),
+              const Text(
+                "UMKM Didaftarkan!",
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                  color: FluidColors.onSurface,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                "Berikan Client ID ini kepada klien untuk didaftarkan di aplikasi mereka:",
+                textAlign: TextAlign.center,
+                style: TextStyle(color: Colors.grey.shade600),
+              ),
+              const SizedBox(height: 24),
+
               Container(
-                padding: const EdgeInsets.all(16),
-                color: Colors.grey.shade200,
+                padding: const EdgeInsets.symmetric(
+                  vertical: 16,
+                  horizontal: 20,
+                ),
+                decoration: BoxDecoration(
+                  color: FluidColors.primaryGhost,
+                  borderRadius: BorderRadius.circular(FluidRadii.sm),
+                ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(_newClientId!, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, letterSpacing: 2)),
+                    Text(
+                      _newClientId!,
+                      style: const TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 2,
+                        color: FluidColors.primary,
+                      ),
+                    ),
                     IconButton(
-                      icon: const Icon(Icons.copy),
+                      icon: const Icon(Icons.copy, color: FluidColors.primary),
                       onPressed: () {
                         Clipboard.setData(ClipboardData(text: _newClientId!));
-                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Client ID disalin!")));
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: const Text("Client ID disalin!"),
+                            backgroundColor: FluidColors.primary,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(
+                                FluidRadii.sm,
+                              ),
+                            ),
+                            behavior: SnackBarBehavior.floating,
+                          ),
+                        );
                       },
-                    )
+                    ),
                   ],
                 ),
               ),
-              const SizedBox(height: 30),
-              ElevatedButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text("Selesai & Kembali"),
-              )
+              const SizedBox(height: 32),
+              SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: OutlinedButton(
+                  onPressed: () => Navigator.pop(context),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: FluidColors.primary,
+                    side: const BorderSide(color: FluidColors.primary),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(FluidRadii.sm),
+                    ),
+                  ),
+                  child: const Text(
+                    "Selesai & Kembali",
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ),
             ],
           ),
         ),

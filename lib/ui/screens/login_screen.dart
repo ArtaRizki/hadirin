@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:hadirin/core/config/app_config.dart';
 import 'package:hadirin/core/providers/auth_provider.dart';
-import 'package:hadirin/ui/screens/admin_register_screen.dart';
+import 'package:hadirin/core/service/attendance_service.dart';
 import 'package:provider/provider.dart';
-import 'package:device_info_plus/device_info_plus.dart';
-import 'package:flutter/services.dart';
+import 'package:hadirin/core/theme/fluid_theme.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -14,123 +14,141 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   final _idController = TextEditingController();
-  final _namaController = TextEditingController();
-  final _formKey = GlobalKey<FormState>(); // ← BARU: validasi form
-  bool _isLoading = false; // ← BARU: loading state
-  String _myDeviceId = "Memuat...";
+  final _namaController =
+      TextEditingController(); // Bisa juga dikosongkan jika mau ambil dari GAS
+  bool _isLoading = false;
 
-  @override
-  void initState() {
-    super.initState();
-    _loadDeviceId();
-  }
+  // GANTI PASSWORD INI DENGAN PASSWORD RAHASIA ANDA SEBAGAI PEMILIK APLIKASI
+  final String _superAdminPassword = "HADIRIN_MASTER_2026";
 
-  void _loadDeviceId() async {
-    final androidInfo = await DeviceInfoPlugin().androidInfo;
-    setState(() => _myDeviceId = androidInfo.id);
-  }
+  void _prosesLogin() async {
+    final inputId = _idController.text.trim();
+    // final inputNama = _namaController.text.trim(); // Opsional, bisa dihapus jika tidak dipakai
 
-  @override
-  void dispose() {
-    // ← BARU: cegah memory leak
-    _idController.dispose();
-    _namaController.dispose();
-    super.dispose();
-  }
-
-  void _submitLogin() async {
-    if (!(_formKey.currentState?.validate() ?? false)) return;
+    if (inputId.isEmpty) {
+      _showError("ID tidak boleh kosong");
+      return;
+    }
 
     setState(() => _isLoading = true);
 
-    await context.read<AuthProvider>().login(
-      _idController.text,
-      _namaController.text,
-    );
+    // ========================================================
+    // FLOW 1: LOGIN SUPER ADMIN (Pembuat Aplikasi / Anda)
+    // ========================================================
+    if (inputId == _superAdminPassword) {
+      await context.read<AuthProvider>().login(
+        "SUPER_ADMIN",
+        "Owner Hadirin",
+        LoginRole.superAdmin,
+      );
+      setState(() => _isLoading = false);
+      return;
+    }
 
-    // RootNavigator otomatis pindah ke AttendanceScreen
-    // setState di bawah hanya jika widget masih mounted
-    if (mounted) setState(() => _isLoading = false);
+    // ========================================================
+    // FLOW 2 & 3: LOGIN UNIVERSAL (ADMIN UMKM & KARYAWAN)
+    // ========================================================
+    // Keduanya wajib dicek Device ID-nya dan diambil data namanya dari Server
+    final authService = AttendanceService();
+
+    // Panggil API Enroll Device (berlaku untuk semua ID selain Super Admin)
+    final result = await authService.enrollDevice(inputId);
+
+    setState(() => _isLoading = false);
+
+    if (result['success']) {
+      final dataKaryawan = result['message'];
+
+      // Simpan Client ID di memori global aplikasi
+      AppConfig.clientId = dataKaryawan['client_id'];
+
+      // Tentukan Jabatan berdasarkan ID yang diketik
+      // Jika ID berawalan UMKM-, dia adalah Admin UMKM. Jika tidak, dia Karyawan.
+      LoginRole assignedRole = inputId.toUpperCase().startsWith("UMKM-")
+          ? LoginRole.adminUmkm
+          : LoginRole.karyawan;
+
+      // Login menggunakan nama asli dari Database Excel
+      await context.read<AuthProvider>().login(
+        inputId,
+        dataKaryawan['nama_karyawan'],
+        assignedRole,
+      );
+    } else {
+      // Jika ID tidak ditemukan atau HP sudah dipakai orang lain
+      _showError(result['message'].toString());
+    }
+  }
+
+  void _showError(String msg) {
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(msg), backgroundColor: Colors.red));
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Aktivasi Perangkat")),
-      body: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Form(
-          key: _formKey,
+      backgroundColor: FluidColors.background,
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(32.0),
           child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              TextFormField(
-                controller: _idController,
-                decoration: const InputDecoration(labelText: "ID Karyawan"),
-                textInputAction: TextInputAction.next,
-                validator: (v) => (v == null || v.trim().isEmpty)
-                    ? 'ID tidak boleh kosong'
-                    : null,
+              const Text(
+                "Masuk ke",
+                style: TextStyle(fontSize: 16, color: Colors.grey),
               ),
-              const SizedBox(height: 12),
-              TextFormField(
-                controller: _namaController,
-                decoration: const InputDecoration(labelText: "Nama Lengkap"),
-                textInputAction: TextInputAction.done,
-                onFieldSubmitted: (_) => _submitLogin(),
-                validator: (v) => (v == null || v.trim().isEmpty)
-                    ? 'Nama tidak boleh kosong'
-                    : null,
-              ),
-              const SizedBox(height: 30),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: _isLoading ? null : _submitLogin,
-                  child: _isLoading
-                      ? const SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Text("Daftarkan Perangkat"),
+              const Text(
+                "Hadirin.",
+                style: TextStyle(
+                  fontSize: 40,
+                  fontWeight: FontWeight.bold,
+                  color: FluidColors.primary,
                 ),
               ),
               const SizedBox(height: 40),
-              // PINTU MASUK ADMIN SAAS
-              TextButton.icon(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const AdminRegisterScreen(),
-                    ),
-                  );
-                },
-                icon: const Icon(
-                  Icons.admin_panel_settings,
-                  color: Colors.grey,
-                ),
-                label: const Text(
-                  "Portal Admin SaaS",
-                  style: TextStyle(color: Colors.grey),
+
+              TextField(
+                controller: _idController,
+                decoration: const InputDecoration(
+                  labelText: "Masukkan ID Karyawan / Client ID",
+                  border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.badge),
                 ),
               ),
-              const SizedBox(height: 20),
-              Text(
-                "Device ID Anda: $_myDeviceId",
-                style: const TextStyle(color: Colors.grey),
+              const SizedBox(height: 16),
+              TextField(
+                controller: _namaController,
+                decoration: const InputDecoration(
+                  labelText: "Nama Panggilan (Opsional)",
+                  border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.person),
+                ),
               ),
-              TextButton.icon(
-                onPressed: () {
-                  Clipboard.setData(ClipboardData(text: _myDeviceId));
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text("Device ID Disalin! Kirimkan ke Admin."),
-                    ),
-                  );
-                },
-                icon: const Icon(Icons.copy, size: 16),
-                label: const Text("Salin Device ID"),
+              const SizedBox(height: 32),
+
+              SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: ElevatedButton(
+                  onPressed: _isLoading ? null : _prosesLogin,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: FluidColors.primary,
+                    foregroundColor: Colors.white,
+                  ),
+                  child: _isLoading
+                      ? const CircularProgressIndicator(color: Colors.white)
+                      : const Text(
+                          "Masuk Sekarang",
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                ),
               ),
             ],
           ),

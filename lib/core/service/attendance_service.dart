@@ -1,24 +1,17 @@
 import 'dart:convert';
 import 'dart:developer' as d;
 import 'dart:io';
-import 'package:hadirin/core/config/office_config.dart';
+import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:geolocator/geolocator.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'dart:math';
+import 'package:flutter_image_compress/flutter_image_compress.dart'; // <-- IMPORT TAMBAHAN
 
-// ← Pisahkan konstanta agar mudah diubah tanpa menyentuh logika service
 import 'package:hadirin/core/config/app_config.dart';
 
-// abstract class _Config {
-//   static const gasEndpoint =
-//       "https://script.google.com/macros/s/AKfycbyV2KrJddqHizRDdlwgCT-00XdTyIrfZo4kULOccaHk6Y4-tjHQfZdZzVLxxHrQ6G2p/exec";
-//   static const apiToken = "SUPER_SECRET_UMKM001_8xZ2";
-//   static const httpTimeout = Duration(seconds: 20); // ← sedikit lebih longgar
-// }
-// Hapus abstract class _Config yang lama, ganti jadi:
 abstract class _Config {
   static String get gasEndpoint => AppConfig.gasEndpoint;
   static String get apiToken => AppConfig.apiToken;
@@ -26,34 +19,43 @@ abstract class _Config {
 }
 
 class AttendanceService {
+  static const platform = MethodChannel('com.example.hadirin/face_recognition');
   final _auth = LocalAuthentication();
   final _picker = ImagePicker();
   final _deviceInfo = DeviceInfoPlugin();
 
+  // =================================================================
+  // SKENARIO B: ABSENSI HARIAN (CLOCK IN / CLOCK OUT)
+  // =================================================================
   Future<Map<String, dynamic>> submitAbsen({
     required String idKaryawan,
     required String namaKaryawan,
     required String tipeAbsen,
   }) async {
     try {
-      // 1. Cek & jalankan biometrik
-      final canCheck = await _auth.canCheckBiometrics;
-      if (!canCheck) throw Exception("Perangkat tidak mendukung biometrik.");
+      // 1. LAPIS KEAMANAN: BIOMETRIK / PIN LAYAR
+      bool biometricPassed = false;
+      try {
+        final canAuthBiometrics = await _auth.canCheckBiometrics;
+        final isDeviceSupported = await _auth.isDeviceSupported();
 
-      // ← `biometricOnly` dan `persistAcrossBackgrounding` sudah deprecated
+        if (canAuthBiometrics || isDeviceSupported) {
+          biometricPassed = await _auth.authenticate(
+            localizedReason:
+                'Gunakan Sidik Jari atau PIN layar Anda untuk absen $tipeAbsen',
+            biometricOnly: false,
+            persistAcrossBackgrounding: true,
+          );
+        }
+      } catch (e) {
+        d.log("Autentikasi perangkat dilewati: $e");
+      }
 
-      bool didAuth = await _auth.authenticate(
-        localizedReason: 'Pindai sidik jari Anda untuk absen $tipeAbsen',
-        biometricOnly: true,
-        persistAcrossBackgrounding: true,
-      );
-      if (!didAuth) throw Exception("Autentikasi biometrik dibatalkan.");
-
-      // 2. Device ID
+      // 2. DEVICE ID
       final androidInfo = await _deviceInfo.androidInfo;
       final deviceId = androidInfo.id;
 
-      // 3. Lokasi & deteksi fake GPS
+      // 3. LOKASI & FAKE GPS CHECK
       final isEnabled = await Geolocator.isLocationServiceEnabled();
       if (!isEnabled) throw Exception("Harap aktifkan GPS terlebih dahulu.");
 
@@ -68,39 +70,85 @@ class AttendanceService {
           accuracy: LocationAccuracy.best,
         ),
       );
-      // maka sistem lokal Flutter akan bertabrakan dengan sistem GAS.
-      // ── Validasi geofence (lapis 1, sisi Flutter) ──────────────────
-      // final jarak = _hitungJarak(
-      //   position.latitude,
-      //   position.longitude,
-      //   OfficeConfig.lat,
-      //   OfficeConfig.lng,
-      // );
 
-      // if (jarak > OfficeConfig.radiusMeter) {
-      //   throw Exception(
-      //     "Lokasi Anda terlalu jauh dari kantor "
-      //     "(${jarak.toStringAsFixed(0)} m). "
-      //     "Maksimal ${OfficeConfig.radiusMeter.toInt()} m.",
-      //   );
-      // }
-      // 4. Selfie
+      // 4. AMBIL FOTO SELFIE
       final image = await _picker.pickImage(
         source: ImageSource.camera,
-        imageQuality: 50,
+        imageQuality:
+            100, // Biarkan 100% untuk deteksi Face Recognition yang akurat
         preferredCameraDevice: CameraDevice.front,
-        maxWidth: 800,
-        maxHeight: 800,
       );
-      if (image == null) throw Exception("Foto wajah wajib diambil.");
+      if (image == null) {
+        throw Exception("Foto wajah wajib diambil untuk absen.");
+      }
 
-      // 5. Base64
-      final imageBytes = await File(image.path).readAsBytes();
+      // ---------------------------------------------------------
+      // 5. PROSES FACE RECOGNITION (PENCOCOKAN WAJAH)
+      // ---------------------------------------------------------
+      d.log("Mengekstrak vektor wajah dari foto...");
+      List<double> wajahHariIni = await getFaceEmbeddingFromNative(image.path);
+      if (wajahHariIni.isEmpty) {
+        throw Exception(
+          "Gagal mendeteksi wajah di foto. Coba lagi di tempat yang terang.",
+        );
+      }
+
+      d.log("Mengambil wajah master dari server...");
+      List<double> wajahMaster = await getWajahMasterDariServer(idKaryawan);
+      if (wajahMaster.isEmpty) {
+        throw Exception(
+          "Wajah Anda belum terdaftar. Daftarkan wajah di menu Profil terlebih dahulu.",
+        );
+      }
+
+      // Hitung Jarak Euclidean (Threshold batas aman = 1.0)
+      double jarakWajah = hitungKemiripanWajah(wajahHariIni, wajahMaster);
+      d.log("Jarak Kemiripan Wajah: $jarakWajah");
+
+      // Jika jarak > 1.0, berarti orang berbeda
+      if (jarakWajah > 1.0) {
+        throw Exception(
+          "Wajah tidak cocok! (Jarak: ${jarakWajah.toStringAsFixed(2)}). Pastikan Anda absen sendiri.",
+        );
+      }
+      // ---------------------------------------------------------
+
+      // ========================================================
+      // 6. KOMPRESI GAMBAR UNTUK CLOUD (HEMAT KUOTA DRIVE)
+      // ========================================================
+      d.log("Mengompresi gambar untuk diupload...");
+      final String targetPath = "${image.path}_compressed.jpg";
+
+      final XFile? compressedFile =
+          await FlutterImageCompress.compressAndGetFile(
+            image.path,
+            targetPath,
+            quality: 30, // Turunkan kualitas ke 30%
+            minWidth: 600, // Maksimal dimensi 600x600
+            minHeight: 600,
+            format: CompressFormat.jpeg,
+          );
+
+      if (compressedFile == null) {
+        throw Exception("Gagal mengompres gambar sebelum upload.");
+      }
+
+      // 7. Base64 dari file yang SUDAH DIKOMPRESI
+      final imageBytes = await compressedFile.readAsBytes();
       final base64Image = base64Encode(imageBytes);
 
-      // 6. Payload
+      // Bersihkan file sementara dari memori HP
+      try {
+        File(targetPath).deleteSync();
+      } catch (e) {
+        d.log("Gagal menghapus file temp: $e");
+      }
+      // ========================================================
+
+      // 8. PAYLOAD
       final payload = {
         "api_token": _Config.apiToken,
+        "action": "absen",
         "client_id": AppConfig.clientId,
         "client_timestamp": DateTime.now().millisecondsSinceEpoch,
         "id_karyawan": idKaryawan,
@@ -109,12 +157,11 @@ class AttendanceService {
         "tipe_absen": tipeAbsen,
         "lat_long": "${position.latitude}, ${position.longitude}",
         "is_mock_location": position.isMocked,
-        "biometric_passed": true,
-        "foto_base64": base64Image,
+        "biometric_passed": biometricPassed,
+        "foto_base64": base64Image, // Gambar yang dikirim sudah ukuran kecil!
       };
 
-      // 7. HTTP POST
-      d.log('==== REQUEST ==== POST ${_Config.gasEndpoint}');
+      // 9. HTTP POST
       var response = await http
           .post(
             Uri.parse(_Config.gasEndpoint),
@@ -123,21 +170,15 @@ class AttendanceService {
           )
           .timeout(_Config.httpTimeout);
 
-      d.log('==== RESPONSE ==== STATUS: ${response.statusCode}');
-      d.log(utf8.decode(response.bodyBytes, allowMalformed: true));
-
-      // 8. Handle redirect Google (302/303)
       if (response.statusCode == 302 || response.statusCode == 303) {
         final redirectUrl = _extractRedirectUrl(response);
-        if (redirectUrl == null) {
-          throw Exception("Gagal mengekstrak URL redirect dari Google.");
+        if (redirectUrl != null) {
+          response = await http
+              .get(Uri.parse(redirectUrl))
+              .timeout(_Config.httpTimeout);
         }
-        response = await http
-            .get(Uri.parse(redirectUrl))
-            .timeout(_Config.httpTimeout);
       }
 
-      // 9. Parse response
       if (response.statusCode != 200) {
         throw Exception(
           "Gagal terhubung ke server (HTTP ${response.statusCode}).",
@@ -146,13 +187,120 @@ class AttendanceService {
 
       return _parseResponse(response.body);
     } catch (e) {
-      d.log('==== ERROR ==== $e');
-      return {"success": false, "message": e.toString()};
+      d.log('==== ERROR ABSEN ==== $e');
+      return {
+        "success": false,
+        "message": e.toString().replaceAll("Exception: ", ""),
+      };
     }
   }
 
   // =================================================================
-  // FUNGSI BARU: AMBIL RIWAYAT ABSEN KARYAWAN
+  // SKENARIO A: DAFTAR WAJAH PERTAMA KALI (ENROLLMENT)
+  // =================================================================
+  Future<Map<String, dynamic>> daftarWajahMaster(String idKaryawan) async {
+    try {
+      final image = await _picker.pickImage(
+        source: ImageSource.camera,
+        imageQuality: 80,
+        preferredCameraDevice: CameraDevice.front,
+      );
+      if (image == null) throw Exception("Pendaftaran wajah dibatalkan.");
+
+      List<double> wajahMaster = await getFaceEmbeddingFromNative(image.path);
+      if (wajahMaster.isEmpty) {
+        throw Exception(
+          "Gagal mengekstrak pola wajah. Pastikan wajah terlihat jelas.",
+        );
+      }
+
+      final payload = {
+        "api_token": _Config.apiToken,
+        "action": "register_face",
+        "client_id": AppConfig.clientId,
+        "id_karyawan": idKaryawan,
+        "face_embedding": jsonEncode(wajahMaster),
+      };
+
+      var response = await http
+          .post(
+            Uri.parse(_Config.gasEndpoint),
+            headers: {"Content-Type": "application/json"},
+            body: jsonEncode(payload),
+          )
+          .timeout(_Config.httpTimeout);
+
+      if (response.statusCode == 302 || response.statusCode == 303) {
+        final redirectUrl = _extractRedirectUrl(response);
+        if (redirectUrl != null) {
+          response = await http
+              .get(Uri.parse(redirectUrl))
+              .timeout(_Config.httpTimeout);
+        }
+      }
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['code'] == 200) {
+          return {"success": true, "message": "Wajah berhasil didaftarkan!"};
+        }
+        throw Exception(data['message']);
+      }
+      throw Exception("Gagal terhubung ke server.");
+    } catch (e) {
+      d.log('==== ERROR REGISTER FACE ==== $e');
+      return {
+        "success": false,
+        "message": e.toString().replaceAll("Exception: ", ""),
+      };
+    }
+  }
+
+  // =================================================================
+  // FUNGSI BANTUAN: AMBIL WAJAH MASTER DARI SERVER
+  // =================================================================
+  Future<List<double>> getWajahMasterDariServer(String idKaryawan) async {
+    try {
+      final payload = {
+        "api_token": _Config.apiToken,
+        "action": "get_face",
+        "client_id": AppConfig.clientId,
+        "id_karyawan": idKaryawan,
+      };
+
+      var response = await http
+          .post(
+            Uri.parse(_Config.gasEndpoint),
+            headers: {"Content-Type": "application/json"},
+            body: jsonEncode(payload),
+          )
+          .timeout(_Config.httpTimeout);
+
+      if (response.statusCode == 302 || response.statusCode == 303) {
+        final redirectUrl = _extractRedirectUrl(response);
+        if (redirectUrl != null) {
+          response = await http
+              .get(Uri.parse(redirectUrl))
+              .timeout(_Config.httpTimeout);
+        }
+      }
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['code'] == 200 && data['message'] != null) {
+          List<dynamic> parsedList = jsonDecode(data['message']);
+          return parsedList.cast<double>();
+        }
+      }
+      return [];
+    } catch (e) {
+      d.log('==== ERROR GET FACE ==== $e');
+      return [];
+    }
+  }
+
+  // =================================================================
+  // SISA FUNGSI LAINNYA (History, Lokasi, Enroll, dll)
   // =================================================================
   Future<List<dynamic>> getHistory(String idKaryawan) async {
     try {
@@ -182,11 +330,8 @@ class AttendanceService {
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        if (data['code'] == 200) {
-          return data['message'] as List<dynamic>; // Array riwayat dari GAS
-        } else {
-          throw Exception(data['message']);
-        }
+        if (data['code'] == 200) return data['message'] as List<dynamic>;
+        throw Exception(data['message']);
       }
       throw Exception("Gagal terhubung ke server.");
     } catch (e) {
@@ -195,9 +340,6 @@ class AttendanceService {
     }
   }
 
-  // =================================================================
-  // FUNGSI BARU: UPDATE LOKASI KANTOR (Khusus Admin)
-  // =================================================================
   Future<bool> updateLokasi(double lat, double lng, double radius) async {
     try {
       final payload = {
@@ -238,8 +380,58 @@ class AttendanceService {
   }
 
   // =================================================================
-  // FUNGSI BARU: REGISTRASI UMKM BARU (SaaS Admin)
+  // FUNGSI BARU: TAMBAH KARYAWAN (KHUSUS ADMIN UMKM)
   // =================================================================
+  Future<Map<String, dynamic>> tambahKaryawan({
+    required String clientId,
+    required String idKaryawanBaru,
+    required String namaKaryawanBaru,
+    required String divisi,
+  }) async {
+    try {
+      final payload = {
+        "api_token": _Config.apiToken,
+        "action": "add_karyawan",
+        "client_id": clientId,
+        "id_karyawan_baru": idKaryawanBaru,
+        "nama_karyawan_baru": namaKaryawanBaru,
+        "divisi_baru": divisi,
+      };
+
+      var response = await http
+          .post(
+            Uri.parse(_Config.gasEndpoint),
+            headers: {"Content-Type": "application/json"},
+            body: jsonEncode(payload),
+          )
+          .timeout(_Config.httpTimeout);
+
+      if (response.statusCode == 302 || response.statusCode == 303) {
+        final redirectUrl = _extractRedirectUrl(response);
+        if (redirectUrl != null) {
+          response = await http
+              .get(Uri.parse(redirectUrl))
+              .timeout(_Config.httpTimeout);
+        }
+      }
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['code'] == 200) {
+          return {"success": true, "message": data['message']};
+        }
+        throw Exception(data['message']);
+      }
+      throw Exception("Gagal terhubung ke server.");
+    } catch (e) {
+      d.log('==== ERROR ADD KARYAWAN ==== $e');
+      return {
+        "success": false,
+        "message": e.toString().replaceAll("Exception: ", ""),
+      };
+    }
+  }
+
   Future<Map<String, dynamic>> registerKlien({
     required String namaUmkm,
     required double lat,
@@ -262,9 +454,7 @@ class AttendanceService {
             headers: {"Content-Type": "application/json"},
             body: jsonEncode(payload),
           )
-          .timeout(
-            const Duration(seconds: 30),
-          ); // Timeout lebih lama karena kloning file GAS butuh waktu
+          .timeout(const Duration(seconds: 30));
 
       if (response.statusCode == 302 || response.statusCode == 303) {
         final redirectUrl = _extractRedirectUrl(response);
@@ -279,23 +469,21 @@ class AttendanceService {
         final data = jsonDecode(response.body);
         if (data['code'] == 200) {
           return {"success": true, "client_id": data['message']['client_id']};
-        } else {
-          throw Exception(data['message'] ?? "Gagal mendaftarkan UMKM");
         }
+        throw Exception(data['message'] ?? "Gagal mendaftarkan UMKM");
       }
       throw Exception("Gagal terhubung ke server.");
     } catch (e) {
       d.log('==== ERROR REGISTER KLIEN ==== $e');
-      return {"success": false, "message": e.toString()};
+      return {
+        "success": false,
+        "message": e.toString().replaceAll("Exception: ", ""),
+      };
     }
   }
 
-  // =================================================================
-  // FUNGSI BARU: AUTO ENROLL DEVICE
-  // =================================================================
   Future<Map<String, dynamic>> enrollDevice(String idKaryawan) async {
     try {
-      // Ambil Device ID
       final androidInfo = await _deviceInfo.androidInfo;
       final deviceId = androidInfo.id;
 
@@ -328,9 +516,8 @@ class AttendanceService {
         final data = jsonDecode(response.body);
         if (data['code'] == 200) {
           return {"success": true, "message": data['message']};
-        } else {
-          throw Exception(data['message']);
         }
+        throw Exception(data['message']);
       }
       throw Exception("Gagal terhubung ke server.");
     } catch (e) {
@@ -341,17 +528,44 @@ class AttendanceService {
     }
   }
 
-  /// Ekstrak URL redirect dari header atau body HTML
+  Future<List<double>> getFaceEmbeddingFromNative(String imagePath) async {
+    try {
+      final result = await platform.invokeMethod('getEmbedding', {
+        'imagePath': imagePath,
+      });
+
+      if (result == null) return [];
+
+      // Konversi aman: Memaksa semua angka (baik int maupun double) dari Kotlin menjadi double di Dart
+      List<double> embedding = (result as List)
+          .map((e) => (e as num).toDouble())
+          .toList();
+      return embedding;
+    } catch (e) {
+      // Print tegas agar error dari Kotlin terlihat jelas di konsol Anda
+      d.log("==== ERROR DARI NATIVE KOTLIN TFLITE ====");
+      d.log(e.toString());
+      return [];
+    }
+  }
+
+  double hitungKemiripanWajah(List<double> wajah1, List<double> wajah2) {
+    if (wajah1.length != wajah2.length) return 999.0;
+    double sum = 0.0;
+    for (int i = 0; i < wajah1.length; i++) {
+      double diff = wajah1[i] - wajah2[i];
+      sum += diff * diff;
+    }
+    return sqrt(sum);
+  }
+
   String? _extractRedirectUrl(http.Response response) {
     var url = response.headers['location'];
     if (url != null) return url;
-
-    // Fallback: cari di body HTML
     final match = RegExp(r'HREF="([^"]+)"').firstMatch(response.body);
     return match?.group(1)?.replaceAll('&amp;', '&');
   }
 
-  /// Parse body JSON dan kembalikan result map
   Map<String, dynamic> _parseResponse(String body) {
     try {
       final data = jsonDecode(body) as Map<String, dynamic>;
@@ -360,25 +574,10 @@ class AttendanceService {
       }
       throw Exception(data['message'] ?? 'Respons tidak valid dari server.');
     } on FormatException {
-      // Fallback jika GAS mengembalikan plain text
       if (body.contains("Absen berhasil dicatat")) {
         return {"success": true, "message": "Absen berhasil dicatat."};
       }
       throw Exception("Respons server bukan JSON valid. Cek konfigurasi GAS.");
     }
-  }
-
-  /// Hitung jarak dua koordinat GPS dalam meter (Haversine)
-  double _hitungJarak(double lat1, double lng1, double lat2, double lng2) {
-    const r = 6371000.0; // radius bumi dalam meter
-    final dLat = (lat2 - lat1) * pi / 180;
-    final dLng = (lng2 - lng1) * pi / 180;
-    final a =
-        sin(dLat / 2) * sin(dLat / 2) +
-        cos(lat1 * pi / 180) *
-            cos(lat2 * pi / 180) *
-            sin(dLng / 2) *
-            sin(dLng / 2);
-    return r * 2 * atan2(sqrt(a), sqrt(1 - a));
   }
 }

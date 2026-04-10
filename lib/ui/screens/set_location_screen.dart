@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart'; // Pengganti LatLng dari Google Maps
 import 'package:hadirin/core/service/attendance_service.dart';
+import 'package:hadirin/core/theme/fluid_theme.dart';
 
 class SetLocationScreen extends StatefulWidget {
   const SetLocationScreen({super.key});
@@ -10,121 +12,160 @@ class SetLocationScreen extends StatefulWidget {
 }
 
 class _SetLocationScreenState extends State<SetLocationScreen> {
-  // Titik awal peta (Bisa disesuaikan dengan default kota Anda)
+  // Titik awal peta
   LatLng _pickedLocation = const LatLng(-7.9713634, 112.5847634);
   double _radius = 100.0;
   bool _isSaving = false;
-  GoogleMapController? _mapController;
+  final MapController _mapController = MapController();
 
   void _simpanLokasi() async {
     setState(() => _isSaving = true);
-
     bool sukses = await AttendanceService().updateLokasi(
       _pickedLocation.latitude,
       _pickedLocation.longitude,
       _radius,
     );
-
     setState(() => _isSaving = false);
 
-    if (sukses) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("Lokasi berhasil diperbarui!"),
-            backgroundColor: Colors.green,
-          ),
-        );
-        Navigator.pop(context); // Kembali ke dashboard admin setelah sukses
-      }
-    } else {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("Gagal memperbarui lokasi."),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
+    if (sukses && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Lokasi diperbarui!"),
+          backgroundColor: FluidColors.primary,
+        ),
+      );
+      Navigator.pop(context);
+    } else if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Gagal memperbarui."),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Tentukan Lokasi Kantor")),
+      backgroundColor: FluidColors.background,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        iconTheme: const IconThemeData(color: FluidColors.onSurface),
+        title: const Text(
+          "Tentukan Lokasi",
+          style: TextStyle(
+            color: FluidColors.onSurface,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ),
       body: Stack(
         alignment: Alignment.center,
         children: [
-          GoogleMap(
-            initialCameraPosition: CameraPosition(
-              target: _pickedLocation,
-              zoom: 17,
+          // ==========================================
+          // PETA OPENSTREETMAP (Gratis)
+          // ==========================================
+          FlutterMap(
+            mapController: _mapController,
+            options: MapOptions(
+              initialCenter: _pickedLocation,
+              initialZoom: 17.0,
+              // Update state koordinat saat peta digeser
+              onPositionChanged: (MapCamera position, bool hasGesture) {
+                setState(() => _pickedLocation = position.center);
+              },
             ),
-            onMapCreated: (controller) => _mapController = controller,
-            // Saat map digeser, update titik lokasi yang dipilih (posisi tengah kamera)
-            onCameraMove: (position) {
-              setState(() {
-                _pickedLocation = position.target;
-              });
-            },
-            circles: {
-              Circle(
-                circleId: const CircleId("radius_kantor"),
-                center: _pickedLocation,
-                radius: _radius,
-                fillColor: Colors.blue.withOpacity(0.2),
-                strokeWidth: 2,
-                strokeColor: Colors.blue,
+            children: [
+              TileLayer(
+                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                userAgentPackageName:
+                    'com.example.hadirin', // Sesuaikan package name Anda
               ),
-            },
+              CircleLayer(
+                circles: [
+                  CircleMarker(
+                    point: _pickedLocation,
+                    color: FluidColors.primary.withOpacity(
+                      0.2,
+                    ), // Warna Emerald transparan
+                    borderStrokeWidth: 2,
+                    borderColor: FluidColors.primary,
+                    useRadiusInMeter:
+                        true, // Pastikan radius dihitung dalam meter sungguhan
+                    radius: _radius,
+                  ),
+                ],
+              ),
+            ],
           ),
 
-          // PIN Lokasi statis di tengah layar (mengikuti pergeseran peta)
+          // ==========================================
+          // PIN CENTER (Statis di tengah layar)
+          // ==========================================
           const Padding(
             padding: EdgeInsets.only(
               bottom: 40.0,
-            ), // Angkat sedikit agar pas di tengah
-            child: Icon(Icons.location_on, size: 50, color: Colors.red),
+            ), // Diangkat sedikit agar ujung pin pas di tengah bidikan
+            child: Icon(Icons.location_on, size: 50, color: Colors.redAccent),
           ),
 
-          // Panel Pengaturan Radius di bagian bawah
+          // ==========================================
+          // KARTU KONTROL BAWAH (Fluid Design)
+          // ==========================================
           Positioned(
-            bottom: 20,
-            left: 20,
-            right: 20,
-            child: Card(
-              elevation: 8,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
+            bottom: 24,
+            left: 24,
+            right: 24,
+            child: Container(
+              decoration: BoxDecoration(
+                color: FluidColors.surfaceContainerLow,
+                borderRadius: BorderRadius.circular(FluidRadii.md),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 20,
+                    offset: const Offset(0, 10),
+                  ), // Soft overlay shadow
+                ],
               ),
               child: Padding(
-                padding: const EdgeInsets.all(16.0),
+                padding: const EdgeInsets.all(24.0),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      "Radius Absensi: ${_radius.toInt()} meter",
+                      "Radius: ${_radius.toInt()} meter",
                       style: const TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 16,
+                        color: FluidColors.onSurface,
                       ),
                     ),
+                    const SizedBox(height: 8),
                     Slider(
                       value: _radius,
                       min: 20,
                       max: 500,
                       divisions: 48,
-                      label: "${_radius.toInt()} m",
+                      activeColor: FluidColors.primary,
+                      inactiveColor: FluidColors.primaryGhost,
                       onChanged: (val) => setState(() => _radius = val),
                     ),
+                    const SizedBox(height: 16),
                     SizedBox(
                       width: double.infinity,
+                      height: 50,
                       child: ElevatedButton(
                         onPressed: _isSaving ? null : _simpanLokasi,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.blue,
+                          backgroundColor: FluidColors.primary,
                           foregroundColor: Colors.white,
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(FluidRadii.sm),
+                          ),
                         ),
                         child: _isSaving
                             ? const SizedBox(
@@ -132,9 +173,13 @@ class _SetLocationScreenState extends State<SetLocationScreen> {
                                 width: 20,
                                 child: CircularProgressIndicator(
                                   color: Colors.white,
+                                  strokeWidth: 2,
                                 ),
                               )
-                            : const Text("Simpan Koordinat & Radius"),
+                            : const Text(
+                                "Simpan Koordinat",
+                                style: TextStyle(fontWeight: FontWeight.bold),
+                              ),
                       ),
                     ),
                   ],

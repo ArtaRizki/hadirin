@@ -1,53 +1,67 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-class AuthProvider extends ChangeNotifier {
-  String? _idKaryawan;
-  String? _namaKaryawan;
-  bool _isLoggedIn = false;
-  bool _isInitialized = false;
-  bool _isAdmin = false; // ← BARU: State untuk Admin
+// Enum untuk membedakan level akses
+enum LoginRole { none, superAdmin, adminUmkm, karyawan }
 
-  String? get idKaryawan => _idKaryawan;
-  String? get namaKaryawan => _namaKaryawan;
-  bool get isLoggedIn => _isLoggedIn;
+class AuthProvider extends ChangeNotifier {
+  String? _idUser; // Bisa berisi ID Karyawan ATAU Client ID (UMKM-xxxx)
+  String? _namaUser; // Nama karyawan ATAU Nama UMKM
+  LoginRole _role = LoginRole.adminUmkm;
+  bool _isInitialized = false;
+
+  String? get idUser => _idUser;
+  String? get namaUser => _namaUser;
+  LoginRole get role => _role;
   bool get isInitialized => _isInitialized;
-  bool get isAdmin => _isAdmin; // ← BARU: Getter untuk Admin
+
+  // Getter bantuan untuk kompatibilitas dengan UI yang sudah ada
+  bool get isLoggedIn => _role != LoginRole.none;
+  bool get isSuperAdmin => _role == LoginRole.superAdmin;
+  bool get isAdminUmkm => _role == LoginRole.adminUmkm;
+  bool get isKaryawan => _role == LoginRole.karyawan;
+
+  // Alias untuk kompatibilitas kode lama (attendance_screen dll)
+  String? get idKaryawan => _idUser;
+  String? get namaKaryawan => _namaUser;
+  bool get isAdmin =>
+      _role == LoginRole.adminUmkm || _role == LoginRole.superAdmin;
 
   Future<void> checkLoginStatus() async {
     final prefs = await SharedPreferences.getInstance();
-    _idKaryawan = prefs.getString('id_karyawan');
-    _namaKaryawan = prefs.getString('nama_karyawan');
-    _isAdmin = prefs.getBool('is_admin') ?? false; // ← BARU: Baca status admin
+    _idUser = prefs.getString('id_user');
+    _namaUser = prefs.getString('nama_user');
 
-    _isLoggedIn = _idKaryawan != null && _idKaryawan!.isNotEmpty;
+    // Membaca string role dari SharedPreferences
+    String savedRole = prefs.getString('login_role') ?? 'none';
+    _role = LoginRole.values.firstWhere(
+      (e) => e.toString() == savedRole,
+      orElse: () => LoginRole.adminUmkm,
+    );
+
     _isInitialized = true;
     notifyListeners();
   }
 
-  Future<void> login(String id, String nama) async {
+  // Fungsi Login Universal Baru
+  Future<void> login(String id, String nama, LoginRole role) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('id_karyawan', id.trim());
-    await prefs.setString('nama_karyawan', nama.trim());
+    await prefs.setString('id_user', id.trim());
+    await prefs.setString('nama_user', nama.trim());
+    await prefs.setString('login_role', role.toString());
 
-    // ← BARU: Logika penentu Admin (Jika ID diawali/mengandung kata ADMIN)
-    bool checkAdmin = id.trim().toUpperCase().contains('ADMIN');
-    await prefs.setBool('is_admin', checkAdmin);
-
-    _idKaryawan = id.trim();
-    _namaKaryawan = nama.trim();
-    _isAdmin = checkAdmin;
-    _isLoggedIn = true;
+    _idUser = id.trim();
+    _namaUser = nama.trim();
+    _role = role;
     notifyListeners();
   }
 
   Future<void> logout() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.clear();
-    _idKaryawan = null;
-    _namaKaryawan = null;
-    _isAdmin = false; // ← BARU: Reset admin
-    _isLoggedIn = false;
+    _idUser = null;
+    _namaUser = null;
+    _role = LoginRole.none;
     notifyListeners();
   }
 }

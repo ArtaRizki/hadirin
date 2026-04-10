@@ -1,7 +1,7 @@
 abstract class AppConfig {
   static const gasEndpoint = String.fromEnvironment('GAS_ENDPOINT');
   static const apiToken = String.fromEnvironment('API_TOKEN');
-  static const clientId = String.fromEnvironment('CLIENT_ID'); // ← BARU
+  static var clientId = String.fromEnvironment('CLIENT_ID'); // ← BARU
 
   static void validate() {
     assert(gasEndpoint.isNotEmpty, 'GAS_ENDPOINT belum di-set');

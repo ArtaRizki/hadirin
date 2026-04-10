@@ -28,7 +28,7 @@
             "args": [
                 "--dart-define=GAS_ENDPOINT=https://script.google.com/macros/s/AKfycbyV2KrJddqHizRDdlwgCT-00XdTyIrfZo4kULOccaHk6Y4-tjHQfZdZzVLxxHrQ6G2p/exec",
                 "--dart-define=API_TOKEN=SUPER_SECRET_UMKM001_8xZ2",
-                "--dart-define=CLIENT_ID=umkm_warung_bu_siti"
+                "--dart-define=CLIENT_ID=UMKM-322482"
             ]
         }
     ]

@@ -1,10 +1,12 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:hadirin/core/providers/auth_provider.dart';
 import 'package:hadirin/core/service/attendance_service.dart';
+import 'package:hadirin/core/service/notification_service.dart';
 import 'package:hadirin/ui/screens/profile_screen.dart';
 import 'package:provider/provider.dart';
-
-// Sesuaikan path import ini jika struktur folder Anda berbeda
-import '../../core/providers/auth_provider.dart';
+import 'package:hadirin/core/theme/fluid_theme.dart';
+import 'package:intl/intl.dart'; // Tambahkan intl untuk formatting yang lebih mudah
 
 class AttendanceScreen extends StatefulWidget {
   const AttendanceScreen({super.key});
@@ -17,146 +19,255 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
   bool _isLoading = false;
   final AttendanceService _attendanceService = AttendanceService();
 
-  void _prosesAbsensi(String tipe) async {
-    // 1. Munculkan loading spinner
-    setState(() {
-      _isLoading = true;
-    });
+  late Timer _timer;
+  DateTime _currentTime = DateTime.now();
 
-    // 2. Baca data karyawan yang sedang login dari Provider
-    // Menggunakan context.read karena kita berada di dalam fungsi (bukan di metode build)
+  @override
+  void initState() {
+    super.initState();
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (mounted) {
+        setState(() {
+          _currentTime = DateTime.now();
+        });
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer.cancel();
+    super.dispose();
+  }
+
+  // Fungsi penentu sapaan berdasarkan jam
+  String _getGreeting() {
+    var hour = _currentTime.hour;
+    if (hour < 11) return "Selamat Pagi,";
+    if (hour < 15) return "Selamat Siang,";
+    if (hour < 18) return "Selamat Sore,";
+    return "Selamat Malam,";
+  }
+
+  // Format jam dengan detik (HH:mm:ss)
+  String _formatFullTime(DateTime time) {
+    return DateFormat('HH:mm:ss').format(time);
+  }
+
+  void _prosesAbsensi(String tipe) async {
+    setState(() => _isLoading = true);
     final auth = context.read<AuthProvider>();
 
-    // 3. Panggil service untuk mengeksekusi biometrik, GPS, Kamera, dan kirim ke GAS
     var result = await _attendanceService.submitAbsen(
       idKaryawan: auth.idKaryawan ?? "UNKNOWN",
       namaKaryawan: auth.namaKaryawan ?? "UNKNOWN",
       tipeAbsen: tipe,
     );
 
-    // 4. Hilangkan loading spinner
     if (!mounted) return;
-    setState(() {
-      _isLoading = false;
-    });
+    setState(() => _isLoading = false);
 
-    // 5. Tampilkan Notifikasi Hasil (SnackBar)
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(result['message'] ?? 'Terjadi kesalahan tidak dikenal.'),
-        backgroundColor: result['success'] == true ? Colors.green : Colors.red,
+        content: Text(result['message'] ?? 'Terjadi kesalahan.'),
+        backgroundColor: result['success'] == true
+            ? FluidColors.primary
+            : Colors.red,
         behavior: SnackBarBehavior.floating,
-        duration: const Duration(seconds: 4),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(FluidRadii.sm),
+        ),
       ),
     );
+
+    if (result['success'] == true) {
+      NotificationService().showNotification(
+        id: DateTime.now().millisecond,
+        title: 'Absen $tipe Berhasil! ✅',
+        body:
+            'Terima kasih ${auth.namaKaryawan}, absen Anda telah tercatat pada ${_formatFullTime(DateTime.now())} WIB.',
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    // Memantau perubahan data login (opsional di sini, tapi baik untuk memastikan UI ter-update)
     final auth = context.watch<AuthProvider>();
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("Absensi Karyawan"),
-        centerTitle: true,
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        actions: [
-          // Tombol Profil di pojok kanan atas
-          IconButton(
-            icon: const Icon(Icons.account_circle, size: 30),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const ProfileScreen()),
-              );
-            },
-          ),
-          const SizedBox(
-            width: 8,
-          ), // Memberikan jarak (margin) agar tidak terlalu mepet ke tepi layar
-        ],
-      ),
-      body: Center(
-        child: _isLoading
-            // Tampilan saat proses loading absensi berjalan
-            ? const Column(
-                mainAxisAlignment: MainAxisAlignment.center,
+      backgroundColor: FluidColors.background,
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // HEADER (Sapaan Dinamis)
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  CircularProgressIndicator(),
-                  SizedBox(height: 16),
-                  Text("Memvalidasi biometrik & lokasi..."),
-                ],
-              )
-            // Tampilan utama saat standby
-            : Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.fingerprint, size: 80, color: Colors.blue),
-                  const SizedBox(height: 24),
-
-                  // Menampilkan Nama Karyawan yang login
-                  Text(
-                    "Halo, ${auth.namaKaryawan ?? '-'}",
-                    style: const TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  Text(
-                    "Silakan lakukan absensi hari ini",
-                    style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
-                  ),
-
-                  const SizedBox(height: 50),
-
-                  // Tombol Absen
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      ElevatedButton.icon(
-                        onPressed: () => _prosesAbsensi("Masuk"),
-                        icon: const Icon(Icons.login),
-                        label: const Padding(
-                          padding: EdgeInsets.symmetric(
-                            vertical: 12.0,
-                            horizontal: 8.0,
-                          ),
-                          child: Text(
-                            "Absen Masuk",
-                            style: TextStyle(fontSize: 16),
-                          ),
-                        ),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.green.shade100,
-                          foregroundColor: Colors.green.shade900,
-                          elevation: 2,
+                      Text(
+                        _getGreeting(), // Memanggil sapaan dinamis
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: Colors.grey.shade600,
                         ),
                       ),
-                      ElevatedButton.icon(
-                        onPressed: () => _prosesAbsensi("Pulang"),
-                        icon: const Icon(Icons.logout),
-                        label: const Padding(
-                          padding: EdgeInsets.symmetric(
-                            vertical: 12.0,
-                            horizontal: 8.0,
-                          ),
-                          child: Text(
-                            "Absen Pulang",
-                            style: TextStyle(fontSize: 16),
-                          ),
-                        ),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.orange.shade100,
-                          foregroundColor: Colors.orange.shade900,
-                          elevation: 2,
+                      const SizedBox(height: 4),
+                      Text(
+                        auth.namaKaryawan ?? "Karyawan",
+                        style: const TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: FluidColors.onSurface,
                         ),
                       ),
                     ],
                   ),
+                  InkWell(
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const ProfileScreen()),
+                    ),
+                    child: Hero(
+                      tag: 'profile-avatar',
+                      child: Container(
+                        padding: const EdgeInsets.all(2),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: FluidColors.primaryGhost,
+                            width: 2,
+                          ),
+                        ),
+                        child: CircleAvatar(
+                          radius: 24,
+                          backgroundColor: FluidColors.surfaceContainerLow,
+                          child: Icon(
+                            auth.isAdmin
+                                ? Icons.admin_panel_settings
+                                : Icons.person,
+                            color: FluidColors.primary,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
                 ],
               ),
+
+              const SizedBox(height: FluidSpacing.section),
+
+              // KARTU UTAMA (Jam Digital + Detik)
+              Expanded(
+                child: Card(
+                  color: FluidColors.surfaceContainerLow,
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(FluidRadii.sm),
+                  ),
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(32.0),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        // Jam Digital Besar + Detik
+                        Text(
+                          _formatFullTime(_currentTime),
+                          style: const TextStyle(
+                            fontSize: 68,
+                            fontWeight: FontWeight.w800,
+                            fontFeatures: [
+                              FontFeature.tabularFigures(),
+                            ], // Agar angka tidak goyang saat berganti
+                            letterSpacing: -2,
+                            color: FluidColors.primary,
+                          ),
+                        ),
+                        Text(
+                          DateFormat(
+                            'EEEE, d MMMM yyyy',
+                            'id_ID',
+                          ).format(_currentTime),
+                          style: TextStyle(
+                            color: Colors.grey.shade600,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        const SizedBox(height: 48),
+
+                        if (_isLoading)
+                          const CircularProgressIndicator(
+                            color: FluidColors.primary,
+                          )
+                        else ...[
+                          // Tombol Masuk
+                          SizedBox(
+                            width: double.infinity,
+                            height: 60,
+                            child: ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: FluidColors.primary,
+                                foregroundColor: Colors.white,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(
+                                    FluidRadii.md,
+                                  ),
+                                ),
+                                elevation: 0,
+                              ),
+                              onPressed: () => _prosesAbsensi("Masuk"),
+                              child: const Text(
+                                "Absen Masuk",
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          // Tombol Pulang
+                          SizedBox(
+                            width: double.infinity,
+                            height: 60,
+                            child: OutlinedButton(
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: FluidColors.primary,
+                                side: const BorderSide(
+                                  color: FluidColors.primary,
+                                  width: 2,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(
+                                    FluidRadii.md,
+                                  ),
+                                ),
+                              ),
+                              onPressed: () => _prosesAbsensi("Pulang"),
+                              child: const Text(
+                                "Absen Pulang",
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
