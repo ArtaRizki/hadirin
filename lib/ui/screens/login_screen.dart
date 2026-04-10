@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:hadirin/core/providers/auth_provider.dart';
+import 'package:hadirin/ui/screens/admin_register_screen.dart';
 import 'package:provider/provider.dart';
+import 'package:device_info_plus/device_info_plus.dart';
+import 'package:flutter/services.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -14,6 +17,18 @@ class _LoginScreenState extends State<LoginScreen> {
   final _namaController = TextEditingController();
   final _formKey = GlobalKey<FormState>(); // ← BARU: validasi form
   bool _isLoading = false; // ← BARU: loading state
+  String _myDeviceId = "Memuat...";
+
+  @override
+  void initState() {
+    super.initState();
+    _loadDeviceId();
+  }
+
+  void _loadDeviceId() async {
+    final androidInfo = await DeviceInfoPlugin().androidInfo;
+    setState(() => _myDeviceId = androidInfo.id);
+  }
 
   @override
   void dispose() {
@@ -79,6 +94,43 @@ class _LoginScreenState extends State<LoginScreen> {
                         )
                       : const Text("Daftarkan Perangkat"),
                 ),
+              ),
+              const SizedBox(height: 40),
+              // PINTU MASUK ADMIN SAAS
+              TextButton.icon(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const AdminRegisterScreen(),
+                    ),
+                  );
+                },
+                icon: const Icon(
+                  Icons.admin_panel_settings,
+                  color: Colors.grey,
+                ),
+                label: const Text(
+                  "Portal Admin SaaS",
+                  style: TextStyle(color: Colors.grey),
+                ),
+              ),
+              const SizedBox(height: 20),
+              Text(
+                "Device ID Anda: $_myDeviceId",
+                style: const TextStyle(color: Colors.grey),
+              ),
+              TextButton.icon(
+                onPressed: () {
+                  Clipboard.setData(ClipboardData(text: _myDeviceId));
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text("Device ID Disalin! Kirimkan ke Admin."),
+                    ),
+                  );
+                },
+                icon: const Icon(Icons.copy, size: 16),
+                label: const Text("Salin Device ID"),
               ),
             ],
           ),

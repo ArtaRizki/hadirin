@@ -68,22 +68,22 @@ class AttendanceService {
           accuracy: LocationAccuracy.best,
         ),
       );
-
+      // maka sistem lokal Flutter akan bertabrakan dengan sistem GAS.
       // ── Validasi geofence (lapis 1, sisi Flutter) ──────────────────
-      final jarak = _hitungJarak(
-        position.latitude,
-        position.longitude,
-        OfficeConfig.lat,
-        OfficeConfig.lng,
-      );
+      // final jarak = _hitungJarak(
+      //   position.latitude,
+      //   position.longitude,
+      //   OfficeConfig.lat,
+      //   OfficeConfig.lng,
+      // );
 
-      if (jarak > OfficeConfig.radiusMeter) {
-        throw Exception(
-          "Lokasi Anda terlalu jauh dari kantor "
-          "(${jarak.toStringAsFixed(0)} m). "
-          "Maksimal ${OfficeConfig.radiusMeter.toInt()} m.",
-        );
-      }
+      // if (jarak > OfficeConfig.radiusMeter) {
+      //   throw Exception(
+      //     "Lokasi Anda terlalu jauh dari kantor "
+      //     "(${jarak.toStringAsFixed(0)} m). "
+      //     "Maksimal ${OfficeConfig.radiusMeter.toInt()} m.",
+      //   );
+      // }
       // 4. Selfie
       final image = await _picker.pickImage(
         source: ImageSource.camera,
@@ -147,6 +147,145 @@ class AttendanceService {
       return _parseResponse(response.body);
     } catch (e) {
       d.log('==== ERROR ==== $e');
+      return {"success": false, "message": e.toString()};
+    }
+  }
+
+  // =================================================================
+  // FUNGSI BARU: AMBIL RIWAYAT ABSEN KARYAWAN
+  // =================================================================
+  Future<List<dynamic>> getHistory(String idKaryawan) async {
+    try {
+      final payload = {
+        "api_token": _Config.apiToken,
+        "action": "get_history",
+        "client_id": AppConfig.clientId,
+        "id_karyawan": idKaryawan,
+      };
+
+      var response = await http
+          .post(
+            Uri.parse(_Config.gasEndpoint),
+            headers: {"Content-Type": "application/json"},
+            body: jsonEncode(payload),
+          )
+          .timeout(_Config.httpTimeout);
+
+      if (response.statusCode == 302 || response.statusCode == 303) {
+        final redirectUrl = _extractRedirectUrl(response);
+        if (redirectUrl != null) {
+          response = await http
+              .get(Uri.parse(redirectUrl))
+              .timeout(_Config.httpTimeout);
+        }
+      }
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['code'] == 200) {
+          return data['message'] as List<dynamic>; // Array riwayat dari GAS
+        } else {
+          throw Exception(data['message']);
+        }
+      }
+      throw Exception("Gagal terhubung ke server.");
+    } catch (e) {
+      d.log('==== ERROR GET HISTORY ==== $e');
+      throw Exception("Gagal mengambil riwayat: $e");
+    }
+  }
+
+  // =================================================================
+  // FUNGSI BARU: UPDATE LOKASI KANTOR (Khusus Admin)
+  // =================================================================
+  Future<bool> updateLokasi(double lat, double lng, double radius) async {
+    try {
+      final payload = {
+        "api_token": _Config.apiToken,
+        "action": "update_lokasi",
+        "client_id": AppConfig.clientId,
+        "lat": lat,
+        "lng": lng,
+        "radius": radius,
+      };
+
+      var response = await http
+          .post(
+            Uri.parse(_Config.gasEndpoint),
+            headers: {"Content-Type": "application/json"},
+            body: jsonEncode(payload),
+          )
+          .timeout(_Config.httpTimeout);
+
+      if (response.statusCode == 302 || response.statusCode == 303) {
+        final redirectUrl = _extractRedirectUrl(response);
+        if (redirectUrl != null) {
+          response = await http
+              .get(Uri.parse(redirectUrl))
+              .timeout(_Config.httpTimeout);
+        }
+      }
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return data['code'] == 200;
+      }
+      return false;
+    } catch (e) {
+      d.log('==== ERROR UPDATE LOKASI ==== $e');
+      return false;
+    }
+  }
+
+  // =================================================================
+  // FUNGSI BARU: REGISTRASI UMKM BARU (SaaS Admin)
+  // =================================================================
+  Future<Map<String, dynamic>> registerKlien({
+    required String namaUmkm,
+    required double lat,
+    required double lng,
+    required double radius,
+  }) async {
+    try {
+      final payload = {
+        "api_token": _Config.apiToken,
+        "action": "register_klien",
+        "nama_umkm": namaUmkm,
+        "lat": lat,
+        "lng": lng,
+        "radius": radius,
+      };
+
+      var response = await http
+          .post(
+            Uri.parse(_Config.gasEndpoint),
+            headers: {"Content-Type": "application/json"},
+            body: jsonEncode(payload),
+          )
+          .timeout(
+            const Duration(seconds: 30),
+          ); // Timeout lebih lama karena kloning file GAS butuh waktu
+
+      if (response.statusCode == 302 || response.statusCode == 303) {
+        final redirectUrl = _extractRedirectUrl(response);
+        if (redirectUrl != null) {
+          response = await http
+              .get(Uri.parse(redirectUrl))
+              .timeout(const Duration(seconds: 30));
+        }
+      }
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['code'] == 200) {
+          return {"success": true, "client_id": data['message']['client_id']};
+        } else {
+          throw Exception(data['message'] ?? "Gagal mendaftarkan UMKM");
+        }
+      }
+      throw Exception("Gagal terhubung ke server.");
+    } catch (e) {
+      d.log('==== ERROR REGISTER KLIEN ==== $e');
       return {"success": false, "message": e.toString()};
     }
   }
