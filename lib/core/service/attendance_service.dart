@@ -699,6 +699,50 @@ class AttendanceService {
     }
   }
 
+  Future<List<dynamic>> getPendingApprovals(String clientId) async {
+    final response = await http.post(
+      Uri.parse(_Config.gasEndpoint),
+      body: jsonEncode({
+        "api_token": _Config.apiToken,
+        "action": "get_all_approvals",
+        "client_id": clientId,
+      }),
+    );
+    final data = jsonDecode(response.body);
+    return data['code'] == 200 ? data['message'] : [];
+  }
+
+  Future<bool> updateLeaveStatus(
+    String clientId,
+    int rowIndex,
+    String status,
+  ) async {
+    final response = await http.post(
+      Uri.parse(_Config.gasEndpoint),
+      body: jsonEncode({
+        "api_token": _Config.apiToken,
+        "action": "update_leave_status",
+        "client_id": clientId,
+        "row_index": rowIndex,
+        "new_status": status,
+      }),
+    );
+    return jsonDecode(response.body)['code'] == 200;
+  }
+
+  Future<Map<String, dynamic>> resetDeviceID(String targetId) async {
+    final response = await http.post(
+      Uri.parse(_Config.gasEndpoint),
+      body: jsonEncode({
+        "api_token": _Config.apiToken,
+        "action": "reset_device",
+        "client_id": AppConfig.clientId,
+        "target_id_karyawan": targetId,
+      }),
+    );
+    return jsonDecode(response.body);
+  }
+
   double hitungKemiripanWajah(List<double> wajah1, List<double> wajah2) {
     if (wajah1.length != wajah2.length) return 999.0;
     double sum = 0.0;
