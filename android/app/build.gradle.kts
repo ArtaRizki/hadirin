@@ -6,7 +6,7 @@ plugins {
 }
 
 android {
-    namespace = "com.example.hadirin"
+    namespace = "com.mobile.hadirin"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -26,7 +26,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.example.hadirin"
+        applicationId = "com.mobile.hadirin"
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode

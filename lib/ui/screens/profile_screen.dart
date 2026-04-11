@@ -10,6 +10,7 @@ import 'package:hadirin/core/theme/fluid_theme.dart';
 import 'package:intl/intl.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:hadirin/ui/screens/leave_request_screen.dart';
+import 'package:hadirin/ui/screens/approval_screen.dart'; // Import layar approval
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -222,7 +223,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   // =================================================================
-  // DIALOG PEMILIHAN BULAN & TAHUN
+  // DIALOG PEMILIHAN BULAN & TAHUN UNTUK EXCEL
   // =================================================================
   void _tampilkanDialogPilihBulan() {
     int selectedMonth = DateTime.now().month;
@@ -261,7 +262,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   Expanded(
                     flex: 3,
                     child: DropdownButtonFormField<int>(
-                      value: selectedMonth,
+                      initialValue: selectedMonth,
                       isExpanded: true,
                       decoration: const InputDecoration(
                         border: OutlineInputBorder(),
@@ -281,16 +282,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   Expanded(
                     flex: 2,
                     child: DropdownButtonFormField<int>(
-                      value: selectedYear,
+                      initialValue: selectedYear,
                       isExpanded: true,
                       decoration: const InputDecoration(
                         border: OutlineInputBorder(),
                         contentPadding: EdgeInsets.symmetric(horizontal: 12),
                       ),
                       items: List.generate(5, (index) {
-                        int year =
-                            DateTime.now().year -
-                            index; // Menampilkan 5 tahun terakhir
+                        int year = DateTime.now().year - index;
                         return DropdownMenuItem(
                           value: year,
                           child: Text(year.toString()),
@@ -317,11 +316,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                   onPressed: () {
                     Navigator.pop(context);
-                    // Format parameter untuk Backend (contoh: "04-2026")
                     String strBulan = selectedMonth.toString().padLeft(2, '0');
                     String bulanTahun = "$strBulan-$selectedYear";
-
-                    // Format nama untuk file Excel (contoh: "April 2026")
                     String bulanNama =
                         "${namaBulan[selectedMonth - 1]} $selectedYear";
 
@@ -338,7 +334,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   // =================================================================
-  // EKSEKUSI DOWNLOAD EXCEL (DIPANGGIL DARI DIALOG)
+  // EKSEKUSI DOWNLOAD EXCEL
   // =================================================================
   void _downloadLaporan(String bulanTahun, String bulanNama) async {
     setState(() => _isExporting = true);
@@ -378,6 +374,110 @@ class _ProfileScreenState extends State<ProfileScreen> {
     } finally {
       if (mounted) setState(() => _isExporting = false);
     }
+  }
+
+  // =================================================================
+  // DIALOG & FUNGSI RESET DEVICE HP
+  // =================================================================
+  void _tampilkanDialogResetHP(BuildContext context) {
+    final TextEditingController idController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        bool isResetting = false;
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(FluidRadii.md),
+              ),
+              title: const Text(
+                "Reset Perangkat",
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+              ),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    "Masukkan ID Karyawan yang ingin direset perangkatnya (Misal: KRY-001).",
+                    style: TextStyle(fontSize: 14),
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: idController,
+                    decoration: const InputDecoration(
+                      labelText: "ID Karyawan",
+                      border: OutlineInputBorder(),
+                      prefixIcon: Icon(Icons.badge),
+                    ),
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text(
+                    "Batal",
+                    style: TextStyle(color: Colors.grey),
+                  ),
+                ),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.red,
+                    foregroundColor: Colors.white,
+                  ),
+                  onPressed: isResetting
+                      ? null
+                      : () async {
+                          if (idController.text.trim().isEmpty) return;
+
+                          setDialogState(() => isResetting = true);
+
+                          try {
+                            final result = await _service.resetDeviceID(
+                              idController.text.trim(),
+                            );
+                            if (!context.mounted) return;
+                            Navigator.pop(context); // Tutup dialog
+
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(result['message']),
+                                backgroundColor: result['code'] == 200
+                                    ? Colors.green
+                                    : Colors.red,
+                              ),
+                            );
+                          } catch (e) {
+                            if (!context.mounted) return;
+                            Navigator.pop(context);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text("Gagal mereset: $e"),
+                                backgroundColor: Colors.red,
+                              ),
+                            );
+                          }
+                        },
+                  child: isResetting
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2,
+                          ),
+                        )
+                      : const Text("Reset Sekarang"),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
   }
 
   @override
@@ -517,9 +617,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
             ),
 
-            // ==========================================
+            const SizedBox(height: 12),
+
             // TOMBOL PENGAJUAN CUTI / IZIN / SAKIT
-            // ==========================================
             SizedBox(
               width: double.infinity,
               height: 50,
@@ -548,7 +648,38 @@ class _ProfileScreenState extends State<ProfileScreen> {
             if (auth.isAdmin) ...[
               const SizedBox(height: 12),
 
-              // TOMBOL DOWNLOAD EXCEL
+              // 1. TOMBOL PERSETUJUAN IZIN
+              SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: ElevatedButton.icon(
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const ApprovalScreen()),
+                  ),
+                  icon: const Icon(
+                    Icons.playlist_add_check_circle,
+                    color: Colors.orange,
+                  ),
+                  label: const Text(
+                    "Daftar Persetujuan Izin",
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.orange,
+                    ),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.orange.shade50,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(FluidRadii.sm),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+
+              // 2. TOMBOL DOWNLOAD EXCEL
               SizedBox(
                 width: double.infinity,
                 height: 50,
@@ -585,34 +716,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                 ),
               ),
+              const SizedBox(height: 8),
 
-              const SizedBox(height: 8),
-              SizedBox(
-                width: double.infinity,
-                height: 50,
-                child: ElevatedButton.icon(
-                  onPressed: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const SetLocationScreen(),
-                    ),
-                  ),
-                  icon: const Icon(Icons.map_outlined),
-                  label: const Text(
-                    "Update Koordinat Kantor",
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: FluidColors.surfaceContainerLow,
-                    foregroundColor: FluidColors.primary,
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(FluidRadii.sm),
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 8),
+              // 3. TOMBOL TAMBAH KARYAWAN
               SizedBox(
                 width: double.infinity,
                 height: 50,
@@ -626,6 +732,59 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   icon: const Icon(Icons.person_add_alt_1),
                   label: const Text(
                     "Tambah Karyawan Baru",
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: FluidColors.surfaceContainerLow,
+                    foregroundColor: FluidColors.primary,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(FluidRadii.sm),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+
+              // 4. TOMBOL RESET DEVICE HP
+              SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: ElevatedButton.icon(
+                  onPressed: () => _tampilkanDialogResetHP(context),
+                  icon: const Icon(Icons.phonelink_erase, color: Colors.red),
+                  label: const Text(
+                    "Reset Perangkat Karyawan",
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.red,
+                    ),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.red.shade50,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(FluidRadii.sm),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+
+              // 5. TOMBOL UPDATE LOKASI
+              SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: ElevatedButton.icon(
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const SetLocationScreen(),
+                    ),
+                  ),
+                  icon: const Icon(Icons.map_outlined),
+                  label: const Text(
+                    "Update Koordinat Kantor",
                     style: TextStyle(fontWeight: FontWeight.bold),
                   ),
                   style: ElevatedButton.styleFrom(

@@ -283,8 +283,9 @@ class AttendanceService {
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        if (data['code'] == 200)
+        if (data['code'] == 200) {
           return {"success": true, "message": data['message']};
+        }
         throw Exception(data['message']);
       }
       throw Exception("Gagal terhubung ke server.");

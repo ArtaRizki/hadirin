@@ -39,8 +39,9 @@ class _LeaveRequestScreenState extends State<LeaveRequestScreen> {
   Future<void> _pickImage() async {
     final picker = ImagePicker();
     final pickedFile = await picker.pickImage(source: ImageSource.camera);
-    if (pickedFile != null)
+    if (pickedFile != null) {
       setState(() => _suratDokter = File(pickedFile.path));
+    }
   }
 
   void _submitPengajuan() async {
@@ -117,7 +118,7 @@ class _LeaveRequestScreenState extends State<LeaveRequestScreen> {
           ),
           const SizedBox(height: 8),
           DropdownButtonFormField<String>(
-            value: _tipeIzin,
+            initialValue: _tipeIzin,
             decoration: InputDecoration(
               filled: true,
               fillColor: FluidColors.surfaceContainerLow,

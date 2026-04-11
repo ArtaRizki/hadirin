@@ -11,12 +11,14 @@ import 'package:hadirin/ui/screens/splash_screen.dart';
 import 'package:hadirin/ui/screens/login_screen.dart';
 import 'package:hadirin/ui/screens/admin_register_screen.dart';
 import 'package:hadirin/ui/screens/attendance_screen.dart';
+import 'package:flutter_native_splash/flutter_native_splash.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   // Inisialisasi sistem notifikasi saat aplikasi dibuka
   await initializeDateFormatting('id_ID');
   await NotificationService().init();
+  FlutterNativeSplash.remove();
   runApp(
     // 1. Bungkus aplikasi dengan Provider agar status login bisa dibaca di semua halaman
     MultiProvider(
