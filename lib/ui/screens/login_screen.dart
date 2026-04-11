@@ -17,7 +17,7 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   final _idController = TextEditingController();
-  final _namaController = TextEditingController();
+  // final _namaController = TextEditingController();
   bool _isLoading = false;
 
   // PASSWORD RAHASIA UNTUK SUPER ADMIN (BYPASS)
@@ -142,17 +142,17 @@ class _LoginScreenState extends State<LoginScreen> {
                     prefixIcon: Icon(Icons.badge),
                   ),
                 ),
-                const SizedBox(height: 16),
+                // const SizedBox(height: 16),
 
                 // Kolom Nama opsional (Bisa Anda hapus jika murni hanya pakai ID, karena nama sudah ditarik dari Database saat Enroll)
-                TextField(
-                  controller: _namaController,
-                  decoration: const InputDecoration(
-                    labelText: "Nama Panggilan (Opsional)",
-                    border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.person),
-                  ),
-                ),
+                // TextField(
+                //   controller: _namaController,
+                //   decoration: const InputDecoration(
+                //     labelText: "Nama Panggilan (Opsional)",
+                //     border: OutlineInputBorder(),
+                //     prefixIcon: Icon(Icons.person),
+                //   ),
+                // ),
                 const SizedBox(height: 32),
 
                 SizedBox(
