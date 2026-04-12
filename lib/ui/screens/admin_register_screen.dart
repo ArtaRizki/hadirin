@@ -161,7 +161,7 @@ class _AdminRegisterScreenState extends State<AdminRegisterScreen> {
                             urlTemplate:
                                 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                             userAgentPackageName:
-                                'com.example.hadirin', // Ganti dengan nama package Anda
+                                'com.mobile.hadirin', // Ganti dengan nama package Anda
                           ),
                           CircleLayer(
                             circles: [

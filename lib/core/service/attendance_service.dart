@@ -19,10 +19,62 @@ abstract class _Config {
 }
 
 class AttendanceService {
-  static const platform = MethodChannel('com.example.hadirin/face_recognition');
+  static const platform = MethodChannel('com.mobile.hadirin/face_recognition');
   final _auth = LocalAuthentication();
   final _picker = ImagePicker();
   final _deviceInfo = DeviceInfoPlugin();
+
+  // =================================================================
+  // FUNGSI BANTUAN: PUSAT HTTP REQUEST & LOGGING
+  // =================================================================
+  Future<http.Response> _sendApiRequest(
+    String actionName,
+    Map<String, dynamic> payload, {
+    Duration? timeout,
+  }) async {
+    final effectiveTimeout = timeout ?? _Config.httpTimeout;
+
+    // 1. Siapkan payload untuk Log (Sembunyikan string base64 agar konsol tidak lag)
+    Map<String, dynamic> logPayload = Map.from(payload);
+    if (logPayload.containsKey('foto_base64') &&
+        logPayload['foto_base64'].toString().isNotEmpty) {
+      logPayload['foto_base64'] = '[BASE64_IMAGE_HIDDEN]';
+    }
+    if (logPayload.containsKey('face_embedding')) {
+      logPayload['face_embedding'] = '[FACE_EMBEDDING_HIDDEN]';
+    }
+
+    d.log(
+      '==== [REQUEST: $actionName] ====\nURL: ${_Config.gasEndpoint}\nPayload: ${jsonEncode(logPayload)}',
+    );
+
+    // 2. Eksekusi HTTP POST
+    var response = await http
+        .post(
+          Uri.parse(_Config.gasEndpoint),
+          headers: {"Content-Type": "application/json"},
+          body: jsonEncode(payload),
+        )
+        .timeout(effectiveTimeout);
+
+    // 3. Handle Redirect 302/303 khas Google Apps Script
+    if (response.statusCode == 302 || response.statusCode == 303) {
+      final redirectUrl = _extractRedirectUrl(response);
+      if (redirectUrl != null) {
+        d.log('==== [REDIRECT: $actionName] ==== Mengikuti URL baru...');
+        response = await http
+            .get(Uri.parse(redirectUrl))
+            .timeout(effectiveTimeout);
+      }
+    }
+
+    // 4. Catat Log Response
+    d.log(
+      '==== [RESPONSE: $actionName] ====\nStatus: ${response.statusCode}\nBody: ${response.body}',
+    );
+
+    return response;
+  }
 
   // =================================================================
   // SKENARIO B: ABSENSI HARIAN (CLOCK IN / CLOCK OUT)
@@ -71,23 +123,16 @@ class AttendanceService {
         ),
       );
 
-      // ========================================================
-      // 4. CEK IZIN KAMERA (Pencegahan Force Close)
-      // ========================================================
+      // 4. CEK IZIN KAMERA
       var cameraStatus = await Permission.camera.status;
-
       if (cameraStatus.isDenied) {
-        // Minta izin jika belum pernah ditanya atau baru sekali ditolak
         cameraStatus = await Permission.camera.request();
       }
-
       if (cameraStatus.isPermanentlyDenied) {
-        // Jika user klik "Jangan tanya lagi", arahkan ke Settings
         throw Exception(
           "Izin kamera ditolak permanen. Harap aktifkan di pengaturan HP.",
         );
       }
-
       if (!cameraStatus.isGranted) {
         throw Exception(
           "Aplikasi butuh izin kamera untuk melakukan absen wajah.",
@@ -97,17 +142,13 @@ class AttendanceService {
       // 4b. AMBIL FOTO SELFIE
       final image = await _picker.pickImage(
         source: ImageSource.camera,
-        imageQuality:
-            100, // Biarkan 100% untuk deteksi Face Recognition yang akurat
+        imageQuality: 100,
         preferredCameraDevice: CameraDevice.front,
       );
-      if (image == null) {
+      if (image == null)
         throw Exception("Foto wajah wajib diambil untuk absen.");
-      }
 
-      // ---------------------------------------------------------
-      // 5. PROSES FACE RECOGNITION (PENCOCOKAN WAJAH)
-      // ---------------------------------------------------------
+      // 5. PROSES FACE RECOGNITION
       d.log("Mengekstrak vektor wajah dari foto...");
       List<double> wajahHariIni = await getFaceEmbeddingFromNative(image.path);
       if (wajahHariIni.isEmpty) {
@@ -124,49 +165,40 @@ class AttendanceService {
         );
       }
 
-      // Hitung Jarak Euclidean (Threshold batas aman = 1.0)
       double jarakWajah = hitungKemiripanWajah(wajahHariIni, wajahMaster);
       d.log("Jarak Kemiripan Wajah: $jarakWajah");
 
-      // Jika jarak > 1.0, berarti orang berbeda
       if (jarakWajah > 1.0) {
         throw Exception(
           "Wajah tidak cocok! (Jarak: ${jarakWajah.toStringAsFixed(2)}). Pastikan Anda absen sendiri.",
         );
       }
-      // ---------------------------------------------------------
 
-      // ========================================================
-      // 6. KOMPRESI GAMBAR UNTUK CLOUD (HEMAT KUOTA DRIVE)
-      // ========================================================
+      // 6. KOMPRESI GAMBAR
       d.log("Mengompresi gambar untuk diupload...");
       final String targetPath = "${image.path}_compressed.jpg";
-
       final XFile? compressedFile =
           await FlutterImageCompress.compressAndGetFile(
             image.path,
             targetPath,
-            quality: 30, // Turunkan kualitas ke 30%
-            minWidth: 600, // Maksimal dimensi 600x600
+            quality: 30,
+            minWidth: 600,
             minHeight: 600,
             format: CompressFormat.jpeg,
           );
 
-      if (compressedFile == null) {
+      if (compressedFile == null)
         throw Exception("Gagal mengompres gambar sebelum upload.");
-      }
 
-      // 7. Base64 dari file yang SUDAH DIKOMPRESI
+      // 7. Base64
       final imageBytes = await compressedFile.readAsBytes();
       final base64Image = base64Encode(imageBytes);
 
-      // Bersihkan file sementara dari memori HP
       try {
         File(targetPath).deleteSync();
       } catch (e) {
         d.log("Gagal menghapus file temp: $e");
       }
-      // ========================================================
 
       // 8. PAYLOAD
       final payload = {
@@ -181,26 +213,11 @@ class AttendanceService {
         "lat_long": "${position.latitude}, ${position.longitude}",
         "is_mock_location": position.isMocked,
         "biometric_passed": biometricPassed,
-        "foto_base64": base64Image, // Gambar yang dikirim sudah ukuran kecil!
+        "foto_base64": base64Image,
       };
 
-      // 9. HTTP POST
-      var response = await http
-          .post(
-            Uri.parse(_Config.gasEndpoint),
-            headers: {"Content-Type": "application/json"},
-            body: jsonEncode(payload),
-          )
-          .timeout(_Config.httpTimeout);
-
-      if (response.statusCode == 302 || response.statusCode == 303) {
-        final redirectUrl = _extractRedirectUrl(response);
-        if (redirectUrl != null) {
-          response = await http
-              .get(Uri.parse(redirectUrl))
-              .timeout(_Config.httpTimeout);
-        }
-      }
+      // 9. HTTP POST MENGGUNAKAN HELPER
+      var response = await _sendApiRequest("absen", payload);
 
       if (response.statusCode != 200) {
         throw Exception(
@@ -219,26 +236,25 @@ class AttendanceService {
   }
 
   // =================================================================
-  // FUNGSI BARU: PENGAJUAN IZIN / SAKIT / CUTI
+  // FUNGSI: PENGAJUAN IZIN / SAKIT / CUTI
   // =================================================================
   Future<Map<String, dynamic>> submitIzin({
     required String idKaryawan,
     required String tipeIzin,
     required String rentangTanggal,
     required String alasan,
-    String? imagePath, // Path foto surat dokter (opsional)
+    String? imagePath,
   }) async {
     try {
       String base64Image = "";
 
-      // Jika user memilih Sakit dan melampirkan foto
       if (imagePath != null && imagePath.isNotEmpty) {
         final String targetPath = "${imagePath}_compressed_doc.jpg";
         final XFile? compressedFile =
             await FlutterImageCompress.compressAndGetFile(
               imagePath,
               targetPath,
-              quality: 40, // Kompresi khusus dokumen
+              quality: 40,
               minWidth: 800,
               minHeight: 800,
               format: CompressFormat.jpeg,
@@ -264,22 +280,7 @@ class AttendanceService {
         "foto_base64": base64Image,
       };
 
-      var response = await http
-          .post(
-            Uri.parse(_Config.gasEndpoint),
-            headers: {"Content-Type": "application/json"},
-            body: jsonEncode(payload),
-          )
-          .timeout(_Config.httpTimeout);
-
-      if (response.statusCode == 302 || response.statusCode == 303) {
-        final redirectUrl = _extractRedirectUrl(response);
-        if (redirectUrl != null) {
-          response = await http
-              .get(Uri.parse(redirectUrl))
-              .timeout(_Config.httpTimeout);
-        }
-      }
+      var response = await _sendApiRequest("ajukan_izin", payload);
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -325,22 +326,7 @@ class AttendanceService {
         "face_embedding": jsonEncode(wajahMaster),
       };
 
-      var response = await http
-          .post(
-            Uri.parse(_Config.gasEndpoint),
-            headers: {"Content-Type": "application/json"},
-            body: jsonEncode(payload),
-          )
-          .timeout(_Config.httpTimeout);
-
-      if (response.statusCode == 302 || response.statusCode == 303) {
-        final redirectUrl = _extractRedirectUrl(response);
-        if (redirectUrl != null) {
-          response = await http
-              .get(Uri.parse(redirectUrl))
-              .timeout(_Config.httpTimeout);
-        }
-      }
+      var response = await _sendApiRequest("register_face", payload);
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -371,22 +357,7 @@ class AttendanceService {
         "id_karyawan": idKaryawan,
       };
 
-      var response = await http
-          .post(
-            Uri.parse(_Config.gasEndpoint),
-            headers: {"Content-Type": "application/json"},
-            body: jsonEncode(payload),
-          )
-          .timeout(_Config.httpTimeout);
-
-      if (response.statusCode == 302 || response.statusCode == 303) {
-        final redirectUrl = _extractRedirectUrl(response);
-        if (redirectUrl != null) {
-          response = await http
-              .get(Uri.parse(redirectUrl))
-              .timeout(_Config.httpTimeout);
-        }
-      }
+      var response = await _sendApiRequest("get_face", payload);
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -403,7 +374,7 @@ class AttendanceService {
   }
 
   // =================================================================
-  // SISA FUNGSI LAINNYA (History, Lokasi, Enroll, dll)
+  // SISA FUNGSI LAINNYA
   // =================================================================
   Future<List<dynamic>> getHistory(String idKaryawan) async {
     try {
@@ -414,22 +385,7 @@ class AttendanceService {
         "id_karyawan": idKaryawan,
       };
 
-      var response = await http
-          .post(
-            Uri.parse(_Config.gasEndpoint),
-            headers: {"Content-Type": "application/json"},
-            body: jsonEncode(payload),
-          )
-          .timeout(_Config.httpTimeout);
-
-      if (response.statusCode == 302 || response.statusCode == 303) {
-        final redirectUrl = _extractRedirectUrl(response);
-        if (redirectUrl != null) {
-          response = await http
-              .get(Uri.parse(redirectUrl))
-              .timeout(_Config.httpTimeout);
-        }
-      }
+      var response = await _sendApiRequest("get_history", payload);
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -454,22 +410,7 @@ class AttendanceService {
         "radius": radius,
       };
 
-      var response = await http
-          .post(
-            Uri.parse(_Config.gasEndpoint),
-            headers: {"Content-Type": "application/json"},
-            body: jsonEncode(payload),
-          )
-          .timeout(_Config.httpTimeout);
-
-      if (response.statusCode == 302 || response.statusCode == 303) {
-        final redirectUrl = _extractRedirectUrl(response);
-        if (redirectUrl != null) {
-          response = await http
-              .get(Uri.parse(redirectUrl))
-              .timeout(_Config.httpTimeout);
-        }
-      }
+      var response = await _sendApiRequest("update_lokasi", payload);
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -482,9 +423,6 @@ class AttendanceService {
     }
   }
 
-  // =================================================================
-  // FUNGSI BARU: TAMBAH KARYAWAN (KHUSUS ADMIN UMKM)
-  // =================================================================
   Future<Map<String, dynamic>> tambahKaryawan({
     required String clientId,
     required String idKaryawanBaru,
@@ -501,22 +439,7 @@ class AttendanceService {
         "divisi_baru": divisi,
       };
 
-      var response = await http
-          .post(
-            Uri.parse(_Config.gasEndpoint),
-            headers: {"Content-Type": "application/json"},
-            body: jsonEncode(payload),
-          )
-          .timeout(_Config.httpTimeout);
-
-      if (response.statusCode == 302 || response.statusCode == 303) {
-        final redirectUrl = _extractRedirectUrl(response);
-        if (redirectUrl != null) {
-          response = await http
-              .get(Uri.parse(redirectUrl))
-              .timeout(_Config.httpTimeout);
-        }
-      }
+      var response = await _sendApiRequest("add_karyawan", payload);
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -551,22 +474,11 @@ class AttendanceService {
         "radius": radius,
       };
 
-      var response = await http
-          .post(
-            Uri.parse(_Config.gasEndpoint),
-            headers: {"Content-Type": "application/json"},
-            body: jsonEncode(payload),
-          )
-          .timeout(const Duration(seconds: 30));
-
-      if (response.statusCode == 302 || response.statusCode == 303) {
-        final redirectUrl = _extractRedirectUrl(response);
-        if (redirectUrl != null) {
-          response = await http
-              .get(Uri.parse(redirectUrl))
-              .timeout(const Duration(seconds: 30));
-        }
-      }
+      var response = await _sendApiRequest(
+        "register_klien",
+        payload,
+        timeout: const Duration(seconds: 30),
+      );
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -598,22 +510,11 @@ class AttendanceService {
         "device_id": deviceId,
       };
 
-      var response = await http
-          .post(
-            Uri.parse(_Config.gasEndpoint),
-            headers: {"Content-Type": "application/json"},
-            body: jsonEncode(payload),
-          )
-          .timeout(const Duration(seconds: 15));
-
-      if (response.statusCode == 302 || response.statusCode == 303) {
-        final redirectUrl = _extractRedirectUrl(response);
-        if (redirectUrl != null) {
-          response = await http
-              .get(Uri.parse(redirectUrl))
-              .timeout(const Duration(seconds: 15));
-        }
-      }
+      var response = await _sendApiRequest(
+        "enroll_device",
+        payload,
+        timeout: const Duration(seconds: 15),
+      );
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -638,23 +539,17 @@ class AttendanceService {
       });
 
       if (result == null) return [];
-
-      // Konversi aman: Memaksa semua angka (baik int maupun double) dari Kotlin menjadi double di Dart
       List<double> embedding = (result as List)
           .map((e) => (e as num).toDouble())
           .toList();
       return embedding;
     } catch (e) {
-      // Print tegas agar error dari Kotlin terlihat jelas di konsol Anda
       d.log("==== ERROR DARI NATIVE KOTLIN TFLITE ====");
       d.log(e.toString());
       return [];
     }
   }
 
-  // =================================================================
-  // FUNGSI BARU: AMBIL REKAP BULANAN (UNTUK EXCEL)
-  // =================================================================
   Future<List<dynamic>> getMonthlyReport(
     String clientId,
     String bulanTahun,
@@ -664,33 +559,18 @@ class AttendanceService {
         "api_token": _Config.apiToken,
         "action": "get_monthly_report",
         "client_id": clientId,
-        "bulan_tahun": bulanTahun, // Format: "04-2026"
+        "bulan_tahun": bulanTahun,
       };
 
-      var response = await http
-          .post(
-            Uri.parse(_Config.gasEndpoint),
-            headers: {"Content-Type": "application/json"},
-            body: jsonEncode(payload),
-          )
-          .timeout(
-            const Duration(seconds: 30),
-          ); // Timeout agak lama karena data banyak
-
-      if (response.statusCode == 302 || response.statusCode == 303) {
-        final redirectUrl = _extractRedirectUrl(response);
-        if (redirectUrl != null) {
-          response = await http
-              .get(Uri.parse(redirectUrl))
-              .timeout(const Duration(seconds: 30));
-        }
-      }
+      var response = await _sendApiRequest(
+        "get_monthly_report",
+        payload,
+        timeout: const Duration(seconds: 30),
+      );
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        if (data['code'] == 200) {
-          return data['message'] as List<dynamic>;
-        }
+        if (data['code'] == 200) return data['message'] as List<dynamic>;
         throw Exception(data['message']);
       }
       throw Exception("Gagal terhubung ke server.");
@@ -701,14 +581,12 @@ class AttendanceService {
   }
 
   Future<List<dynamic>> getPendingApprovals(String clientId) async {
-    final response = await http.post(
-      Uri.parse(_Config.gasEndpoint),
-      body: jsonEncode({
-        "api_token": _Config.apiToken,
-        "action": "get_all_approvals",
-        "client_id": clientId,
-      }),
-    );
+    final payload = {
+      "api_token": _Config.apiToken,
+      "action": "get_all_approvals",
+      "client_id": clientId,
+    };
+    final response = await _sendApiRequest("get_all_approvals", payload);
     final data = jsonDecode(response.body);
     return data['code'] == 200 ? data['message'] : [];
   }
@@ -718,29 +596,25 @@ class AttendanceService {
     int rowIndex,
     String status,
   ) async {
-    final response = await http.post(
-      Uri.parse(_Config.gasEndpoint),
-      body: jsonEncode({
-        "api_token": _Config.apiToken,
-        "action": "update_leave_status",
-        "client_id": clientId,
-        "row_index": rowIndex,
-        "new_status": status,
-      }),
-    );
+    final payload = {
+      "api_token": _Config.apiToken,
+      "action": "update_leave_status",
+      "client_id": clientId,
+      "row_index": rowIndex,
+      "new_status": status,
+    };
+    final response = await _sendApiRequest("update_leave_status", payload);
     return jsonDecode(response.body)['code'] == 200;
   }
 
   Future<Map<String, dynamic>> resetDeviceID(String targetId) async {
-    final response = await http.post(
-      Uri.parse(_Config.gasEndpoint),
-      body: jsonEncode({
-        "api_token": _Config.apiToken,
-        "action": "reset_device",
-        "client_id": AppConfig.clientId,
-        "target_id_karyawan": targetId,
-      }),
-    );
+    final payload = {
+      "api_token": _Config.apiToken,
+      "action": "reset_device",
+      "client_id": AppConfig.clientId,
+      "target_id_karyawan": targetId,
+    };
+    final response = await _sendApiRequest("reset_device", payload);
     return jsonDecode(response.body);
   }
 

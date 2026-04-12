@@ -1,4 +1,4 @@
-package com.example.hadirin // Sesuaikan
+package com.mobile.hadirin // Sesuaikan
 
 import android.content.Context
 import android.graphics.Bitmap

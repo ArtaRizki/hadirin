@@ -81,7 +81,7 @@ class _SetLocationScreenState extends State<SetLocationScreen> {
               TileLayer(
                 urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                 userAgentPackageName:
-                    'com.example.hadirin', // Sesuaikan package name Anda
+                    'com.mobile.hadirin', // Sesuaikan package name Anda
               ),
               CircleLayer(
                 circles: [
