@@ -28,7 +28,7 @@ class _ApprovalScreenState extends State<ApprovalScreen> {
     setState(() => _isLoading = true);
     try {
       final auth = context.read<AuthProvider>();
-      final clientId = auth.idUser ?? "";
+      final clientId = auth.clientId ?? "";
 
       final data = await _service.getPendingApprovals(clientId);
       setState(() {
@@ -87,7 +87,7 @@ class _ApprovalScreenState extends State<ApprovalScreen> {
 
     try {
       final auth = context.read<AuthProvider>();
-      final clientId = auth.idUser ?? "";
+      final clientId = auth.clientId ?? "";
 
       final success = await _service.updateLeaveStatus(
         clientId,

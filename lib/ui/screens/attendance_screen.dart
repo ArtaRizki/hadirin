@@ -59,10 +59,10 @@ class _AttendanceScreenState extends State<AttendanceScreen>
   // =================================================================
   // 1. FUNGSI CEK STATUS CUTI HARI INI
   // =================================================================
-  Future<bool> _cekStatusIzin(String idKaryawan) async {
+  Future<bool> _cekStatusIzin(String idKaryawan, String clientId) async {
     try {
       // Menggunakan endpoint khusus agar lebih ringan dan cepat
-      return await _attendanceService.cekStatusCutiHariIni(idKaryawan);
+      return await _attendanceService.cekStatusCutiHariIni(idKaryawan, clientId);
     } catch (e) {
       debugPrint("Gagal mengecek status cuti: $e");
     }
@@ -101,7 +101,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
     final auth = context.read<AuthProvider>();
     final idKaryawan = auth.idKaryawan ?? "";
 
-    bool sedangCuti = await _cekStatusIzin(idKaryawan);
+    bool sedangCuti = await _cekStatusIzin(idKaryawan, auth.clientId ?? "");
 
     if (!mounted) return;
     setState(() => _isLoading = false);
@@ -184,6 +184,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
       idKaryawan: auth.idKaryawan ?? "",
       namaKaryawan: auth.namaKaryawan ?? "",
       tipeAbsen: tipeAbsen,
+      clientId: auth.clientId ?? "",
     );
 
     if (!mounted) return;

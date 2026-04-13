@@ -12,12 +12,17 @@ class AdminService extends ApiClient {
   // =================================================================
   // UPDATE LOKASI KANTOR (titik pusat & radius absensi)
   // =================================================================
-  Future<bool> updateLokasi(double lat, double lng, double radius) async {
+  Future<bool> updateLokasi(
+    String clientId,
+    double lat,
+    double lng,
+    double radius,
+  ) async {
     try {
       final payload = {
         'api_token': AppConfig.apiToken,
         'action': 'update_lokasi',
-        'client_id': AppConfig.clientId,
+        'client_id': clientId,
         'lat': lat,
         'lng': lng,
         'radius': radius,
@@ -230,6 +235,39 @@ class AdminService extends ApiClient {
         final data = jsonDecode(response.body);
         if (data['code'] == 200) {
           return {'success': true, 'message': data['message']};
+        }
+        throw Exception(data['message']);
+      }
+      throw Exception('Gagal terhubung ke server.');
+    } catch (e) {
+      return {
+        'success': false,
+        'message': e.toString().replaceAll('Exception: ', ''),
+      };
+    }
+  }
+
+  // =================================================================
+  // VERIFIKASI SUPER ADMIN
+  // =================================================================
+  Future<Map<String, dynamic>> verifySuperAdmin(String password) async {
+    try {
+      final payload = {
+        'api_token': AppConfig.apiToken,
+        'action': 'verify_super_admin',
+        'password': password,
+      };
+
+      final response = await sendRequest(
+        'verify_super_admin',
+        payload,
+        timeout: const Duration(seconds: 15),
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['code'] == 200) {
+          return {'success': true, 'message': 'Super Admin Verified'};
         }
         throw Exception(data['message']);
       }

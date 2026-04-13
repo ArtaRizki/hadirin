@@ -45,7 +45,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final auth = context.read<AuthProvider>();
     if (auth.idKaryawan == null) return;
     try {
-      final data = await AttendanceService().getHistory(auth.idKaryawan!);
+      final data = await AttendanceService().getHistory(auth.idKaryawan!, auth.clientId ?? "");
       setState(() {
         _allHistory = data;
         _isLoading = false;
@@ -178,7 +178,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   void _prosesDaftarWajah() async {
     setState(() => _isRegisteringFace = true);
     final auth = context.read<AuthProvider>();
-    final result = await _service.daftarWajahMaster(auth.idKaryawan!);
+    final result = await _service.daftarWajahMaster(auth.idKaryawan!, auth.clientId ?? "");
     if (!mounted) return;
     setState(() => _isRegisteringFace = false);
     ScaffoldMessenger.of(context).showSnackBar(
@@ -209,7 +209,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (auth.isAdmin) {
       setState(() => _isExporting = true);
       try {
-        listKaryawan = await AdminService().getAllKaryawan(AppConfig.clientId);
+        listKaryawan = await AdminService().getAllKaryawan(auth.clientId ?? "");
       } catch (e) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -387,7 +387,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final auth = context.read<AuthProvider>();
     try {
       final dataMentah = await AdminService().getMonthlyReport(
-        AppConfig.clientId,
+        auth.clientId ?? "",
         bulanTahun,
         targetId,
       );

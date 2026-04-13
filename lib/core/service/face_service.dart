@@ -15,7 +15,7 @@ class FaceService extends ApiClient {
   // =================================================================
   // DAFTARKAN WAJAH MASTER (ENROLLMENT — sekali saat pertama kali)
   // =================================================================
-  Future<Map<String, dynamic>> daftarWajahMaster(String idKaryawan) async {
+  Future<Map<String, dynamic>> daftarWajahMaster(String idKaryawan, String clientId) async {
     try {
       final image = await _picker.pickImage(
         source: ImageSource.camera,
@@ -34,7 +34,7 @@ class FaceService extends ApiClient {
       final payload = {
         'api_token': AppConfig.apiToken,
         'action': 'register_face',
-        'client_id': AppConfig.clientId,
+        'client_id': clientId,
         'id_karyawan': idKaryawan,
         'face_embedding': jsonEncode(embedding),
       };
@@ -60,12 +60,12 @@ class FaceService extends ApiClient {
   // =================================================================
   // AMBIL EMBEDDING WAJAH MASTER DARI SERVER
   // =================================================================
-  Future<List<double>> getWajahMasterDariServer(String idKaryawan) async {
+  Future<List<double>> getWajahMasterDariServer(String idKaryawan, String clientId) async {
     try {
       final payload = {
         'api_token': AppConfig.apiToken,
         'action': 'get_face',
-        'client_id': AppConfig.clientId,
+        'client_id': clientId,
         'id_karyawan': idKaryawan,
       };
 

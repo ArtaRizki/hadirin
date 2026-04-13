@@ -10,6 +10,8 @@ import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:hadirin/core/theme/fluid_theme.dart';
+import 'package:provider/provider.dart';
+import 'package:hadirin/core/providers/auth_provider.dart';
 
 class SetLocationScreen extends StatefulWidget {
   final bool isSelectionMode;
@@ -151,7 +153,9 @@ class _SetLocationScreenState extends State<SetLocationScreen> {
       return;
     }
     setState(() => _isSaving = true);
+    final auth = context.read<AuthProvider>();
     bool sukses = await AdminService().updateLokasi(
+      auth.clientId ?? "",
       _pickedLocation.latitude,
       _pickedLocation.longitude,
       _radius,

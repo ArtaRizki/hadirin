@@ -70,6 +70,7 @@ class _LeaveRequestScreenState extends State<LeaveRequestScreen> {
         "${DateFormat('dd MMM yyyy').format(_selectedDates!.start)} s/d ${DateFormat('dd MMM yyyy').format(_selectedDates!.end)}";
 
     final result = await LeaveService().submitIzin(
+      clientId: auth.clientId ?? "",
       idKaryawan: idKaryawan,
       tipeIzin: _tipeIzin,
       rentangTanggal: strTanggal,

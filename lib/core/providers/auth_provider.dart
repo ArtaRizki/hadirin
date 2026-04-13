@@ -8,11 +8,13 @@ enum LoginRole { none, superAdmin, adminUmkm, karyawan }
 class AuthProvider extends ChangeNotifier {
   String? _idUser; // Bisa berisi ID Karyawan ATAU Client ID (UMKM-xxxx)
   String? _namaUser; // Nama karyawan ATAU Nama UMKM
+  String? _clientId; // Disimpan dengan aman di state
   LoginRole _role = LoginRole.none; // Ubah default jadi none
   bool _isInitialized = false;
 
   String? get idUser => _idUser;
   String? get namaUser => _namaUser;
+  String? get clientId => _clientId; // Akses dari UI
   LoginRole get role => _role;
   bool get isInitialized => _isInitialized;
 
@@ -33,10 +35,10 @@ class AuthProvider extends ChangeNotifier {
     _idUser = prefs.getString('id_user');
     _namaUser = prefs.getString('nama_user');
 
-    // 👇 BACA CLIENT_ID DAN KEMBALIKAN KE APP_CONFIG SESAAT SETELAH SPLASH SCREEN 👇
+    // 👇 BACA CLIENT_ID DARI DEVICE 👇
     final savedClientId = prefs.getString('client_id');
     if (savedClientId != null && savedClientId.isNotEmpty) {
-      AppConfig.clientId = savedClientId;
+      _clientId = savedClientId;
     }
 
     // Membaca string role dari SharedPreferences
@@ -63,10 +65,9 @@ class AuthProvider extends ChangeNotifier {
     await prefs.setString('login_role', role.toString());
     await prefs.setString('client_id', clientId.trim()); // Simpan permanen
 
-    AppConfig.clientId = clientId.trim(); // Update memori global config juga
-
     _idUser = id.trim();
     _namaUser = nama.trim();
+    _clientId = clientId.trim();
     _role = role;
     notifyListeners();
   }
@@ -77,8 +78,8 @@ class AuthProvider extends ChangeNotifier {
 
     _idUser = null;
     _namaUser = null;
+    _clientId = null;
     _role = LoginRole.none;
-    AppConfig.clientId = ""; // Kosongkan config global
     notifyListeners();
   }
 }

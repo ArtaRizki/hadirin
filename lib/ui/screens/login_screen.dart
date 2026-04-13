@@ -19,33 +19,39 @@ class _LoginScreenState extends State<LoginScreen> {
   final _idController = TextEditingController();
   bool _isLoading = false;
 
-  // PASSWORD RAHASIA UNTUK SUPER ADMIN (BYPASS)
-  final String _superAdminPassword = "HADIRIN_MASTER_2026";
-
   void _prosesLogin() async {
     final inputKodeUmkm = _kodeUmkmController.text.trim().toUpperCase();
     final inputId = _idController.text.trim();
 
     // ========================================================
-    // FLOW 1: JALUR RAHASIA SUPER ADMIN (BYPASS API)
+    // FLOW 1: JALUR RAHASIA SUPER ADMIN (API VALIDATION)
     // ========================================================
-    if (inputId == _superAdminPassword) {
+    if (inputKodeUmkm.isEmpty && inputId.isNotEmpty) {
       setState(() => _isLoading = true);
-      await context.read<AuthProvider>().login(
-        "SUPER_ADMIN",
-        "Owner Hadir.in",
-        LoginRole.superAdmin,
-        "MASTER",
-      );
+      
+      final superResult = await AdminService().verifySuperAdmin(inputId);
+      
+      if (superResult['success']) {
+        await context.read<AuthProvider>().login(
+          "SUPER_ADMIN",
+          "Owner Hadir.in",
+          LoginRole.superAdmin,
+          "MASTER",
+        );
+        setState(() => _isLoading = false);
+        if (!mounted) return;
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const AdminRegisterScreen()),
+        );
+        return;
+      }
+      
+      // Jika ternyata bukan super admin namun kode UMKM kosong,
+      // biarkan program lanjut ke validasi normal di bawah
+      // (yang akan menampilkan error "Kode Perusahaan wajib diisi")
       setState(() => _isLoading = false);
-      if (!mounted) return;
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const AdminRegisterScreen()),
-      );
-      return;
     }
-
     // ========================================================
     // FLOW 2: VALIDASI LOGIN NORMAL
     // ========================================================

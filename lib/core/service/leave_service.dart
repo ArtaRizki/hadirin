@@ -12,6 +12,7 @@ class LeaveService extends ApiClient {
   // AJUKAN IZIN / SAKIT / CUTI (dari karyawan)
   // =================================================================
   Future<Map<String, dynamic>> submitIzin({
+    required String clientId,
     required String idKaryawan,
     required String tipeIzin,
     required String rentangTanggal,
@@ -46,7 +47,7 @@ class LeaveService extends ApiClient {
       final payload = {
         'api_token': AppConfig.apiToken,
         'action': 'ajukan_izin',
-        'client_id': AppConfig.clientId,
+        'client_id': clientId,
         'id_karyawan': idKaryawan,
         'tipe_izin': tipeIzin,
         'rentang_tanggal': rentangTanggal,

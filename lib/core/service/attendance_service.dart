@@ -28,6 +28,7 @@ class AttendanceService extends ApiClient {
     required String idKaryawan,
     required String namaKaryawan,
     required String tipeAbsen,
+    required String clientId,
   }) async {
     try {
       // 1. BIOMETRIK / PIN LAYAR
@@ -106,6 +107,7 @@ class AttendanceService extends ApiClient {
       d.log('Mengambil wajah master dari server...');
       final wajahMaster = await _faceService.getWajahMasterDariServer(
         idKaryawan,
+        clientId,
       );
       if (wajahMaster.isEmpty) {
         throw Exception(
@@ -151,7 +153,7 @@ class AttendanceService extends ApiClient {
       final payload = {
         'api_token': AppConfig.apiToken,
         'action': 'absen',
-        'client_id': AppConfig.clientId,
+        'client_id': clientId,
         'client_timestamp': DateTime.now().millisecondsSinceEpoch,
         'id_karyawan': idKaryawan,
         'nama': namaKaryawan,
@@ -183,12 +185,12 @@ class AttendanceService extends ApiClient {
   // =================================================================
   // RIWAYAT ABSENSI KARYAWAN
   // =================================================================
-  Future<List<dynamic>> getHistory(String idKaryawan) async {
+  Future<List<dynamic>> getHistory(String idKaryawan, String clientId) async {
     try {
       final payload = {
         'api_token': AppConfig.apiToken,
         'action': 'get_history',
-        'client_id': AppConfig.clientId,
+        'client_id': clientId,
         'id_karyawan': idKaryawan,
       };
 
@@ -207,12 +209,12 @@ class AttendanceService extends ApiClient {
   // =================================================================
   // CEK STATUS CUTI HARI INI
   // =================================================================
-  Future<bool> cekStatusCutiHariIni(String idKaryawan) async {
+  Future<bool> cekStatusCutiHariIni(String idKaryawan, String clientId) async {
     try {
       final payload = {
         'api_token': AppConfig.apiToken,
         'action': 'cek_status_hari_ini',
-        'client_id': AppConfig.clientId,
+        'client_id': clientId,
         'id_karyawan': idKaryawan,
       };
 
