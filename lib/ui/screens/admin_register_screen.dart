@@ -60,7 +60,7 @@ class _AdminRegisterScreenState extends State<AdminRegisterScreen> {
     if (_namaController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text("Nama UMKM tidak boleh kosong"),
+          content: const Text("Nama Instansi tidak boleh kosong"),
           backgroundColor: Colors.red.shade600,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(
@@ -88,7 +88,7 @@ class _AdminRegisterScreenState extends State<AdminRegisterScreen> {
     setState(() => _isLoading = true);
 
     final result = await AdminService().registerKlien(
-      namaUmkm: _namaController.text.trim(),
+      namaInstansi: _namaController.text.trim(),
       lat: _pickedLocation.latitude,
       lng: _pickedLocation.longitude,
       radius: _radius,
@@ -129,7 +129,7 @@ class _AdminRegisterScreenState extends State<AdminRegisterScreen> {
         scrolledUnderElevation: 0,
         centerTitle: true,
         title: const Text(
-          "Pendaftaran UMKM Baru",
+          "Pendaftaran Instansi Baru",
           style: TextStyle(
             color: Color(0xFF0F172A),
             fontWeight: FontWeight.w800,
@@ -237,7 +237,7 @@ class _AdminRegisterScreenState extends State<AdminRegisterScreen> {
       children: [
         // TITLE SECTION
         const Text(
-          "Detail UMKM",
+          "Detail Instansi",
           style: TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.w900,
@@ -247,7 +247,7 @@ class _AdminRegisterScreenState extends State<AdminRegisterScreen> {
         ),
         const SizedBox(height: 6),
         Text(
-          "Masukkan nama perusahaan / toko yang akan didaftarkan ke dalam sistem Hadir.in.",
+          "Masukkan nama instansi / kantor yang akan didaftarkan ke dalam sistem Hadir.in.",
           style: TextStyle(
             color: Colors.grey.shade600,
             fontSize: 13,
@@ -272,7 +272,7 @@ class _AdminRegisterScreenState extends State<AdminRegisterScreen> {
           child: TextFormField(
             controller: _namaController,
             decoration: InputDecoration(
-              labelText: "Nama UMKM / Klien",
+              labelText: "Nama Instansi / Kantor",
               labelStyle: TextStyle(color: Colors.grey.shade500),
               prefixIcon: const Icon(
                 Icons.business_rounded,
@@ -551,7 +551,7 @@ class _AdminRegisterScreenState extends State<AdminRegisterScreen> {
             ),
             const SizedBox(height: 24),
             const Text(
-              "UMKM Didaftarkan!",
+              "Instansi Didaftarkan!",
               style: TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.w900,

@@ -10,13 +10,20 @@ import 'package:intl/intl.dart';
 Future<DateTimeRange?> showCustomDateRangePicker({
   required BuildContext context,
   DateTimeRange? initialDateRange,
+  bool allowFuture = false,
+  DateTime? firstDate,
+  DateTime? lastDate,
 }) async {
   return await showModalBottomSheet<DateTimeRange>(
     context: context,
     isScrollControlled: true,
     backgroundColor: Colors.transparent,
-    builder: (_) =>
-        _CustomDateRangePickerSheet(initialDateRange: initialDateRange),
+    builder: (_) => _CustomDateRangePickerSheet(
+      initialDateRange: initialDateRange,
+      allowFuture: allowFuture,
+      firstDate: firstDate,
+      lastDate: lastDate,
+    ),
   );
 }
 
@@ -25,7 +32,16 @@ Future<DateTimeRange?> showCustomDateRangePicker({
 // =================================================================
 class _CustomDateRangePickerSheet extends StatefulWidget {
   final DateTimeRange? initialDateRange;
-  const _CustomDateRangePickerSheet({this.initialDateRange});
+  final bool allowFuture;
+  final DateTime? firstDate;
+  final DateTime? lastDate;
+
+  const _CustomDateRangePickerSheet({
+    this.initialDateRange,
+    this.allowFuture = false,
+    this.firstDate,
+    this.lastDate,
+  });
 
   @override
   State<_CustomDateRangePickerSheet> createState() =>
@@ -103,26 +119,10 @@ class _CustomDateRangePickerSheetState
     });
   }
 
-  void _nextMonth() {
-    final now = DateTime.now();
-    if (_focusedMonth.year == now.year && _focusedMonth.month == now.month) {
-      return;
-    }
-    setState(() {
-      _focusedMonth = DateTime(_focusedMonth.year, _focusedMonth.month + 1, 1);
-    });
-  }
-
-  bool get _isNextDisabled {
-    final now = DateTime.now();
-    return _focusedMonth.year == now.year && _focusedMonth.month == now.month;
-  }
-
   void _onDayTap(DateTime day) {
-    final today = DateTime.now();
+    if (_isOutsideConstraints(day)) return;
+
     final d = DateTime(day.year, day.month, day.day);
-    final todayClean = DateTime(today.year, today.month, today.day);
-    if (d.isAfter(todayClean)) return;
 
     setState(() {
       if (_selectingStart || (_startDate != null && _endDate != null)) {
@@ -139,6 +139,49 @@ class _CustomDateRangePickerSheetState
         _selectingStart = true;
       }
     });
+  }
+
+  bool _isOutsideConstraints(DateTime day) {
+    final d = DateTime(day.year, day.month, day.day);
+    if (!widget.allowFuture) {
+      final today = DateTime.now();
+      final todayClean = DateTime(today.year, today.month, today.day);
+      if (d.isAfter(todayClean)) return true;
+    }
+    if (widget.firstDate != null) {
+      final s = widget.firstDate!;
+      final sClean = DateTime(s.year, s.month, s.day);
+      if (d.isBefore(sClean)) return true;
+    }
+    if (widget.lastDate != null) {
+      final e = widget.lastDate!;
+      final eClean = DateTime(e.year, e.month, e.day);
+      if (d.isAfter(eClean)) return true;
+    }
+    return false;
+  }
+
+  void _nextMonth() {
+    if (_isNextDisabled) return;
+    setState(() {
+      _focusedMonth = DateTime(_focusedMonth.year, _focusedMonth.month + 1, 1);
+    });
+  }
+
+  bool get _isNextDisabled {
+    if (widget.allowFuture) {
+      if (widget.lastDate != null) {
+        final nextMonth = DateTime(_focusedMonth.year, _focusedMonth.month + 1, 1);
+        return nextMonth.isAfter(widget.lastDate!);
+      }
+      // Allow up to 1 year ahead if no lastDate
+      final maxFuture = DateTime.now().add(const Duration(days: 365));
+      final nextMonth = DateTime(_focusedMonth.year, _focusedMonth.month + 1, 1);
+      return nextMonth.isAfter(maxFuture);
+    }
+
+    final now = DateTime.now();
+    return _focusedMonth.year == now.year && _focusedMonth.month == now.month;
   }
 
   bool _isInRange(DateTime day) {
@@ -162,9 +205,8 @@ class _CustomDateRangePickerSheetState
     return day.year == now.year && day.month == now.month && day.day == now.day;
   }
 
-  bool _isFuture(DateTime day) {
-    final today = DateTime.now();
-    return day.isAfter(DateTime(today.year, today.month, today.day));
+  bool _isDisabled(DateTime day) {
+    return _isOutsideConstraints(day);
   }
 
   List<DateTime?> _buildCalendarDays() {
@@ -540,7 +582,7 @@ class _CustomDateRangePickerSheetState
     final isEnd = _isEnd(day);
     final inRange = _isInRange(day);
     final isToday = _isToday(day);
-    final future = _isFuture(day);
+    final disabled = _isDisabled(day);
     final isSelected = isStart || isEnd;
 
     // Range highlight shape
@@ -550,7 +592,7 @@ class _CustomDateRangePickerSheetState
     if (isEnd && _startDate != null) side = RangeSide.end;
 
     return GestureDetector(
-      onTap: future ? null : () => _onDayTap(day),
+      onTap: disabled ? null : () => _onDayTap(day),
       behavior: HitTestBehavior.opaque,
       child: SizedBox(
         height: 44,
@@ -607,7 +649,7 @@ class _CustomDateRangePickerSheetState
                         : FontWeight.w500,
                     color: isSelected
                         ? Colors.white
-                        : future
+                        : disabled
                         ? Colors.grey.shade300
                         : inRange
                         ? FluidColors.primary

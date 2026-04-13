@@ -43,10 +43,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Future<void> _fetchHistory() async {
     final auth = context.read<AuthProvider>();
-    if (auth.idKaryawan == null) return;
+    if (auth.idAnggota == null) return;
     try {
       final data = await AttendanceService().getHistory(
-        auth.idKaryawan!,
+        auth.idAnggota!,
         auth.clientId ?? "",
       );
       setState(() {
@@ -182,7 +182,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     setState(() => _isRegisteringFace = true);
     final auth = context.read<AuthProvider>();
     final result = await _service.daftarWajahMaster(
-      auth.idKaryawan!,
+      auth.idAnggota!,
       auth.clientId ?? "",
     );
     if (!mounted) return;
@@ -211,16 +211,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   void _tampilkanDialogPilihBulan() async {
     final auth = context.read<AuthProvider>();
-    List<dynamic> listKaryawan = [];
+    List<dynamic> listAnggota = [];
     if (auth.isAdmin) {
       setState(() => _isExporting = true);
       try {
-        listKaryawan = await AdminService().getAllKaryawan(auth.clientId ?? "");
+        listAnggota = await AdminService().getAllAnggota(auth.clientId ?? "");
       } catch (e) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text("Gagal memuat daftar karyawan: $e"),
+              content: Text("Gagal memuat daftar anggota: $e"),
               backgroundColor: Colors.red,
             ),
           );
@@ -233,9 +233,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     int selectedMonth = DateTime.now().month;
     int selectedYear = DateTime.now().year;
-    String selectedKaryawanId = auth.isAdmin
+    String selectedAnggotaId = auth.isAdmin
         ? "SEMUA"
-        : (auth.idKaryawan ?? "");
+        : (auth.idAnggota ?? "");
 
     final List<String> namaBulan = [
       "Januari",
@@ -324,10 +324,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
               if (auth.isAdmin) ...[
                 const SizedBox(height: 12),
                 DropdownButtonFormField<String>(
-                  initialValue: selectedKaryawanId,
+                  initialValue: selectedAnggotaId,
                   isExpanded: true,
                   decoration: InputDecoration(
-                    labelText: "Pilih Karyawan",
+                    labelText: "Pilih Anggota",
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -336,9 +336,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   items: [
                     const DropdownMenuItem(
                       value: "SEMUA",
-                      child: Text("Semua Karyawan"),
+                      child: Text("Semua Anggota"),
                     ),
-                    ...listKaryawan.map(
+                    ...listAnggota.map(
                       (k) => DropdownMenuItem<String>(
                         value: k['id'].toString(),
                         child: Text("${k['nama']} (${k['id']})"),
@@ -346,7 +346,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                   ],
                   onChanged: (val) =>
-                      setDialogState(() => selectedKaryawanId = val!),
+                      setDialogState(() => selectedAnggotaId = val!),
                 ),
               ],
             ],
@@ -373,7 +373,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 _downloadLaporan(
                   "$strBulan-$selectedYear",
                   "${namaBulan[selectedMonth - 1]} $selectedYear",
-                  selectedKaryawanId,
+                  selectedAnggotaId,
                 );
               },
               child: const Text("Download"),
@@ -409,9 +409,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
         return;
       }
       String namaRekap = targetId == "SEMUA"
-          ? "UMKM"
-          : (targetId == auth.idKaryawan
-                ? (auth.namaKaryawan ?? targetId)
+          ? "Instansi"
+          : (targetId == auth.idAnggota
+                ? (auth.namaAnggota ?? targetId)
                 : targetId);
       await ExportService().generateMonthlyExcel(
         namaRekap,
@@ -469,7 +469,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  "Masukkan ID Karyawan yang ingin direset perangkatnya.",
+                  "Masukkan ID Anggota yang ingin direset perangkatnya.",
                   style: TextStyle(
                     color: Colors.grey.shade600,
                     fontSize: 13,
@@ -480,7 +480,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 TextField(
                   controller: idController,
                   decoration: InputDecoration(
-                    labelText: "ID Karyawan",
+                    labelText: "ID Anggota",
                     prefixIcon: const Icon(Icons.badge),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -520,7 +520,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           if (!context.mounted) return;
                           Navigator.pop(context);
                           if (result['code'] == 200) {
-                            if (targetId == auth.idKaryawan) {
+                            if (targetId == auth.idAnggota) {
                               auth.logout();
                               Navigator.pushAndRemoveUntil(
                                 context,
@@ -877,7 +877,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            auth.namaKaryawan ?? "Unknown",
+                            auth.namaAnggota ?? "Unknown",
                             style: const TextStyle(
                               fontSize: 17,
                               fontWeight: FontWeight.w800,
@@ -886,7 +886,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            "ID: ${auth.idKaryawan ?? '-'}",
+                            "ID: ${auth.idAnggota ?? '-'}",
                             style: TextStyle(
                               color: Colors.white.withOpacity(0.7),
                               fontSize: 12,
@@ -904,7 +904,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: const Text(
-                                "ADMIN UMKM",
+                                "ADMIN INSTANSI",
                                 style: TextStyle(
                                   color: Colors.white,
                                   fontSize: 10,
@@ -987,7 +987,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                   if (auth.isAdmin) ...[
                     _buildMenuCard(
-                      title: "Daftar\nKaryawan",
+                      title: "Daftar\nAnggota",
                       icon: Icons.people_alt_rounded,
                       onTap: () => Navigator.push(
                         context,
@@ -1009,7 +1009,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       accentColor: Colors.orange.shade700,
                     ),
                     _buildMenuCard(
-                      title: "Tambah\nKaryawan",
+                      title: "Tambah\nAnggota",
                       icon: Icons.person_add_alt_1,
                       onTap: () => Navigator.push(
                         context,

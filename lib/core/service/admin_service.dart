@@ -4,8 +4,8 @@ import 'package:device_info_plus/device_info_plus.dart';
 import 'package:hadirin/core/config/app_config.dart';
 import 'package:hadirin/core/service/api_client.dart';
 
-/// Tanggung jawab: Semua operasi yang hanya bisa dilakukan admin UMKM —
-/// kelola karyawan, lokasi kantor, perangkat, laporan, dan registrasi klien.
+/// Tanggung jawab: Semua operasi yang hanya bisa dilakukan admin Instansi —
+/// kelola anggota, lokasi kantor, perangkat, laporan, dan registrasi klien.
 class AdminService extends ApiClient {
   final _deviceInfo = DeviceInfoPlugin();
 
@@ -40,22 +40,22 @@ class AdminService extends ApiClient {
   }
 
   // =================================================================
-  // TAMBAH KARYAWAN BARU KE DATABASE UMKM
+  // TAMBAH ANGGOTA BARU KE DATABASE INSTANSI
   // =================================================================
-  Future<Map<String, dynamic>> tambahKaryawan({
+  Future<Map<String, dynamic>> tambahAnggota({
     required String clientId,
-    required String idKaryawanBaru,
-    required String namaKaryawanBaru,
-    required String divisi,
+    required String idAnggotaBaru,
+    required String namaAnggotaBaru,
+    required String bagian,
   }) async {
     try {
       final payload = {
         'api_token': AppConfig.apiToken,
         'action': 'add_karyawan',
         'client_id': clientId,
-        'id_karyawan_baru': idKaryawanBaru,
-        'nama_karyawan_baru': namaKaryawanBaru,
-        'divisi_baru': divisi,
+        'id_karyawan_baru': idAnggotaBaru,
+        'nama_karyawan_baru': namaAnggotaBaru,
+        'divisi_baru': bagian,
       };
 
       final response = await sendRequest('add_karyawan', payload);
@@ -68,7 +68,7 @@ class AdminService extends ApiClient {
       }
       throw Exception('Gagal terhubung ke server.');
     } catch (e) {
-      d.log('==== ERROR ADD KARYAWAN ==== $e');
+      d.log('==== ERROR ADD ANGGOTA ==== $e');
       return {
         'success': false,
         'message': e.toString().replaceAll('Exception: ', ''),
@@ -77,9 +77,9 @@ class AdminService extends ApiClient {
   }
 
   // =================================================================
-  // AMBIL SEMUA DATA KARYAWAN SATU UMKM
+  // AMBIL SEMUA DATA ANGGOTA SATU INSTANSI
   // =================================================================
-  Future<List<dynamic>> getAllKaryawan(String clientId) async {
+  Future<List<dynamic>> getAllAnggota(String clientId) async {
     try {
       final payload = {
         'api_token': AppConfig.apiToken,
@@ -95,18 +95,18 @@ class AdminService extends ApiClient {
       }
       throw Exception('Gagal terhubung ke server.');
     } catch (e) {
-      d.log('==== ERROR GET ALL KARYAWAN ==== $e');
-      throw Exception('Gagal mengambil data karyawan: $e');
+      d.log('==== ERROR GET ALL ANGGOTA ==== $e');
+      throw Exception('Gagal mengambil data anggota: $e');
     }
   }
 
   // =================================================================
-  // LAPORAN BULANAN (bisa semua karyawan atau 1 karyawan tertentu)
+  // LAPORAN BULANAN (bisa semua anggota atau 1 anggota tertentu)
   // =================================================================
   Future<List<dynamic>> getMonthlyReport(
     String clientId,
     String bulanTahun,
-    String idKaryawanTarget,
+    String idAnggotaTarget,
   ) async {
     try {
       final payload = {
@@ -114,7 +114,7 @@ class AdminService extends ApiClient {
         'action': 'get_monthly_report',
         'client_id': clientId,
         'bulan_tahun': bulanTahun,
-        'id_karyawan_target': idKaryawanTarget,
+        'id_karyawan_target': idAnggotaTarget,
       };
 
       final response = await sendRequest(
@@ -136,7 +136,7 @@ class AdminService extends ApiClient {
   }
 
   // =================================================================
-  // RESET DEVICE ID KARYAWAN (jika karyawan ganti HP)
+  // RESET DEVICE ID ANGGOTA (jika anggota ganti HP)
   // =================================================================
   Future<Map<String, dynamic>> resetDeviceID(
     String clientId,
@@ -165,10 +165,10 @@ class AdminService extends ApiClient {
   }
 
   // =================================================================
-  // DAFTARKAN KLIEN UMKM BARU (dipakai di AdminRegisterScreen)
+  // DAFTARKAN KLIEN INSTANSI BARU (dipakai di AdminRegisterScreen)
   // =================================================================
   Future<Map<String, dynamic>> registerKlien({
-    required String namaUmkm,
+    required String namaInstansi,
     required double lat,
     required double lng,
     required double radius,
@@ -177,7 +177,7 @@ class AdminService extends ApiClient {
       final payload = {
         'api_token': AppConfig.apiToken,
         'action': 'register_klien',
-        'nama_umkm': namaUmkm,
+        'nama_umkm': namaInstansi,
         'lat': lat,
         'lng': lng,
         'radius': radius,
@@ -194,7 +194,7 @@ class AdminService extends ApiClient {
         if (data['code'] == 200) {
           return {'success': true, 'client_id': data['message']['client_id']};
         }
-        throw Exception(data['message'] ?? 'Gagal mendaftarkan UMKM');
+        throw Exception(data['message'] ?? 'Gagal mendaftarkan Instansi');
       }
       throw Exception('Gagal terhubung ke server.');
     } catch (e) {
@@ -207,11 +207,11 @@ class AdminService extends ApiClient {
   }
 
   // =================================================================
-  // ENROLL PERANGKAT KARYAWAN (dipakai di LoginScreen)
+  // ENROLL PERANGKAT ANGGOTA (dipakai di LoginScreen)
   // =================================================================
   Future<Map<String, dynamic>> enrollDevice(
     String clientId,
-    String idKaryawan,
+    String idAnggota,
   ) async {
     try {
       final androidInfo = await _deviceInfo.androidInfo;
@@ -221,7 +221,7 @@ class AdminService extends ApiClient {
         'api_token': AppConfig.apiToken,
         'action': 'enroll_device',
         'client_id': clientId,
-        'id_karyawan': idKaryawan,
+        'id_karyawan': idAnggota,
         'device_id': deviceId,
       };
 

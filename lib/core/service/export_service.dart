@@ -5,7 +5,7 @@ import 'package:share_plus/share_plus.dart';
 
 class ExportService {
   Future<void> generateMonthlyExcel(
-    String namaUmkm,
+    String namaInstansi,
     String bulan,
     List<dynamic> data,
   ) async {
@@ -23,8 +23,8 @@ class ExportService {
     // 2. Buat Header Kolom
     List<String> headers = [
       "Waktu",
-      "ID Karyawan",
-      "Nama Karyawan",
+      "ID Anggota",
+      "Nama Anggota",
       "Tipe",
       "Status",
     ];
@@ -50,13 +50,13 @@ class ExportService {
     // 4. Simpan ke File Sementara
     var fileBytes = excel.save();
     final directory = await getTemporaryDirectory();
-    final file = File('${directory.path}/Rekap_Absen_${namaUmkm}_$bulan.xlsx');
+    final file = File('${directory.path}/Rekap_Absen_${namaInstansi}_$bulan.xlsx');
 
     await file.writeAsBytes(fileBytes!);
 
     // 5. Bagikan (Share) ke WhatsApp/Email
     await Share.shareXFiles([
       XFile(file.path),
-    ], text: 'Laporan Absensi $namaUmkm Bulan $bulan');
+    ], text: 'Laporan Absensi $namaInstansi Bulan $bulan');
   }
 }

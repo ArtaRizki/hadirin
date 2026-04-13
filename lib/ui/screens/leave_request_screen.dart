@@ -6,6 +6,7 @@ import 'package:hadirin/core/theme/fluid_theme.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:hadirin/ui/widgets/custom_date_range_picker.dart';
 
 class LeaveRequestScreen extends StatefulWidget {
   const LeaveRequestScreen({super.key});
@@ -22,16 +23,12 @@ class _LeaveRequestScreenState extends State<LeaveRequestScreen> {
   bool _isLoading = false;
 
   Future<void> _pickDates() async {
-    final picked = await showDateRangePicker(
+    final picked = await showCustomDateRangePicker(
       context: context,
+      initialDateRange: _selectedDates,
+      allowFuture: true,
       firstDate: DateTime.now(),
       lastDate: DateTime.now().add(const Duration(days: 365)),
-      builder: (context, child) => Theme(
-        data: Theme.of(context).copyWith(
-          colorScheme: const ColorScheme.light(primary: FluidColors.primary),
-        ),
-        child: child!,
-      ),
     );
     if (picked != null) setState(() => _selectedDates = picked);
   }

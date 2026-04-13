@@ -14,28 +14,28 @@ class AddKaryawanScreen extends StatefulWidget {
 class _AddKaryawanScreenState extends State<AddKaryawanScreen> {
   final _idController = TextEditingController();
   final _namaController = TextEditingController();
-  final _divisiController = TextEditingController();
+  final _bagianController = TextEditingController();
   bool _isLoading = false;
 
-  void _simpanKaryawan() async {
+  void _simpanAnggota() async {
     if (_idController.text.isEmpty || _namaController.text.isEmpty) {
-      _showSnackBar("ID dan Nama Karyawan wajib diisi!", isError: true);
+      _showSnackBar("ID dan Nama Anggota wajib diisi!", isError: true);
       return;
     }
 
     setState(() => _isLoading = true);
 
-    // BACA ID ADMIN UMKM YANG SEDANG LOGIN
+    // BACA ID ADMIN INSTANSI YANG SEDANG LOGIN
     final auth = context.read<AuthProvider>();
     final clientId = auth.idUser ?? "";
 
-    final result = await AdminService().tambahKaryawan(
+    final result = await AdminService().tambahAnggota(
       clientId: clientId,
-      idKaryawanBaru: _idController.text.trim(),
-      namaKaryawanBaru: _namaController.text.trim(),
-      divisi: _divisiController.text.trim().isEmpty
+      idAnggotaBaru: _idController.text.trim(),
+      namaAnggotaBaru: _namaController.text.trim(),
+      bagian: _bagianController.text.trim().isEmpty
           ? "-"
-          : _divisiController.text.trim(),
+          : _bagianController.text.trim(),
     );
 
     setState(() => _isLoading = false);
@@ -109,7 +109,7 @@ class _AddKaryawanScreenState extends State<AddKaryawanScreen> {
           ),
         ),
         title: const Text(
-          "Tambah Karyawan",
+          "Tambah Anggota",
           style: TextStyle(
             color: Color(0xFF0F172A),
             fontWeight: FontWeight.w800,
@@ -153,7 +153,7 @@ class _AddKaryawanScreenState extends State<AddKaryawanScreen> {
                 children: [
                   // HEADER SECTION
                   const Text(
-                    "Informasi Karyawan",
+                    "Informasi Anggota",
                     style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.w900,
@@ -163,7 +163,7 @@ class _AddKaryawanScreenState extends State<AddKaryawanScreen> {
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    "Masukkan detail data diri karyawan baru ke dalam sistem UMKM Anda.",
+                    "Masukkan detail data diri anggota baru ke dalam sistem Instansi Anda.",
                     style: TextStyle(
                       color: Colors.grey.shade600,
                       fontSize: 13,
@@ -175,8 +175,8 @@ class _AddKaryawanScreenState extends State<AddKaryawanScreen> {
                   // FORM INPUTS
                   _buildInputField(
                     controller: _idController,
-                    label: "ID Karyawan",
-                    hint: "Contoh: KRY-001",
+                    label: "ID Anggota",
+                    hint: "Contoh: AGT-001",
                     icon: Icons.badge_rounded,
                   ),
                   const SizedBox(height: 20),
@@ -190,9 +190,9 @@ class _AddKaryawanScreenState extends State<AddKaryawanScreen> {
                   const SizedBox(height: 20),
 
                   _buildInputField(
-                    controller: _divisiController,
-                    label: "Divisi / Jabatan",
-                    hint: "Opsional (Contoh: Kasir, Sales)",
+                    controller: _bagianController,
+                    label: "Bagian / Jabatan",
+                    hint: "Opsional (Contoh: Guru, Staf)",
                     icon: Icons.work_outline_rounded,
                   ),
 
@@ -203,7 +203,7 @@ class _AddKaryawanScreenState extends State<AddKaryawanScreen> {
                     width: double.infinity,
                     height: 60,
                     child: ElevatedButton(
-                      onPressed: _isLoading ? null : _simpanKaryawan,
+                      onPressed: _isLoading ? null : _simpanAnggota,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: FluidColors.primary,
                         foregroundColor: Colors.white,
@@ -223,7 +223,7 @@ class _AddKaryawanScreenState extends State<AddKaryawanScreen> {
                               ),
                             )
                           : const Text(
-                              "Simpan Data Karyawan",
+                              "Simpan Data Anggota",
                               style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,

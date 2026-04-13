@@ -14,18 +14,18 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final _kodeUmkmController = TextEditingController();
+  final _kodeInstansiController = TextEditingController();
   final _idController = TextEditingController();
   bool _isLoading = false;
 
   void _prosesLogin() async {
-    final inputKodeUmkm = _kodeUmkmController.text.trim().toUpperCase();
+    final inputKodeInstansi = _kodeInstansiController.text.trim().toUpperCase();
     final inputId = _idController.text.trim();
 
     // ========================================================
     // FLOW 1: JALUR RAHASIA SUPER ADMIN (API VALIDATION)
     // ========================================================
-    if (inputKodeUmkm.isEmpty && inputId.isNotEmpty) {
+    if (inputKodeInstansi.isEmpty && inputId.isNotEmpty) {
       setState(() => _isLoading = true);
 
       final superResult = await AdminService().verifySuperAdmin(inputId);
@@ -46,16 +46,16 @@ class _LoginScreenState extends State<LoginScreen> {
         return;
       }
 
-      // Jika ternyata bukan super admin namun kode UMKM kosong,
+      // Jika ternyata bukan super admin namun kode Instansi kosong,
       // biarkan program lanjut ke validasi normal di bawah
-      // (yang akan menampilkan error "Kode Perusahaan wajib diisi")
+      // (yang akan menampilkan error "Kode Instansi wajib diisi")
       setState(() => _isLoading = false);
     }
     // ========================================================
     // FLOW 2: VALIDASI LOGIN NORMAL
     // ========================================================
-    if (inputKodeUmkm.isEmpty) {
-      _showError("Kode Perusahaan (UMKM) wajib diisi!");
+    if (inputKodeInstansi.isEmpty) {
+      _showError("Kode Instansi wajib diisi!");
       return;
     }
     if (inputId.isEmpty) {
@@ -66,19 +66,19 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _isLoading = true);
 
     try {
-      final result = await AdminService().enrollDevice(inputKodeUmkm, inputId);
+      final result = await AdminService().enrollDevice(inputKodeInstansi, inputId);
 
       if (result['success']) {
-        final dataKaryawan = result['message'];
-        final clientIdDariServer = dataKaryawan['client_id'];
+        final dataAnggota = result['message'];
+        final clientIdDariServer = dataAnggota['client_id'];
 
-        LoginRole assignedRole = inputId.toUpperCase().startsWith("UMKM-")
-            ? LoginRole.adminUmkm
+        LoginRole assignedRole = inputId.toUpperCase().startsWith("INST-")
+            ? LoginRole.admin
             : LoginRole.karyawan;
 
         await context.read<AuthProvider>().login(
           inputId,
-          dataKaryawan['nama_karyawan'],
+          dataAnggota['nama_karyawan'],
           assignedRole,
           clientIdDariServer,
         );
@@ -207,7 +207,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         const SizedBox(height: 48),
 
-                        // FIELD 1: KODE UMKM
+                        // FIELD 1: KODE INSTANSI
                         Container(
                           decoration: BoxDecoration(
                             color: Colors.white,
@@ -221,11 +221,11 @@ class _LoginScreenState extends State<LoginScreen> {
                             ],
                           ),
                           child: TextField(
-                            controller: _kodeUmkmController,
+                            controller: _kodeInstansiController,
                             textCapitalization: TextCapitalization.characters,
                             decoration: InputDecoration(
-                              labelText: "Kode Perusahaan",
-                              hintText: "Contoh: UMKM-123456",
+                              labelText: "Kode Instansi",
+                              hintText: "Contoh: INST-123456",
                               labelStyle: TextStyle(
                                 color: Colors.grey.shade500,
                               ),

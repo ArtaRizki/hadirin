@@ -99,13 +99,13 @@ class _AuthWrapperState extends State<AuthWrapper> {
     // C. Jika sudah login, cek Jabatannya (Role)
     switch (auth.role) {
       case LoginRole.superAdmin:
-        // Layar Khusus Anda (Pemilik Aplikasi)
+        // Layar Khusus Pemilik Aplikasi (Super Admin)
         return const AdminRegisterScreen();
 
-      case LoginRole.adminUmkm:
+      case LoginRole.admin:
       case LoginRole.karyawan:
-        // Admin UMKM & Karyawan masuk ke Dashboard yang sama.
-        // Nanti menu "Tambah Karyawan" disembunyikan otomatis jika yang login Karyawan biasa.
+        // Admin Instansi & Anggota masuk ke Dashboard yang sama.
+        // Nanti menu "Tambah Anggota" disembunyikan otomatis jika yang login Anggota biasa.
         return const AttendanceScreen();
 
       default:

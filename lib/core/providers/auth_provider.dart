@@ -3,11 +3,11 @@ import 'package:shared_preferences/shared_preferences.dart';
 // Tambahkan ini
 
 // Enum untuk membedakan level akses
-enum LoginRole { none, superAdmin, adminUmkm, karyawan }
+enum LoginRole { none, superAdmin, admin, karyawan }
 
 class AuthProvider extends ChangeNotifier {
-  String? _idUser; // Bisa berisi ID Karyawan ATAU Client ID (UMKM-xxxx)
-  String? _namaUser; // Nama karyawan ATAU Nama UMKM
+  String? _idUser; // Bisa berisi ID Anggota ATAU Client ID (INST-xxxx)
+  String? _namaUser; // Nama anggota ATAU Nama Instansi
   String? _clientId; // Disimpan dengan aman di state
   LoginRole _role = LoginRole.none; // Ubah default jadi none
   bool _isInitialized = false;
@@ -21,14 +21,16 @@ class AuthProvider extends ChangeNotifier {
   // Getter bantuan untuk kompatibilitas dengan UI yang sudah ada
   bool get isLoggedIn => _role != LoginRole.none;
   bool get isSuperAdmin => _role == LoginRole.superAdmin;
-  bool get isAdminUmkm => _role == LoginRole.adminUmkm;
-  bool get isKaryawan => _role == LoginRole.karyawan;
+  bool get isAdmin => _role == LoginRole.admin || _role == LoginRole.superAdmin;
+  bool get isAnggota => _role == LoginRole.karyawan;
 
-  // Alias untuk kompatibilitas kode lama (attendance_screen dll)
+  // Alias untuk kompatibilitas kode lama
+  String? get idAnggota => _idUser;
+  String? get namaAnggota => _namaUser;
   String? get idKaryawan => _idUser;
   String? get namaKaryawan => _namaUser;
-  bool get isAdmin =>
-      _role == LoginRole.adminUmkm || _role == LoginRole.superAdmin;
+  bool get isAdminInstansi => _role == LoginRole.admin;
+  bool get isAdminUmkm => _role == LoginRole.admin;
 
   Future<void> checkLoginStatus() async {
     final prefs = await SharedPreferences.getInstance();
