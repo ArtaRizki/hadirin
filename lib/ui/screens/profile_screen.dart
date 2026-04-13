@@ -4,7 +4,7 @@ import 'package:hadirin/core/service/admin_service.dart';
 import 'package:hadirin/core/service/attendance_service.dart';
 import 'package:hadirin/core/service/export_service.dart';
 import 'package:hadirin/core/service/face_service.dart';
-import 'package:hadirin/ui/screens/add_karyawan_screen.dart';
+import 'package:hadirin/ui/screens/add_anggota_screen.dart';
 import 'package:hadirin/ui/screens/login_screen.dart';
 import 'package:hadirin/ui/screens/set_location_screen.dart';
 import 'package:hadirin/ui/widgets/custom_date_range_picker.dart';
@@ -14,7 +14,8 @@ import 'package:intl/intl.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:hadirin/ui/screens/leave_request_screen.dart';
 import 'package:hadirin/ui/screens/approval_screen.dart';
-import 'package:hadirin/ui/screens/employee_list_screen.dart';
+import 'package:hadirin/ui/screens/anggota_list_screen.dart';
+import 'package:hadirin/ui/widgets/attendance_history_list.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -647,134 +648,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   // =================================================================
   // COMPONENT: HISTORY ITEM
   // =================================================================
-  Widget _buildHistoryItem(Map log) {
-    final dt =
-        DateTime.tryParse(log['waktu'].toString())?.toLocal() ?? DateTime.now();
-    final isTerlambat = log['status'] == "Terlambat";
-    final isMasuk = log['tipe'] == "Masuk";
-    final isCuti =
-        log['tipe'] == "Cuti" ||
-        log['tipe'] == "Izin" ||
-        log['tipe'] == "Sakit";
-
-    Color accentColor = isMasuk ? FluidColors.primary : Colors.orange.shade600;
-    if (isCuti) accentColor = Colors.grey.shade500;
-
-    String statusLabel = "";
-    Color statusColor = FluidColors.primary;
-    Color statusBg = FluidColors.primary.withOpacity(0.08);
-
-    if (isMasuk) {
-      statusLabel = log['status'] ?? "";
-      statusColor = isTerlambat ? Colors.red.shade700 : const Color(0xFF16A34A);
-      statusBg = isTerlambat
-          ? Colors.red.shade50
-          : const Color(0xFF16A34A).withOpacity(0.08);
-    } else if (isCuti) {
-      statusLabel = log['status'] ?? "";
-      statusColor = log['status'] == 'Disetujui'
-          ? const Color(0xFF16A34A)
-          : Colors.orange.shade700;
-      statusBg = log['status'] == 'Disetujui'
-          ? const Color(0xFF16A34A).withOpacity(0.08)
-          : Colors.orange.shade50;
-    }
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 10,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: accentColor.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(
-              isMasuk
-                  ? Icons.login_rounded
-                  : isCuti
-                  ? Icons.event_busy_rounded
-                  : Icons.logout_rounded,
-              color: accentColor,
-              size: 18,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  "Absen ${log['tipe']}  ·  ${_formatJam(dt)}",
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w700,
-                    fontSize: 14,
-                    color: Color(0xFF0F172A),
-                  ),
-                ),
-                const SizedBox(height: 3),
-                Text(
-                  _formatTanggalIndo(dt),
-                  style: TextStyle(color: Colors.grey.shade500, fontSize: 11),
-                ),
-              ],
-            ),
-          ),
-          if (log['foto'] != null && log['foto'].toString().isNotEmpty)
-            GestureDetector(
-              onTap: () => _tampilkanFoto(
-                context,
-                log['foto'],
-                log['tipe'],
-                "${_formatTanggalIndo(dt)} - ${_formatJam(dt)}",
-              ),
-              child: Container(
-                padding: const EdgeInsets.all(7),
-                margin: const EdgeInsets.only(right: 6),
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade100,
-                  borderRadius: BorderRadius.circular(9),
-                ),
-                child: Icon(
-                  Icons.image_rounded,
-                  size: 16,
-                  color: Colors.grey.shade500,
-                ),
-              ),
-            ),
-          if (statusLabel.isNotEmpty)
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-              decoration: BoxDecoration(
-                color: statusBg,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Text(
-                statusLabel,
-                style: TextStyle(
-                  color: statusColor,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
+// History items extracted to AttendanceHistoryList widget
 
   @override
   Widget build(BuildContext context) {
@@ -992,7 +866,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       onTap: () => Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (_) => const EmployeeListScreen(),
+                          builder: (_) => const AnggotaListScreen(),
                         ),
                       ),
                       accentColor: const Color(0xFF6366F1), // Indigo
@@ -1014,7 +888,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       onTap: () => Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (_) => const AddKaryawanScreen(),
+                          builder: (_) => const AddAnggotaScreen(),
                         ),
                       ),
                       accentColor: const Color(0xFF0891B2),
@@ -1208,57 +1082,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
               const SizedBox(height: 16),
 
-              // History list
-              if (_isLoading)
-                const Center(
-                  child: Padding(
-                    padding: EdgeInsets.all(40.0),
-                    child: CircularProgressIndicator(
-                      color: FluidColors.primary,
-                      strokeWidth: 3,
-                    ),
-                  ),
-                )
-              else if (_errorMsg.isNotEmpty)
-                Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(32.0),
-                    child: Text(
-                      _errorMsg,
-                      style: TextStyle(
-                        color: Colors.red.shade700,
-                        fontSize: 13,
-                      ),
-                    ),
-                  ),
-                )
-              else if (_filteredHistory.isEmpty)
-                Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(40.0),
-                    child: Column(
-                      children: [
-                        Icon(
-                          Icons.history_toggle_off,
-                          size: 52,
-                          color: Colors.grey.shade300,
-                        ),
-                        const SizedBox(height: 12),
-                        Text(
-                          "Belum ada data absen.",
-                          style: TextStyle(
-                            color: Colors.grey.shade500,
-                            fontSize: 13,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                )
-              else
-                ...(_filteredHistory
-                    .map((log) => _buildHistoryItem(log as Map))
-                    .toList()),
+              AttendanceHistoryList(
+                history: _filteredHistory,
+                isLoading: _isLoading,
+                errorMessage: _errorMsg,
+                onShowPhoto: (url, tipe, waktu) => _tampilkanFoto(context, url, tipe, waktu),
+              ),
             ],
           ),
         ),

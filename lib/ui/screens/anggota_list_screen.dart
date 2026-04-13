@@ -4,14 +4,14 @@ import 'package:hadirin/core/service/admin_service.dart';
 import 'package:hadirin/core/theme/fluid_theme.dart';
 import 'package:provider/provider.dart';
 
-class EmployeeListScreen extends StatefulWidget {
-  const EmployeeListScreen({super.key});
+class AnggotaListScreen extends StatefulWidget {
+  const AnggotaListScreen({super.key});
 
   @override
-  State<EmployeeListScreen> createState() => _EmployeeListScreenState();
+  State<AnggotaListScreen> createState() => _AnggotaListScreenState();
 }
 
-class _EmployeeListScreenState extends State<EmployeeListScreen> {
+class _AnggotaListScreenState extends State<AnggotaListScreen> {
   final AdminService _adminService = AdminService();
   bool _isLoading = true;
   List<dynamic> _anggota = [];

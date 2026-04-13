@@ -4,14 +4,14 @@ import 'package:provider/provider.dart';
 import 'package:hadirin/core/providers/auth_provider.dart';
 import 'package:hadirin/core/theme/fluid_theme.dart';
 
-class AddKaryawanScreen extends StatefulWidget {
-  const AddKaryawanScreen({super.key});
+class AddAnggotaScreen extends StatefulWidget {
+  const AddAnggotaScreen({super.key});
 
   @override
-  State<AddKaryawanScreen> createState() => _AddKaryawanScreenState();
+  State<AddAnggotaScreen> createState() => _AddAnggotaScreenState();
 }
 
-class _AddKaryawanScreenState extends State<AddKaryawanScreen> {
+class _AddAnggotaScreenState extends State<AddAnggotaScreen> {
   final _idController = TextEditingController();
   final _namaController = TextEditingController();
   final _bagianController = TextEditingController();

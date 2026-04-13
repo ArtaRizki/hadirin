@@ -277,6 +277,30 @@ class _SetLocationScreenState extends State<SetLocationScreen> {
                     ),
                   ],
                 ),
+ 
+                // Atribusi OSM (Penting untuk legalitas)
+                Positioned(
+                  bottom: 6,
+                  left: 6,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.7),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: const Text(
+                      "© OpenStreetMap",
+                      style: TextStyle(
+                        fontSize: 9,
+                        color: Colors.black54,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
 
                 // 2. PIN CENTRAL (Hanya muncul jika tidak sedang mencari di list)
                 if (_searchResults.isEmpty)
