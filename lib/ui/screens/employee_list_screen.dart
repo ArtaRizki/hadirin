@@ -1,0 +1,355 @@
+import 'package:flutter/material.dart';
+import 'package:hadirin/core/providers/auth_provider.dart';
+import 'package:hadirin/core/service/admin_service.dart';
+import 'package:hadirin/core/theme/fluid_theme.dart';
+import 'package:provider/provider.dart';
+
+class EmployeeListScreen extends StatefulWidget {
+  const EmployeeListScreen({super.key});
+
+  @override
+  State<EmployeeListScreen> createState() => _EmployeeListScreenState();
+}
+
+class _EmployeeListScreenState extends State<EmployeeListScreen> {
+  final AdminService _adminService = AdminService();
+  bool _isLoading = true;
+  List<dynamic> _employees = [];
+  String _errorMsg = "";
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _fetchEmployees();
+    });
+  }
+
+  Future<void> _fetchEmployees() async {
+    setState(() {
+      _isLoading = true;
+      _errorMsg = "";
+    });
+
+    try {
+      final auth = context.read<AuthProvider>();
+      final clientId = auth.clientId ?? "";
+      final data = await _adminService.getAllKaryawan(clientId);
+      setState(() {
+        _employees = data;
+        _isLoading = false;
+      });
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _errorMsg = e.toString().replaceAll("Exception: ", "");
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  Widget _buildStatusBadge({
+    required bool isRegistered,
+    required String activeLabel,
+    required String inactiveLabel,
+    required IconData activeIcon,
+    required IconData inactiveIcon,
+  }) {
+    final color = isRegistered ? const Color(0xFF16A34A) : Colors.red.shade600;
+    final bgColor = isRegistered
+        ? const Color(0xFF16A34A).withOpacity(0.08)
+        : Colors.red.shade50;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color.withOpacity(0.3)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(isRegistered ? activeIcon : inactiveIcon, size: 12, color: color),
+          const SizedBox(width: 4),
+          Text(
+            isRegistered ? activeLabel : inactiveLabel,
+            style: TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.w800,
+              color: color,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFFF4F6FF),
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        centerTitle: true,
+        leading: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: InkWell(
+            onTap: () => Navigator.pop(context),
+            borderRadius: BorderRadius.circular(12),
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.06),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: const Icon(
+                Icons.arrow_back_ios_new_rounded,
+                color: Color(0xFF0F172A),
+                size: 16,
+              ),
+            ),
+          ),
+        ),
+        title: const Text(
+          "Daftar Karyawan",
+          style: TextStyle(
+            color: Color(0xFF0F172A),
+            fontWeight: FontWeight.w800,
+            fontSize: 18,
+          ),
+        ),
+      ),
+      body: SafeArea(
+        child: Stack(
+          children: [
+            // Background blobs
+            Positioned(
+              top: -70,
+              right: -50,
+              child: Container(
+                width: 230,
+                height: 230,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: FluidColors.primary.withOpacity(0.06),
+                ),
+              ),
+            ),
+            Positioned(
+              bottom: -50,
+              left: -40,
+              child: Container(
+                width: 200,
+                height: 200,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: const Color(0xFF7C3AED).withOpacity(0.05),
+                ),
+              ),
+            ),
+            
+            RefreshIndicator(
+              color: FluidColors.primary,
+              onRefresh: _fetchEmployees,
+              child: _isLoading
+                  ? const Center(
+                      child: CircularProgressIndicator(color: FluidColors.primary),
+                    )
+                  : _errorMsg.isNotEmpty
+                      ? ListView(
+                          children: [
+                            SizedBox(
+                              height: MediaQuery.of(context).size.height * 0.3,
+                            ),
+                            Center(
+                              child: Text(
+                                _errorMsg,
+                                style: TextStyle(
+                                  color: Colors.red.shade600,
+                                  fontSize: 14,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+                          ],
+                        )
+                      : _employees.isEmpty
+                          ? ListView(
+                              children: [
+                                SizedBox(
+                                  height:
+                                      MediaQuery.of(context).size.height * 0.25,
+                                ),
+                                Center(
+                                  child: Column(
+                                    children: [
+                                      Icon(
+                                        Icons.people_outline_rounded,
+                                        size: 64,
+                                        color: Colors.grey.shade400,
+                                      ),
+                                      const SizedBox(height: 16),
+                                      const Text(
+                                        "Belum ada karyawan.",
+                                        style: TextStyle(
+                                          color: Color(0xFF0F172A),
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.w800,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            )
+                          : ListView.builder(
+                              padding: const EdgeInsets.fromLTRB(20, 16, 20, 40),
+                              itemCount: _employees.length,
+                              itemBuilder: (context, index) {
+                                final emp = _employees[index];
+                                final isSuperAdmin =
+                                    emp['nama'].toString().toLowerCase().contains("admin") ||
+                                    emp['divisi'].toString().toLowerCase().contains("pemilik");
+
+                                return Container(
+                                  margin: const EdgeInsets.only(bottom: 16),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(20),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withOpacity(0.04),
+                                        blurRadius: 10,
+                                        offset: const Offset(0, 4),
+                                      ),
+                                    ],
+                                  ),
+                                  padding: const EdgeInsets.all(16),
+                                  child: Row(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      CircleAvatar(
+                                        radius: 24,
+                                        backgroundColor: isSuperAdmin
+                                            ? Colors.amber.withOpacity(0.15)
+                                            : FluidColors.primary
+                                                .withOpacity(0.1),
+                                        child: isSuperAdmin
+                                            ? const Icon(
+                                                Icons.shield_rounded,
+                                                color: Colors.amber,
+                                                size: 24,
+                                              )
+                                            : Text(
+                                                emp['nama']
+                                                    .toString()
+                                                    .substring(0, 1)
+                                                    .toUpperCase(),
+                                                style: const TextStyle(
+                                                  color: FluidColors.primary,
+                                                  fontWeight: FontWeight.bold,
+                                                  fontSize: 18,
+                                                ),
+                                              ),
+                                      ),
+                                      const SizedBox(width: 16),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              emp['nama'],
+                                              style: const TextStyle(
+                                                fontWeight: FontWeight.w800,
+                                                fontSize: 16,
+                                                color: Color(0xFF0F172A),
+                                              ),
+                                            ),
+                                            const SizedBox(height: 4),
+                                            Text(
+                                              "${emp['id']}  •  ${emp['divisi'] ?? '-'}",
+                                              style: TextStyle(
+                                                color: Colors.grey.shade600,
+                                                fontSize: 12,
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 12),
+                                            if (!isSuperAdmin)
+                                              Wrap(
+                                                spacing: 8,
+                                                runSpacing: 8,
+                                                children: [
+                                                  _buildStatusBadge(
+                                                    isRegistered:
+                                                        emp['wajah_terdaftar'] ==
+                                                            true,
+                                                    activeLabel: "Wajah Terdaftar",
+                                                    inactiveLabel: "Belum Ada Wajah",
+                                                    activeIcon:
+                                                        Icons.face_retouching_natural,
+                                                    inactiveIcon:
+                                                        Icons.sentiment_dissatisfied,
+                                                  ),
+                                                  _buildStatusBadge(
+                                                    isRegistered:
+                                                        emp['sudah_enroll'] == true,
+                                                    activeLabel: "HP Terdaftar",
+                                                    inactiveLabel: "Belum Ada HP",
+                                                    activeIcon: Icons.phonelink_setup,
+                                                    inactiveIcon:
+                                                        Icons.phonelink_erase,
+                                                  ),
+                                                ],
+                                              )
+                                            else
+                                              Container(
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                  horizontal: 8,
+                                                  vertical: 4,
+                                                ),
+                                                decoration: BoxDecoration(
+                                                  color: Colors.amber.shade50,
+                                                  borderRadius:
+                                                      BorderRadius.circular(8),
+                                                  border: Border.all(
+                                                    color: Colors.amber.shade200,
+                                                  ),
+                                                ),
+                                                child: Text(
+                                                  "Role Hak Akses Admin",
+                                                  style: TextStyle(
+                                                    fontSize: 10,
+                                                    fontWeight: FontWeight.w800,
+                                                    color: Colors.amber.shade800,
+                                                  ),
+                                                ),
+                                              ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              },
+                            ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

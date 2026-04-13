@@ -15,6 +15,7 @@ import 'package:intl/intl.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:hadirin/ui/screens/leave_request_screen.dart';
 import 'package:hadirin/ui/screens/approval_screen.dart';
+import 'package:hadirin/ui/screens/employee_list_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -980,6 +981,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     accentColor: const Color(0xFF16A34A),
                   ),
                   if (auth.isAdmin) ...[
+                    _buildMenuCard(
+                      title: "Daftar\nKaryawan",
+                      icon: Icons.people_alt_rounded,
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const EmployeeListScreen(),
+                        ),
+                      ),
+                      accentColor: const Color(0xFF6366F1), // Indigo
+                    ),
                     _buildMenuCard(
                       title: "Persetujuan\nIzin",
                       icon: Icons.playlist_add_check_circle,

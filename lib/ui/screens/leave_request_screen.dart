@@ -67,7 +67,7 @@ class _LeaveRequestScreenState extends State<LeaveRequestScreen> {
     final idKaryawan = auth.idKaryawan ?? "";
 
     String strTanggal =
-        "${DateFormat('dd MMM yyyy').format(_selectedDates!.start)} s/d ${DateFormat('dd MMM yyyy').format(_selectedDates!.end)}";
+        "${DateFormat('dd MMM yyyy', 'id_ID').format(_selectedDates!.start)} s/d ${DateFormat('dd MMM yyyy', 'id_ID').format(_selectedDates!.end)}";
 
     final result = await LeaveService().submitIzin(
       clientId: auth.clientId ?? "",
@@ -313,7 +313,7 @@ class _LeaveRequestScreenState extends State<LeaveRequestScreen> {
                               child: Text(
                                 _selectedDates == null
                                     ? "Pilih Tanggal Mulai - Selesai"
-                                    : "${DateFormat('dd/MM/yyyy').format(_selectedDates!.start)} - ${DateFormat('dd/MM/yyyy').format(_selectedDates!.end)}",
+                                    : "${DateFormat('dd MMM yyyy', 'id_ID').format(_selectedDates!.start)} - ${DateFormat('dd MMM yyyy', 'id_ID').format(_selectedDates!.end)}",
                                 style: TextStyle(
                                   color: _selectedDates == null
                                       ? Colors.grey.shade500

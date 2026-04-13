@@ -73,6 +73,8 @@ class _AttendanceScreenState extends State<AttendanceScreen>
   // 2. FUNGSI PEMBUNGKUS TOMBOL ABSEN (DENGAN TIME-FENCING)
   // =================================================================
   void _konfirmasiAbsen(String tipeAbsen) async {
+    if (_isLoading) return;
+    
     final now = DateTime.now();
     final hour = now.hour;
 
