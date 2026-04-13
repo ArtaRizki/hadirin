@@ -1,4 +1,7 @@
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:timezone/data/latest_all.dart' as tz_data;
+import 'package:timezone/timezone.dart' as tz;
+import 'package:flutter_timezone/flutter_timezone.dart';
 
 class NotificationService {
   // Singleton pattern agar tidak membuat banyak instance
@@ -10,11 +13,16 @@ class NotificationService {
       FlutterLocalNotificationsPlugin();
 
   Future<void> init() async {
-    // Pengaturan Icon Notifikasi Android (Gunakan icon bawaan mipmap)
+    // 1. Inisialisasi Database Timezone
+    tz_data.initializeTimeZones();
+    final String timeZoneName = await FlutterTimezone.getLocalTimezone();
+    tz.setLocalLocation(tz.getLocation(timeZoneName));
+
+    // 2. Pengaturan Icon Notifikasi Android
     const AndroidInitializationSettings initializationSettingsAndroid =
         AndroidInitializationSettings('@mipmap/ic_launcher');
 
-    // Pengaturan iOS
+    // 3. Pengaturan iOS
     const DarwinInitializationSettings initializationSettingsIOS =
         DarwinInitializationSettings(
           requestSoundPermission: true,
@@ -30,12 +38,60 @@ class NotificationService {
 
     await _notificationsPlugin.initialize(settings: initializationSettings);
 
-    // Meminta Izin Notifikasi (Khusus Android 13+)
+    // 4. Meminta Izin Notifikasi (Android 13+)
     _notificationsPlugin
         .resolvePlatformSpecificImplementation<
           AndroidFlutterLocalNotificationsPlugin
         >()
         ?.requestNotificationsPermission();
+  }
+
+  // Fungsi untuk Menjadwalkan Notifikasi Harian
+  Future<void> scheduleDailyNotification({
+    required int id,
+    required String title,
+    required String body,
+    required int hour,
+    required int minute,
+  }) async {
+    final now = tz.TZDateTime.now(tz.local);
+    var scheduledDate = tz.TZDateTime(
+      tz.local,
+      now.year,
+      now.month,
+      now.day,
+      hour,
+      minute,
+    );
+
+    // Jika waktu sudah lewat hari ini, jadwalkan untuk besok
+    if (scheduledDate.isBefore(now)) {
+      scheduledDate = scheduledDate.add(const Duration(days: 1));
+    }
+
+    await _notificationsPlugin.zonedSchedule(
+      id: id,
+      title: title,
+      body: body,
+      scheduledDate: scheduledDate,
+      notificationDetails: const NotificationDetails(
+        android: AndroidNotificationDetails(
+          'hadirin_reminders',
+          'Pengingat Absensi',
+          channelDescription: 'Pengingat rutin absen pagi dan sore',
+          importance: Importance.max,
+          priority: Priority.high,
+        ),
+        iOS: DarwinNotificationDetails(),
+      ),
+      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+      matchDateTimeComponents: DateTimeComponents.time, // Ulangi setiap hari
+    );
+  }
+
+  // Fungsi untuk Membatalkan Semua Notifikasi
+  Future<void> cancelAll() async {
+    await _notificationsPlugin.cancelAll();
   }
 
   // Fungsi untuk Memunculkan Notifikasi
@@ -65,6 +121,31 @@ class NotificationService {
       title: title,
       body: body,
       notificationDetails: platformChannelSpecifics,
+    );
+  }
+
+  // Fungsi Helper untuk Setup Pengingat Rutin (Pagi & Sore)
+  Future<void> setupReminders() async {
+    // Batalkan dulu semua agar tidak duplikat
+    await cancelAll();
+
+    // 1. Pengingat Pagi (07:30)
+    await scheduleDailyNotification(
+      id: 101,
+      title: "Hadirin: Semangat Pagi! ☀️",
+      body: "Pastikan Anda sudah melakukan Absen Masuk ya. Selamat bekerja!",
+      hour: 7,
+      minute: 30,
+    );
+
+    // 2. Pengingat Sore (16:30)
+    await scheduleDailyNotification(
+      id: 102,
+      title: "Hadirin: Waktunya Pulang? 🏠",
+      body:
+          "Jangan lupa lakukan Absen Pulang sebelum meninggalkan lokasi. Hati-hati di jalan!",
+      hour: 16,
+      minute: 30,
     );
   }
 }

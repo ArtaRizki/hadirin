@@ -40,6 +40,29 @@ class AdminService extends ApiClient {
   }
 
   // =================================================================
+  // AMBIL KONFIGURASI KANTOR (lat, lng, radius)
+  // =================================================================
+  Future<Map<String, dynamic>?> getOfficeConfig(String clientId) async {
+    try {
+      final payload = {
+        'api_token': AppConfig.apiToken,
+        'action': 'get_office_config',
+        'client_id': clientId,
+      };
+
+      final response = await sendRequest('get_office_config', payload);
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['code'] == 200) return data['message'];
+      }
+      return null;
+    } catch (e) {
+      d.log('==== ERROR GET OFFICE CONFIG ==== $e');
+      return null;
+    }
+  }
+
+  // =================================================================
   // TAMBAH ANGGOTA BARU KE DATABASE INSTANSI
   // =================================================================
   Future<Map<String, dynamic>> tambahAnggota({

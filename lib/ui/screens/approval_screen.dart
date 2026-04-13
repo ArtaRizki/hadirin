@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:hadirin/core/providers/auth_provider.dart';
 import 'package:hadirin/core/service/leave_service.dart';
 import 'package:hadirin/core/theme/fluid_theme.dart';
+import 'package:hadirin/ui/widgets/skeleton_loader.dart';
 import 'package:provider/provider.dart';
 
 class ApprovalScreen extends StatefulWidget {
@@ -298,7 +299,7 @@ class _ApprovalScreenState extends State<ApprovalScreen> {
               child: _isLoading
                   ? const Padding(
                       padding: EdgeInsets.fromLTRB(20, 16, 20, 0),
-                      child: CardSkeleton(itemCount: 4),
+                      child: CardSkeletonList(itemCount: 4),
                     )
                   : _approvalList.isEmpty
                   ? ListView(

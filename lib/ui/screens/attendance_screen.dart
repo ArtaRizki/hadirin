@@ -2,7 +2,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:hadirin/core/providers/auth_provider.dart';
 import 'package:hadirin/core/service/attendance_service.dart';
+import 'package:hadirin/core/service/admin_service.dart';
 import 'package:hadirin/core/service/notification_service.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:hadirin/ui/screens/profile_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:hadirin/core/theme/fluid_theme.dart';
@@ -38,6 +40,44 @@ class _AttendanceScreenState extends State<AttendanceScreen>
     _pulseAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
       CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
     );
+
+    // Trigger Proximity Check
+    _checkProximity();
+  }
+
+  bool _hasNotifiedProximity = false;
+
+  Future<void> _checkProximity() async {
+    try {
+      final auth = context.read<AuthProvider>();
+      if (!auth.isLoggedIn || !auth.isAnggota) return;
+
+      final config = await AdminService().getOfficeConfig(auth.clientId ?? "");
+      if (config == null) return;
+
+      double offLat = double.parse(config['lat'].toString());
+      double offLng = double.parse(config['lng'].toString());
+      double radius = double.parse(config['radius'].toString());
+
+      Position pos = await Geolocator.getCurrentPosition();
+      double distance = Geolocator.distanceBetween(
+        pos.latitude,
+        pos.longitude,
+        offLat,
+        offLng,
+      );
+
+      if (distance <= radius && !_hasNotifiedProximity) {
+        NotificationService().showNotification(
+          id: 999,
+          title: "Sudah Sampai di Lokasi?📍",
+          body: "Anda sudah berada dalam radius Instansi. Yuk, segera lakukan Absen Masuk!",
+        );
+        _hasNotifiedProximity = true;
+      }
+    } catch (e) {
+      debugPrint("Proximity check failed: $e");
+    }
   }
 
   @override

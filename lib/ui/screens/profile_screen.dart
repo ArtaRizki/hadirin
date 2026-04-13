@@ -12,6 +12,7 @@ import 'package:provider/provider.dart';
 import 'package:hadirin/core/theme/fluid_theme.dart';
 import 'package:intl/intl.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:hadirin/ui/widgets/skeleton_loader.dart';
 import 'package:hadirin/ui/screens/leave_request_screen.dart';
 import 'package:hadirin/ui/screens/approval_screen.dart';
 import 'package:hadirin/ui/screens/anggota_list_screen.dart';

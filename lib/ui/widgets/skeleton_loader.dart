@@ -112,3 +112,19 @@ class CardSkeleton extends StatelessWidget {
     );
   }
 }
+
+/// A helper to show multiple card skeletons
+class CardSkeletonList extends StatelessWidget {
+  final int itemCount;
+  const CardSkeletonList({super.key, this.itemCount = 3});
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: itemCount,
+      itemBuilder: (context, index) => const CardSkeleton(),
+    );
+  }
+}

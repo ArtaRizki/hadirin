@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:hadirin/core/service/notification_service.dart';
+import 'package:hadirin/core/service/sync_service.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:provider/provider.dart';
 
@@ -76,8 +77,17 @@ class _AuthWrapperState extends State<AuthWrapper> {
   void initState() {
     super.initState();
     // 3. Cek status memori saat aplikasi pertama kali dibuka
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<AuthProvider>().checkLoginStatus();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final auth = context.read<AuthProvider>();
+      await auth.checkLoginStatus();
+
+      // Trigger Sync & Notifications jika sudah login
+      if (auth.isLoggedIn && auth.isAnggota) {
+        SyncService().runSync(
+          idAnggota: auth.idAnggota ?? "",
+          clientId: auth.clientId ?? "",
+        );
+      }
     });
   }
 
