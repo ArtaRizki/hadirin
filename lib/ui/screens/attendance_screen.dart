@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:hadirin/core/providers/auth_provider.dart';
 import 'package:hadirin/core/service/attendance_service.dart';
@@ -62,7 +61,10 @@ class _AttendanceScreenState extends State<AttendanceScreen>
   Future<bool> _cekStatusIzin(String idKaryawan, String clientId) async {
     try {
       // Menggunakan endpoint khusus agar lebih ringan dan cepat
-      return await _attendanceService.cekStatusCutiHariIni(idKaryawan, clientId);
+      return await _attendanceService.cekStatusCutiHariIni(
+        idKaryawan,
+        clientId,
+      );
     } catch (e) {
       debugPrint("Gagal mengecek status cuti: $e");
     }
@@ -74,7 +76,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
   // =================================================================
   void _konfirmasiAbsen(String tipeAbsen) async {
     if (_isLoading) return;
-    
+
     final now = DateTime.now();
     final hour = now.hour;
 
@@ -262,7 +264,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                 ),
               ),
             ),
-        
+
             SafeArea(
               child: Padding(
                 padding: const EdgeInsets.symmetric(
@@ -365,16 +367,19 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                         ),
                       ],
                     ),
-        
+
                     const Spacer(flex: 1),
-        
+
                     // CLOCK CARD
                     Container(
                       width: double.infinity,
                       padding: const EdgeInsets.fromLTRB(28, 40, 28, 36),
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
-                          colors: [FluidColors.primary, const Color(0xFF7C3AED)],
+                          colors: [
+                            FluidColors.primary,
+                            const Color(0xFF7C3AED),
+                          ],
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
                         ),
@@ -451,9 +456,9 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                         ],
                       ),
                     ),
-        
+
                     const Spacer(flex: 2),
-        
+
                     // TOMBOL ABSEN
                     if (_isLoading)
                       const Center(

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:hadirin/core/config/app_config.dart';
 import 'package:hadirin/core/providers/auth_provider.dart';
 import 'package:hadirin/core/service/admin_service.dart';
 import 'package:hadirin/core/service/attendance_service.dart';
@@ -46,7 +45,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final auth = context.read<AuthProvider>();
     if (auth.idKaryawan == null) return;
     try {
-      final data = await AttendanceService().getHistory(auth.idKaryawan!, auth.clientId ?? "");
+      final data = await AttendanceService().getHistory(
+        auth.idKaryawan!,
+        auth.clientId ?? "",
+      );
       setState(() {
         _allHistory = data;
         _isLoading = false;
@@ -179,7 +181,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
   void _prosesDaftarWajah() async {
     setState(() => _isRegisteringFace = true);
     final auth = context.read<AuthProvider>();
-    final result = await _service.daftarWajahMaster(auth.idKaryawan!, auth.clientId ?? "");
+    final result = await _service.daftarWajahMaster(
+      auth.idKaryawan!,
+      auth.clientId ?? "",
+    );
     if (!mounted) return;
     setState(() => _isRegisteringFace = false);
     ScaffoldMessenger.of(context).showSnackBar(

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:hadirin/core/config/app_config.dart'; // Tambahkan ini
+// Tambahkan ini
 
 // Enum untuk membedakan level akses
 enum LoginRole { none, superAdmin, adminUmkm, karyawan }

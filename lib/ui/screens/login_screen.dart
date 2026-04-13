@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hadirin/core/providers/auth_provider.dart';
 import 'package:hadirin/core/service/admin_service.dart';
-import 'package:hadirin/core/service/attendance_service.dart';
 import 'package:provider/provider.dart';
 import 'package:hadirin/core/theme/fluid_theme.dart';
 import 'package:hadirin/ui/screens/admin_register_screen.dart';
@@ -28,9 +27,9 @@ class _LoginScreenState extends State<LoginScreen> {
     // ========================================================
     if (inputKodeUmkm.isEmpty && inputId.isNotEmpty) {
       setState(() => _isLoading = true);
-      
+
       final superResult = await AdminService().verifySuperAdmin(inputId);
-      
+
       if (superResult['success']) {
         await context.read<AuthProvider>().login(
           "SUPER_ADMIN",
@@ -46,7 +45,7 @@ class _LoginScreenState extends State<LoginScreen> {
         );
         return;
       }
-      
+
       // Jika ternyata bukan super admin namun kode UMKM kosong,
       // biarkan program lanjut ke validasi normal di bawah
       // (yang akan menampilkan error "Kode Perusahaan wajib diisi")

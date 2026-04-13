@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:hadirin/core/service/admin_service.dart';
@@ -7,7 +6,6 @@ import 'package:hadirin/core/providers/auth_provider.dart';
 import 'package:hadirin/ui/screens/login_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:hadirin/core/service/attendance_service.dart';
 import 'package:hadirin/core/theme/fluid_theme.dart';
 import 'package:hadirin/ui/screens/set_location_screen.dart';
 

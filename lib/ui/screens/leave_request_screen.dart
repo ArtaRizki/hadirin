@@ -1,7 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:hadirin/core/providers/auth_provider.dart';
-import 'package:hadirin/core/service/attendance_service.dart';
 import 'package:hadirin/core/service/leave_service.dart';
 import 'package:hadirin/core/theme/fluid_theme.dart';
 import 'package:image_picker/image_picker.dart';

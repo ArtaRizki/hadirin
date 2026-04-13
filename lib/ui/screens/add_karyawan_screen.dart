@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:hadirin/core/service/admin_service.dart';
 import 'package:provider/provider.dart';
 import 'package:hadirin/core/providers/auth_provider.dart';
-import 'package:hadirin/core/service/attendance_service.dart';
 import 'package:hadirin/core/theme/fluid_theme.dart';
 
 class AddKaryawanScreen extends StatefulWidget {
