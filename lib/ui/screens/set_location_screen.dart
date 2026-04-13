@@ -3,12 +3,12 @@ import 'dart:convert';
 import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:hadirin/core/service/admin_service.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:hadirin/core/service/attendance_service.dart';
 import 'package:hadirin/core/theme/fluid_theme.dart';
 
 class SetLocationScreen extends StatefulWidget {
@@ -33,14 +33,17 @@ class _SetLocationScreenState extends State<SetLocationScreen> {
 
   bool _isSaving = false;
   final MapController _mapController = MapController();
-
   final TextEditingController _searchController = TextEditingController();
+
+  // SOLUSI UTAMA: Tambahkan FocusNode agar focus tidak hilang saat rebuild
+  final FocusNode _searchFocusNode = FocusNode();
+
   String _currentAddress = "Mencari alamat...";
   Timer? _debounce;
   bool _isSearching = false;
   bool _isGettingLocation = false;
-
   bool _isMapReady = false;
+  double _currentRotation = 0.0;
   List<dynamic> _searchResults = [];
 
   @override
@@ -62,23 +65,22 @@ class _SetLocationScreenState extends State<SetLocationScreen> {
   void dispose() {
     _debounce?.cancel();
     _searchController.dispose();
+    _searchFocusNode.dispose(); // Jangan lupa di-dispose
     super.dispose();
   }
+
+  // --- Fungsi API & Logika Tetap Sama ---
 
   Future<void> _loadSavedLocation() async {
     final prefs = await SharedPreferences.getInstance();
     final lat = prefs.getDouble('office_lat');
     final lng = prefs.getDouble('office_lng');
     final rad = prefs.getDouble('office_radius');
-
     if (lat != null && lng != null) {
       _pickedLocation = LatLng(lat, lng);
       _radius = rad ?? 100.0;
     }
-
-    if (mounted) {
-      setState(() => _isMapReady = true);
-    }
+    if (mounted) setState(() => _isMapReady = true);
     _getAddressFromLatLng(_pickedLocation);
   }
 
@@ -88,21 +90,15 @@ class _SetLocationScreenState extends State<SetLocationScreen> {
         position.latitude,
         position.longitude,
       );
-      if (placemarks.isNotEmpty) {
+      if (placemarks.isNotEmpty && mounted) {
         Placemark place = placemarks[0];
-        if (mounted) {
-          setState(() {
-            _currentAddress =
-                "${place.street}, ${place.subLocality}, ${place.locality}";
-          });
-        }
-      }
-    } catch (e) {
-      if (mounted) {
         setState(() {
-          _currentAddress = "Alamat tidak ditemukan";
+          _currentAddress =
+              "${place.street}, ${place.subLocality}, ${place.locality}";
         });
       }
+    } catch (e) {
+      if (mounted) setState(() => _currentAddress = "Alamat tidak ditemukan");
     }
   }
 
@@ -114,9 +110,7 @@ class _SetLocationScreenState extends State<SetLocationScreen> {
       });
       return;
     }
-
     setState(() => _isSearching = true);
-
     try {
       final url = Uri.parse(
         'https://nominatim.openstreetmap.org/search?q=$query&format=json&limit=5&addressdetails=1',
@@ -125,71 +119,26 @@ class _SetLocationScreenState extends State<SetLocationScreen> {
         url,
         headers: {'User-Agent': 'com.mobile.hadirin'},
       );
-
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body) as List;
-        if (mounted) {
-          setState(() => _searchResults = data);
-        }
+      if (response.statusCode == 200 && mounted) {
+        setState(() => _searchResults = json.decode(response.body) as List);
       }
     } catch (e) {
-      log("Error searching location: $e");
+      log("Search error: $e");
     } finally {
       if (mounted) setState(() => _isSearching = false);
     }
   }
 
   void _onLocationSelected(double lat, double lon, String displayName) {
-    FocusScope.of(context).unfocus();
+    _searchFocusNode.unfocus(); // Tutup keyboard saat lokasi dipilih
     final newLoc = LatLng(lat, lon);
-
     _mapController.move(newLoc, 17.0);
-
     setState(() {
       _pickedLocation = newLoc;
-      _currentAddress = displayName
-          .split(',')
-          .take(3)
-          .join(','); // Ambil 3 segmen pertama agar tidak terlalu panjang
+      _currentAddress = displayName.split(',').take(3).join(',');
       _searchResults.clear();
       _searchController.clear();
     });
-  }
-
-  Future<void> _getCurrentLocation() async {
-    setState(() => _isGettingLocation = true);
-    try {
-      bool isEnabled = await Geolocator.isLocationServiceEnabled();
-      if (!isEnabled) throw Exception("Harap aktifkan GPS HP Anda.");
-
-      LocationPermission permission = await Geolocator.checkPermission();
-      if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
-        if (permission == LocationPermission.denied) {
-          throw Exception("Izin lokasi ditolak.");
-        }
-      }
-      if (permission == LocationPermission.deniedForever) {
-        throw Exception("Izin lokasi diblokir permanen.");
-      }
-
-      Position position = await Geolocator.getCurrentPosition(
-        locationSettings: const LocationSettings(
-          accuracy: LocationAccuracy.best,
-        ),
-      );
-
-      final newLoc = LatLng(position.latitude, position.longitude);
-
-      _mapController.moveAndRotate(newLoc, 17.0, 0.0);
-
-      setState(() => _pickedLocation = newLoc);
-      _getAddressFromLatLng(newLoc);
-    } catch (e) {
-      _showSnackBar(e.toString().replaceAll("Exception: ", ""), isError: true);
-    } finally {
-      if (mounted) setState(() => _isGettingLocation = false);
-    }
   }
 
   void _simpanLokasi() async {
@@ -201,129 +150,63 @@ class _SetLocationScreenState extends State<SetLocationScreen> {
       });
       return;
     }
-
     setState(() => _isSaving = true);
-    bool sukses = await AttendanceService().updateLokasi(
+    bool sukses = await AdminService().updateLokasi(
       _pickedLocation.latitude,
       _pickedLocation.longitude,
       _radius,
     );
     setState(() => _isSaving = false);
-
     if (sukses && mounted) {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setDouble('office_lat', _pickedLocation.latitude);
       await prefs.setDouble('office_lng', _pickedLocation.longitude);
       await prefs.setDouble('office_radius', _radius);
-
-      _showSnackBar("Lokasi berhasil diperbarui!", isError: false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Lokasi diperbarui!"),
+          backgroundColor: Colors.green,
+        ),
+      );
       Navigator.pop(context);
-    } else if (mounted) {
-      _showSnackBar("Gagal memperbarui lokasi.", isError: true);
     }
   }
 
-  void _showSnackBar(String msg, {bool isError = false}) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            Icon(
-              isError
-                  ? Icons.error_outline_rounded
-                  : Icons.check_circle_outline_rounded,
-              color: Colors.white,
-            ),
-            const SizedBox(width: 8),
-            Expanded(child: Text(msg)),
-          ],
+  Future<void> _getCurrentLocation() async {
+    setState(() => _isGettingLocation = true);
+    try {
+      Position position = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.best,
         ),
-        backgroundColor: isError
-            ? Colors.red.shade600
-            : const Color(0xFF16A34A),
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        margin: const EdgeInsets.all(16),
-      ),
-    );
-  }
-
-  // Komponen pembantu untuk tombol peta (Zoom / My Location)
-  Widget _buildMapButton({
-    required IconData icon,
-    required VoidCallback onPressed,
-    bool isLoading = false,
-  }) {
-    return InkWell(
-      onTap: isLoading ? null : onPressed,
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        width: 44,
-        height: 44,
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.1),
-              blurRadius: 8,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: isLoading
-            ? const Padding(
-                padding: EdgeInsets.all(12.0),
-                child: CircularProgressIndicator(
-                  strokeWidth: 2.5,
-                  color: FluidColors.primary,
-                ),
-              )
-            : Icon(icon, color: const Color(0xFF0F172A), size: 20),
-      ),
-    );
+      );
+      final newLoc = LatLng(position.latitude, position.longitude);
+      _mapController.moveAndRotate(newLoc, 17.0, 0.0);
+      setState(() => _pickedLocation = newLoc);
+      _getAddressFromLatLng(newLoc);
+    } catch (e) {
+      log("GPS error: $e");
+    } finally {
+      if (mounted) setState(() => _isGettingLocation = false);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    if (!_isMapReady) {
-      return const Scaffold(
-        backgroundColor: Colors.white,
-        body: Center(
-          child: CircularProgressIndicator(color: FluidColors.primary),
-        ),
-      );
-    }
+    if (!_isMapReady)
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
 
-    final bool isKeyboardVisible =
-        MediaQuery.of(context).viewInsets.bottom != 0;
+    // Deteksi keyboard aktif menggunakan viewInsets
+    final double keyboardHeight = MediaQuery.of(context).viewInsets.bottom;
+    final bool isKeyboardVisible = keyboardHeight > 0;
 
     return Scaffold(
       backgroundColor: Colors.white,
+      // PENTING: resizeToAvoidBottomInset harus TRUE agar Scaffold menyesuaikan layout saat keyboard muncul
       resizeToAvoidBottomInset: true,
       appBar: AppBar(
         backgroundColor: Colors.white,
-        surfaceTintColor: Colors.white,
         elevation: 0,
-        centerTitle: true,
-        leading: Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: InkWell(
-            onTap: () => Navigator.pop(context),
-            borderRadius: BorderRadius.circular(12),
-            child: Container(
-              decoration: BoxDecoration(
-                color: const Color(0xFFF8FAFC),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: const Icon(
-                Icons.arrow_back_ios_new_rounded,
-                color: Color(0xFF0F172A),
-                size: 16,
-              ),
-            ),
-          ),
-        ),
         title: Text(
           widget.isSelectionMode ? "Pilih Lokasi" : "Update Lokasi",
           style: const TextStyle(
@@ -332,10 +215,17 @@ class _SetLocationScreenState extends State<SetLocationScreen> {
             fontSize: 18,
           ),
         ),
+        leading: IconButton(
+          icon: const Icon(
+            Icons.arrow_back_ios_new_rounded,
+            color: Color(0xFF0F172A),
+          ),
+          onPressed: () => Navigator.pop(context),
+        ),
       ),
       body: Stack(
         children: [
-          // 1. LAYER PETA
+          // 1. LAYER PETA (Paling Bawah)
           FlutterMap(
             mapController: _mapController,
             options: MapOptions(
@@ -347,19 +237,23 @@ class _SetLocationScreenState extends State<SetLocationScreen> {
                     _pickedLocation = position.center;
                     _currentAddress = "Menyesuaikan...";
                     _searchResults.clear();
+                    _currentRotation = position.rotation; // ← TAMBAHKAN INI
                   });
-
                   if (_debounce?.isActive ?? false) _debounce!.cancel();
-                  _debounce = Timer(const Duration(milliseconds: 800), () {
-                    _getAddressFromLatLng(position.center);
-                  });
+                  _debounce = Timer(
+                    const Duration(milliseconds: 800),
+                    () => _getAddressFromLatLng(position.center),
+                  );
                 }
               },
             ),
             children: [
               TileLayer(
-                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                urlTemplate:
+                    'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png',
+                subdomains: const ['a', 'b', 'c', 'd'],
                 userAgentPackageName: 'com.mobile.hadirin',
+                maxZoom: 19,
               ),
               CircleLayer(
                 circles: [
@@ -376,343 +270,266 @@ class _SetLocationScreenState extends State<SetLocationScreen> {
             ],
           ),
 
-          // 2. PIN LOKASI & TOOLTIP (DI TENGAH PETA)
-          if (!isKeyboardVisible && _searchResults.isEmpty)
-            Align(
-              alignment: Alignment.center,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // Tooltip Alamat
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 10,
-                    ),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF0F172A).withOpacity(0.9),
-                      borderRadius: BorderRadius.circular(12),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.2),
-                          blurRadius: 8,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    constraints: const BoxConstraints(maxWidth: 280),
-                    child: Text(
-                      _currentAddress,
-                      textAlign: TextAlign.center,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.white,
-                        height: 1.3,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  // Ikon Pin
-                  const Padding(
-                    padding: EdgeInsets.only(
-                      bottom: 48.0,
-                    ), // Offset agar pas di titik tengah
-                    child: Icon(
-                      Icons.location_on_rounded,
-                      size: 48,
-                      color: Colors.redAccent,
-                    ),
-                  ),
-                ],
+          // 2. PIN CENTRAL (Hanya muncul jika tidak sedang mencari di list)
+          if (_searchResults.isEmpty)
+            const Center(
+              child: Padding(
+                padding: EdgeInsets.only(bottom: 40),
+                child: Icon(
+                  Icons.location_on_rounded,
+                  size: 48,
+                  color: Colors.redAccent,
+                ),
               ),
             ),
 
-          // 3. SEARCH BAR & HASIL PENCARIAN (DI ATAS PETA)
-          SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                children: [
+          // 3. UI SEARCH BAR (Diposisikan paling atas)
+          Positioned(
+            top: 16,
+            left: 16,
+            right: 16,
+            child: Column(
+              children: [
+                Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: const [
+                      BoxShadow(
+                        color: Colors.black12,
+                        blurRadius: 10,
+                        offset: Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: TextField(
+                    controller: _searchController,
+                    focusNode: _searchFocusNode, // TAUTKAN FOCUSNODE DI SINI
+                    decoration: InputDecoration(
+                      hintText: "Cari nama jalan / kota...",
+                      prefixIcon: const Icon(
+                        Icons.search_rounded,
+                        color: FluidColors.primary,
+                      ),
+                      border: InputBorder.none,
+                      contentPadding: const EdgeInsets.symmetric(vertical: 15),
+                      suffixIcon: _searchController.text.isNotEmpty
+                          ? IconButton(
+                              icon: const Icon(Icons.cancel_rounded),
+                              onPressed: () {
+                                _searchController.clear();
+                                setState(() => _searchResults.clear());
+                              },
+                            )
+                          : null,
+                    ),
+                    onChanged: (val) {
+                      if (_debounce?.isActive ?? false) _debounce!.cancel();
+                      _debounce = Timer(
+                        const Duration(milliseconds: 800),
+                        () => _searchAddress(val),
+                      );
+                    },
+                  ),
+                ),
+                // HASIL PENCARIAN
+                if (_searchResults.isNotEmpty)
                   Container(
+                    margin: const EdgeInsets.only(top: 8),
+                    constraints: const BoxConstraints(maxHeight: 300),
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.08),
-                          blurRadius: 15,
-                          offset: const Offset(0, 5),
-                        ),
+                      boxShadow: const [
+                        BoxShadow(color: Colors.black12, blurRadius: 10),
                       ],
                     ),
-                    child: TextField(
-                      controller: _searchController,
-                      decoration: InputDecoration(
-                        hintText: "Cari nama jalan / kota...",
-                        hintStyle: TextStyle(
-                          color: Colors.grey.shade400,
-                          fontSize: 14,
-                        ),
-                        border: InputBorder.none,
-                        prefixIcon: const Icon(
-                          Icons.search_rounded,
-                          color: FluidColors.primary,
-                        ),
-                        suffixIcon: _searchController.text.isNotEmpty
-                            ? IconButton(
-                                icon: const Icon(
-                                  Icons.cancel_rounded,
-                                  color: Colors.grey,
-                                  size: 20,
-                                ),
-                                onPressed: () {
-                                  _searchController.clear();
-                                  setState(() => _searchResults.clear());
-                                  FocusScope.of(context).unfocus();
-                                },
-                              )
-                            : null,
-                      ),
-                      onChanged: (val) {
-                        if (_debounce?.isActive ?? false) _debounce!.cancel();
-                        _debounce = Timer(
-                          const Duration(milliseconds: 800),
-                          () => _searchAddress(val),
+                    child: ListView.separated(
+                      shrinkWrap: true,
+                      itemCount: _searchResults.length,
+                      separatorBuilder: (_, __) => const Divider(height: 1),
+                      itemBuilder: (context, index) {
+                        final item = _searchResults[index];
+                        return ListTile(
+                          title: Text(
+                            item['display_name'],
+                            style: const TextStyle(fontSize: 13),
+                          ),
+                          onTap: () => _onLocationSelected(
+                            double.parse(item['lat']),
+                            double.parse(item['lon']),
+                            item['display_name'],
+                          ),
                         );
                       },
-                      onSubmitted: (val) => _searchAddress(val),
                     ),
                   ),
-                  if (_isSearching)
-                    const Padding(
-                      padding: EdgeInsets.all(16.0),
-                      child: SizedBox(
-                        width: 24,
-                        height: 24,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2.5,
-                          color: FluidColors.primary,
-                        ),
-                      ),
-                    ),
-                  if (_searchResults.isNotEmpty)
-                    Container(
-                      margin: const EdgeInsets.only(top: 8),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(16),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.08),
-                            blurRadius: 15,
-                            offset: const Offset(0, 5),
-                          ),
-                        ],
-                      ),
-                      child: ListView.separated(
-                        shrinkWrap: true,
-                        padding: const EdgeInsets.symmetric(vertical: 8),
-                        itemCount: _searchResults.length > 5
-                            ? 5
-                            : _searchResults.length,
-                        separatorBuilder: (_, __) =>
-                            Divider(height: 1, color: Colors.grey.shade100),
-                        itemBuilder: (context, index) {
-                          final place = _searchResults[index];
-                          return ListTile(
-                            leading: Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: FluidColors.primary.withOpacity(0.1),
-                                shape: BoxShape.circle,
-                              ),
-                              child: const Icon(
-                                Icons.location_on_rounded,
-                                color: FluidColors.primary,
-                                size: 18,
-                              ),
-                            ),
-                            title: Text(
-                              place['display_name'],
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                            onTap: () => _onLocationSelected(
-                              double.parse(place['lat']),
-                              double.parse(place['lon']),
-                              place['display_name'],
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                ],
-              ),
+              ],
             ),
           ),
 
-          // 4. MAP CONTROLS (My Location & Zoom)
-          if (!isKeyboardVisible && _searchResults.isEmpty)
+          // 4. FLOATING BUTTON (GPS)
+          if (!isKeyboardVisible)
+            // KOMPAS — reset ke utara saat di-tap
             Positioned(
               right: 16,
-              bottom: 270, // Di atas panel bawah
-              child: Column(
-                children: [
-                  _buildMapButton(
-                    icon: Icons.my_location_rounded,
-                    isLoading: _isGettingLocation,
-                    onPressed: _getCurrentLocation,
-                  ),
-                  const SizedBox(height: 12),
-                  _buildMapButton(
-                    icon: Icons.add_rounded,
-                    onPressed: () => _mapController.move(
-                      _pickedLocation,
-                      _mapController.camera.zoom + 1,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  _buildMapButton(
-                    icon: Icons.remove_rounded,
-                    onPressed: () => _mapController.move(
-                      _pickedLocation,
-                      _mapController.camera.zoom - 1,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-          // 5. BOTTOM SHEET PANEL (Radius & Save)
-          if (!isKeyboardVisible && _searchResults.isEmpty)
-            Align(
-              alignment: Alignment.bottomCenter,
-              child: Container(
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: const BorderRadius.vertical(
-                    top: Radius.circular(24),
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.08),
-                      blurRadius: 24,
-                      offset: const Offset(0, -4),
-                    ),
-                  ],
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(24, 12, 24, 32),
+              bottom: 400,
+              child: FloatingActionButton.small(
+                heroTag: "compass_btn",
+                backgroundColor: Colors.white,
+                elevation: 4,
+                onPressed: () {
+                  _mapController.rotate(0);
+                  setState(() => _currentRotation = 0);
+                },
+                child: Transform.rotate(
+                  angle: -_currentRotation * (3.14159265 / 180),
                   child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      // Handle bar kecil di atas (seperti laci)
-                      Container(
-                        width: 40,
-                        height: 4,
-                        decoration: BoxDecoration(
-                          color: Colors.grey.shade300,
-                          borderRadius: BorderRadius.circular(10),
-                        ),
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: const [
+                      Icon(
+                        Icons.navigation_rounded,
+                        color: Colors.red,
+                        size: 18,
                       ),
-                      const SizedBox(height: 24),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Text(
-                            "Radius Absensi",
-                            style: TextStyle(
-                              fontWeight: FontWeight.w800,
-                              fontSize: 16,
-                              color: Color(0xFF0F172A),
-                            ),
-                          ),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 6,
-                            ),
-                            decoration: BoxDecoration(
-                              color: FluidColors.primary.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: Text(
-                              "${_radius.toInt()} Meter",
-                              style: const TextStyle(
-                                fontWeight: FontWeight.w800,
-                                color: FluidColors.primary,
-                                fontSize: 13,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-                      SliderTheme(
-                        data: SliderTheme.of(context).copyWith(
-                          trackHeight: 6,
-                          thumbShape: const RoundSliderThumbShape(
-                            enabledThumbRadius: 12,
-                          ),
-                          overlayShape: const RoundSliderOverlayShape(
-                            overlayRadius: 24,
-                          ),
-                        ),
-                        child: Slider(
-                          value: _radius,
-                          min: 20,
-                          max: 500,
-                          divisions: 48,
-                          activeColor: FluidColors.primary,
-                          inactiveColor: FluidColors.primaryGhost,
-                          onChanged: (val) => setState(() => _radius = val),
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-                      SizedBox(
-                        width: double.infinity,
-                        height: 56,
-                        child: ElevatedButton(
-                          onPressed: _isSaving ? null : _simpanLokasi,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: FluidColors.primary,
-                            foregroundColor: Colors.white,
-                            elevation: 4,
-                            shadowColor: FluidColors.primary.withOpacity(0.4),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                          ),
-                          child: _isSaving
-                              ? const SizedBox(
-                                  height: 24,
-                                  width: 24,
-                                  child: CircularProgressIndicator(
-                                    color: Colors.white,
-                                    strokeWidth: 2.5,
-                                  ),
-                                )
-                              : Text(
-                                  widget.isSelectionMode
-                                      ? "Gunakan Lokasi Ini"
-                                      : "Simpan Koordinat",
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 16,
-                                    letterSpacing: 0.5,
-                                  ),
-                                ),
+                      Text(
+                        "U",
+                        style: TextStyle(
+                          fontSize: 8,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF0F172A),
                         ),
                       ),
                     ],
                   ),
+                ),
+              ),
+            ),
+
+          // ZOOM IN
+          Positioned(
+            right: 16,
+            bottom: 345,
+            child: FloatingActionButton.small(
+              heroTag: "zoom_in_btn",
+              backgroundColor: Colors.white,
+              elevation: 4,
+              onPressed: () {
+                final currentZoom = _mapController.camera.zoom;
+                _mapController.move(
+                  _mapController.camera.center,
+                  (currentZoom + 1).clamp(1.0, 19.0),
+                );
+              },
+              child: const Icon(Icons.add_rounded, color: Color(0xFF0F172A)),
+            ),
+          ),
+
+          // ZOOM OUT
+          Positioned(
+            right: 16,
+            bottom: 290,
+            child: FloatingActionButton.small(
+              heroTag: "zoom_out_btn",
+              backgroundColor: Colors.white,
+              elevation: 4,
+              onPressed: () {
+                final currentZoom = _mapController.camera.zoom;
+                _mapController.move(
+                  _mapController.camera.center,
+                  (currentZoom - 1).clamp(1.0, 19.0),
+                );
+              },
+              child: const Icon(Icons.remove_rounded, color: Color(0xFF0F172A)),
+            ),
+          ),
+
+          // GPS — lokasi saat ini
+          Positioned(
+            right: 16,
+            bottom: 230,
+            child: FloatingActionButton.small(
+              heroTag: "gps_btn",
+              backgroundColor: Colors.white,
+              elevation: 4,
+              onPressed: _isGettingLocation ? null : _getCurrentLocation,
+              child: _isGettingLocation
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.my_location, color: FluidColors.primary),
+            ),
+          ),
+
+          // 5. PANEL BAWAH (Hanya muncul jika keyboard tertutup)
+          if (!isKeyboardVisible)
+            Align(
+              alignment: Alignment.bottomCenter,
+              child: Container(
+                padding: const EdgeInsets.fromLTRB(24, 20, 24, 64),
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+                  boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 20)],
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          "Radius Absensi",
+                          style: TextStyle(
+                            fontWeight: FontWeight.w800,
+                            fontSize: 16,
+                          ),
+                        ),
+                        Text(
+                          "${_radius.toInt()} Meter",
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w800,
+                            color: FluidColors.primary,
+                          ),
+                        ),
+                      ],
+                    ),
+                    Slider(
+                      value: _radius,
+                      min: 20,
+                      max: 500,
+                      onChanged: (val) => setState(() => _radius = val),
+                    ),
+                    const SizedBox(height: 16),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 56,
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: FluidColors.primary,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          elevation: 0,
+                        ),
+                        onPressed: _isSaving ? null : _simpanLokasi,
+                        child: _isSaving
+                            ? const CircularProgressIndicator(
+                                color: Colors.white,
+                              )
+                            : const Text(
+                                "Simpan Lokasi",
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                ),
+                              ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),

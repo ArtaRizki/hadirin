@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:hadirin/core/service/notification_service.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:provider/provider.dart';
@@ -33,6 +34,18 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    SystemChrome.setSystemUIOverlayStyle(
+      const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.dark,
+        systemNavigationBarColor:
+            Colors.transparent, // Ubah ke warna yang kamu mau (misal putih)
+        systemNavigationBarIconBrightness:
+            Brightness.dark, // Ikon navigasi jadi gelap agar kontras
+        systemNavigationBarDividerColor:
+            Colors.transparent, // Menghilangkan garis pembatas jika ada
+      ),
+    );
     return MaterialApp(
       title: 'Hadir.in',
       debugShowCheckedModeBanner: false,

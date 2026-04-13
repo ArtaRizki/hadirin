@@ -61,40 +61,8 @@ class _AttendanceScreenState extends State<AttendanceScreen>
   // =================================================================
   Future<bool> _cekStatusIzin(String idKaryawan) async {
     try {
-      final history = await _attendanceService.getHistory(idKaryawan);
-      final now = DateTime.now();
-      final today = DateTime(now.year, now.month, now.day);
-
-      for (var log in history) {
-        final tipe = log['tipe'].toString();
-        final status = log['status'].toString();
-
-        if ((tipe == 'Cuti' || tipe == 'Izin' || tipe == 'Sakit') &&
-            status == 'Disetujui') {
-          final rentang = log['lat_long'].toString();
-          RegExp dateRegex = RegExp(r'\d{4}-\d{2}-\d{2}');
-          final matches = dateRegex.allMatches(rentang).toList();
-
-          if (matches.length >= 2) {
-            final startDt = DateTime.parse(matches[0].group(0)!);
-            final endDt = DateTime.parse(matches[1].group(0)!);
-            final startDate = DateTime(
-              startDt.year,
-              startDt.month,
-              startDt.day,
-            );
-            final endDate = DateTime(endDt.year, endDt.month, endDt.day);
-            if (today.compareTo(startDate) >= 0 &&
-                today.compareTo(endDate) <= 0) {
-              return true;
-            }
-          } else if (matches.length == 1) {
-            final dateDt = DateTime.parse(matches[0].group(0)!);
-            final dateDate = DateTime(dateDt.year, dateDt.month, dateDt.day);
-            if (today.isAtSameMomentAs(dateDate)) return true;
-          }
-        }
-      }
+      // Menggunakan endpoint khusus agar lebih ringan dan cepat
+      return await _attendanceService.cekStatusCutiHariIni(idKaryawan);
     } catch (e) {
       debugPrint("Gagal mengecek status cuti: $e");
     }
@@ -263,295 +231,297 @@ class _AttendanceScreenState extends State<AttendanceScreen>
 
     return Scaffold(
       backgroundColor: const Color(0xFFF4F6FF),
-      body: Stack(
-        children: [
-          // Dekorasi Background Blobs
-          Positioned(
-            top: -70,
-            right: -50,
-            child: Container(
-              width: 230,
-              height: 230,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: FluidColors.primary.withOpacity(0.09),
+      body: SafeArea(
+        child: Stack(
+          children: [
+            // Dekorasi Background Blobs
+            Positioned(
+              top: -70,
+              right: -50,
+              child: Container(
+                width: 230,
+                height: 230,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: FluidColors.primary.withOpacity(0.09),
+                ),
               ),
             ),
-          ),
-          Positioned(
-            bottom: -50,
-            left: -40,
-            child: Container(
-              width: 200,
-              height: 200,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: const Color(0xFF7C3AED).withOpacity(0.06),
+            Positioned(
+              bottom: -50,
+              left: -40,
+              child: Container(
+                width: 200,
+                height: 200,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: const Color(0xFF7C3AED).withOpacity(0.06),
+                ),
               ),
             ),
-          ),
-
-          SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 24.0,
-                vertical: 20.0,
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // HEADER PROFILE
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                AnimatedBuilder(
-                                  animation: _pulseAnimation,
-                                  builder: (_, __) => Transform.scale(
-                                    scale: _pulseAnimation.value,
-                                    child: Container(
-                                      width: 8,
-                                      height: 8,
-                                      decoration: BoxDecoration(
-                                        shape: BoxShape.circle,
-                                        color: const Color(0xFF16A34A),
-                                        boxShadow: [
-                                          BoxShadow(
-                                            color: const Color(
-                                              0xFF16A34A,
-                                            ).withOpacity(0.4),
-                                            blurRadius: 6,
-                                            spreadRadius: 2,
-                                          ),
-                                        ],
+        
+            SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24.0,
+                  vertical: 20.0,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // HEADER PROFILE
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  AnimatedBuilder(
+                                    animation: _pulseAnimation,
+                                    builder: (_, __) => Transform.scale(
+                                      scale: _pulseAnimation.value,
+                                      child: Container(
+                                        width: 8,
+                                        height: 8,
+                                        decoration: BoxDecoration(
+                                          shape: BoxShape.circle,
+                                          color: const Color(0xFF16A34A),
+                                          boxShadow: [
+                                            BoxShadow(
+                                              color: const Color(
+                                                0xFF16A34A,
+                                              ).withOpacity(0.4),
+                                              blurRadius: 6,
+                                              spreadRadius: 2,
+                                            ),
+                                          ],
+                                        ),
                                       ),
                                     ),
                                   ),
-                                ),
-                                const SizedBox(width: 8),
-                                Text(
-                                  _getGreeting(),
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    color: Colors.grey.shade500,
-                                    fontWeight: FontWeight.w500,
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    _getGreeting(),
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      color: Colors.grey.shade500,
+                                      fontWeight: FontWeight.w500,
+                                    ),
                                   ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 5),
-                            Text(
-                              auth.namaKaryawan ?? "Karyawan",
-                              style: const TextStyle(
-                                fontSize: 24,
-                                fontWeight: FontWeight.w900,
-                                color: Color(0xFF0F172A),
-                                letterSpacing: -0.5,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      GestureDetector(
-                        onTap: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const ProfileScreen(),
-                          ),
-                        ),
-                        child: Hero(
-                          tag: 'profile-avatar',
-                          child: Container(
-                            padding: const EdgeInsets.all(3),
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              gradient: LinearGradient(
-                                colors: [
-                                  FluidColors.primary,
-                                  FluidColors.primary.withOpacity(0.5),
                                 ],
                               ),
+                              const SizedBox(height: 5),
+                              Text(
+                                auth.namaKaryawan ?? "Karyawan",
+                                style: const TextStyle(
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.w900,
+                                  color: Color(0xFF0F172A),
+                                  letterSpacing: -0.5,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        GestureDetector(
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const ProfileScreen(),
                             ),
-                            child: const CircleAvatar(
-                              radius: 24,
-                              backgroundColor: Colors.white,
-                              child: Icon(
-                                Icons.person_rounded,
-                                color: FluidColors.primary,
-                                size: 24,
+                          ),
+                          child: Hero(
+                            tag: 'profile-avatar',
+                            child: Container(
+                              padding: const EdgeInsets.all(3),
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                gradient: LinearGradient(
+                                  colors: [
+                                    FluidColors.primary,
+                                    FluidColors.primary.withOpacity(0.5),
+                                  ],
+                                ),
+                              ),
+                              child: const CircleAvatar(
+                                radius: 24,
+                                backgroundColor: Colors.white,
+                                child: Icon(
+                                  Icons.person_rounded,
+                                  color: FluidColors.primary,
+                                  size: 24,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+        
+                    const Spacer(flex: 1),
+        
+                    // CLOCK CARD
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.fromLTRB(28, 40, 28, 36),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [FluidColors.primary, const Color(0xFF7C3AED)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.circular(28),
+                        boxShadow: [
+                          BoxShadow(
+                            color: FluidColors.primary.withOpacity(0.32),
+                            blurRadius: 32,
+                            offset: const Offset(0, 16),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              Text(
+                                DateFormat('HH:mm').format(_currentTime),
+                                style: const TextStyle(
+                                  fontSize: 76,
+                                  fontWeight: FontWeight.w900,
+                                  color: Colors.white,
+                                  letterSpacing: -4,
+                                  height: 1.0,
+                                  fontFeatures: [FontFeature.tabularFigures()],
+                                ),
+                              ),
+                              Padding(
+                                padding: const EdgeInsets.only(
+                                  bottom: 10,
+                                  left: 6,
+                                ),
+                                child: Text(
+                                  DateFormat('ss').format(_currentTime),
+                                  style: TextStyle(
+                                    fontSize: 26,
+                                    fontWeight: FontWeight.w700,
+                                    color: Colors.white.withOpacity(0.45),
+                                    fontFeatures: const [
+                                      FontFeature.tabularFigures(),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 18),
+                          Divider(color: Colors.white.withOpacity(0.2)),
+                          const SizedBox(height: 16),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.calendar_today_rounded,
+                                size: 14,
+                                color: Colors.white.withOpacity(0.65),
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                DateFormat(
+                                  'EEEE, d MMMM yyyy',
+                                  'id_ID',
+                                ).format(_currentTime),
+                                style: TextStyle(
+                                  color: Colors.white.withOpacity(0.75),
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+        
+                    const Spacer(flex: 2),
+        
+                    // TOMBOL ABSEN
+                    if (_isLoading)
+                      const Center(
+                        child: CircularProgressIndicator(
+                          color: FluidColors.primary,
+                          strokeWidth: 3,
+                        ),
+                      )
+                    else ...[
+                      GestureDetector(
+                        onTap: () => _konfirmasiAbsen("Masuk"),
+                        child: Container(
+                          width: double.infinity,
+                          height: 62,
+                          decoration: BoxDecoration(
+                            color: FluidColors.primary,
+                            borderRadius: BorderRadius.circular(18),
+                            boxShadow: [
+                              BoxShadow(
+                                color: FluidColors.primary.withOpacity(0.35),
+                                blurRadius: 20,
+                                offset: const Offset(0, 8),
+                              ),
+                            ],
+                          ),
+                          child: const Center(
+                            child: Text(
+                              "Absen Masuk",
+                              style: TextStyle(
+                                fontSize: 17,
+                                fontWeight: FontWeight.w800,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      GestureDetector(
+                        onTap: () => _konfirmasiAbsen("Pulang"),
+                        child: Container(
+                          width: double.infinity,
+                          height: 62,
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(18),
+                            border: Border.all(
+                              color: Colors.red.shade200,
+                              width: 1.5,
+                            ),
+                          ),
+                          child: Center(
+                            child: Text(
+                              "Absen Pulang",
+                              style: TextStyle(
+                                fontSize: 17,
+                                fontWeight: FontWeight.w800,
+                                color: Colors.red.shade600,
                               ),
                             ),
                           ),
                         ),
                       ),
                     ],
-                  ),
-
-                  const Spacer(flex: 1),
-
-                  // CLOCK CARD
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.fromLTRB(28, 40, 28, 36),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [FluidColors.primary, const Color(0xFF7C3AED)],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      borderRadius: BorderRadius.circular(28),
-                      boxShadow: [
-                        BoxShadow(
-                          color: FluidColors.primary.withOpacity(0.32),
-                          blurRadius: 32,
-                          offset: const Offset(0, 16),
-                        ),
-                      ],
-                    ),
-                    child: Column(
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                            Text(
-                              DateFormat('HH:mm').format(_currentTime),
-                              style: const TextStyle(
-                                fontSize: 76,
-                                fontWeight: FontWeight.w900,
-                                color: Colors.white,
-                                letterSpacing: -4,
-                                height: 1.0,
-                                fontFeatures: [FontFeature.tabularFigures()],
-                              ),
-                            ),
-                            Padding(
-                              padding: const EdgeInsets.only(
-                                bottom: 10,
-                                left: 6,
-                              ),
-                              child: Text(
-                                DateFormat('ss').format(_currentTime),
-                                style: TextStyle(
-                                  fontSize: 26,
-                                  fontWeight: FontWeight.w700,
-                                  color: Colors.white.withOpacity(0.45),
-                                  fontFeatures: const [
-                                    FontFeature.tabularFigures(),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 18),
-                        Divider(color: Colors.white.withOpacity(0.2)),
-                        const SizedBox(height: 16),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.calendar_today_rounded,
-                              size: 14,
-                              color: Colors.white.withOpacity(0.65),
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              DateFormat(
-                                'EEEE, d MMMM yyyy',
-                                'id_ID',
-                              ).format(_currentTime),
-                              style: TextStyle(
-                                color: Colors.white.withOpacity(0.75),
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  const Spacer(flex: 2),
-
-                  // TOMBOL ABSEN
-                  if (_isLoading)
-                    const Center(
-                      child: CircularProgressIndicator(
-                        color: FluidColors.primary,
-                        strokeWidth: 3,
-                      ),
-                    )
-                  else ...[
-                    GestureDetector(
-                      onTap: () => _konfirmasiAbsen("Masuk"),
-                      child: Container(
-                        width: double.infinity,
-                        height: 62,
-                        decoration: BoxDecoration(
-                          color: FluidColors.primary,
-                          borderRadius: BorderRadius.circular(18),
-                          boxShadow: [
-                            BoxShadow(
-                              color: FluidColors.primary.withOpacity(0.35),
-                              blurRadius: 20,
-                              offset: const Offset(0, 8),
-                            ),
-                          ],
-                        ),
-                        child: const Center(
-                          child: Text(
-                            "Absen Masuk",
-                            style: TextStyle(
-                              fontSize: 17,
-                              fontWeight: FontWeight.w800,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    GestureDetector(
-                      onTap: () => _konfirmasiAbsen("Pulang"),
-                      child: Container(
-                        width: double.infinity,
-                        height: 62,
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(18),
-                          border: Border.all(
-                            color: Colors.red.shade200,
-                            width: 1.5,
-                          ),
-                        ),
-                        child: Center(
-                          child: Text(
-                            "Absen Pulang",
-                            style: TextStyle(
-                              fontSize: 17,
-                              fontWeight: FontWeight.w800,
-                              color: Colors.red.shade600,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
+                    const SizedBox(height: 24),
                   ],
-                  const SizedBox(height: 24),
-                ],
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

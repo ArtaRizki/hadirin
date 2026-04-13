@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:hadirin/core/config/app_config.dart';
 import 'package:hadirin/core/providers/auth_provider.dart';
+import 'package:hadirin/core/service/admin_service.dart';
 import 'package:hadirin/core/service/attendance_service.dart';
 import 'package:hadirin/core/service/export_service.dart';
+import 'package:hadirin/core/service/face_service.dart';
 import 'package:hadirin/ui/screens/add_karyawan_screen.dart';
 import 'package:hadirin/ui/screens/login_screen.dart';
 import 'package:hadirin/ui/screens/set_location_screen.dart';
@@ -22,7 +24,7 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  final AttendanceService _service = AttendanceService();
+  final _service = FaceService();
   bool _isLoading = true;
   bool _isRegisteringFace = false;
   bool _isExporting = false;
@@ -43,7 +45,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final auth = context.read<AuthProvider>();
     if (auth.idKaryawan == null) return;
     try {
-      final data = await _service.getHistory(auth.idKaryawan!);
+      final data = await AttendanceService().getHistory(auth.idKaryawan!);
       setState(() {
         _allHistory = data;
         _isLoading = false;
@@ -207,7 +209,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (auth.isAdmin) {
       setState(() => _isExporting = true);
       try {
-        listKaryawan = await _service.getAllKaryawan(AppConfig.clientId);
+        listKaryawan = await AdminService().getAllKaryawan(AppConfig.clientId);
       } catch (e) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -384,7 +386,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     setState(() => _isExporting = true);
     final auth = context.read<AuthProvider>();
     try {
-      final dataMentah = await _service.getMonthlyReport(
+      final dataMentah = await AdminService().getMonthlyReport(
         AppConfig.clientId,
         bulanTahun,
         targetId,
@@ -505,7 +507,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         try {
                           final auth = context.read<AuthProvider>();
                           final targetId = idController.text.trim();
-                          final result = await _service.resetDeviceID(
+                          final result = await AdminService().resetDeviceID(
                             auth.idUser ?? "",
                             targetId,
                           );
@@ -813,426 +815,435 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
         centerTitle: true,
       ),
-      body: RefreshIndicator(
-        color: FluidColors.primary,
-        onRefresh: _fetchHistory,
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(20, 4, 20, 40),
-          children: [
-            // ==========================================
-            // 1. KARTU PROFIL UTAMA
-            // ==========================================
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    FluidColors.primary,
-                    Color.lerp(
+      body: SafeArea(
+        child: RefreshIndicator(
+          color: FluidColors.primary,
+          onRefresh: _fetchHistory,
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(20, 4, 20, 40),
+            children: [
+              // ==========================================
+              // 1. KARTU PROFIL UTAMA
+              // ==========================================
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
                       FluidColors.primary,
-                      const Color(0xFF7C3AED),
-                      0.55,
-                    )!,
-                  ],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: [
-                  BoxShadow(
-                    color: FluidColors.primary.withOpacity(0.28),
-                    blurRadius: 20,
-                    offset: const Offset(0, 8),
+                      Color.lerp(
+                        FluidColors.primary,
+                        const Color(0xFF7C3AED),
+                        0.55,
+                      )!,
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
                   ),
-                ],
-              ),
-              child: Row(
-                children: [
-                  Hero(
-                    tag: 'profile-avatar',
-                    child: CircleAvatar(
-                      radius: 30,
-                      backgroundColor: Colors.white.withOpacity(0.2),
-                      child: Icon(
-                        auth.isAdmin
-                            ? Icons.admin_panel_settings_rounded
-                            : Icons.person_rounded,
-                        color: Colors.white,
-                        size: 28,
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: FluidColors.primary.withOpacity(0.28),
+                      blurRadius: 20,
+                      offset: const Offset(0, 8),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    Hero(
+                      tag: 'profile-avatar',
+                      child: CircleAvatar(
+                        radius: 30,
+                        backgroundColor: Colors.white.withOpacity(0.2),
+                        child: Icon(
+                          auth.isAdmin
+                              ? Icons.admin_panel_settings_rounded
+                              : Icons.person_rounded,
+                          color: Colors.white,
+                          size: 28,
+                        ),
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          auth.namaKaryawan ?? "Unknown",
-                          style: const TextStyle(
-                            fontSize: 17,
-                            fontWeight: FontWeight.w800,
-                            color: Colors.white,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          "ID: ${auth.idKaryawan ?? '-'}",
-                          style: TextStyle(
-                            color: Colors.white.withOpacity(0.7),
-                            fontSize: 12,
-                          ),
-                        ),
-                        if (auth.isAdmin) ...[
-                          const SizedBox(height: 8),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 10,
-                              vertical: 4,
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            auth.namaKaryawan ?? "Unknown",
+                            style: const TextStyle(
+                              fontSize: 17,
+                              fontWeight: FontWeight.w800,
+                              color: Colors.white,
                             ),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.2),
-                              borderRadius: BorderRadius.circular(8),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            "ID: ${auth.idKaryawan ?? '-'}",
+                            style: TextStyle(
+                              color: Colors.white.withOpacity(0.7),
+                              fontSize: 12,
                             ),
-                            child: const Text(
-                              "ADMIN UMKM",
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 10,
-                                fontWeight: FontWeight.w800,
-                                letterSpacing: 0.8,
+                          ),
+                          if (auth.isAdmin) ...[
+                            const SizedBox(height: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.2),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: const Text(
+                                "ADMIN UMKM",
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w800,
+                                  letterSpacing: 0.8,
+                                ),
                               ),
                             ),
-                          ),
+                          ],
                         ],
-                      ],
+                      ),
                     ),
+                    // Logout
+                    GestureDetector(
+                      onTap: () {
+                        context.read<AuthProvider>().logout();
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const LoginScreen(),
+                          ),
+                        );
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.15),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Icon(
+                          Icons.logout_rounded,
+                          color: Colors.white,
+                          size: 18,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 24),
+
+              // ==========================================
+              // 2. GRID MENU
+              // ==========================================
+              _sectionLabel("Menu Navigasi"),
+              const SizedBox(height: 12),
+              GridView.count(
+                crossAxisCount: 3,
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                mainAxisSpacing: 10,
+                crossAxisSpacing: 10,
+                childAspectRatio: 1.0,
+                children: [
+                  _buildMenuCard(
+                    title: "Daftar\nWajah",
+                    icon: Icons.face_retouching_natural,
+                    isLoading: _isRegisteringFace,
+                    onTap: _isRegisteringFace ? null : _prosesDaftarWajah,
+                    accentColor: FluidColors.primary,
                   ),
-                  // Logout
-                  GestureDetector(
-                    onTap: () {
-                      context.read<AuthProvider>().logout();
-                      Navigator.pushReplacement(
+                  _buildMenuCard(
+                    title: "Pengajuan\nIzin",
+                    icon: Icons.edit_calendar_rounded,
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const LeaveRequestScreen(),
+                      ),
+                    ),
+                    accentColor: const Color(0xFF7C3AED),
+                  ),
+                  _buildMenuCard(
+                    title: "Download\nRekap",
+                    icon: Icons.download_rounded,
+                    isLoading: _isExporting,
+                    onTap: _isExporting ? null : _tampilkanDialogPilihBulan,
+                    accentColor: const Color(0xFF16A34A),
+                  ),
+                  if (auth.isAdmin) ...[
+                    _buildMenuCard(
+                      title: "Persetujuan\nIzin",
+                      icon: Icons.playlist_add_check_circle,
+                      onTap: () => Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (_) => const LoginScreen()),
-                      );
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.15),
-                        borderRadius: BorderRadius.circular(12),
+                        MaterialPageRoute(
+                          builder: (_) => const ApprovalScreen(),
+                        ),
                       ),
-                      child: const Icon(
-                        Icons.logout_rounded,
-                        color: Colors.white,
-                        size: 18,
-                      ),
+                      accentColor: Colors.orange.shade700,
                     ),
-                  ),
+                    _buildMenuCard(
+                      title: "Tambah\nKaryawan",
+                      icon: Icons.person_add_alt_1,
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const AddKaryawanScreen(),
+                        ),
+                      ),
+                      accentColor: const Color(0xFF0891B2),
+                    ),
+                    _buildMenuCard(
+                      title: "Update\nLokasi",
+                      icon: Icons.map_outlined,
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const SetLocationScreen(),
+                        ),
+                      ),
+                      accentColor: const Color(0xFF059669),
+                    ),
+                    _buildMenuCard(
+                      title: "Reset\nPerangkat",
+                      icon: Icons.phonelink_erase,
+                      onTap: () => _tampilkanDialogResetHP(context),
+                      accentColor: Colors.red.shade600,
+                    ),
+                  ],
                 ],
               ),
-            ),
 
-            const SizedBox(height: 24),
+              const SizedBox(height: 24),
 
-            // ==========================================
-            // 2. GRID MENU
-            // ==========================================
-            _sectionLabel("Menu Navigasi"),
-            const SizedBox(height: 12),
-            GridView.count(
-              crossAxisCount: 3,
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              mainAxisSpacing: 10,
-              crossAxisSpacing: 10,
-              childAspectRatio: 1.0,
-              children: [
-                _buildMenuCard(
-                  title: "Daftar\nWajah",
-                  icon: Icons.face_retouching_natural,
-                  isLoading: _isRegisteringFace,
-                  onTap: _isRegisteringFace ? null : _prosesDaftarWajah,
-                  accentColor: FluidColors.primary,
-                ),
-                _buildMenuCard(
-                  title: "Pengajuan\nIzin",
-                  icon: Icons.edit_calendar_rounded,
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const LeaveRequestScreen(),
-                    ),
-                  ),
-                  accentColor: const Color(0xFF7C3AED),
-                ),
-                _buildMenuCard(
-                  title: "Download\nRekap",
-                  icon: Icons.download_rounded,
-                  isLoading: _isExporting,
-                  onTap: _isExporting ? null : _tampilkanDialogPilihBulan,
-                  accentColor: const Color(0xFF16A34A),
-                ),
-                if (auth.isAdmin) ...[
-                  _buildMenuCard(
-                    title: "Persetujuan\nIzin",
-                    icon: Icons.playlist_add_check_circle,
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const ApprovalScreen()),
-                    ),
-                    accentColor: Colors.orange.shade700,
-                  ),
-                  _buildMenuCard(
-                    title: "Tambah\nKaryawan",
-                    icon: Icons.person_add_alt_1,
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const AddKaryawanScreen(),
+              // ==========================================
+              // 3. RIWAYAT ABSENSI
+              // ==========================================
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  _sectionLabel("Riwayat Absensi"),
+                  GestureDetector(
+                    onTap: _pickDateRange,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 7,
                       ),
-                    ),
-                    accentColor: const Color(0xFF0891B2),
-                  ),
-                  _buildMenuCard(
-                    title: "Update\nLokasi",
-                    icon: Icons.map_outlined,
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const SetLocationScreen(),
-                      ),
-                    ),
-                    accentColor: const Color(0xFF059669),
-                  ),
-                  _buildMenuCard(
-                    title: "Reset\nPerangkat",
-                    icon: Icons.phonelink_erase,
-                    onTap: () => _tampilkanDialogResetHP(context),
-                    accentColor: Colors.red.shade600,
-                  ),
-                ],
-              ],
-            ),
-
-            const SizedBox(height: 24),
-
-            // ==========================================
-            // 3. RIWAYAT ABSENSI
-            // ==========================================
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                _sectionLabel("Riwayat Absensi"),
-                GestureDetector(
-                  onTap: _pickDateRange,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 7,
-                    ),
-                    decoration: BoxDecoration(
-                      color: _selectedDateRange != null
-                          ? FluidColors.primary.withOpacity(0.08)
-                          : Colors.white,
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(
+                      decoration: BoxDecoration(
                         color: _selectedDateRange != null
-                            ? FluidColors.primary.withOpacity(0.3)
-                            : Colors.grey.shade200,
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          _selectedDateRange == null
-                              ? Icons.calendar_month_outlined
-                              : Icons.event_available,
-                          size: 14,
-                          color: _selectedDateRange == null
-                              ? Colors.grey.shade500
-                              : FluidColors.primary,
+                            ? FluidColors.primary.withOpacity(0.08)
+                            : Colors.white,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                          color: _selectedDateRange != null
+                              ? FluidColors.primary.withOpacity(0.3)
+                              : Colors.grey.shade200,
                         ),
-                        const SizedBox(width: 6),
-                        Text(
-                          "Filter",
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            _selectedDateRange == null
+                                ? Icons.calendar_month_outlined
+                                : Icons.event_available,
+                            size: 14,
                             color: _selectedDateRange == null
                                 ? Colors.grey.shade500
                                 : FluidColors.primary,
                           ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-
-            // Active date range banner
-            if (_selectedDateRange != null) ...[
-              const SizedBox(height: 10),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 10,
-                ),
-                decoration: BoxDecoration(
-                  color: FluidColors.primary.withOpacity(0.07),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: FluidColors.primary.withOpacity(0.2),
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.date_range_rounded,
-                      size: 14,
-                      color: FluidColors.primary,
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        "${DateFormat('dd MMM yyyy').format(_selectedDateRange!.start)} – ${DateFormat('dd MMM yyyy').format(_selectedDateRange!.end)}",
-                        style: TextStyle(
-                          color: FluidColors.primary,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                    GestureDetector(
-                      onTap: () {
-                        setState(() => _selectedDateRange = null);
-                        _applyFilter();
-                      },
-                      child: Icon(
-                        Icons.close_rounded,
-                        size: 16,
-                        color: Colors.red.shade400,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-
-            const SizedBox(height: 14),
-
-            // Filter chips
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: ["Semua", "Masuk", "Pulang"].map((tipe) {
-                  final isSelected = _filterTipe == tipe;
-                  return Padding(
-                    padding: const EdgeInsets.only(right: 8.0),
-                    child: GestureDetector(
-                      onTap: () {
-                        setState(() => _filterTipe = tipe);
-                        _applyFilter();
-                      },
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 200),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 8,
-                        ),
-                        decoration: BoxDecoration(
-                          color: isSelected
-                              ? FluidColors.primary
-                              : Colors.white,
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(
-                            color: isSelected
-                                ? FluidColors.primary
-                                : Colors.grey.shade200,
+                          const SizedBox(width: 6),
+                          Text(
+                            "Filter",
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: _selectedDateRange == null
+                                  ? Colors.grey.shade500
+                                  : FluidColors.primary,
+                            ),
                           ),
-                          boxShadow: isSelected
-                              ? [
-                                  BoxShadow(
-                                    color: FluidColors.primary.withOpacity(
-                                      0.25,
-                                    ),
-                                    blurRadius: 8,
-                                    offset: const Offset(0, 3),
-                                  ),
-                                ]
-                              : [],
-                        ),
-                        child: Text(
-                          tipe,
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w700,
-                            color: isSelected
-                                ? Colors.white
-                                : Colors.grey.shade600,
-                          ),
-                        ),
+                        ],
                       ),
                     ),
-                  );
-                }).toList(),
+                  ),
+                ],
               ),
-            ),
 
-            const SizedBox(height: 16),
-
-            // History list
-            if (_isLoading)
-              const Center(
-                child: Padding(
-                  padding: EdgeInsets.all(40.0),
-                  child: CircularProgressIndicator(
-                    color: FluidColors.primary,
-                    strokeWidth: 3,
+              // Active date range banner
+              if (_selectedDateRange != null) ...[
+                const SizedBox(height: 10),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 10,
                   ),
-                ),
-              )
-            else if (_errorMsg.isNotEmpty)
-              Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(32.0),
-                  child: Text(
-                    _errorMsg,
-                    style: TextStyle(color: Colors.red.shade700, fontSize: 13),
+                  decoration: BoxDecoration(
+                    color: FluidColors.primary.withOpacity(0.07),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: FluidColors.primary.withOpacity(0.2),
+                    ),
                   ),
-                ),
-              )
-            else if (_filteredHistory.isEmpty)
-              Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(40.0),
-                  child: Column(
+                  child: Row(
                     children: [
                       Icon(
-                        Icons.history_toggle_off,
-                        size: 52,
-                        color: Colors.grey.shade300,
+                        Icons.date_range_rounded,
+                        size: 14,
+                        color: FluidColors.primary,
                       ),
-                      const SizedBox(height: 12),
-                      Text(
-                        "Belum ada data absen.",
-                        style: TextStyle(
-                          color: Colors.grey.shade500,
-                          fontSize: 13,
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          "${DateFormat('dd MMM yyyy').format(_selectedDateRange!.start)} – ${DateFormat('dd MMM yyyy').format(_selectedDateRange!.end)}",
+                          style: TextStyle(
+                            color: FluidColors.primary,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                      GestureDetector(
+                        onTap: () {
+                          setState(() => _selectedDateRange = null);
+                          _applyFilter();
+                        },
+                        child: Icon(
+                          Icons.close_rounded,
+                          size: 16,
+                          color: Colors.red.shade400,
                         ),
                       ),
                     ],
                   ),
                 ),
-              )
-            else
-              ...(_filteredHistory
-                  .map((log) => _buildHistoryItem(log as Map))
-                  .toList()),
-          ],
+              ],
+
+              const SizedBox(height: 14),
+
+              // Filter chips
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: ["Semua", "Masuk", "Pulang"].map((tipe) {
+                    final isSelected = _filterTipe == tipe;
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 8.0),
+                      child: GestureDetector(
+                        onTap: () {
+                          setState(() => _filterTipe = tipe);
+                          _applyFilter();
+                        },
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 8,
+                          ),
+                          decoration: BoxDecoration(
+                            color: isSelected
+                                ? FluidColors.primary
+                                : Colors.white,
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(
+                              color: isSelected
+                                  ? FluidColors.primary
+                                  : Colors.grey.shade200,
+                            ),
+                            boxShadow: isSelected
+                                ? [
+                                    BoxShadow(
+                                      color: FluidColors.primary.withOpacity(
+                                        0.25,
+                                      ),
+                                      blurRadius: 8,
+                                      offset: const Offset(0, 3),
+                                    ),
+                                  ]
+                                : [],
+                          ),
+                          child: Text(
+                            tipe,
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              color: isSelected
+                                  ? Colors.white
+                                  : Colors.grey.shade600,
+                            ),
+                          ),
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ),
+
+              const SizedBox(height: 16),
+
+              // History list
+              if (_isLoading)
+                const Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(40.0),
+                    child: CircularProgressIndicator(
+                      color: FluidColors.primary,
+                      strokeWidth: 3,
+                    ),
+                  ),
+                )
+              else if (_errorMsg.isNotEmpty)
+                Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(32.0),
+                    child: Text(
+                      _errorMsg,
+                      style: TextStyle(
+                        color: Colors.red.shade700,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ),
+                )
+              else if (_filteredHistory.isEmpty)
+                Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(40.0),
+                    child: Column(
+                      children: [
+                        Icon(
+                          Icons.history_toggle_off,
+                          size: 52,
+                          color: Colors.grey.shade300,
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          "Belum ada data absen.",
+                          style: TextStyle(
+                            color: Colors.grey.shade500,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                )
+              else
+                ...(_filteredHistory
+                    .map((log) => _buildHistoryItem(log as Map))
+                    .toList()),
+            ],
+          ),
         ),
       ),
     );

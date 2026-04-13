@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:hadirin/core/service/admin_service.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:hadirin/core/providers/auth_provider.dart';
 import 'package:hadirin/ui/screens/login_screen.dart';
@@ -88,7 +89,7 @@ class _AdminRegisterScreenState extends State<AdminRegisterScreen> {
 
     setState(() => _isLoading = true);
 
-    final result = await AttendanceService().registerKlien(
+    final result = await AdminService().registerKlien(
       namaUmkm: _namaController.text.trim(),
       lat: _pickedLocation.latitude,
       lng: _pickedLocation.longitude,
@@ -193,39 +194,41 @@ class _AdminRegisterScreenState extends State<AdminRegisterScreen> {
           ),
         ],
       ),
-      body: Stack(
-        children: [
-          // Dekorasi blob atas kiri
-          Positioned(
-            top: -50,
-            left: -50,
-            child: Container(
-              width: 200,
-              height: 200,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: FluidColors.primary.withOpacity(0.06),
+      body: SafeArea(
+        child: Stack(
+          children: [
+            // Dekorasi blob atas kiri
+            Positioned(
+              top: -50,
+              left: -50,
+              child: Container(
+                width: 200,
+                height: 200,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: FluidColors.primary.withOpacity(0.06),
+                ),
               ),
             ),
-          ),
-          // Dekorasi blob bawah kanan
-          Positioned(
-            bottom: -100,
-            right: -50,
-            child: Container(
-              width: 250,
-              height: 250,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: const Color(0xFF7C3AED).withOpacity(0.05),
+            // Dekorasi blob bawah kanan
+            Positioned(
+              bottom: -100,
+              right: -50,
+              child: Container(
+                width: 250,
+                height: 250,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: const Color(0xFF7C3AED).withOpacity(0.05),
+                ),
               ),
             ),
-          ),
 
-          SafeArea(
-            child: _newClientId != null ? _buildSuccessCard() : _buildForm(),
-          ),
-        ],
+            SafeArea(
+              child: _newClientId != null ? _buildSuccessCard() : _buildForm(),
+            ),
+          ],
+        ),
       ),
     );
   }

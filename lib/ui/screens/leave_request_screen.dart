@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:hadirin/core/providers/auth_provider.dart';
 import 'package:hadirin/core/service/attendance_service.dart';
+import 'package:hadirin/core/service/leave_service.dart';
 import 'package:hadirin/core/theme/fluid_theme.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
@@ -68,7 +69,7 @@ class _LeaveRequestScreenState extends State<LeaveRequestScreen> {
     String strTanggal =
         "${DateFormat('dd MMM yyyy').format(_selectedDates!.start)} s/d ${DateFormat('dd MMM yyyy').format(_selectedDates!.end)}";
 
-    final result = await AttendanceService().submitIzin(
+    final result = await LeaveService().submitIzin(
       idKaryawan: idKaryawan,
       tipeIzin: _tipeIzin,
       rentangTanggal: strTanggal,
@@ -156,337 +157,344 @@ class _LeaveRequestScreenState extends State<LeaveRequestScreen> {
           ),
         ),
       ),
-      body: Stack(
-        children: [
-          // Dekorasi blob atas kanan
-          Positioned(
-            top: -50,
-            right: -50,
-            child: Container(
-              width: 200,
-              height: 200,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: FluidColors.primary.withOpacity(0.06),
+      body: SafeArea(
+        child: Stack(
+          children: [
+            // Dekorasi blob atas kanan
+            Positioned(
+              top: -50,
+              right: -50,
+              child: Container(
+                width: 200,
+                height: 200,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: FluidColors.primary.withOpacity(0.06),
+                ),
               ),
             ),
-          ),
-          // Dekorasi blob bawah kiri
-          Positioned(
-            bottom: -80,
-            left: -80,
-            child: Container(
-              width: 250,
-              height: 250,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: const Color(0xFF7C3AED).withOpacity(0.05),
+            // Dekorasi blob bawah kiri
+            Positioned(
+              bottom: -80,
+              left: -80,
+              child: Container(
+                width: 250,
+                height: 250,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: const Color(0xFF7C3AED).withOpacity(0.05),
+                ),
               ),
             ),
-          ),
 
-          SafeArea(
-            child: ListView(
-              padding: const EdgeInsets.fromLTRB(24, 24, 24, 40),
-              children: [
-                // HEADER SECTION
-                const Text(
-                  "Formulir Pengajuan",
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w900,
-                    color: Color(0xFF0F172A),
-                    letterSpacing: -0.5,
+            SafeArea(
+              child: ListView(
+                padding: const EdgeInsets.fromLTRB(24, 24, 24, 40),
+                children: [
+                  // HEADER SECTION
+                  const Text(
+                    "Formulir Pengajuan",
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w900,
+                      color: Color(0xFF0F172A),
+                      letterSpacing: -0.5,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  "Lengkapi data di bawah ini untuk mengajukan ketidakhadiran Anda.",
-                  style: TextStyle(
-                    color: Colors.grey.shade600,
-                    fontSize: 13,
-                    height: 1.5,
+                  const SizedBox(height: 6),
+                  Text(
+                    "Lengkapi data di bawah ini untuk mengajukan ketidakhadiran Anda.",
+                    style: TextStyle(
+                      color: Colors.grey.shade600,
+                      fontSize: 13,
+                      height: 1.5,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 32),
+                  const SizedBox(height: 32),
 
-                // 1. Pilih Tipe
-                const Text(
-                  "Jenis Pengajuan",
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF0F172A),
+                  // 1. Pilih Tipe
+                  const Text(
+                    "Jenis Pengajuan",
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF0F172A),
+                    ),
                   ),
-                ),
-                const SizedBox(height: 8),
-                Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.03),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
+                  const SizedBox(height: 8),
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.03),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: DropdownButtonHideUnderline(
+                      child: DropdownButtonFormField<String>(
+                        initialValue: _tipeIzin,
+                        icon: const Icon(
+                          Icons.keyboard_arrow_down_rounded,
+                          color: FluidColors.primary,
+                        ),
+                        decoration: InputDecoration(
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 16,
+                          ),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(16),
+                            borderSide: BorderSide.none,
+                          ),
+                        ),
+                        items: ["Sakit", "Izin Keperluan", "Cuti Tahunan"].map((
+                          String val,
+                        ) {
+                          return DropdownMenuItem(
+                            value: val,
+                            child: Text(
+                              val,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                        onChanged: (val) => setState(() {
+                          _tipeIzin = val!;
+                          _suratDokter = null; // Reset foto jika ganti tipe
+                        }),
                       ),
-                    ],
+                    ),
                   ),
-                  child: DropdownButtonHideUnderline(
-                    child: DropdownButtonFormField<String>(
-                      initialValue: _tipeIzin,
-                      icon: const Icon(
-                        Icons.keyboard_arrow_down_rounded,
-                        color: FluidColors.primary,
-                      ),
-                      decoration: InputDecoration(
-                        contentPadding: const EdgeInsets.symmetric(
+                  const SizedBox(height: 24),
+
+                  // 2. Pilih Tanggal
+                  const Text(
+                    "Rentang Waktu",
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF0F172A),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.03),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: InkWell(
+                      onTap: _pickDates,
+                      borderRadius: BorderRadius.circular(16),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
                           horizontal: 16,
                           vertical: 16,
                         ),
+                        child: Row(
+                          children: [
+                            const Icon(
+                              Icons.calendar_month_rounded,
+                              color: FluidColors.primary,
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Text(
+                                _selectedDates == null
+                                    ? "Pilih Tanggal Mulai - Selesai"
+                                    : "${DateFormat('dd/MM/yyyy').format(_selectedDates!.start)} - ${DateFormat('dd/MM/yyyy').format(_selectedDates!.end)}",
+                                style: TextStyle(
+                                  color: _selectedDates == null
+                                      ? Colors.grey.shade500
+                                      : const Color(0xFF0F172A),
+                                  fontWeight: _selectedDates == null
+                                      ? FontWeight.normal
+                                      : FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+
+                  // 3. Alasan
+                  const Text(
+                    "Keterangan / Alasan Lengkap",
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF0F172A),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.03),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: TextField(
+                      controller: _alasanController,
+                      maxLines: 4,
+                      decoration: InputDecoration(
+                        hintText:
+                            "Tuliskan alasan Anda secara detail di sini...",
+                        hintStyle: TextStyle(
+                          color: Colors.grey.shade400,
+                          fontSize: 14,
+                        ),
+                        contentPadding: const EdgeInsets.all(16),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(16),
                           borderSide: BorderSide.none,
                         ),
-                      ),
-                      items: ["Sakit", "Izin Keperluan", "Cuti Tahunan"].map((
-                        String val,
-                      ) {
-                        return DropdownMenuItem(
-                          value: val,
-                          child: Text(
-                            val,
-                            style: const TextStyle(fontWeight: FontWeight.w500),
-                          ),
-                        );
-                      }).toList(),
-                      onChanged: (val) => setState(() {
-                        _tipeIzin = val!;
-                        _suratDokter = null; // Reset foto jika ganti tipe
-                      }),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 24),
-
-                // 2. Pilih Tanggal
-                const Text(
-                  "Rentang Waktu",
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF0F172A),
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.03),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: InkWell(
-                    onTap: _pickDates,
-                    borderRadius: BorderRadius.circular(16),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 16,
-                      ),
-                      child: Row(
-                        children: [
-                          const Icon(
-                            Icons.calendar_month_rounded,
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          borderSide: const BorderSide(
                             color: FluidColors.primary,
+                            width: 1.5,
                           ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Text(
-                              _selectedDates == null
-                                  ? "Pilih Tanggal Mulai - Selesai"
-                                  : "${DateFormat('dd/MM/yyyy').format(_selectedDates!.start)} - ${DateFormat('dd/MM/yyyy').format(_selectedDates!.end)}",
-                              style: TextStyle(
-                                color: _selectedDates == null
-                                    ? Colors.grey.shade500
-                                    : const Color(0xFF0F172A),
-                                fontWeight: _selectedDates == null
-                                    ? FontWeight.normal
-                                    : FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+
+                  // 4. Upload Surat Dokter (Hanya jika Sakit)
+                  if (_tipeIzin == "Sakit") ...[
+                    Row(
+                      children: const [
+                        Text(
+                          "Lampiran Surat Dokter ",
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF0F172A),
+                          ),
+                        ),
+                        Text(
+                          "(Wajib)",
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.red,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    InkWell(
+                      onTap: _pickImage,
+                      borderRadius: BorderRadius.circular(16),
+                      child: Container(
+                        height: 140,
+                        width: double.infinity,
+                        decoration: BoxDecoration(
+                          color: FluidColors.primary.withOpacity(0.04),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: FluidColors.primary.withOpacity(0.3),
+                            width: 1.5,
+                          ),
+                        ),
+                        child: _suratDokter == null
+                            ? Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.all(12),
+                                    decoration: BoxDecoration(
+                                      color: FluidColors.primary.withOpacity(
+                                        0.1,
+                                      ),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: const Icon(
+                                      Icons.camera_alt_rounded,
+                                      color: FluidColors.primary,
+                                      size: 28,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 12),
+                                  const Text(
+                                    "Ambil Foto Surat Keterangan",
+                                    style: TextStyle(
+                                      color: FluidColors.primary,
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                                ],
+                              )
+                            : ClipRRect(
+                                borderRadius: BorderRadius.circular(14),
+                                child: Image.file(
+                                  _suratDokter!,
+                                  fit: BoxFit.cover,
+                                ),
                               ),
-                            ),
-                          ),
-                        ],
                       ),
                     ),
-                  ),
-                ),
-                const SizedBox(height: 24),
+                    const SizedBox(height: 32),
+                  ],
 
-                // 3. Alasan
-                const Text(
-                  "Keterangan / Alasan Lengkap",
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF0F172A),
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.03),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: TextField(
-                    controller: _alasanController,
-                    maxLines: 4,
-                    decoration: InputDecoration(
-                      hintText: "Tuliskan alasan Anda secara detail di sini...",
-                      hintStyle: TextStyle(
-                        color: Colors.grey.shade400,
-                        fontSize: 14,
-                      ),
-                      contentPadding: const EdgeInsets.all(16),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(16),
-                        borderSide: BorderSide.none,
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(16),
-                        borderSide: const BorderSide(
-                          color: FluidColors.primary,
-                          width: 1.5,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 24),
+                  const SizedBox(height: 16),
 
-                // 4. Upload Surat Dokter (Hanya jika Sakit)
-                if (_tipeIzin == "Sakit") ...[
-                  Row(
-                    children: const [
-                      Text(
-                        "Lampiran Surat Dokter ",
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF0F172A),
+                  // 5. Tombol Submit
+                  SizedBox(
+                    width: double.infinity,
+                    height: 60,
+                    child: ElevatedButton(
+                      onPressed: _isLoading ? null : _submitPengajuan,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: FluidColors.primary,
+                        foregroundColor: Colors.white,
+                        elevation: 4,
+                        shadowColor: FluidColors.primary.withOpacity(0.4),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
                         ),
                       ),
-                      Text(
-                        "(Wajib)",
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: Colors.red,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  InkWell(
-                    onTap: _pickImage,
-                    borderRadius: BorderRadius.circular(16),
-                    child: Container(
-                      height: 140,
-                      width: double.infinity,
-                      decoration: BoxDecoration(
-                        color: FluidColors.primary.withOpacity(0.04),
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(
-                          color: FluidColors.primary.withOpacity(0.3),
-                          width: 1.5,
-                        ),
-                      ),
-                      child: _suratDokter == null
-                          ? Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.all(12),
-                                  decoration: BoxDecoration(
-                                    color: FluidColors.primary.withOpacity(0.1),
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: const Icon(
-                                    Icons.camera_alt_rounded,
-                                    color: FluidColors.primary,
-                                    size: 28,
-                                  ),
-                                ),
-                                const SizedBox(height: 12),
-                                const Text(
-                                  "Ambil Foto Surat Keterangan",
-                                  style: TextStyle(
-                                    color: FluidColors.primary,
-                                    fontWeight: FontWeight.w600,
-                                    fontSize: 13,
-                                  ),
-                                ),
-                              ],
+                      child: _isLoading
+                          ? const SizedBox(
+                              height: 24,
+                              width: 24,
+                              child: CircularProgressIndicator(
+                                color: Colors.white,
+                                strokeWidth: 2.5,
+                              ),
                             )
-                          : ClipRRect(
-                              borderRadius: BorderRadius.circular(14),
-                              child: Image.file(
-                                _suratDokter!,
-                                fit: BoxFit.cover,
+                          : const Text(
+                              "Kirim Pengajuan",
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 0.5,
                               ),
                             ),
                     ),
                   ),
-                  const SizedBox(height: 32),
                 ],
-
-                const SizedBox(height: 16),
-
-                // 5. Tombol Submit
-                SizedBox(
-                  width: double.infinity,
-                  height: 60,
-                  child: ElevatedButton(
-                    onPressed: _isLoading ? null : _submitPengajuan,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: FluidColors.primary,
-                      foregroundColor: Colors.white,
-                      elevation: 4,
-                      shadowColor: FluidColors.primary.withOpacity(0.4),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                    ),
-                    child: _isLoading
-                        ? const SizedBox(
-                            height: 24,
-                            width: 24,
-                            child: CircularProgressIndicator(
-                              color: Colors.white,
-                              strokeWidth: 2.5,
-                            ),
-                          )
-                        : const Text(
-                            "Kirim Pengajuan",
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              letterSpacing: 0.5,
-                            ),
-                          ),
-                  ),
-                ),
-              ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
