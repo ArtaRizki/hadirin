@@ -4,6 +4,7 @@ import 'package:hadirin/core/providers/auth_provider.dart';
 import 'package:hadirin/core/service/attendance_service.dart';
 import 'package:hadirin/core/service/export_service.dart';
 import 'package:hadirin/ui/screens/add_karyawan_screen.dart';
+import 'package:hadirin/ui/screens/login_screen.dart';
 import 'package:hadirin/ui/screens/set_location_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:hadirin/core/theme/fluid_theme.dart';
@@ -436,7 +437,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           setDialogState(() => isResetting = true);
 
                           try {
+                            final auth = context.read<AuthProvider>();
+                            final clientId = auth.idUser ?? "";
+
+                            // SEKARANG MENGIRIM 2 PARAMETER
                             final result = await _service.resetDeviceID(
+                              clientId,
                               idController.text.trim(),
                             );
                             if (!context.mounted) return;
@@ -575,7 +581,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       icon: const Icon(Icons.logout, color: Colors.redAccent),
                       onPressed: () {
                         context.read<AuthProvider>().logout();
-                        Navigator.pop(context);
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const LoginScreen(),
+                          ),
+                        );
                       },
                     ),
                   ],

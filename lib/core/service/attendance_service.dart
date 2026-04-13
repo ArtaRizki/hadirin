@@ -581,14 +581,19 @@ class AttendanceService {
   }
 
   Future<List<dynamic>> getPendingApprovals(String clientId) async {
-    final payload = {
-      "api_token": _Config.apiToken,
-      "action": "get_all_approvals",
-      "client_id": clientId,
-    };
-    final response = await _sendApiRequest("get_all_approvals", payload);
-    final data = jsonDecode(response.body);
-    return data['code'] == 200 ? data['message'] : [];
+    try {
+      final payload = {
+        "api_token": _Config.apiToken,
+        "action": "get_all_approvals",
+        "client_id": clientId,
+      };
+      final response = await _sendApiRequest("get_all_approvals", payload);
+      final data = jsonDecode(response.body);
+      return data['code'] == 200 ? data['message'] : [];
+    } catch (e) {
+      d.log('==== ERROR GET APPROVALS ==== $e');
+      return [];
+    }
   }
 
   Future<bool> updateLeaveStatus(
@@ -596,26 +601,39 @@ class AttendanceService {
     int rowIndex,
     String status,
   ) async {
-    final payload = {
-      "api_token": _Config.apiToken,
-      "action": "update_leave_status",
-      "client_id": clientId,
-      "row_index": rowIndex,
-      "new_status": status,
-    };
-    final response = await _sendApiRequest("update_leave_status", payload);
-    return jsonDecode(response.body)['code'] == 200;
+    try {
+      final payload = {
+        "api_token": _Config.apiToken,
+        "action": "update_leave_status",
+        "client_id": clientId,
+        "row_index": rowIndex,
+        "new_status": status,
+      };
+      final response = await _sendApiRequest("update_leave_status", payload);
+      return jsonDecode(response.body)['code'] == 200;
+    } catch (e) {
+      d.log('==== ERROR UPDATE LEAVE ==== $e');
+      return false;
+    }
   }
 
-  Future<Map<String, dynamic>> resetDeviceID(String targetId) async {
-    final payload = {
-      "api_token": _Config.apiToken,
-      "action": "reset_device",
-      "client_id": AppConfig.clientId,
-      "target_id_karyawan": targetId,
-    };
-    final response = await _sendApiRequest("reset_device", payload);
-    return jsonDecode(response.body);
+  Future<Map<String, dynamic>> resetDeviceID(
+    String clientId,
+    String targetId,
+  ) async {
+    try {
+      final payload = {
+        "api_token": _Config.apiToken,
+        "action": "reset_device",
+        "client_id": clientId, // SEKARANG AMAN DARI PROVIDER
+        "target_id_karyawan": targetId,
+      };
+      final response = await _sendApiRequest("reset_device", payload);
+      return jsonDecode(response.body);
+    } catch (e) {
+      d.log('==== ERROR RESET DEVICE ==== $e');
+      return {"code": 500, "message": "Gagal mereset: $e"};
+    }
   }
 
   double hitungKemiripanWajah(List<double> wajah1, List<double> wajah2) {
