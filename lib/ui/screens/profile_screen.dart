@@ -6,6 +6,7 @@ import 'package:hadirin/core/service/export_service.dart';
 import 'package:hadirin/ui/screens/add_karyawan_screen.dart';
 import 'package:hadirin/ui/screens/login_screen.dart';
 import 'package:hadirin/ui/screens/set_location_screen.dart';
+import 'package:hadirin/ui/widgets/custom_date_range_picker.dart';
 import 'package:provider/provider.dart';
 import 'package:hadirin/core/theme/fluid_theme.dart';
 import 'package:intl/intl.dart';
@@ -30,21 +31,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
   List<dynamic> _allHistory = [];
   List<dynamic> _filteredHistory = [];
   String _filterTipe = "Semua";
-
   DateTimeRange? _selectedDateRange;
 
   @override
   void initState() {
     super.initState();
-    initializeDateFormatting('id_ID', null).then((_) {
-      _fetchHistory();
-    });
+    initializeDateFormatting('id_ID', null).then((_) => _fetchHistory());
   }
 
   Future<void> _fetchHistory() async {
     final auth = context.read<AuthProvider>();
     if (auth.idKaryawan == null) return;
-
     try {
       final data = await _service.getHistory(auth.idKaryawan!);
       setState(() {
@@ -64,26 +61,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
     setState(() {
       _filteredHistory = _allHistory.where((log) {
         bool passTipe = _filterTipe == "Semua" || log['tipe'] == _filterTipe;
-
         bool passTanggal = true;
         if (_selectedDateRange != null && log['waktu'] != null) {
           final dt = DateTime.tryParse(log['waktu'].toString())?.toLocal();
           if (dt != null) {
             final logDate = DateTime(dt.year, dt.month, dt.day);
-            final startDate = DateTime(
-              _selectedDateRange!.start.year,
-              _selectedDateRange!.start.month,
-              _selectedDateRange!.start.day,
-            );
-            final endDate = DateTime(
-              _selectedDateRange!.end.year,
-              _selectedDateRange!.end.month,
-              _selectedDateRange!.end.day,
-            );
-
+            final s = _selectedDateRange!.start;
+            final e = _selectedDateRange!.end;
             passTanggal =
-                logDate.isAfter(startDate.subtract(const Duration(days: 1))) &&
-                logDate.isBefore(endDate.add(const Duration(days: 1)));
+                !logDate.isBefore(DateTime(s.year, s.month, s.day)) &&
+                !logDate.isAfter(DateTime(e.year, e.month, e.day));
           }
         }
         return passTipe && passTanggal;
@@ -91,41 +78,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
     });
   }
 
+  // =================================================================
+  // REDESIGN KALENDER (DATE RANGE PICKER)
+  // =================================================================
   Future<void> _pickDateRange() async {
-    final DateTimeRange? picked = await showDateRangePicker(
+    final DateTimeRange? picked = await showCustomDateRangePicker(
       context: context,
-      firstDate: DateTime(2020),
-      lastDate: DateTime.now(),
       initialDateRange: _selectedDateRange,
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.light(
-              primary: FluidColors.primary,
-              onPrimary: Colors.white,
-              onSurface: FluidColors.onSurface,
-            ),
-          ),
-          child: child!,
-        );
-      },
     );
-
     if (picked != null) {
-      setState(() {
-        _selectedDateRange = picked;
-      });
+      setState(() => _selectedDateRange = picked);
       _applyFilter();
     }
   }
 
-  String _formatTanggalIndo(DateTime dt) {
-    return DateFormat('EEEE, d MMMM yyyy', 'id_ID').format(dt);
-  }
+  String _formatTanggalIndo(DateTime dt) =>
+      DateFormat('EEEE, d MMMM yyyy', 'id_ID').format(dt);
 
-  String _formatJam(DateTime dt) {
-    return DateFormat('HH:mm').format(dt);
-  }
+  String _formatJam(DateTime dt) => DateFormat('HH:mm').format(dt);
 
   String getDirectUrl(String originalUrl) {
     if (originalUrl.contains("drive.google.com")) {
@@ -144,15 +114,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
     showDialog(
       context: context,
       builder: (context) => Dialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(FluidRadii.md),
-        ),
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             ClipRRect(
               borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(FluidRadii.md),
+                top: Radius.circular(20),
               ),
               child: Image.network(
                 getDirectUrl(url),
@@ -161,10 +130,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   if (loadingProgress == null) return child;
                   return const SizedBox(
                     height: 200,
-                    child: Center(child: CircularProgressIndicator()),
+                    child: Center(
+                      child: CircularProgressIndicator(
+                        color: FluidColors.primary,
+                      ),
+                    ),
                   );
                 },
-                errorBuilder: (context, error, stackTrace) => const SizedBox(
+                errorBuilder: (_, __, ___) => const SizedBox(
                   height: 200,
                   child: Center(child: Text("Gagal memuat foto.")),
                 ),
@@ -181,7 +154,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   const SizedBox(height: 4),
                   Text(
                     waktu,
-                    style: const TextStyle(fontSize: 12, color: Colors.grey),
+                    style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
                   ),
                   const SizedBox(height: 16),
                   SizedBox(
@@ -203,29 +176,33 @@ class _ProfileScreenState extends State<ProfileScreen> {
   void _prosesDaftarWajah() async {
     setState(() => _isRegisteringFace = true);
     final auth = context.read<AuthProvider>();
-
     final result = await _service.daftarWajahMaster(auth.idKaryawan!);
-
     if (!mounted) return;
     setState(() => _isRegisteringFace = false);
-
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(result['message']),
-        backgroundColor: result['success'] == true
-            ? FluidColors.primary
-            : Colors.red,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(FluidRadii.sm),
+        content: Row(
+          children: [
+            Icon(
+              result['success'] == true ? Icons.check_circle : Icons.error,
+              color: Colors.white,
+            ),
+            const SizedBox(width: 8),
+            Expanded(child: Text(result['message'])),
+          ],
         ),
+        backgroundColor: result['success'] == true
+            ? const Color(0xFF16A34A)
+            : Colors.red.shade700,
+        behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.all(16),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
       ),
     );
   }
 
   void _tampilkanDialogPilihBulan() async {
     final auth = context.read<AuthProvider>();
-
     List<dynamic> listKaryawan = [];
     if (auth.isAdmin) {
       setState(() => _isExporting = true);
@@ -248,7 +225,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     int selectedMonth = DateTime.now().month;
     int selectedYear = DateTime.now().year;
-
     String selectedKaryawanId = auth.isAdmin
         ? "SEMUA"
         : (auth.idKaryawan ?? "");
@@ -269,130 +245,134 @@ class _ProfileScreenState extends State<ProfileScreen> {
     ];
 
     if (!mounted) return;
-
     showDialog(
       context: context,
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setDialogState) {
-            return AlertDialog(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(FluidRadii.md),
-              ),
-              title: const Text(
-                "Pilih Bulan Rekap",
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-              ),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          backgroundColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          title: const Text(
+            "Pilih Bulan Rekap",
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
                 children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        flex: 3,
-                        child: DropdownButtonFormField<int>(
-                          initialValue: selectedMonth,
-                          isExpanded: true,
-                          decoration: const InputDecoration(
-                            border: OutlineInputBorder(),
-                            contentPadding: EdgeInsets.symmetric(
-                              horizontal: 12,
-                            ),
-                          ),
-                          items: List.generate(12, (index) {
-                            return DropdownMenuItem(
-                              value: index + 1,
-                              child: Text(namaBulan[index]),
-                            );
-                          }),
-                          onChanged: (val) =>
-                              setDialogState(() => selectedMonth = val!),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        flex: 2,
-                        child: DropdownButtonFormField<int>(
-                          initialValue: selectedYear,
-                          isExpanded: true,
-                          decoration: const InputDecoration(
-                            border: OutlineInputBorder(),
-                            contentPadding: EdgeInsets.symmetric(
-                              horizontal: 12,
-                            ),
-                          ),
-                          items: List.generate(5, (index) {
-                            int year = DateTime.now().year - index;
-                            return DropdownMenuItem(
-                              value: year,
-                              child: Text(year.toString()),
-                            );
-                          }),
-                          onChanged: (val) =>
-                              setDialogState(() => selectedYear = val!),
-                        ),
-                      ),
-                    ],
-                  ),
-                  if (auth.isAdmin) ...[
-                    const SizedBox(height: 16),
-                    DropdownButtonFormField<String>(
-                      initialValue: selectedKaryawanId,
+                  Expanded(
+                    flex: 3,
+                    child: DropdownButtonFormField<int>(
+                      initialValue: selectedMonth,
                       isExpanded: true,
-                      decoration: const InputDecoration(
-                        labelText: "Pilih Karyawan",
-                        border: OutlineInputBorder(),
-                        contentPadding: EdgeInsets.symmetric(horizontal: 12),
-                      ),
-                      items: [
-                        const DropdownMenuItem(
-                          value: "SEMUA",
-                          child: Text("Semua Karyawan"),
+                      decoration: InputDecoration(
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
                         ),
-                        ...listKaryawan.map((karyawan) {
-                          return DropdownMenuItem<String>(
-                            value: karyawan['id'].toString(),
-                            child: Text(
-                              "${karyawan['nama']} (${karyawan['id']})",
-                            ),
-                          );
-                        }),
-                      ],
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                        ),
+                      ),
+                      items: List.generate(
+                        12,
+                        (i) => DropdownMenuItem(
+                          value: i + 1,
+                          child: Text(namaBulan[i]),
+                        ),
+                      ),
                       onChanged: (val) =>
-                          setDialogState(() => selectedKaryawanId = val!),
+                          setDialogState(() => selectedMonth = val!),
                     ),
-                  ],
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    flex: 2,
+                    child: DropdownButtonFormField<int>(
+                      initialValue: selectedYear,
+                      isExpanded: true,
+                      decoration: InputDecoration(
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                        ),
+                      ),
+                      items: List.generate(5, (i) {
+                        final y = DateTime.now().year - i;
+                        return DropdownMenuItem(
+                          value: y,
+                          child: Text(y.toString()),
+                        );
+                      }),
+                      onChanged: (val) =>
+                          setDialogState(() => selectedYear = val!),
+                    ),
+                  ),
                 ],
               ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text(
-                    "Batal",
-                    style: TextStyle(color: Colors.grey),
+              if (auth.isAdmin) ...[
+                const SizedBox(height: 12),
+                DropdownButtonFormField<String>(
+                  initialValue: selectedKaryawanId,
+                  isExpanded: true,
+                  decoration: InputDecoration(
+                    labelText: "Pilih Karyawan",
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 12),
                   ),
-                ),
-                ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: FluidColors.primary,
-                    foregroundColor: Colors.white,
-                  ),
-                  onPressed: () {
-                    Navigator.pop(context);
-                    String strBulan = selectedMonth.toString().padLeft(2, '0');
-                    String bulanTahun = "$strBulan-$selectedYear";
-                    String bulanNama =
-                        "${namaBulan[selectedMonth - 1]} $selectedYear";
-
-                    _downloadLaporan(bulanTahun, bulanNama, selectedKaryawanId);
-                  },
-                  child: const Text("Download"),
+                  items: [
+                    const DropdownMenuItem(
+                      value: "SEMUA",
+                      child: Text("Semua Karyawan"),
+                    ),
+                    ...listKaryawan.map(
+                      (k) => DropdownMenuItem<String>(
+                        value: k['id'].toString(),
+                        child: Text("${k['nama']} (${k['id']})"),
+                      ),
+                    ),
+                  ],
+                  onChanged: (val) =>
+                      setDialogState(() => selectedKaryawanId = val!),
                 ),
               ],
-            );
-          },
-        );
-      },
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text(
+                "Batal",
+                style: TextStyle(color: Colors.grey.shade500),
+              ),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: FluidColors.primary,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              onPressed: () {
+                Navigator.pop(context);
+                final strBulan = selectedMonth.toString().padLeft(2, '0');
+                _downloadLaporan(
+                  "$strBulan-$selectedYear",
+                  "${namaBulan[selectedMonth - 1]} $selectedYear",
+                  selectedKaryawanId,
+                );
+              },
+              child: const Text("Download"),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -403,32 +383,28 @@ class _ProfileScreenState extends State<ProfileScreen> {
   ) async {
     setState(() => _isExporting = true);
     final auth = context.read<AuthProvider>();
-
     try {
       final dataMentah = await _service.getMonthlyReport(
         AppConfig.clientId,
         bulanTahun,
         targetId,
       );
-
       if (dataMentah.isEmpty) {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text("Belum ada data absen di bulan $bulanNama."),
-            backgroundColor: Colors.orange,
+            backgroundColor: Colors.orange.shade700,
           ),
         );
         setState(() => _isExporting = false);
         return;
       }
-
       String namaRekap = targetId == "SEMUA"
           ? "UMKM"
           : (targetId == auth.idKaryawan
                 ? (auth.namaKaryawan ?? targetId)
                 : targetId);
-
       await ExportService().generateMonthlyExcel(
         namaRekap,
         bulanNama,
@@ -449,188 +425,208 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   void _tampilkanDialogResetHP(BuildContext context) {
     final TextEditingController idController = TextEditingController();
-
     showDialog(
       context: context,
       builder: (context) {
         bool isResetting = false;
         return StatefulBuilder(
-          builder: (context, setDialogState) {
-            return AlertDialog(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(FluidRadii.md),
-              ),
-              title: const Text(
-                "Reset Perangkat",
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-              ),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    "Masukkan ID Karyawan yang ingin direset perangkatnya (Misal: KRY-001).",
-                    style: TextStyle(fontSize: 14),
+          builder: (context, setDialogState) => AlertDialog(
+            backgroundColor: Colors.white,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
+            title: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.red.shade50,
+                    borderRadius: BorderRadius.circular(10),
                   ),
-                  const SizedBox(height: 16),
-                  TextField(
-                    controller: idController,
-                    decoration: const InputDecoration(
-                      labelText: "ID Karyawan",
-                      border: OutlineInputBorder(),
-                      prefixIcon: Icon(Icons.badge),
-                    ),
-                  ),
-                ],
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text(
-                    "Batal",
-                    style: TextStyle(color: Colors.grey),
+                  child: Icon(
+                    Icons.phonelink_erase,
+                    color: Colors.red.shade600,
+                    size: 20,
                   ),
                 ),
-                ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.red,
-                    foregroundColor: Colors.white,
+                const SizedBox(width: 12),
+                const Text(
+                  "Reset Perangkat",
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17),
+                ),
+              ],
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "Masukkan ID Karyawan yang ingin direset perangkatnya.",
+                  style: TextStyle(
+                    color: Colors.grey.shade600,
+                    fontSize: 13,
+                    height: 1.5,
                   ),
-                  onPressed: isResetting
-                      ? null
-                      : () async {
-                          if (idController.text.trim().isEmpty) return;
-
-                          setDialogState(() => isResetting = true);
-
-                          try {
-                            final auth = context.read<AuthProvider>();
-                            final clientId = auth.idUser ?? "";
-                            final targetId = idController.text.trim();
-
-                            final result = await _service.resetDeviceID(
-                              clientId,
-                              targetId,
-                            );
-
-                            if (!context.mounted) return;
-                            Navigator.pop(context);
-
-                            if (result['code'] == 200) {
-                              if (targetId == auth.idKaryawan) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text(
-                                      "Perangkat Anda di-reset. Silakan login kembali untuk mendaftarkan ulang perangkat.",
-                                    ),
-                                    backgroundColor: Colors.orange,
-                                  ),
-                                );
-
-                                auth.logout();
-                                Navigator.pushAndRemoveUntil(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) => const LoginScreen(),
-                                  ),
-                                  (route) => false,
-                                );
-                              } else {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text(result['message']),
-                                    backgroundColor: Colors.green,
-                                  ),
-                                );
-                              }
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: idController,
+                  decoration: InputDecoration(
+                    labelText: "ID Karyawan",
+                    prefixIcon: const Icon(Icons.badge),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text(
+                  "Batal",
+                  style: TextStyle(color: Colors.grey.shade500),
+                ),
+              ),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.red.shade600,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                onPressed: isResetting
+                    ? null
+                    : () async {
+                        if (idController.text.trim().isEmpty) return;
+                        setDialogState(() => isResetting = true);
+                        try {
+                          final auth = context.read<AuthProvider>();
+                          final targetId = idController.text.trim();
+                          final result = await _service.resetDeviceID(
+                            auth.idUser ?? "",
+                            targetId,
+                          );
+                          if (!context.mounted) return;
+                          Navigator.pop(context);
+                          if (result['code'] == 200) {
+                            if (targetId == auth.idKaryawan) {
+                              auth.logout();
+                              Navigator.pushAndRemoveUntil(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => const LoginScreen(),
+                                ),
+                                (route) => false,
+                              );
                             } else {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
                                   content: Text(result['message']),
-                                  backgroundColor: Colors.red,
+                                  backgroundColor: const Color(0xFF16A34A),
                                 ),
                               );
                             }
-                          } catch (e) {
-                            if (!context.mounted) return;
-                            Navigator.pop(context);
+                          } else {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
-                                content: Text("Gagal mereset: $e"),
+                                content: Text(result['message']),
                                 backgroundColor: Colors.red,
                               ),
                             );
                           }
-                        },
-                  child: isResetting
-                      ? const SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(
-                            color: Colors.white,
-                            strokeWidth: 2,
-                          ),
-                        )
-                      : const Text("Reset Sekarang"),
-                ),
-              ],
-            );
-          },
+                        } catch (e) {
+                          if (!context.mounted) return;
+                          Navigator.pop(context);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text("Gagal mereset: $e"),
+                              backgroundColor: Colors.red,
+                            ),
+                          );
+                        }
+                      },
+                child: isResetting
+                    ? const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 2,
+                        ),
+                      )
+                    : const Text("Reset"),
+              ),
+            ],
+          ),
         );
       },
     );
   }
 
   // =================================================================
-  // COMPONENT: KOTAK MENU GRID (DASHBOARD STYLE)
+  // COMPONENT: MENU CARD
   // =================================================================
   Widget _buildMenuCard({
     required String title,
     required IconData icon,
     required VoidCallback? onTap,
     bool isLoading = false,
-    Color? bgColor,
-    Color? iconColor,
-    Color? textColor,
-    BoxBorder? border,
+    required Color accentColor,
   }) {
     return Material(
-      color: bgColor ?? FluidColors.surfaceContainerLow,
-      borderRadius: BorderRadius.circular(FluidRadii.md),
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(16),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(FluidRadii.md),
+        borderRadius: BorderRadius.circular(16),
+        splashColor: accentColor.withOpacity(0.1),
         child: Container(
           decoration: BoxDecoration(
-            border: border,
-            borderRadius: BorderRadius.circular(FluidRadii.md),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: accentColor.withOpacity(0.15)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.04),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
           ),
-          padding: const EdgeInsets.all(8),
+          padding: const EdgeInsets.all(12),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              if (isLoading)
-                SizedBox(
-                  width: 28,
-                  height: 28,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2.5,
-                    color: iconColor ?? FluidColors.primary,
-                  ),
-                )
-              else
-                Icon(icon, color: iconColor ?? FluidColors.primary, size: 32),
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: accentColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: isLoading
+                    ? SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2.5,
+                          color: accentColor,
+                        ),
+                      )
+                    : Icon(icon, color: accentColor, size: 22),
+              ),
               const SizedBox(height: 10),
               Text(
                 title,
                 textAlign: TextAlign.center,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                  color: textColor ?? FluidColors.onSurface,
-                  height: 1.2,
+                style: const TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF0F172A),
+                  height: 1.3,
                 ),
               ),
             ],
@@ -640,21 +636,179 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
+  // =================================================================
+  // COMPONENT: HISTORY ITEM
+  // =================================================================
+  Widget _buildHistoryItem(Map log) {
+    final dt =
+        DateTime.tryParse(log['waktu'].toString())?.toLocal() ?? DateTime.now();
+    final isTerlambat = log['status'] == "Terlambat";
+    final isMasuk = log['tipe'] == "Masuk";
+    final isCuti =
+        log['tipe'] == "Cuti" ||
+        log['tipe'] == "Izin" ||
+        log['tipe'] == "Sakit";
+
+    Color accentColor = isMasuk ? FluidColors.primary : Colors.orange.shade600;
+    if (isCuti) accentColor = Colors.grey.shade500;
+
+    String statusLabel = "";
+    Color statusColor = FluidColors.primary;
+    Color statusBg = FluidColors.primary.withOpacity(0.08);
+
+    if (isMasuk) {
+      statusLabel = log['status'] ?? "";
+      statusColor = isTerlambat ? Colors.red.shade700 : const Color(0xFF16A34A);
+      statusBg = isTerlambat
+          ? Colors.red.shade50
+          : const Color(0xFF16A34A).withOpacity(0.08);
+    } else if (isCuti) {
+      statusLabel = log['status'] ?? "";
+      statusColor = log['status'] == 'Disetujui'
+          ? const Color(0xFF16A34A)
+          : Colors.orange.shade700;
+      statusBg = log['status'] == 'Disetujui'
+          ? const Color(0xFF16A34A).withOpacity(0.08)
+          : Colors.orange.shade50;
+    }
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: accentColor.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(
+              isMasuk
+                  ? Icons.login_rounded
+                  : isCuti
+                  ? Icons.event_busy_rounded
+                  : Icons.logout_rounded,
+              color: accentColor,
+              size: 18,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "Absen ${log['tipe']}  ·  ${_formatJam(dt)}",
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 14,
+                    color: Color(0xFF0F172A),
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  _formatTanggalIndo(dt),
+                  style: TextStyle(color: Colors.grey.shade500, fontSize: 11),
+                ),
+              ],
+            ),
+          ),
+          if (log['foto'] != null && log['foto'].toString().isNotEmpty)
+            GestureDetector(
+              onTap: () => _tampilkanFoto(
+                context,
+                log['foto'],
+                log['tipe'],
+                "${_formatTanggalIndo(dt)} - ${_formatJam(dt)}",
+              ),
+              child: Container(
+                padding: const EdgeInsets.all(7),
+                margin: const EdgeInsets.only(right: 6),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade100,
+                  borderRadius: BorderRadius.circular(9),
+                ),
+                child: Icon(
+                  Icons.image_rounded,
+                  size: 16,
+                  color: Colors.grey.shade500,
+                ),
+              ),
+            ),
+          if (statusLabel.isNotEmpty)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+              decoration: BoxDecoration(
+                color: statusBg,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                statusLabel,
+                style: TextStyle(
+                  color: statusColor,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
 
     return Scaffold(
-      backgroundColor: FluidColors.background,
+      backgroundColor: const Color(0xFFF4F6FF),
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
+        backgroundColor: const Color(0xFFF4F6FF),
         elevation: 0,
-        leading: const BackButton(color: FluidColors.onSurface),
+        scrolledUnderElevation: 0,
+        leading: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: InkWell(
+            onTap: () => Navigator.pop(context),
+            borderRadius: BorderRadius.circular(12),
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.06),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: const Icon(
+                Icons.arrow_back_ios_new_rounded,
+                color: Color(0xFF0F172A),
+                size: 16,
+              ),
+            ),
+          ),
+        ),
         title: const Text(
           "Profil & Menu",
           style: TextStyle(
-            color: FluidColors.onSurface,
-            fontWeight: FontWeight.bold,
+            color: Color(0xFF0F172A),
+            fontWeight: FontWeight.w800,
+            fontSize: 18,
           ),
         ),
         centerTitle: true,
@@ -663,130 +817,144 @@ class _ProfileScreenState extends State<ProfileScreen> {
         color: FluidColors.primary,
         onRefresh: _fetchHistory,
         child: ListView(
-          padding: const EdgeInsets.all(24.0),
+          padding: const EdgeInsets.fromLTRB(20, 4, 20, 40),
           children: [
             // ==========================================
             // 1. KARTU PROFIL UTAMA
             // ==========================================
-            Card(
-              color: FluidColors.surfaceContainerLow,
-              elevation: 0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(FluidRadii.md),
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    FluidColors.primary,
+                    Color.lerp(
+                      FluidColors.primary,
+                      const Color(0xFF7C3AED),
+                      0.55,
+                    )!,
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: FluidColors.primary.withOpacity(0.28),
+                    blurRadius: 20,
+                    offset: const Offset(0, 8),
+                  ),
+                ],
               ),
-              child: Padding(
-                padding: const EdgeInsets.all(20.0),
-                child: Row(
-                  children: [
-                    CircleAvatar(
-                      radius: 28,
-                      backgroundColor: FluidColors.primary.withOpacity(0.1),
+              child: Row(
+                children: [
+                  Hero(
+                    tag: 'profile-avatar',
+                    child: CircleAvatar(
+                      radius: 30,
+                      backgroundColor: Colors.white.withOpacity(0.2),
                       child: Icon(
                         auth.isAdmin
-                            ? Icons.admin_panel_settings
-                            : Icons.person,
-                        color: FluidColors.primary,
+                            ? Icons.admin_panel_settings_rounded
+                            : Icons.person_rounded,
+                        color: Colors.white,
                         size: 28,
                       ),
                     ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            auth.namaKaryawan ?? "Unknown",
-                            style: const TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: FluidColors.onSurface,
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          auth.namaKaryawan ?? "Unknown",
+                          style: const TextStyle(
+                            fontSize: 17,
+                            fontWeight: FontWeight.w800,
+                            color: Colors.white,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          "ID: ${auth.idKaryawan ?? '-'}",
+                          style: TextStyle(
+                            color: Colors.white.withOpacity(0.7),
+                            fontSize: 12,
+                          ),
+                        ),
+                        if (auth.isAdmin) ...[
+                          const SizedBox(height: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Text(
+                              "ADMIN UMKM",
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 10,
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: 0.8,
+                              ),
                             ),
                           ),
-                          const SizedBox(height: 4),
-                          Text(
-                            "ID: ${auth.idKaryawan ?? '-'}",
-                            style: TextStyle(
-                              color: Colors.grey.shade600,
-                              fontSize: 13,
-                            ),
-                          ),
-                          if (auth.isAdmin) ...[
-                            const SizedBox(height: 8),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 4,
-                              ),
-                              decoration: BoxDecoration(
-                                color: FluidColors.primaryGhost,
-                                borderRadius: BorderRadius.circular(
-                                  FluidRadii.sm,
-                                ),
-                              ),
-                              child: const Text(
-                                "ADMIN UMKM",
-                                style: TextStyle(
-                                  color: FluidColors.primary,
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                          ],
                         ],
+                      ],
+                    ),
+                  ),
+                  // Logout
+                  GestureDetector(
+                    onTap: () {
+                      context.read<AuthProvider>().logout();
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(builder: (_) => const LoginScreen()),
+                      );
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.15),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(
+                        Icons.logout_rounded,
+                        color: Colors.white,
+                        size: 18,
                       ),
                     ),
-                    IconButton(
-                      icon: const Icon(Icons.logout, color: Colors.redAccent),
-                      tooltip: "Keluar",
-                      onPressed: () {
-                        context.read<AuthProvider>().logout();
-                        Navigator.pushReplacement(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const LoginScreen(),
-                          ),
-                        );
-                      },
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
 
-            const SizedBox(height: 12),
+            const SizedBox(height: 24),
 
             // ==========================================
-            // 2. GRID MENU (DASHBOARD COMPACT)
+            // 2. GRID MENU
             // ==========================================
-            const Text(
-              "Menu Navigasi",
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: FluidColors.onSurface,
-              ),
-            ),
+            _sectionLabel("Menu Navigasi"),
             const SizedBox(height: 12),
             GridView.count(
-              padding: EdgeInsets.symmetric(horizontal: 0),
-              crossAxisCount: 3, // 3 Kolom agar lebih padat
+              crossAxisCount: 3,
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
-              mainAxisSpacing: 12,
-              crossAxisSpacing: 12,
-              childAspectRatio: 1.0, // Bentuk Kotak presisi
+              mainAxisSpacing: 10,
+              crossAxisSpacing: 10,
+              childAspectRatio: 1.0,
               children: [
-                // ---- MENU UMUM (Karyawan & Admin) ----
                 _buildMenuCard(
                   title: "Daftar\nWajah",
                   icon: Icons.face_retouching_natural,
                   isLoading: _isRegisteringFace,
                   onTap: _isRegisteringFace ? null : _prosesDaftarWajah,
-                  bgColor: Colors.transparent,
-                  border: Border.all(
-                    color: FluidColors.primary.withOpacity(0.5),
-                  ),
+                  accentColor: FluidColors.primary,
                 ),
                 _buildMenuCard(
                   title: "Pengajuan\nIzin",
@@ -797,29 +965,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       builder: (_) => const LeaveRequestScreen(),
                     ),
                   ),
+                  accentColor: const Color(0xFF7C3AED),
                 ),
                 _buildMenuCard(
                   title: "Download\nRekap",
                   icon: Icons.download_rounded,
-                  iconColor: Colors.green.shade700,
-                  textColor: Colors.green.shade800,
-                  bgColor: Colors.green.shade50,
                   isLoading: _isExporting,
                   onTap: _isExporting ? null : _tampilkanDialogPilihBulan,
+                  accentColor: const Color(0xFF16A34A),
                 ),
-
-                // ---- MENU KHUSUS ADMIN ----
                 if (auth.isAdmin) ...[
                   _buildMenuCard(
                     title: "Persetujuan\nIzin",
                     icon: Icons.playlist_add_check_circle,
-                    iconColor: Colors.orange.shade700,
-                    textColor: Colors.orange.shade800,
-                    bgColor: Colors.orange.shade50,
                     onTap: () => Navigator.push(
                       context,
                       MaterialPageRoute(builder: (_) => const ApprovalScreen()),
                     ),
+                    accentColor: Colors.orange.shade700,
                   ),
                   _buildMenuCard(
                     title: "Tambah\nKaryawan",
@@ -830,6 +993,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         builder: (_) => const AddKaryawanScreen(),
                       ),
                     ),
+                    accentColor: const Color(0xFF0891B2),
                   ),
                   _buildMenuCard(
                     title: "Update\nLokasi",
@@ -840,20 +1004,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         builder: (_) => const SetLocationScreen(),
                       ),
                     ),
+                    accentColor: const Color(0xFF059669),
                   ),
                   _buildMenuCard(
                     title: "Reset\nPerangkat",
                     icon: Icons.phonelink_erase,
-                    iconColor: Colors.red.shade600,
-                    textColor: Colors.red.shade700,
-                    bgColor: Colors.red.shade50,
                     onTap: () => _tampilkanDialogResetHP(context),
+                    accentColor: Colors.red.shade600,
                   ),
                 ],
               ],
             ),
 
-            const SizedBox(height: 12),
+            const SizedBox(height: 24),
 
             // ==========================================
             // 3. RIWAYAT ABSENSI
@@ -861,63 +1024,107 @@ class _ProfileScreenState extends State<ProfileScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
-                  "Riwayat Absensi",
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: FluidColors.onSurface,
+                _sectionLabel("Riwayat Absensi"),
+                GestureDetector(
+                  onTap: _pickDateRange,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 7,
+                    ),
+                    decoration: BoxDecoration(
+                      color: _selectedDateRange != null
+                          ? FluidColors.primary.withOpacity(0.08)
+                          : Colors.white,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
+                        color: _selectedDateRange != null
+                            ? FluidColors.primary.withOpacity(0.3)
+                            : Colors.grey.shade200,
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          _selectedDateRange == null
+                              ? Icons.calendar_month_outlined
+                              : Icons.event_available,
+                          size: 14,
+                          color: _selectedDateRange == null
+                              ? Colors.grey.shade500
+                              : FluidColors.primary,
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          "Filter",
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: _selectedDateRange == null
+                                ? Colors.grey.shade500
+                                : FluidColors.primary,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-                IconButton(
-                  icon: Icon(
-                    _selectedDateRange == null
-                        ? Icons.calendar_month_outlined
-                        : Icons.event_available,
-                    color: _selectedDateRange == null
-                        ? Colors.grey
-                        : FluidColors.primary,
-                  ),
-                  onPressed: _pickDateRange,
-                  tooltip: "Filter Tanggal",
                 ),
               ],
             ),
 
-            if (_selectedDateRange != null)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 12.0),
+            // Active date range banner
+            if (_selectedDateRange != null) ...[
+              const SizedBox(height: 10),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 10,
+                ),
+                decoration: BoxDecoration(
+                  color: FluidColors.primary.withOpacity(0.07),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: FluidColors.primary.withOpacity(0.2),
+                  ),
+                ),
                 child: Row(
                   children: [
+                    Icon(
+                      Icons.date_range_rounded,
+                      size: 14,
+                      color: FluidColors.primary,
+                    ),
+                    const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        "${DateFormat('dd MMM yyyy').format(_selectedDateRange!.start)} - ${DateFormat('dd MMM yyyy').format(_selectedDateRange!.end)}",
-                        style: const TextStyle(
+                        "${DateFormat('dd MMM yyyy').format(_selectedDateRange!.start)} – ${DateFormat('dd MMM yyyy').format(_selectedDateRange!.end)}",
+                        style: TextStyle(
                           color: FluidColors.primary,
-                          fontWeight: FontWeight.bold,
                           fontSize: 12,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
                     ),
-                    InkWell(
+                    GestureDetector(
                       onTap: () {
                         setState(() => _selectedDateRange = null);
                         _applyFilter();
                       },
-                      child: const Text(
-                        "Hapus Filter",
-                        style: TextStyle(
-                          color: Colors.redAccent,
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                        ),
+                      child: Icon(
+                        Icons.close_rounded,
+                        size: 16,
+                        color: Colors.red.shade400,
                       ),
                     ),
                   ],
                 ),
               ),
+            ],
 
-            // Filter Tipe
+            const SizedBox(height: 14),
+
+            // Filter chips
             SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: Row(
@@ -925,26 +1132,50 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   final isSelected = _filterTipe == tipe;
                   return Padding(
                     padding: const EdgeInsets.only(right: 8.0),
-                    child: ChoiceChip(
-                      label: Text(tipe),
-                      selected: isSelected,
-                      checkmarkColor: FluidColors.background,
-                      selectedColor: FluidColors.primary,
-                      labelStyle: TextStyle(
-                        color: isSelected ? Colors.white : Colors.grey.shade700,
-                        fontWeight: isSelected
-                            ? FontWeight.bold
-                            : FontWeight.normal,
-                      ),
-                      backgroundColor: FluidColors.surfaceContainerLow,
-                      side: BorderSide.none,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(FluidRadii.sm),
-                      ),
-                      onSelected: (bool selected) {
+                    child: GestureDetector(
+                      onTap: () {
                         setState(() => _filterTipe = tipe);
                         _applyFilter();
                       },
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 200),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
+                        decoration: BoxDecoration(
+                          color: isSelected
+                              ? FluidColors.primary
+                              : Colors.white,
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(
+                            color: isSelected
+                                ? FluidColors.primary
+                                : Colors.grey.shade200,
+                          ),
+                          boxShadow: isSelected
+                              ? [
+                                  BoxShadow(
+                                    color: FluidColors.primary.withOpacity(
+                                      0.25,
+                                    ),
+                                    blurRadius: 8,
+                                    offset: const Offset(0, 3),
+                                  ),
+                                ]
+                              : [],
+                        ),
+                        child: Text(
+                          tipe,
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            color: isSelected
+                                ? Colors.white
+                                : Colors.grey.shade600,
+                          ),
+                        ),
+                      ),
                     ),
                   );
                 }).toList(),
@@ -953,12 +1184,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
             const SizedBox(height: 16),
 
-            // LIST RIWAYAT
+            // History list
             if (_isLoading)
               const Center(
                 child: Padding(
-                  padding: EdgeInsets.all(32.0),
-                  child: CircularProgressIndicator(color: FluidColors.primary),
+                  padding: EdgeInsets.all(40.0),
+                  child: CircularProgressIndicator(
+                    color: FluidColors.primary,
+                    strokeWidth: 3,
+                  ),
                 ),
               )
             else if (_errorMsg.isNotEmpty)
@@ -967,144 +1201,50 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   padding: const EdgeInsets.all(32.0),
                   child: Text(
                     _errorMsg,
-                    style: const TextStyle(color: Colors.red),
+                    style: TextStyle(color: Colors.red.shade700, fontSize: 13),
                   ),
                 ),
               )
             else if (_filteredHistory.isEmpty)
               Center(
                 child: Padding(
-                  padding: const EdgeInsets.all(32.0),
+                  padding: const EdgeInsets.all(40.0),
                   child: Column(
                     children: [
                       Icon(
                         Icons.history_toggle_off,
-                        size: 48,
-                        color: Colors.grey.shade400,
+                        size: 52,
+                        color: Colors.grey.shade300,
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: 12),
                       Text(
                         "Belum ada data absen.",
-                        style: TextStyle(color: Colors.grey.shade600),
+                        style: TextStyle(
+                          color: Colors.grey.shade500,
+                          fontSize: 13,
+                        ),
                       ),
                     ],
                   ),
                 ),
               )
             else
-              ListView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: _filteredHistory.length,
-                itemBuilder: (context, index) {
-                  final log = _filteredHistory[index];
-                  final dt =
-                      DateTime.tryParse(log['waktu'].toString())?.toLocal() ??
-                      DateTime.now();
-                  final isTerlambat = log['status'] == "Terlambat";
-                  final isMasuk = log['tipe'] == "Masuk";
-
-                  final formatTgl = _formatTanggalIndo(dt);
-                  final formatJam = _formatJam(dt);
-
-                  return Container(
-                    margin: const EdgeInsets.only(bottom: 12),
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: FluidColors.surfaceContainerLow,
-                      borderRadius: BorderRadius.circular(FluidRadii.md),
-                    ),
-                    child: Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: FluidColors.background,
-                            borderRadius: BorderRadius.circular(FluidRadii.sm),
-                          ),
-                          child: Icon(
-                            isMasuk
-                                ? Icons.login_rounded
-                                : Icons.logout_rounded,
-                            color: isMasuk
-                                ? FluidColors.primary
-                                : Colors.orange.shade700,
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                "Absen ${log['tipe']} ($formatJam)",
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 15,
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                formatTgl,
-                                style: TextStyle(
-                                  color: Colors.grey.shade600,
-                                  fontSize: 12,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        if (log['foto'] != null &&
-                            log['foto'].toString().isNotEmpty)
-                          IconButton(
-                            icon: const Icon(
-                              Icons.image_search,
-                              color: Colors.grey,
-                            ),
-                            tooltip: "Lihat Foto",
-                            onPressed: () {
-                              _tampilkanFoto(
-                                context,
-                                log['foto'],
-                                log['tipe'],
-                                "$formatTgl - $formatJam",
-                              );
-                            },
-                          ),
-                        if (isMasuk)
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 10,
-                              vertical: 6,
-                            ),
-                            decoration: BoxDecoration(
-                              color: isTerlambat
-                                  ? Colors.red.shade50
-                                  : FluidColors.primaryGhost,
-                              borderRadius: BorderRadius.circular(
-                                FluidRadii.sm,
-                              ),
-                            ),
-                            child: Text(
-                              log['status'],
-                              style: TextStyle(
-                                color: isTerlambat
-                                    ? Colors.red.shade700
-                                    : FluidColors.primary,
-                                fontSize: 11,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                      ],
-                    ),
-                  );
-                },
-              ),
-            const SizedBox(height: 32),
+              ...(_filteredHistory
+                  .map((log) => _buildHistoryItem(log as Map))
+                  .toList()),
           ],
         ),
       ),
     );
   }
+
+  Widget _sectionLabel(String label) => Text(
+    label,
+    style: const TextStyle(
+      fontSize: 14,
+      fontWeight: FontWeight.w800,
+      color: Color(0xFF0F172A),
+      letterSpacing: 0.2,
+    ),
+  );
 }

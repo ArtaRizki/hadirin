@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:hadirin/core/providers/auth_provider.dart';
 import 'package:hadirin/core/theme/fluid_theme.dart';
@@ -11,22 +12,48 @@ class SplashScreen extends StatefulWidget {
   State<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen> {
+class _SplashScreenState extends State<SplashScreen>
+    with SingleTickerProviderStateMixin {
   String _statusText = "Memuat sistem...";
+
+  late AnimationController _animationController;
+  late Animation<double> _scaleAnimation;
 
   @override
   void initState() {
     super.initState();
+
+    // Setup Animasi Denyut (Pulse)
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1500),
+    )..repeat(reverse: true);
+
+    _scaleAnimation = Tween<double>(begin: 0.95, end: 1.05).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
+    );
+
     _initializeApp();
   }
 
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
+
   Future<void> _initializeApp() async {
+    // Minimum delay agar pengguna sempat melihat animasi splash yang bagus (UX Trick)
+    await Future.delayed(const Duration(milliseconds: 1500));
+
     // 1. Meminta Izin Akses (Lokasi & Kamera)
-    setState(() => _statusText = "Memeriksa perizinan perangkat...");
+    if (mounted)
+      setState(() => _statusText = "Memeriksa perizinan perangkat...");
     await _requestPermissions();
 
     // 2. Lanjut mengecek sesi login (RootNavigator yang akan memindahkan layar)
-    setState(() => _statusText = "Memeriksa sesi pengguna...");
+    if (mounted) setState(() => _statusText = "Memeriksa sesi pengguna...");
+
     if (mounted) {
       await context.read<AuthProvider>().checkLoginStatus();
     }
@@ -52,32 +79,125 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: FluidColors.background,
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(24),
+      backgroundColor: const Color(0xFFF4F6FF), // Latar modern yang seragam
+      body: Stack(
+        children: [
+          // Dekorasi blob atas kanan
+          Positioned(
+            top: -100,
+            right: -80,
+            child: Container(
+              width: 300,
+              height: 300,
               decoration: BoxDecoration(
-                color: FluidColors.surfaceContainerLow,
                 shape: BoxShape.circle,
-              ),
-              child: const Icon(
-                Icons.fingerprint_rounded,
-                size: 80,
-                color: FluidColors.primary,
+                color: FluidColors.primary.withOpacity(0.06),
               ),
             ),
-            const SizedBox(height: 32),
-            const CircularProgressIndicator(color: FluidColors.primary),
-            const SizedBox(height: 24),
-            Text(
-              _statusText,
-              style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
+          ),
+          // Dekorasi blob bawah kiri
+          Positioned(
+            bottom: -100,
+            left: -80,
+            child: Container(
+              width: 250,
+              height: 250,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: const Color(0xFF7C3AED).withOpacity(0.05),
+              ),
             ),
-          ],
-        ),
+          ),
+
+          // KONTEN UTAMA
+          Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Spacer(flex: 3),
+
+                // LOGO ANIMASI
+                ScaleTransition(
+                  scale: _scaleAnimation,
+                  child: Container(
+                    padding: const EdgeInsets.all(28),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: FluidColors.primary.withOpacity(0.15),
+                          blurRadius: 30,
+                          spreadRadius: 10,
+                          offset: const Offset(0, 10),
+                        ),
+                      ],
+                    ),
+                    child: Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: FluidColors.primary.withOpacity(0.1),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.fingerprint_rounded,
+                        size: 72,
+                        color: FluidColors.primary,
+                      ),
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 32),
+
+                // NAMA BRAND
+                const Text(
+                  "Hadir.in",
+                  style: TextStyle(
+                    fontSize: 36,
+                    fontWeight: FontWeight.w900,
+                    color: Color(0xFF0F172A),
+                    letterSpacing: -1,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  "Sistem Absensi & HRIS Terintegrasi",
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.grey.shade600,
+                  ),
+                ),
+
+                const Spacer(flex: 2),
+
+                // LOADING INDICATOR
+                const SizedBox(
+                  width: 24,
+                  height: 24,
+                  child: CircularProgressIndicator(
+                    color: FluidColors.primary,
+                    strokeWidth: 2.5,
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // STATUS TEXT
+                Text(
+                  _statusText,
+                  style: TextStyle(
+                    color: Colors.grey.shade500,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+                const Spacer(flex: 1),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

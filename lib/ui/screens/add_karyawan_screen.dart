@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart'; // TAMBAHAN IMPORT
-import 'package:hadirin/core/providers/auth_provider.dart'; // TAMBAHAN IMPORT
+import 'package:provider/provider.dart';
+import 'package:hadirin/core/providers/auth_provider.dart';
 import 'package:hadirin/core/service/attendance_service.dart';
 import 'package:hadirin/core/theme/fluid_theme.dart';
 
@@ -19,9 +19,7 @@ class _AddKaryawanScreenState extends State<AddKaryawanScreen> {
 
   void _simpanKaryawan() async {
     if (_idController.text.isEmpty || _namaController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("ID dan Nama Karyawan wajib diisi!")),
-      );
+      _showSnackBar("ID dan Nama Karyawan wajib diisi!", isError: true);
       return;
     }
 
@@ -32,7 +30,7 @@ class _AddKaryawanScreenState extends State<AddKaryawanScreen> {
     final clientId = auth.idUser ?? "";
 
     final result = await AttendanceService().tambahKaryawan(
-      clientId: clientId, // KIRIM CLIENT ID KE SERVICE
+      clientId: clientId,
       idKaryawanBaru: _idController.text.trim(),
       namaKaryawanBaru: _namaController.text.trim(),
       divisi: _divisiController.text.trim().isEmpty
@@ -43,99 +41,244 @@ class _AddKaryawanScreenState extends State<AddKaryawanScreen> {
     setState(() => _isLoading = false);
 
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(result['message']),
-          backgroundColor: result['success'] ? FluidColors.primary : Colors.red,
-        ),
-      );
+      _showSnackBar(result['message'], isError: !result['success']);
+
       if (result['success']) {
         Navigator.pop(context);
       }
     }
   }
 
+  void _showSnackBar(String message, {bool isError = false}) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            Icon(
+              isError
+                  ? Icons.error_outline_rounded
+                  : Icons.check_circle_outline_rounded,
+              color: Colors.white,
+            ),
+            const SizedBox(width: 8),
+            Expanded(child: Text(message)),
+          ],
+        ),
+        backgroundColor: isError
+            ? Colors.red.shade600
+            : const Color(0xFF16A34A),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        margin: const EdgeInsets.all(16),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: FluidColors.background,
+      backgroundColor: const Color(0xFFF4F6FF), // Latar belakang seragam
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        iconTheme: const IconThemeData(color: FluidColors.onSurface),
-        title: const Text(
-          "Tambah Karyawan Baru",
-          style: TextStyle(
-            color: FluidColors.onSurface,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ),
-      body: ListView(
-        padding: const EdgeInsets.all(24.0),
-        children: [
-          Card(
-            color: FluidColors.surfaceContainerLow,
-            elevation: 0,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(FluidRadii.md),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(24.0),
-              child: Column(
-                children: [
-                  TextField(
-                    controller: _idController,
-                    decoration: const InputDecoration(
-                      labelText: "ID Karyawan (Contoh: KRY-001)",
-                      prefixIcon: Icon(Icons.badge),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  TextField(
-                    controller: _namaController,
-                    decoration: const InputDecoration(
-                      labelText: "Nama Lengkap",
-                      prefixIcon: Icon(Icons.person),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  TextField(
-                    controller: _divisiController,
-                    decoration: const InputDecoration(
-                      labelText: "Divisi / Jabatan (Opsional)",
-                      prefixIcon: Icon(Icons.work),
-                    ),
+        scrolledUnderElevation: 0,
+        centerTitle: true,
+        leading: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: InkWell(
+            onTap: () => Navigator.pop(context),
+            borderRadius: BorderRadius.circular(12),
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.06),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
                   ),
                 ],
               ),
+              child: const Icon(
+                Icons.arrow_back_ios_new_rounded,
+                color: Color(0xFF0F172A),
+                size: 16,
+              ),
             ),
           ),
-          const SizedBox(height: 32),
-          SizedBox(
-            width: double.infinity,
-            height: 56,
-            child: ElevatedButton(
-              onPressed: _isLoading ? null : _simpanKaryawan,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: FluidColors.primary,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(FluidRadii.sm),
-                ),
+        ),
+        title: const Text(
+          "Tambah Karyawan",
+          style: TextStyle(
+            color: Color(0xFF0F172A),
+            fontWeight: FontWeight.w800,
+            fontSize: 18,
+          ),
+        ),
+      ),
+      body: Stack(
+        children: [
+          // Dekorasi blob atas kanan
+          Positioned(
+            top: -50,
+            right: -50,
+            child: Container(
+              width: 200,
+              height: 200,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: FluidColors.primary.withOpacity(0.06),
               ),
-              child: _isLoading
-                  ? const CircularProgressIndicator(color: Colors.white)
-                  : const Text(
-                      "Simpan Data Karyawan",
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
+            ),
+          ),
+          // Dekorasi blob bawah kiri
+          Positioned(
+            bottom: -50,
+            left: -80,
+            child: Container(
+              width: 250,
+              height: 250,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: const Color(0xFF7C3AED).withOpacity(0.05),
+              ),
+            ),
+          ),
+
+          SafeArea(
+            child: ListView(
+              padding: const EdgeInsets.fromLTRB(24, 24, 24, 40),
+              children: [
+                // HEADER SECTION
+                const Text(
+                  "Informasi Karyawan",
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w900,
+                    color: Color(0xFF0F172A),
+                    letterSpacing: -0.5,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  "Masukkan detail data diri karyawan baru ke dalam sistem UMKM Anda.",
+                  style: TextStyle(
+                    color: Colors.grey.shade600,
+                    fontSize: 13,
+                    height: 1.5,
+                  ),
+                ),
+                const SizedBox(height: 32),
+
+                // FORM INPUTS
+                _buildInputField(
+                  controller: _idController,
+                  label: "ID Karyawan",
+                  hint: "Contoh: KRY-001",
+                  icon: Icons.badge_rounded,
+                ),
+                const SizedBox(height: 20),
+
+                _buildInputField(
+                  controller: _namaController,
+                  label: "Nama Lengkap",
+                  hint: "Sesuai KTP / Panggilan",
+                  icon: Icons.person_rounded,
+                ),
+                const SizedBox(height: 20),
+
+                _buildInputField(
+                  controller: _divisiController,
+                  label: "Divisi / Jabatan",
+                  hint: "Opsional (Contoh: Kasir, Sales)",
+                  icon: Icons.work_outline_rounded,
+                ),
+
+                const SizedBox(height: 48),
+
+                // SUBMIT BUTTON
+                SizedBox(
+                  width: double.infinity,
+                  height: 60,
+                  child: ElevatedButton(
+                    onPressed: _isLoading ? null : _simpanKaryawan,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: FluidColors.primary,
+                      foregroundColor: Colors.white,
+                      elevation: 4,
+                      shadowColor: FluidColors.primary.withOpacity(0.4),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
                       ),
                     ),
+                    child: _isLoading
+                        ? const SizedBox(
+                            height: 24,
+                            width: 24,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2.5,
+                            ),
+                          )
+                        : const Text(
+                            "Simpan Data Karyawan",
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                  ),
+                ),
+              ],
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  // Fungsi Pembantu untuk membuat TextField agar kode lebih rapi (DRY)
+  Widget _buildInputField({
+    required TextEditingController controller,
+    required String label,
+    required String hint,
+    required IconData icon,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: TextField(
+        controller: controller,
+        decoration: InputDecoration(
+          labelText: label,
+          hintText: hint,
+          labelStyle: TextStyle(color: Colors.grey.shade500),
+          prefixIcon: Icon(icon, color: FluidColors.primary),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: BorderSide.none,
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: const BorderSide(
+              color: FluidColors.primary,
+              width: 1.5,
+            ),
+          ),
+          filled: true,
+          fillColor: Colors.white,
+        ),
       ),
     );
   }

@@ -8,7 +8,7 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:hadirin/core/service/attendance_service.dart';
 import 'package:hadirin/core/theme/fluid_theme.dart';
-import 'package:hadirin/ui/screens/set_location_screen.dart'; // Import ini
+import 'package:hadirin/ui/screens/set_location_screen.dart';
 
 class AdminRegisterScreen extends StatefulWidget {
   const AdminRegisterScreen({super.key});
@@ -24,7 +24,7 @@ class _AdminRegisterScreenState extends State<AdminRegisterScreen> {
   LatLng _pickedLocation = const LatLng(-7.9713634, 112.5847634);
   double _radius = 100.0;
   String _pickedAddress = "";
-  bool _isLocationPicked = false; // Penanda apakah user sudah memilih lokasi
+  bool _isLocationPicked = false;
 
   bool _isLoading = false;
   String? _newClientId;
@@ -35,23 +35,18 @@ class _AdminRegisterScreenState extends State<AdminRegisterScreen> {
     super.dispose();
   }
 
-  // Fungsi untuk membuka SetLocationScreen dan menunggu hasilnya
   Future<void> _bukaMapPilihLokasi() async {
-    // Navigasi dengan return value berupa Map
     final result = await Navigator.push(
       context,
       MaterialPageRoute(
-        // Kirim state awal (berguna jika sebelumnya sudah pilih tapi mau diubah)
         builder: (_) => SetLocationScreen(
-          isSelectionMode:
-              true, // Beritahu bahwa ini mode pilih, bukan update langsung
+          isSelectionMode: true,
           initialLocation: _pickedLocation,
           initialRadius: _radius,
         ),
       ),
     );
 
-    // Tangkap kembalian dari SetLocationScreen
     if (result != null && result is Map<String, dynamic>) {
       setState(() {
         _pickedLocation = result['location'] as LatLng;
@@ -67,8 +62,11 @@ class _AdminRegisterScreenState extends State<AdminRegisterScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: const Text("Nama UMKM tidak boleh kosong"),
-          backgroundColor: Colors.red,
+          backgroundColor: Colors.red.shade600,
           behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
         ),
       );
       return;
@@ -80,6 +78,9 @@ class _AdminRegisterScreenState extends State<AdminRegisterScreen> {
           content: const Text("Harap tentukan lokasi kantor terlebih dahulu!"),
           backgroundColor: Colors.orange.shade800,
           behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
         ),
       );
       return;
@@ -108,8 +109,11 @@ class _AdminRegisterScreenState extends State<AdminRegisterScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(result['message']),
-            backgroundColor: Colors.red,
+            backgroundColor: Colors.red.shade600,
             behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
           ),
         );
       }
@@ -119,195 +123,375 @@ class _AdminRegisterScreenState extends State<AdminRegisterScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: FluidColors.background,
+      backgroundColor: const Color(0xFFF4F6FF), // Warna background modern
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        iconTheme: const IconThemeData(color: FluidColors.onSurface),
+        scrolledUnderElevation: 0,
+        centerTitle: true,
         title: const Text(
           "Pendaftaran UMKM Baru",
           style: TextStyle(
-            color: FluidColors.onSurface,
-            fontWeight: FontWeight.bold,
+            color: Color(0xFF0F172A),
+            fontWeight: FontWeight.w800,
+            fontSize: 18,
+          ),
+        ),
+        leading: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: InkWell(
+            onTap: () => Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => LoginScreen()),
+            ),
+            borderRadius: BorderRadius.circular(12),
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.06),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: const Icon(
+                Icons.arrow_back_ios_new_rounded,
+                color: Color(0xFF0F172A),
+                size: 16,
+              ),
+            ),
           ),
         ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.logout, color: Colors.redAccent),
-            tooltip: "Keluar",
-            onPressed: () {
-              context.read<AuthProvider>().logout();
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (_) => const LoginScreen()),
-              );
-            },
+          Padding(
+            padding: const EdgeInsets.only(right: 16.0),
+            child: InkWell(
+              onTap: () {
+                context.read<AuthProvider>().logout();
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (_) => const LoginScreen()),
+                );
+              },
+              borderRadius: BorderRadius.circular(12),
+              child: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.red.shade50,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  Icons.logout_rounded,
+                  color: Colors.red.shade600,
+                  size: 20,
+                ),
+              ),
+            ),
           ),
         ],
       ),
-      body: _newClientId != null ? _buildSuccessCard() : _buildForm(),
+      body: Stack(
+        children: [
+          // Dekorasi blob atas kiri
+          Positioned(
+            top: -50,
+            left: -50,
+            child: Container(
+              width: 200,
+              height: 200,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: FluidColors.primary.withOpacity(0.06),
+              ),
+            ),
+          ),
+          // Dekorasi blob bawah kanan
+          Positioned(
+            bottom: -100,
+            right: -50,
+            child: Container(
+              width: 250,
+              height: 250,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: const Color(0xFF7C3AED).withOpacity(0.05),
+              ),
+            ),
+          ),
+
+          SafeArea(
+            child: _newClientId != null ? _buildSuccessCard() : _buildForm(),
+          ),
+        ],
+      ),
     );
   }
 
   Widget _buildForm() {
     return ListView(
-      padding: const EdgeInsets.all(24.0),
+      padding: const EdgeInsets.fromLTRB(24, 16, 24, 40),
       children: [
+        // TITLE SECTION
         const Text(
           "Detail UMKM",
           style: TextStyle(
             fontSize: 20,
-            fontWeight: FontWeight.bold,
-            color: FluidColors.onSurface,
+            fontWeight: FontWeight.w900,
+            color: Color(0xFF0F172A),
+            letterSpacing: -0.5,
           ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 6),
         Text(
-          "Masukkan nama perusahaan / toko yang akan didaftarkan.",
-          style: TextStyle(color: Colors.grey.shade600),
+          "Masukkan nama perusahaan / toko yang akan didaftarkan ke dalam sistem Hadir.in.",
+          style: TextStyle(
+            color: Colors.grey.shade600,
+            fontSize: 13,
+            height: 1.5,
+          ),
         ),
         const SizedBox(height: 24),
 
-        TextFormField(
-          controller: _namaController,
-          decoration: const InputDecoration(
-            labelText: "Nama UMKM / Klien",
-            prefixIcon: Icon(Icons.business),
+        // INPUT FIELD
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.03),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
           ),
-          textInputAction: TextInputAction.done,
+          child: TextFormField(
+            controller: _namaController,
+            decoration: InputDecoration(
+              labelText: "Nama UMKM / Klien",
+              labelStyle: TextStyle(color: Colors.grey.shade500),
+              prefixIcon: const Icon(
+                Icons.business_rounded,
+                color: FluidColors.primary,
+              ),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+                borderSide: BorderSide.none,
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+                borderSide: const BorderSide(
+                  color: FluidColors.primary,
+                  width: 1.5,
+                ),
+              ),
+              filled: true,
+              fillColor: Colors.white,
+            ),
+            textInputAction: TextInputAction.done,
+          ),
         ),
 
         const SizedBox(height: 40),
 
+        // LOCATION SECTION
         const Text(
           "Lokasi Absensi",
           style: TextStyle(
             fontSize: 20,
-            fontWeight: FontWeight.bold,
-            color: FluidColors.onSurface,
+            fontWeight: FontWeight.w900,
+            color: Color(0xFF0F172A),
+            letterSpacing: -0.5,
           ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 6),
         Text(
-          "Pilih titik akurat di peta untuk batas absensi.",
-          style: TextStyle(color: Colors.grey.shade600),
+          "Pilih titik koordinat akurat di peta sebagai pusat batas absensi karyawan.",
+          style: TextStyle(
+            color: Colors.grey.shade600,
+            fontSize: 13,
+            height: 1.5,
+          ),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 20),
 
         // CARD INDIKATOR LOKASI
-        Card(
-          color: FluidColors.surfaceContainerLow,
-          elevation: 0,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(FluidRadii.md),
-            side: BorderSide(
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
               color: _isLocationPicked
-                  ? FluidColors.primary
-                  : Colors.grey.shade300,
-              width: 1,
+                  ? FluidColors.primary.withOpacity(0.3)
+                  : Colors.grey.shade200,
+              width: 1.5,
             ),
+            boxShadow: [
+              BoxShadow(
+                color: _isLocationPicked
+                    ? FluidColors.primary.withOpacity(0.08)
+                    : Colors.black.withOpacity(0.03),
+                blurRadius: 15,
+                offset: const Offset(0, 8),
+              ),
+            ],
           ),
-          child: Padding(
-            padding: const EdgeInsets.all(20.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(
-                          _isLocationPicked
-                              ? Icons.check_circle
-                              : Icons.location_off,
-                          color: _isLocationPicked
-                              ? FluidColors.primary
-                              : Colors.grey,
-                          size: 20,
-                        ),
-                        SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            _isLocationPicked
-                                ? "Lokasi Disimpan"
-                                : "Belum ditentukan",
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                            ),
-                          ),
-                        ),
-                      ],
+          padding: const EdgeInsets.all(20.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: _isLocationPicked
+                          ? FluidColors.primary.withOpacity(0.1)
+                          : Colors.grey.shade100,
+                      borderRadius: BorderRadius.circular(10),
                     ),
-                    if (_isLocationPicked) ...[
-                      const SizedBox(height: 8),
+                    child: Icon(
+                      _isLocationPicked
+                          ? Icons.check_circle_rounded
+                          : Icons.location_off_rounded,
+                      color: _isLocationPicked
+                          ? FluidColors.primary
+                          : Colors.grey.shade500,
+                      size: 24,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      _isLocationPicked
+                          ? "Lokasi Disimpan"
+                          : "Belum ditentukan",
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                        color: _isLocationPicked
+                            ? const Color(0xFF0F172A)
+                            : Colors.grey.shade500,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              if (_isLocationPicked) ...[
+                const SizedBox(height: 16),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF8FAFC),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
                       Text(
                         _pickedAddress,
                         style: TextStyle(
                           fontSize: 13,
-                          color: Colors.grey.shade800,
-                          fontWeight: FontWeight.w500,
-                          height: 1.3,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        "Lat: ${_pickedLocation.latitude.toStringAsFixed(5)}\nLng: ${_pickedLocation.longitude.toStringAsFixed(5)}",
-                        style: TextStyle(
-                          fontSize: 13,
                           color: Colors.grey.shade700,
+                          fontWeight: FontWeight.w500,
+                          height: 1.4,
                         ),
                       ),
-                      const SizedBox(height: 4),
-                      Text(
-                        "Radius: ${_radius.toInt()} meter",
-                        style: const TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.bold,
-                          color: FluidColors.primary,
-                        ),
+                      const Divider(height: 24),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                "Koordinat",
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  color: Colors.grey.shade500,
+                                ),
+                              ),
+                              Text(
+                                "${_pickedLocation.latitude.toStringAsFixed(4)}, ${_pickedLocation.longitude.toStringAsFixed(4)}",
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              Text(
+                                "Radius",
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  color: Colors.grey.shade500,
+                                ),
+                              ),
+                              Text(
+                                "${_radius.toInt()} meter",
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: FluidColors.primary,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
                       ),
                     ],
-                  ],
-                ),
-                const SizedBox(height: 24),
-                SizedBox(
-                  width: double.infinity,
-                  height: 45,
-                  child: OutlinedButton.icon(
-                    onPressed: _bukaMapPilihLokasi,
-                    icon: const Icon(Icons.map),
-                    label: Text(
-                      _isLocationPicked ? "Ubah Lokasi" : "Buka Peta",
-                    ),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: FluidColors.primary,
-                      side: const BorderSide(color: FluidColors.primary),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(FluidRadii.sm),
-                      ),
-                    ),
                   ),
                 ),
               ],
-            ),
+              const SizedBox(height: 20),
+              SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: OutlinedButton.icon(
+                  onPressed: _bukaMapPilihLokasi,
+                  icon: const Icon(Icons.map_rounded),
+                  label: Text(
+                    _isLocationPicked ? "Ubah Lokasi" : "Buka Peta",
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: FluidColors.primary,
+                    side: BorderSide(
+                      color: FluidColors.primary.withOpacity(0.5),
+                      width: 1.5,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    backgroundColor: FluidColors.primary.withOpacity(0.05),
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
 
-        const SizedBox(height: 40),
+        const SizedBox(height: 48),
 
+        // SUBMIT BUTTON
         SizedBox(
           width: double.infinity,
-          height: 56,
+          height: 60,
           child: ElevatedButton(
             onPressed: _isLoading ? null : _submitDaftar,
             style: ElevatedButton.styleFrom(
               backgroundColor: FluidColors.primary,
               foregroundColor: Colors.white,
-              elevation: 0,
+              elevation: 4,
+              shadowColor: FluidColors.primary.withOpacity(0.4),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(FluidRadii.sm),
+                borderRadius: BorderRadius.circular(16),
               ),
             ),
             child: _isLoading
@@ -316,120 +500,164 @@ class _AdminRegisterScreenState extends State<AdminRegisterScreen> {
                     width: 24,
                     child: CircularProgressIndicator(
                       color: Colors.white,
-                      strokeWidth: 2,
+                      strokeWidth: 2.5,
                     ),
                   )
                 : const Text(
                     "Daftarkan & Buat Database",
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 0.5,
+                    ),
                   ),
           ),
         ),
-        const SizedBox(height: 40),
       ],
     );
   }
 
   Widget _buildSuccessCard() {
     return Center(
-      child: Card(
-        color: FluidColors.surfaceContainerLow,
-        margin: const EdgeInsets.all(24),
-        child: Padding(
-          padding: const EdgeInsets.all(32.0),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 24),
+        padding: const EdgeInsets.all(32.0),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(24),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 24,
+              offset: const Offset(0, 10),
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: const Color(0xFF16A34A).withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
                 Icons.check_circle_rounded,
-                color: FluidColors.primary,
-                size: 80,
+                color: Color(0xFF16A34A),
+                size: 64,
               ),
-              const SizedBox(height: 24),
-              const Text(
-                "UMKM Didaftarkan!",
-                style: TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                  color: FluidColors.onSurface,
-                ),
+            ),
+            const SizedBox(height: 24),
+            const Text(
+              "UMKM Didaftarkan!",
+              style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.w900,
+                color: Color(0xFF0F172A),
+                letterSpacing: -0.5,
               ),
-              const SizedBox(height: 8),
-              Text(
-                "Berikan Client ID ini kepada klien untuk didaftarkan di aplikasi mereka:",
-                textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.grey.shade600),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              "Berikan Client ID ini kepada klien untuk digunakan saat login pertama kali.",
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: Colors.grey.shade600,
+                height: 1.5,
+                fontSize: 13,
               ),
-              const SizedBox(height: 24),
+            ),
+            const SizedBox(height: 32),
 
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  vertical: 16,
-                  horizontal: 20,
-                ),
-                decoration: BoxDecoration(
-                  color: FluidColors.primaryGhost,
-                  borderRadius: BorderRadius.circular(FluidRadii.sm),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      _newClientId!,
-                      style: const TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 2,
+            // CLIENT ID BOX
+            Container(
+              padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+              decoration: BoxDecoration(
+                color: FluidColors.primary.withOpacity(0.08),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: FluidColors.primary.withOpacity(0.3)),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    _newClientId!,
+                    style: const TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 1.5,
+                      color: FluidColors.primary,
+                    ),
+                  ),
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(10),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.05),
+                          blurRadius: 4,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: IconButton(
+                      icon: const Icon(
+                        Icons.copy_rounded,
                         color: FluidColors.primary,
+                        size: 20,
                       ),
-                    ),
-                    Flexible(
-                      child: IconButton(
-                        icon: const Icon(Icons.copy, color: FluidColors.primary),
-                        onPressed: () {
-                          Clipboard.setData(ClipboardData(text: _newClientId!));
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: const Text("Client ID disalin!"),
-                              backgroundColor: FluidColors.primary,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(
-                                  FluidRadii.sm,
-                                ),
-                              ),
-                              behavior: SnackBarBehavior.floating,
+                      onPressed: () {
+                        Clipboard.setData(ClipboardData(text: _newClientId!));
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Row(
+                              children: const [
+                                Icon(Icons.check_circle, color: Colors.white),
+                                SizedBox(width: 8),
+                                Text("Client ID disalin!"),
+                              ],
                             ),
-                          );
-                        },
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 32),
-              SizedBox(
-                width: double.infinity,
-                height: 50,
-                child: OutlinedButton(
-                  onPressed: () {
-                    _newClientId = null;
-                    setState(() {});
-                  },
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: FluidColors.primary,
-                    side: const BorderSide(color: FluidColors.primary),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(FluidRadii.sm),
+                            backgroundColor: const Color(0xFF16A34A),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            behavior: SnackBarBehavior.floating,
+                          ),
+                        );
+                      },
                     ),
                   ),
-                  child: const Text(
-                    "Selesai & Kembali",
-                    style: TextStyle(fontWeight: FontWeight.bold),
+                ],
+              ),
+            ),
+            const SizedBox(height: 32),
+            SizedBox(
+              width: double.infinity,
+              height: 56,
+              child: ElevatedButton(
+                onPressed: () {
+                  _newClientId = null;
+                  setState(() {});
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(
+                    0xFF0F172A,
+                  ), // Warna gelap elegan
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
                   ),
+                  elevation: 0,
+                ),
+                child: const Text(
+                  "Selesai & Kembali",
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
