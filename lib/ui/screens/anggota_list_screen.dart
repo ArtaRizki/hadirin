@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:hadirin/core/providers/auth_provider.dart';
 import 'package:hadirin/core/service/admin_service.dart';
 import 'package:hadirin/core/theme/fluid_theme.dart';
+import 'package:hadirin/ui/widgets/skeleton_loader.dart';
 import 'package:provider/provider.dart';
 
 class AnggotaListScreen extends StatefulWidget {
@@ -166,10 +167,10 @@ class _AnggotaListScreenState extends State<AnggotaListScreen> {
               color: FluidColors.primary,
               onRefresh: _fetchEmployees,
               child: _isLoading
-                  ? const Center(
-                      child: CircularProgressIndicator(
-                        color: FluidColors.primary,
-                      ),
+                  ? ListView.builder(
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                      itemCount: 5,
+                      itemBuilder: (context, index) => const CardSkeleton(),
                     )
                   : _errorMsg.isNotEmpty
                   ? ListView(

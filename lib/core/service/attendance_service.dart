@@ -25,8 +25,8 @@ class AttendanceService extends ApiClient {
   // ABSEN MASUK / PULANG
   // =================================================================
   Future<Map<String, dynamic>> submitAbsen({
-    required String idKaryawan,
-    required String namaKaryawan,
+    required String idAnggota,
+    required String namaAnggota,
     required String tipeAbsen,
     required String clientId,
   }) async {
@@ -106,7 +106,7 @@ class AttendanceService extends ApiClient {
 
       d.log('Mengambil wajah master dari server...');
       final wajahMaster = await _faceService.getWajahMasterDariServer(
-        idKaryawan,
+        idAnggota,
         clientId,
       );
       if (wajahMaster.isEmpty) {
@@ -165,8 +165,8 @@ class AttendanceService extends ApiClient {
         'action': 'absen',
         'client_id': clientId,
         'client_timestamp': DateTime.now().millisecondsSinceEpoch,
-        'id_karyawan': idKaryawan,
-        'nama': namaKaryawan,
+        'id_karyawan': idAnggota,
+        'nama': namaAnggota,
         'device_id': deviceId,
         'tipe_absen': tipeAbsen,
         'lat_long': '${position.latitude}, ${position.longitude}',
@@ -193,15 +193,15 @@ class AttendanceService extends ApiClient {
   }
 
   // =================================================================
-  // RIWAYAT ABSENSI KARYAWAN
+  // RIWAYAT ABSENSI ANGGOTA
   // =================================================================
-  Future<List<dynamic>> getHistory(String idKaryawan, String clientId) async {
+  Future<List<dynamic>> getHistory(String idAnggota, String clientId) async {
     try {
       final payload = {
         'api_token': AppConfig.apiToken,
         'action': 'get_history',
         'client_id': clientId,
-        'id_karyawan': idKaryawan,
+        'id_karyawan': idAnggota,
       };
 
       final response = await sendRequest('get_history', payload);
@@ -219,13 +219,13 @@ class AttendanceService extends ApiClient {
   // =================================================================
   // CEK STATUS CUTI HARI INI
   // =================================================================
-  Future<bool> cekStatusCutiHariIni(String idKaryawan, String clientId) async {
+  Future<bool> cekStatusCutiHariIni(String idAnggota, String clientId) async {
     try {
       final payload = {
         'api_token': AppConfig.apiToken,
         'action': 'cek_status_hari_ini',
         'client_id': clientId,
-        'id_karyawan': idKaryawan,
+        'id_karyawan': idAnggota,
       };
 
       final response = await sendRequest('cek_status_hari_ini', payload);

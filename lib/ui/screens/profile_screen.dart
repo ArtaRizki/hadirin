@@ -35,11 +35,33 @@ class _ProfileScreenState extends State<ProfileScreen> {
   List<dynamic> _filteredHistory = [];
   String _filterTipe = "Semua";
   DateTimeRange? _selectedDateRange;
+  List<dynamic> _listAnggotaStats = [];
+  bool _isLoadingStats = false;
 
   @override
   void initState() {
     super.initState();
-    initializeDateFormatting('id_ID', null).then((_) => _fetchHistory());
+    initializeDateFormatting('id_ID', null).then((_) {
+      _fetchHistory();
+      if (context.read<AuthProvider>().isAdmin) {
+        _fetchStats();
+      }
+    });
+  }
+
+  Future<void> _fetchStats() async {
+    setState(() => _isLoadingStats = true);
+    try {
+      final auth = context.read<AuthProvider>();
+      final data = await AdminService().getAllAnggota(auth.clientId ?? "");
+      setState(() {
+        _listAnggotaStats = data;
+        _isLoadingStats = false;
+      });
+    } catch (e) {
+      debugPrint("Gagal fetch stats: $e");
+      setState(() => _isLoadingStats = false);
+    }
   }
 
   Future<void> _fetchHistory() async {
@@ -914,6 +936,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ],
               ),
 
+              if (auth.isAdmin) ...[
+                const SizedBox(height: 24),
+                _sectionLabel("Statistik Instansi"),
+                const SizedBox(height: 12),
+                _buildAdminStats(),
+              ],
+
               const SizedBox(height: 24),
 
               // ==========================================
@@ -1104,4 +1133,74 @@ class _ProfileScreenState extends State<ProfileScreen> {
       letterSpacing: 0.2,
     ),
   );
+
+  Widget _buildAdminStats() {
+    if (_isLoadingStats) {
+      return Row(
+        children: List.generate(
+          3,
+          (i) => Expanded(
+            child: Container(
+              margin: EdgeInsets.only(right: i == 2 ? 0 : 8),
+              child: const SkeletonLoader(width: double.infinity, height: 80),
+            ),
+          ),
+        ),
+      );
+    }
+
+    int total = _listAnggotaStats.length;
+    int wajahOk =
+        _listAnggotaStats.where((a) => a['wajah_terdaftar'] == true).length;
+    int hpOk = _listAnggotaStats.where((a) => a['sudah_enroll'] == true).length;
+
+    return Row(
+      children: [
+        _statCard("Anggota", total.toString(), Icons.people_rounded, Colors.blue),
+        const SizedBox(width: 8),
+        _statCard("Wajah OK", wajahOk.toString(), Icons.face_rounded, Colors.green),
+        const SizedBox(width: 8),
+        _statCard("HP OK", hpOk.toString(), Icons.phonelink_setup, Colors.orange),
+      ],
+    );
+  }
+
+  Widget _statCard(String label, String value, IconData icon, Color color) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: color.withOpacity(0.1)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.03),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          children: [
+            Icon(icon, color: color, size: 20),
+            const SizedBox(height: 8),
+            Text(
+              value,
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w900,
+                color: color,
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              label,
+              style: TextStyle(fontSize: 10, color: Colors.grey.shade500),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }

@@ -55,14 +55,11 @@ class _AttendanceScreenState extends State<AttendanceScreen>
     return "Selamat Malam";
   }
 
-  // =================================================================
-  // 1. FUNGSI CEK STATUS CUTI HARI INI
-  // =================================================================
-  Future<bool> _cekStatusIzin(String idKaryawan, String clientId) async {
+  Future<bool> _cekStatusIzin(String idAnggota, String clientId) async {
     try {
       // Menggunakan endpoint khusus agar lebih ringan dan cepat
       return await _attendanceService.cekStatusCutiHariIni(
-        idKaryawan,
+        idAnggota,
         clientId,
       );
     } catch (e) {
@@ -103,9 +100,9 @@ class _AttendanceScreenState extends State<AttendanceScreen>
 
     setState(() => _isLoading = true);
     final auth = context.read<AuthProvider>();
-    final idKaryawan = auth.idKaryawan ?? "";
+    final idAnggota = auth.idAnggota ?? "";
 
-    bool sedangCuti = await _cekStatusIzin(idKaryawan, auth.clientId ?? "");
+    bool sedangCuti = await _cekStatusIzin(idAnggota, auth.clientId ?? "");
 
     if (!mounted) return;
     setState(() => _isLoading = false);
@@ -185,8 +182,8 @@ class _AttendanceScreenState extends State<AttendanceScreen>
     final auth = context.read<AuthProvider>();
 
     final result = await _attendanceService.submitAbsen(
-      idKaryawan: auth.idKaryawan ?? "",
-      namaKaryawan: auth.namaKaryawan ?? "",
+      idAnggota: auth.idAnggota ?? "",
+      namaAnggota: auth.namaAnggota ?? "",
       tipeAbsen: tipeAbsen,
       clientId: auth.clientId ?? "",
     );
@@ -319,7 +316,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                               ),
                               const SizedBox(height: 5),
                               Text(
-                                auth.namaKaryawan ?? "Karyawan",
+                                auth.namaAnggota ?? "Anggota",
                                 style: const TextStyle(
                                   fontSize: 24,
                                   fontWeight: FontWeight.w900,

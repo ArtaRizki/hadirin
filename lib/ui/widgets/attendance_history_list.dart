@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:hadirin/core/theme/fluid_theme.dart';
+import 'package:hadirin/ui/widgets/skeleton_loader.dart';
 
 class AttendanceHistoryList extends StatelessWidget {
   final List<dynamic> history;
@@ -24,14 +25,8 @@ class AttendanceHistoryList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (isLoading) {
-      return const Center(
-        child: Padding(
-          padding: EdgeInsets.all(40.0),
-          child: CircularProgressIndicator(
-            color: FluidColors.primary,
-            strokeWidth: 3,
-          ),
-        ),
+      return Column(
+        children: List.generate(3, (index) => const CardSkeleton(height: 80)),
       );
     }
 

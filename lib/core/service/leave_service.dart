@@ -5,7 +5,7 @@ import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:hadirin/core/config/app_config.dart';
 import 'package:hadirin/core/service/api_client.dart';
 
-/// Tanggung jawab: Pengajuan izin/cuti/sakit oleh karyawan
+/// Tanggung jawab: Pengajuan izin/cuti/sakit oleh Anggota
 /// dan persetujuan/penolakan izin oleh admin.
 class LeaveService extends ApiClient {
   // =================================================================
@@ -13,12 +13,13 @@ class LeaveService extends ApiClient {
   // =================================================================
   Future<Map<String, dynamic>> submitIzin({
     required String clientId,
-    required String idKaryawan,
+    required String idAnggota,
     required String tipeIzin,
     required String rentangTanggal,
     required String alasan,
     required bool isAdmin,
     String? imagePath,
+    String? namaAnggota, // Optional for tracking
   }) async {
     try {
       String base64Image = '';
@@ -48,7 +49,7 @@ class LeaveService extends ApiClient {
         'api_token': AppConfig.apiToken,
         'action': 'ajukan_izin',
         'client_id': clientId,
-        'id_karyawan': idKaryawan,
+        'id_karyawan': idAnggota,
         'tipe_izin': tipeIzin,
         'rentang_tanggal': rentangTanggal,
         'alasan': alasan,

@@ -74,7 +74,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
         LoginRole assignedRole = inputId.toUpperCase().startsWith("INST-")
             ? LoginRole.admin
-            : LoginRole.karyawan;
+            : LoginRole.anggota;
 
         await context.read<AuthProvider>().login(
           inputId,

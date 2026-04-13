@@ -60,14 +60,15 @@ class _LeaveRequestScreenState extends State<LeaveRequestScreen> {
 
     setState(() => _isLoading = true);
     final auth = context.read<AuthProvider>();
-    final idKaryawan = auth.idKaryawan ?? "";
+    final idAnggota = auth.idAnggota ?? "";
 
     String strTanggal =
         "${DateFormat('dd MMM yyyy', 'id_ID').format(_selectedDates!.start)} s/d ${DateFormat('dd MMM yyyy', 'id_ID').format(_selectedDates!.end)}";
 
     final result = await LeaveService().submitIzin(
       clientId: auth.clientId ?? "",
-      idKaryawan: idKaryawan,
+      idAnggota: idAnggota,
+      namaAnggota: auth.namaAnggota ?? "",
       tipeIzin: _tipeIzin,
       rentangTanggal: strTanggal,
       alasan: _alasanController.text.trim(),

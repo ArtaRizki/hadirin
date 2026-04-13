@@ -103,7 +103,7 @@ class _AuthWrapperState extends State<AuthWrapper> {
         return const AdminRegisterScreen();
 
       case LoginRole.admin:
-      case LoginRole.karyawan:
+      case LoginRole.anggota:
         // Admin Instansi & Anggota masuk ke Dashboard yang sama.
         // Nanti menu "Tambah Anggota" disembunyikan otomatis jika yang login Anggota biasa.
         return const AttendanceScreen();

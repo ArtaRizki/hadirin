@@ -306,9 +306,9 @@ class _SetLocationScreenState extends State<SetLocationScreen> {
                 if (_searchResults.isEmpty)
                   Center(
                     child: Transform.translate(
-                      // Geser Y ke atas sejauh 24 (setengah dari size 48)
+                      // Geser Y ke atas sejauh 22 (sedikit lebih rendah dari 24)
                       // agar ujung lancip pin tepat di tengah lingkaran
-                      offset: const Offset(0, -24),
+                      offset: const Offset(0, -22),
                       child: const Icon(
                         Icons.location_on_rounded,
                         size: 48,

@@ -296,10 +296,9 @@ class _ApprovalScreenState extends State<ApprovalScreen> {
               color: FluidColors.primary,
               onRefresh: _fetchApprovals,
               child: _isLoading
-                  ? const Center(
-                      child: CircularProgressIndicator(
-                        color: FluidColors.primary,
-                      ),
+                  ? const Padding(
+                      padding: EdgeInsets.fromLTRB(20, 16, 20, 0),
+                      child: CardSkeleton(itemCount: 4),
                     )
                   : _approvalList.isEmpty
                   ? ListView(

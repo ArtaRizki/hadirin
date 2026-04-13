@@ -3,7 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 // Tambahkan ini
 
 // Enum untuk membedakan level akses
-enum LoginRole { none, superAdmin, admin, karyawan }
+enum LoginRole { none, superAdmin, admin, anggota }
 
 class AuthProvider extends ChangeNotifier {
   String? _idUser; // Bisa berisi ID Anggota ATAU Client ID (INST-xxxx)
@@ -22,7 +22,7 @@ class AuthProvider extends ChangeNotifier {
   bool get isLoggedIn => _role != LoginRole.none;
   bool get isSuperAdmin => _role == LoginRole.superAdmin;
   bool get isAdmin => _role == LoginRole.admin || _role == LoginRole.superAdmin;
-  bool get isAnggota => _role == LoginRole.karyawan;
+  bool get isAnggota => _role == LoginRole.anggota;
 
   // Alias untuk kompatibilitas kode lama
   String? get idAnggota => _idUser;
