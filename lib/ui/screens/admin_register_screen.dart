@@ -1,9 +1,14 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_map/flutter_map.dart';
-import 'package:latlong2/latlong.dart'; // Pengganti LatLng dari Google Maps
+import 'package:latlong2/latlong.dart';
+import 'package:hadirin/core/providers/auth_provider.dart';
+import 'package:hadirin/ui/screens/login_screen.dart';
+import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:hadirin/core/service/attendance_service.dart';
 import 'package:hadirin/core/theme/fluid_theme.dart';
+import 'package:hadirin/ui/screens/set_location_screen.dart'; // Import ini
 
 class AdminRegisterScreen extends StatefulWidget {
   const AdminRegisterScreen({super.key});
@@ -15,13 +20,47 @@ class AdminRegisterScreen extends StatefulWidget {
 class _AdminRegisterScreenState extends State<AdminRegisterScreen> {
   final _namaController = TextEditingController();
 
-  // State untuk Map & Lokasi menggunakan latlong2
-  LatLng _pickedLocation = const LatLng(-7.9713634, 112.5847634); // Titik awal
+  // Default jika belum pilih
+  LatLng _pickedLocation = const LatLng(-7.9713634, 112.5847634);
   double _radius = 100.0;
-  final MapController _mapController = MapController();
+  String _pickedAddress = "";
+  bool _isLocationPicked = false; // Penanda apakah user sudah memilih lokasi
 
   bool _isLoading = false;
   String? _newClientId;
+
+  @override
+  void dispose() {
+    _namaController.dispose();
+    super.dispose();
+  }
+
+  // Fungsi untuk membuka SetLocationScreen dan menunggu hasilnya
+  Future<void> _bukaMapPilihLokasi() async {
+    // Navigasi dengan return value berupa Map
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        // Kirim state awal (berguna jika sebelumnya sudah pilih tapi mau diubah)
+        builder: (_) => SetLocationScreen(
+          isSelectionMode:
+              true, // Beritahu bahwa ini mode pilih, bukan update langsung
+          initialLocation: _pickedLocation,
+          initialRadius: _radius,
+        ),
+      ),
+    );
+
+    // Tangkap kembalian dari SetLocationScreen
+    if (result != null && result is Map<String, dynamic>) {
+      setState(() {
+        _pickedLocation = result['location'] as LatLng;
+        _radius = result['radius'] as double;
+        _pickedAddress = result['address'] as String;
+        _isLocationPicked = true;
+      });
+    }
+  }
 
   void _submitDaftar() async {
     if (_namaController.text.trim().isEmpty) {
@@ -29,9 +68,17 @@ class _AdminRegisterScreenState extends State<AdminRegisterScreen> {
         SnackBar(
           content: const Text("Nama UMKM tidak boleh kosong"),
           backgroundColor: Colors.red,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(FluidRadii.sm),
-          ),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+    if (!_isLocationPicked) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text("Harap tentukan lokasi kantor terlebih dahulu!"),
+          backgroundColor: Colors.orange.shade800,
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -50,6 +97,11 @@ class _AdminRegisterScreenState extends State<AdminRegisterScreen> {
     setState(() => _isLoading = false);
 
     if (result['success']) {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setDouble('office_lat', _pickedLocation.latitude);
+      await prefs.setDouble('office_lng', _pickedLocation.longitude);
+      await prefs.setDouble('office_radius', _radius);
+
       setState(() => _newClientId = result['client_id']);
     } else {
       if (mounted) {
@@ -57,9 +109,6 @@ class _AdminRegisterScreenState extends State<AdminRegisterScreen> {
           SnackBar(
             content: Text(result['message']),
             backgroundColor: Colors.red,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(FluidRadii.sm),
-            ),
             behavior: SnackBarBehavior.floating,
           ),
         );
@@ -82,6 +131,19 @@ class _AdminRegisterScreenState extends State<AdminRegisterScreen> {
             fontWeight: FontWeight.bold,
           ),
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout, color: Colors.redAccent),
+            tooltip: "Keluar",
+            onPressed: () {
+              context.read<AuthProvider>().logout();
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (_) => const LoginScreen()),
+              );
+            },
+          ),
+        ],
       ),
       body: _newClientId != null ? _buildSuccessCard() : _buildForm(),
     );
@@ -101,12 +163,11 @@ class _AdminRegisterScreenState extends State<AdminRegisterScreen> {
         ),
         const SizedBox(height: 8),
         Text(
-          "Masukkan nama dan tentukan titik lokasi kantor.",
+          "Masukkan nama perusahaan / toko yang akan didaftarkan.",
           style: TextStyle(color: Colors.grey.shade600),
         ),
         const SizedBox(height: 24),
 
-        // Input Nama UMKM
         TextFormField(
           controller: _namaController,
           decoration: const InputDecoration(
@@ -116,126 +177,126 @@ class _AdminRegisterScreenState extends State<AdminRegisterScreen> {
           textInputAction: TextInputAction.done,
         ),
 
-        const SizedBox(height: FluidSpacing.section),
+        const SizedBox(height: 40),
+
         const Text(
-          "Lokasi & Radius Absensi",
+          "Lokasi Absensi",
           style: TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.bold,
             color: FluidColors.onSurface,
           ),
         ),
+        const SizedBox(height: 8),
+        Text(
+          "Pilih titik akurat di peta untuk batas absensi.",
+          style: TextStyle(color: Colors.grey.shade600),
+        ),
         const SizedBox(height: 16),
 
-        // KARTU MAP INTERAKTIF (OPEN STREET MAP)
+        // CARD INDIKATOR LOKASI
         Card(
           color: FluidColors.surfaceContainerLow,
-          child: Column(
-            children: [
-              // Area flutter_map
-              ClipRRect(
-                borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(FluidRadii.md),
-                ),
-                child: SizedBox(
-                  height: 300,
-                  width: double.infinity,
-                  child: Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      FlutterMap(
-                        mapController: _mapController,
-                        options: MapOptions(
-                          initialCenter: _pickedLocation,
-                          initialZoom: 16.0,
-                          // Update posisi state saat map digeser
-                          onPositionChanged:
-                              (MapCamera position, bool hasGesture) {
-                                setState(() {
-                                  _pickedLocation = position.center;
-                                });
-                              },
-                        ),
-                        children: [
-                          TileLayer(
-                            urlTemplate:
-                                'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                            userAgentPackageName:
-                                'com.mobile.hadirin', // Ganti dengan nama package Anda
-                          ),
-                          CircleLayer(
-                            circles: [
-                              CircleMarker(
-                                point: _pickedLocation,
-                                color: FluidColors.primary.withOpacity(0.15),
-                                borderStrokeWidth: 2,
-                                borderColor: FluidColors.primary,
-                                useRadiusInMeter:
-                                    true, // Radius akurat sesuai meter
-                                radius: _radius,
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                      // PIN Merah Statis di Tengah Layar
-                      const Padding(
-                        padding: EdgeInsets.only(bottom: 40.0),
-                        child: Icon(
-                          Icons.location_on,
-                          size: 50,
-                          color: Colors.redAccent,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-
-              // Area Kontrol Radius di bawah Peta
-              Padding(
-                padding: const EdgeInsets.all(24.0),
-                child: Column(
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(FluidRadii.md),
+            side: BorderSide(
+              color: _isLocationPicked
+                  ? FluidColors.primary
+                  : Colors.grey.shade300,
+              width: 1,
+            ),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(20.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text(
-                          "Radius Absensi:",
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: FluidColors.onSurface,
-                          ),
+                        Icon(
+                          _isLocationPicked
+                              ? Icons.check_circle
+                              : Icons.location_off,
+                          color: _isLocationPicked
+                              ? FluidColors.primary
+                              : Colors.grey,
+                          size: 20,
                         ),
-                        Text(
-                          "${_radius.toInt()} meter",
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: FluidColors.primary,
+                        SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            _isLocationPicked
+                                ? "Lokasi Disimpan"
+                                : "Belum ditentukan",
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
                           ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 8),
-                    Slider(
-                      value: _radius,
-                      min: 20,
-                      max: 500,
-                      divisions: 48,
-                      activeColor: FluidColors.primary,
-                      inactiveColor: FluidColors.primaryGhost,
-                      onChanged: (val) => setState(() => _radius = val),
-                    ),
+                    if (_isLocationPicked) ...[
+                      const SizedBox(height: 8),
+                      Text(
+                        _pickedAddress,
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Colors.grey.shade800,
+                          fontWeight: FontWeight.w500,
+                          height: 1.3,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        "Lat: ${_pickedLocation.latitude.toStringAsFixed(5)}\nLng: ${_pickedLocation.longitude.toStringAsFixed(5)}",
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Colors.grey.shade700,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        "Radius: ${_radius.toInt()} meter",
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.bold,
+                          color: FluidColors.primary,
+                        ),
+                      ),
+                    ],
                   ],
                 ),
-              ),
-            ],
+                const SizedBox(height: 24),
+                SizedBox(
+                  width: double.infinity,
+                  height: 45,
+                  child: OutlinedButton.icon(
+                    onPressed: _bukaMapPilihLokasi,
+                    icon: const Icon(Icons.map),
+                    label: Text(
+                      _isLocationPicked ? "Ubah Lokasi" : "Buka Peta",
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: FluidColors.primary,
+                      side: const BorderSide(color: FluidColors.primary),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(FluidRadii.sm),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
 
-        const SizedBox(height: FluidSpacing.section),
+        const SizedBox(height: 40),
 
-        // TOMBOL SUBMIT
         SizedBox(
           width: double.infinity,
           height: 56,
@@ -273,6 +334,7 @@ class _AdminRegisterScreenState extends State<AdminRegisterScreen> {
     return Center(
       child: Card(
         color: FluidColors.surfaceContainerLow,
+        margin: const EdgeInsets.all(24),
         child: Padding(
           padding: const EdgeInsets.all(32.0),
           child: Column(
@@ -321,23 +383,25 @@ class _AdminRegisterScreenState extends State<AdminRegisterScreen> {
                         color: FluidColors.primary,
                       ),
                     ),
-                    IconButton(
-                      icon: const Icon(Icons.copy, color: FluidColors.primary),
-                      onPressed: () {
-                        Clipboard.setData(ClipboardData(text: _newClientId!));
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: const Text("Client ID disalin!"),
-                            backgroundColor: FluidColors.primary,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(
-                                FluidRadii.sm,
+                    Flexible(
+                      child: IconButton(
+                        icon: const Icon(Icons.copy, color: FluidColors.primary),
+                        onPressed: () {
+                          Clipboard.setData(ClipboardData(text: _newClientId!));
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: const Text("Client ID disalin!"),
+                              backgroundColor: FluidColors.primary,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(
+                                  FluidRadii.sm,
+                                ),
                               ),
+                              behavior: SnackBarBehavior.floating,
                             ),
-                            behavior: SnackBarBehavior.floating,
-                          ),
-                        );
-                      },
+                          );
+                        },
+                      ),
                     ),
                   ],
                 ),
@@ -347,7 +411,10 @@ class _AdminRegisterScreenState extends State<AdminRegisterScreen> {
                 width: double.infinity,
                 height: 50,
                 child: OutlinedButton(
-                  onPressed: () => Navigator.pop(context),
+                  onPressed: () {
+                    _newClientId = null;
+                    setState(() {});
+                  },
                   style: OutlinedButton.styleFrom(
                     foregroundColor: FluidColors.primary,
                     side: const BorderSide(color: FluidColors.primary),

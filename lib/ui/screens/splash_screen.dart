@@ -39,17 +39,12 @@ class _SplashScreenState extends State<SplashScreen> {
       Permission.camera,
     ].request();
 
-    // Opsional: Anda bisa menambahkan logika di sini jika izin ditolak
-    // Misalnya, memaksa user membuka pengaturan jika statusnya permanentlyDenied
     if (statuses[Permission.location]!.isDenied ||
         statuses[Permission.camera]!.isDenied) {
-      // Jika izin ditolak, kita tetap bisa melanjutkan,
-      // namun nantinya fitur map/absen akan gagal di halaman masing-masing.
       debugPrint("Beberapa izin ditolak oleh pengguna.");
     }
 
     if (statuses[Permission.location]!.isPermanentlyDenied) {
-      // Buka pengaturan aplikasi jika user memilih "Don't ask again"
       openAppSettings();
     }
   }
@@ -57,12 +52,11 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: FluidColors.background, // Sesuai tema Fluid
+      backgroundColor: FluidColors.background,
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // Ikon atau Logo Perusahaan Anda
             Container(
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(

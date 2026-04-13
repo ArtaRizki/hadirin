@@ -6,7 +6,7 @@ import 'package:hadirin/core/service/notification_service.dart';
 import 'package:hadirin/ui/screens/profile_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:hadirin/core/theme/fluid_theme.dart';
-import 'package:intl/intl.dart'; // Tambahkan intl untuk formatting yang lebih mudah
+import 'package:intl/intl.dart';
 
 class AttendanceScreen extends StatefulWidget {
   const AttendanceScreen({super.key});
@@ -54,38 +54,159 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
     return DateFormat('HH:mm:ss').format(time);
   }
 
-  void _prosesAbsensi(String tipe) async {
-    setState(() => _isLoading = true);
-    final auth = context.read<AuthProvider>();
+  // =================================================================
+  // 1. FUNGSI CEK STATUS CUTI HARI INI
+  // =================================================================
+  Future<bool> _cekStatusIzin(String idKaryawan) async {
+    try {
+      final history = await _attendanceService.getHistory(idKaryawan);
+      final now = DateTime.now();
+      final today = DateTime(now.year, now.month, now.day);
 
-    var result = await _attendanceService.submitAbsen(
-      idKaryawan: auth.idKaryawan ?? "UNKNOWN",
-      namaKaryawan: auth.namaKaryawan ?? "UNKNOWN",
-      tipeAbsen: tipe,
+      for (var log in history) {
+        final tipe = log['tipe'].toString();
+        final status = log['status'].toString();
+
+        if ((tipe == 'Cuti' || tipe == 'Izin' || tipe == 'Sakit') &&
+            status == 'Disetujui') {
+          final rentang = log['lat_long'].toString();
+
+          RegExp dateRegex = RegExp(r'\d{4}-\d{2}-\d{2}');
+          final matches = dateRegex.allMatches(rentang).toList();
+
+          if (matches.length >= 2) {
+            final startDt = DateTime.parse(matches[0].group(0)!);
+            final endDt = DateTime.parse(matches[1].group(0)!);
+
+            final startDate = DateTime(
+              startDt.year,
+              startDt.month,
+              startDt.day,
+            );
+            final endDate = DateTime(endDt.year, endDt.month, endDt.day);
+
+            if (today.compareTo(startDate) >= 0 &&
+                today.compareTo(endDate) <= 0) {
+              return true;
+            }
+          } else if (matches.length == 1) {
+            final dateDt = DateTime.parse(matches[0].group(0)!);
+            final dateDate = DateTime(dateDt.year, dateDt.month, dateDt.day);
+            if (today.isAtSameMomentAs(dateDate)) return true;
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint("Gagal mengecek status cuti: $e");
+    }
+    return false;
+  }
+
+  // =================================================================
+  // 2. FUNGSI PEMBUNGKUS TOMBOL ABSEN (SOFT BLOCK DIALOG)
+  // =================================================================
+  void _konfirmasiAbsen(String tipeAbsen) async {
+    setState(() => _isLoading = true);
+
+    final auth = context.read<AuthProvider>();
+    final idKaryawan = auth.idKaryawan ?? "";
+
+    bool sedangCuti = await _cekStatusIzin(idKaryawan);
+
+    if (!mounted) return;
+    setState(() => _isLoading = false);
+
+    if (sedangCuti) {
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(FluidRadii.md),
+          ),
+          title: Row(
+            children: const [
+              Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 28),
+              SizedBox(width: 8),
+              Text(
+                "Status Cuti Aktif",
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+              ),
+            ],
+          ),
+          content: Text(
+            "Anda terdaftar sedang Cuti/Izin/Sakit hari ini dan sudah disetujui oleh Admin.\n\nApakah Anda yakin ingin membatalkan status tersebut dan tetap melakukan Absen $tipeAbsen?",
+            style: const TextStyle(height: 1.5),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text(
+                "Batal Absen",
+                style: TextStyle(color: Colors.grey),
+              ),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: FluidColors.primary,
+                foregroundColor: Colors.white,
+              ),
+              onPressed: () {
+                Navigator.pop(context);
+                _prosesAbsensi(tipeAbsen); // <-- SUDAH MEMANGGIL PROSES ABSEN
+              },
+              child: const Text("Tetap Absen"),
+            ),
+          ],
+        ),
+      );
+    } else {
+      _prosesAbsensi(tipeAbsen); // <-- SUDAH MEMANGGIL PROSES ABSEN
+    }
+  }
+
+  // =================================================================
+  // 3. FUNGSI INTI: MENGIRIM ABSENSI KE SERVER
+  // =================================================================
+  void _prosesAbsensi(String tipeAbsen) async {
+    setState(() => _isLoading = true);
+
+    final auth = context.read<AuthProvider>();
+    final idKaryawan = auth.idKaryawan ?? "";
+    final namaKaryawan = auth.namaKaryawan ?? "";
+
+    final result = await _attendanceService.submitAbsen(
+      idKaryawan: idKaryawan,
+      namaKaryawan: namaKaryawan,
+      tipeAbsen: tipeAbsen,
     );
 
     if (!mounted) return;
     setState(() => _isLoading = false);
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(result['message'] ?? 'Terjadi kesalahan.'),
-        backgroundColor: result['success'] == true
-            ? FluidColors.primary
-            : Colors.red,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(FluidRadii.sm),
-        ),
-      ),
-    );
-
-    if (result['success'] == true) {
+    if (result['success']) {
+      // Munculkan Notifikasi Sistem
       NotificationService().showNotification(
         id: DateTime.now().millisecond,
-        title: 'Absen $tipe Berhasil! ✅',
-        body:
-            'Terima kasih ${auth.namaKaryawan}, absen Anda telah tercatat pada ${_formatFullTime(DateTime.now())} WIB.',
+        title: "Absen $tipeAbsen Berhasil",
+        body: "Terima kasih, absen $tipeAbsen Anda telah tercatat disistem.",
+      );
+
+      // Munculkan Pop-up Bawah
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(result['message']),
+          backgroundColor: Colors.green,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(result['message']),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+          duration: const Duration(seconds: 5), // Tahan lebih lama untuk dibaca
+        ),
       );
     }
   }
@@ -110,7 +231,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        _getGreeting(), // Memanggil sapaan dinamis
+                        _getGreeting(),
                         style: TextStyle(
                           fontSize: 16,
                           color: Colors.grey.shade600,
@@ -181,9 +302,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                           style: const TextStyle(
                             fontSize: 68,
                             fontWeight: FontWeight.w800,
-                            fontFeatures: [
-                              FontFeature.tabularFigures(),
-                            ], // Agar angka tidak goyang saat berganti
+                            fontFeatures: [FontFeature.tabularFigures()],
                             letterSpacing: -2,
                             color: FluidColors.primary,
                           ),
@@ -221,7 +340,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                                 ),
                                 elevation: 0,
                               ),
-                              onPressed: () => _prosesAbsensi("Masuk"),
+                              onPressed: () => _konfirmasiAbsen("Masuk"),
                               child: const Text(
                                 "Absen Masuk",
                                 style: TextStyle(
@@ -249,7 +368,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                                   ),
                                 ),
                               ),
-                              onPressed: () => _prosesAbsensi("Pulang"),
+                              onPressed: () => _konfirmasiAbsen("Pulang"),
                               child: const Text(
                                 "Absen Pulang",
                                 style: TextStyle(

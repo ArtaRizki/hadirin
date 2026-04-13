@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:hadirin/core/config/app_config.dart'; // Tambahkan ini
 
 // Enum untuk membedakan level akses
 enum LoginRole { none, superAdmin, adminUmkm, karyawan }
@@ -7,7 +8,7 @@ enum LoginRole { none, superAdmin, adminUmkm, karyawan }
 class AuthProvider extends ChangeNotifier {
   String? _idUser; // Bisa berisi ID Karyawan ATAU Client ID (UMKM-xxxx)
   String? _namaUser; // Nama karyawan ATAU Nama UMKM
-  LoginRole _role = LoginRole.adminUmkm;
+  LoginRole _role = LoginRole.none; // Ubah default jadi none
   bool _isInitialized = false;
 
   String? get idUser => _idUser;
@@ -32,23 +33,37 @@ class AuthProvider extends ChangeNotifier {
     _idUser = prefs.getString('id_user');
     _namaUser = prefs.getString('nama_user');
 
+    // 👇 BACA CLIENT_ID DAN KEMBALIKAN KE APP_CONFIG SESAAT SETELAH SPLASH SCREEN 👇
+    final savedClientId = prefs.getString('client_id');
+    if (savedClientId != null && savedClientId.isNotEmpty) {
+      AppConfig.clientId = savedClientId;
+    }
+
     // Membaca string role dari SharedPreferences
     String savedRole = prefs.getString('login_role') ?? 'none';
     _role = LoginRole.values.firstWhere(
       (e) => e.toString() == savedRole,
-      orElse: () => LoginRole.adminUmkm,
+      orElse: () => LoginRole.none,
     );
 
     _isInitialized = true;
     notifyListeners();
   }
 
-  // Fungsi Login Universal Baru
-  Future<void> login(String id, String nama, LoginRole role) async {
+  // 👇 FUNGSI LOGIN DITAMBAH PARAMETER clientId 👇
+  Future<void> login(
+    String id,
+    String nama,
+    LoginRole role,
+    String clientId,
+  ) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('id_user', id.trim());
     await prefs.setString('nama_user', nama.trim());
     await prefs.setString('login_role', role.toString());
+    await prefs.setString('client_id', clientId.trim()); // Simpan permanen
+
+    AppConfig.clientId = clientId.trim(); // Update memori global config juga
 
     _idUser = id.trim();
     _namaUser = nama.trim();
@@ -59,9 +74,11 @@ class AuthProvider extends ChangeNotifier {
   Future<void> logout() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.clear();
+
     _idUser = null;
     _namaUser = null;
     _role = LoginRole.none;
+    AppConfig.clientId = ""; // Kosongkan config global
     notifyListeners();
   }
 }

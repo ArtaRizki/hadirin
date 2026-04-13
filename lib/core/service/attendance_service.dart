@@ -243,6 +243,7 @@ class AttendanceService {
     required String tipeIzin,
     required String rentangTanggal,
     required String alasan,
+    required bool isAdmin,
     String? imagePath,
   }) async {
     try {
@@ -278,6 +279,7 @@ class AttendanceService {
         "rentang_tanggal": rentangTanggal,
         "alasan": alasan,
         "foto_base64": base64Image,
+        "is_admin": isAdmin,
       };
 
       var response = await _sendApiRequest("ajukan_izin", payload);
@@ -497,7 +499,11 @@ class AttendanceService {
     }
   }
 
-  Future<Map<String, dynamic>> enrollDevice(String idKaryawan) async {
+  // TAMBAHKAN PARAMETER clientId
+  Future<Map<String, dynamic>> enrollDevice(
+    String clientId,
+    String idKaryawan,
+  ) async {
     try {
       final androidInfo = await _deviceInfo.androidInfo;
       final deviceId = androidInfo.id;
@@ -505,7 +511,7 @@ class AttendanceService {
       final payload = {
         "api_token": _Config.apiToken,
         "action": "enroll_device",
-        "client_id": AppConfig.clientId,
+        "client_id": clientId, // SEKARANG MENGIRIM CLIENT ID DARI INPUT USER
         "id_karyawan": idKaryawan,
         "device_id": deviceId,
       };
@@ -553,6 +559,7 @@ class AttendanceService {
   Future<List<dynamic>> getMonthlyReport(
     String clientId,
     String bulanTahun,
+    String idKaryawanTarget, // <--- TAMBAH INI
   ) async {
     try {
       final payload = {
@@ -560,6 +567,7 @@ class AttendanceService {
         "action": "get_monthly_report",
         "client_id": clientId,
         "bulan_tahun": bulanTahun,
+        "id_karyawan_target": idKaryawanTarget, // <--- TAMBAH INI
       };
 
       var response = await _sendApiRequest(
@@ -625,14 +633,44 @@ class AttendanceService {
       final payload = {
         "api_token": _Config.apiToken,
         "action": "reset_device",
-        "client_id": clientId, // SEKARANG AMAN DARI PROVIDER
+        "client_id": clientId,
         "target_id_karyawan": targetId,
       };
-      final response = await _sendApiRequest("reset_device", payload);
-      return jsonDecode(response.body);
+      var response = await _sendApiRequest("reset_device", payload);
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      }
+      throw Exception(
+        "Gagal terhubung ke server (HTTP ${response.statusCode}).",
+      );
     } catch (e) {
       d.log('==== ERROR RESET DEVICE ==== $e');
-      return {"code": 500, "message": "Gagal mereset: $e"};
+      return {
+        "code": 500,
+        "message": e.toString().replaceAll("Exception: ", ""),
+      };
+    }
+  }
+
+  Future<List<dynamic>> getAllKaryawan(String clientId) async {
+    try {
+      final payload = {
+        "api_token": _Config.apiToken,
+        "action": "get_all_karyawan",
+        "client_id": clientId,
+      };
+
+      var response = await _sendApiRequest("get_all_karyawan", payload);
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['code'] == 200) return data['message'] as List<dynamic>;
+        throw Exception(data['message']);
+      }
+      throw Exception("Gagal terhubung ke server.");
+    } catch (e) {
+      d.log('==== ERROR GET ALL KARYAWAN ==== $e');
+      throw Exception("Gagal mengambil data karyawan: $e");
     }
   }
 

@@ -22,7 +22,7 @@
             "flutterMode": "release"
         },
         {
-            "name": "Hadirin - Dev",
+            "name": "Hadir.in - Dev",
             "request": "launch",
             "type": "dart",
             "args": [

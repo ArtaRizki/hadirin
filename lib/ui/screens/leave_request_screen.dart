@@ -70,6 +70,7 @@ class _LeaveRequestScreenState extends State<LeaveRequestScreen> {
       rentangTanggal: strTanggal,
       alasan: _alasanController.text.trim(),
       imagePath: _suratDokter?.path,
+      isAdmin: auth.isAdmin,
     );
 
     setState(() => _isLoading = false);

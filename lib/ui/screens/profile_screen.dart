@@ -11,7 +11,7 @@ import 'package:hadirin/core/theme/fluid_theme.dart';
 import 'package:intl/intl.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:hadirin/ui/screens/leave_request_screen.dart';
-import 'package:hadirin/ui/screens/approval_screen.dart'; // Import layar approval
+import 'package:hadirin/ui/screens/approval_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -223,12 +223,35 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  // =================================================================
-  // DIALOG PEMILIHAN BULAN & TAHUN UNTUK EXCEL
-  // =================================================================
-  void _tampilkanDialogPilihBulan() {
+  void _tampilkanDialogPilihBulan() async {
+    final auth = context.read<AuthProvider>();
+
+    List<dynamic> listKaryawan = [];
+    if (auth.isAdmin) {
+      setState(() => _isExporting = true);
+      try {
+        listKaryawan = await _service.getAllKaryawan(AppConfig.clientId);
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text("Gagal memuat daftar karyawan: $e"),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+        setState(() => _isExporting = false);
+        return;
+      }
+      setState(() => _isExporting = false);
+    }
+
     int selectedMonth = DateTime.now().month;
     int selectedYear = DateTime.now().year;
+
+    String selectedKaryawanId = auth.isAdmin
+        ? "SEMUA"
+        : (auth.idKaryawan ?? "");
 
     final List<String> namaBulan = [
       "Januari",
@@ -245,6 +268,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
       "Desember",
     ];
 
+    if (!mounted) return;
+
     showDialog(
       context: context,
       builder: (context) {
@@ -258,48 +283,85 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 "Pilih Bulan Rekap",
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
               ),
-              content: Row(
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Expanded(
-                    flex: 3,
-                    child: DropdownButtonFormField<int>(
-                      initialValue: selectedMonth,
+                  Row(
+                    children: [
+                      Expanded(
+                        flex: 3,
+                        child: DropdownButtonFormField<int>(
+                          initialValue: selectedMonth,
+                          isExpanded: true,
+                          decoration: const InputDecoration(
+                            border: OutlineInputBorder(),
+                            contentPadding: EdgeInsets.symmetric(
+                              horizontal: 12,
+                            ),
+                          ),
+                          items: List.generate(12, (index) {
+                            return DropdownMenuItem(
+                              value: index + 1,
+                              child: Text(namaBulan[index]),
+                            );
+                          }),
+                          onChanged: (val) =>
+                              setDialogState(() => selectedMonth = val!),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        flex: 2,
+                        child: DropdownButtonFormField<int>(
+                          initialValue: selectedYear,
+                          isExpanded: true,
+                          decoration: const InputDecoration(
+                            border: OutlineInputBorder(),
+                            contentPadding: EdgeInsets.symmetric(
+                              horizontal: 12,
+                            ),
+                          ),
+                          items: List.generate(5, (index) {
+                            int year = DateTime.now().year - index;
+                            return DropdownMenuItem(
+                              value: year,
+                              child: Text(year.toString()),
+                            );
+                          }),
+                          onChanged: (val) =>
+                              setDialogState(() => selectedYear = val!),
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (auth.isAdmin) ...[
+                    const SizedBox(height: 16),
+                    DropdownButtonFormField<String>(
+                      initialValue: selectedKaryawanId,
                       isExpanded: true,
                       decoration: const InputDecoration(
+                        labelText: "Pilih Karyawan",
                         border: OutlineInputBorder(),
                         contentPadding: EdgeInsets.symmetric(horizontal: 12),
                       ),
-                      items: List.generate(12, (index) {
-                        return DropdownMenuItem(
-                          value: index + 1,
-                          child: Text(namaBulan[index]),
-                        );
-                      }),
+                      items: [
+                        const DropdownMenuItem(
+                          value: "SEMUA",
+                          child: Text("Semua Karyawan"),
+                        ),
+                        ...listKaryawan.map((karyawan) {
+                          return DropdownMenuItem<String>(
+                            value: karyawan['id'].toString(),
+                            child: Text(
+                              "${karyawan['nama']} (${karyawan['id']})",
+                            ),
+                          );
+                        }),
+                      ],
                       onChanged: (val) =>
-                          setDialogState(() => selectedMonth = val!),
+                          setDialogState(() => selectedKaryawanId = val!),
                     ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    flex: 2,
-                    child: DropdownButtonFormField<int>(
-                      initialValue: selectedYear,
-                      isExpanded: true,
-                      decoration: const InputDecoration(
-                        border: OutlineInputBorder(),
-                        contentPadding: EdgeInsets.symmetric(horizontal: 12),
-                      ),
-                      items: List.generate(5, (index) {
-                        int year = DateTime.now().year - index;
-                        return DropdownMenuItem(
-                          value: year,
-                          child: Text(year.toString()),
-                        );
-                      }),
-                      onChanged: (val) =>
-                          setDialogState(() => selectedYear = val!),
-                    ),
-                  ),
+                  ],
                 ],
               ),
               actions: [
@@ -322,7 +384,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     String bulanNama =
                         "${namaBulan[selectedMonth - 1]} $selectedYear";
 
-                    _downloadLaporan(bulanTahun, bulanNama);
+                    _downloadLaporan(bulanTahun, bulanNama, selectedKaryawanId);
                   },
                   child: const Text("Download"),
                 ),
@@ -334,10 +396,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  // =================================================================
-  // EKSEKUSI DOWNLOAD EXCEL
-  // =================================================================
-  void _downloadLaporan(String bulanTahun, String bulanNama) async {
+  void _downloadLaporan(
+    String bulanTahun,
+    String bulanNama,
+    String targetId,
+  ) async {
     setState(() => _isExporting = true);
     final auth = context.read<AuthProvider>();
 
@@ -345,6 +408,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       final dataMentah = await _service.getMonthlyReport(
         AppConfig.clientId,
         bulanTahun,
+        targetId,
       );
 
       if (dataMentah.isEmpty) {
@@ -359,8 +423,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
         return;
       }
 
+      String namaRekap = targetId == "SEMUA"
+          ? "UMKM"
+          : (targetId == auth.idKaryawan
+                ? (auth.namaKaryawan ?? targetId)
+                : targetId);
+
       await ExportService().generateMonthlyExcel(
-        auth.namaKaryawan ?? "UMKM",
+        namaRekap,
         bulanNama,
         dataMentah,
       );
@@ -377,9 +447,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
-  // =================================================================
-  // DIALOG & FUNGSI RESET DEVICE HP
-  // =================================================================
   void _tampilkanDialogResetHP(BuildContext context) {
     final TextEditingController idController = TextEditingController();
 
@@ -439,23 +506,51 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           try {
                             final auth = context.read<AuthProvider>();
                             final clientId = auth.idUser ?? "";
+                            final targetId = idController.text.trim();
 
-                            // SEKARANG MENGIRIM 2 PARAMETER
                             final result = await _service.resetDeviceID(
                               clientId,
-                              idController.text.trim(),
+                              targetId,
                             );
-                            if (!context.mounted) return;
-                            Navigator.pop(context); // Tutup dialog
 
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(result['message']),
-                                backgroundColor: result['code'] == 200
-                                    ? Colors.green
-                                    : Colors.red,
-                              ),
-                            );
+                            if (!context.mounted) return;
+                            Navigator.pop(context);
+
+                            if (result['code'] == 200) {
+                              if (targetId == auth.idKaryawan) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text(
+                                      "Perangkat Anda di-reset. Silakan login kembali untuk mendaftarkan ulang perangkat.",
+                                    ),
+                                    backgroundColor: Colors.orange,
+                                  ),
+                                );
+
+                                auth.logout();
+                                Navigator.pushAndRemoveUntil(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => const LoginScreen(),
+                                  ),
+                                  (route) => false,
+                                );
+                              } else {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(result['message']),
+                                    backgroundColor: Colors.green,
+                                  ),
+                                );
+                              }
+                            } else {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(result['message']),
+                                  backgroundColor: Colors.red,
+                                ),
+                              );
+                            }
                           } catch (e) {
                             if (!context.mounted) return;
                             Navigator.pop(context);
@@ -486,6 +581,65 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
+  // =================================================================
+  // COMPONENT: KOTAK MENU GRID (DASHBOARD STYLE)
+  // =================================================================
+  Widget _buildMenuCard({
+    required String title,
+    required IconData icon,
+    required VoidCallback? onTap,
+    bool isLoading = false,
+    Color? bgColor,
+    Color? iconColor,
+    Color? textColor,
+    BoxBorder? border,
+  }) {
+    return Material(
+      color: bgColor ?? FluidColors.surfaceContainerLow,
+      borderRadius: BorderRadius.circular(FluidRadii.md),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(FluidRadii.md),
+        child: Container(
+          decoration: BoxDecoration(
+            border: border,
+            borderRadius: BorderRadius.circular(FluidRadii.md),
+          ),
+          padding: const EdgeInsets.all(8),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              if (isLoading)
+                SizedBox(
+                  width: 28,
+                  height: 28,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2.5,
+                    color: iconColor ?? FluidColors.primary,
+                  ),
+                )
+              else
+                Icon(icon, color: iconColor ?? FluidColors.primary, size: 32),
+              const SizedBox(height: 10),
+              Text(
+                title,
+                textAlign: TextAlign.center,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  color: textColor ?? FluidColors.onSurface,
+                  height: 1.2,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
@@ -497,7 +651,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         elevation: 0,
         leading: const BackButton(color: FluidColors.onSurface),
         title: const Text(
-          "Profil & Riwayat",
+          "Profil & Menu",
           style: TextStyle(
             color: FluidColors.onSurface,
             fontWeight: FontWeight.bold,
@@ -511,23 +665,28 @@ class _ProfileScreenState extends State<ProfileScreen> {
         child: ListView(
           padding: const EdgeInsets.all(24.0),
           children: [
-            // KARTU PROFIL
+            // ==========================================
+            // 1. KARTU PROFIL UTAMA
+            // ==========================================
             Card(
               color: FluidColors.surfaceContainerLow,
               elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(FluidRadii.md),
+              ),
               child: Padding(
-                padding: const EdgeInsets.all(24.0),
+                padding: const EdgeInsets.all(20.0),
                 child: Row(
                   children: [
                     CircleAvatar(
-                      radius: 30,
+                      radius: 28,
                       backgroundColor: FluidColors.primary.withOpacity(0.1),
                       child: Icon(
                         auth.isAdmin
                             ? Icons.admin_panel_settings
                             : Icons.person,
                         color: FluidColors.primary,
-                        size: 30,
+                        size: 28,
                       ),
                     ),
                     const SizedBox(width: 16),
@@ -548,14 +707,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             "ID: ${auth.idKaryawan ?? '-'}",
                             style: TextStyle(
                               color: Colors.grey.shade600,
-                              fontSize: 14,
+                              fontSize: 13,
                             ),
                           ),
                           if (auth.isAdmin) ...[
                             const SizedBox(height: 8),
                             Container(
                               padding: const EdgeInsets.symmetric(
-                                horizontal: 10,
+                                horizontal: 8,
                                 vertical: 4,
                               ),
                               decoration: BoxDecoration(
@@ -579,6 +738,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                     IconButton(
                       icon: const Icon(Icons.logout, color: Colors.redAccent),
+                      tooltip: "Keluar",
                       onPressed: () {
                         context.read<AuthProvider>().logout();
                         Navigator.pushReplacement(
@@ -594,232 +754,117 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
             ),
 
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
 
-            // TOMBOL PENDAFTARAN WAJAH
-            SizedBox(
-              width: double.infinity,
-              height: 50,
-              child: OutlinedButton.icon(
-                onPressed: _isRegisteringFace ? null : _prosesDaftarWajah,
-                icon: _isRegisteringFace
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: FluidColors.primary,
-                        ),
-                      )
-                    : const Icon(Icons.face_retouching_natural),
-                label: Text(
-                  _isRegisteringFace
-                      ? "Memproses Wajah..."
-                      : "Daftarkan / Update Wajah",
-                  style: const TextStyle(fontWeight: FontWeight.bold),
-                ),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: FluidColors.primary,
-                  side: const BorderSide(color: FluidColors.primary),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(FluidRadii.sm),
+            // ==========================================
+            // 2. GRID MENU (DASHBOARD COMPACT)
+            // ==========================================
+            const Text(
+              "Menu Navigasi",
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: FluidColors.onSurface,
+              ),
+            ),
+            const SizedBox(height: 12),
+            GridView.count(
+              padding: EdgeInsets.symmetric(horizontal: 0),
+              crossAxisCount: 3, // 3 Kolom agar lebih padat
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              mainAxisSpacing: 12,
+              crossAxisSpacing: 12,
+              childAspectRatio: 1.0, // Bentuk Kotak presisi
+              children: [
+                // ---- MENU UMUM (Karyawan & Admin) ----
+                _buildMenuCard(
+                  title: "Daftar\nWajah",
+                  icon: Icons.face_retouching_natural,
+                  isLoading: _isRegisteringFace,
+                  onTap: _isRegisteringFace ? null : _prosesDaftarWajah,
+                  bgColor: Colors.transparent,
+                  border: Border.all(
+                    color: FluidColors.primary.withOpacity(0.5),
                   ),
                 ),
-              ),
+                _buildMenuCard(
+                  title: "Pengajuan\nIzin",
+                  icon: Icons.edit_calendar_rounded,
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const LeaveRequestScreen(),
+                    ),
+                  ),
+                ),
+                _buildMenuCard(
+                  title: "Download\nRekap",
+                  icon: Icons.download_rounded,
+                  iconColor: Colors.green.shade700,
+                  textColor: Colors.green.shade800,
+                  bgColor: Colors.green.shade50,
+                  isLoading: _isExporting,
+                  onTap: _isExporting ? null : _tampilkanDialogPilihBulan,
+                ),
+
+                // ---- MENU KHUSUS ADMIN ----
+                if (auth.isAdmin) ...[
+                  _buildMenuCard(
+                    title: "Persetujuan\nIzin",
+                    icon: Icons.playlist_add_check_circle,
+                    iconColor: Colors.orange.shade700,
+                    textColor: Colors.orange.shade800,
+                    bgColor: Colors.orange.shade50,
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const ApprovalScreen()),
+                    ),
+                  ),
+                  _buildMenuCard(
+                    title: "Tambah\nKaryawan",
+                    icon: Icons.person_add_alt_1,
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const AddKaryawanScreen(),
+                      ),
+                    ),
+                  ),
+                  _buildMenuCard(
+                    title: "Update\nLokasi",
+                    icon: Icons.map_outlined,
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const SetLocationScreen(),
+                      ),
+                    ),
+                  ),
+                  _buildMenuCard(
+                    title: "Reset\nPerangkat",
+                    icon: Icons.phonelink_erase,
+                    iconColor: Colors.red.shade600,
+                    textColor: Colors.red.shade700,
+                    bgColor: Colors.red.shade50,
+                    onTap: () => _tampilkanDialogResetHP(context),
+                  ),
+                ],
+              ],
             ),
 
             const SizedBox(height: 12),
 
-            // TOMBOL PENGAJUAN CUTI / IZIN / SAKIT
-            SizedBox(
-              width: double.infinity,
-              height: 50,
-              child: ElevatedButton.icon(
-                onPressed: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const LeaveRequestScreen()),
-                ),
-                icon: const Icon(Icons.edit_calendar_rounded),
-                label: const Text(
-                  "Pengajuan Cuti / Izin / Sakit",
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: FluidColors.surfaceContainerLow,
-                  foregroundColor: FluidColors.primary,
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(FluidRadii.sm),
-                  ),
-                ),
-              ),
-            ),
-
-            // MENU KHUSUS ADMIN
-            if (auth.isAdmin) ...[
-              const SizedBox(height: 12),
-
-              // 1. TOMBOL PERSETUJUAN IZIN
-              SizedBox(
-                width: double.infinity,
-                height: 50,
-                child: ElevatedButton.icon(
-                  onPressed: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const ApprovalScreen()),
-                  ),
-                  icon: const Icon(
-                    Icons.playlist_add_check_circle,
-                    color: Colors.orange,
-                  ),
-                  label: const Text(
-                    "Daftar Persetujuan Izin",
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: Colors.orange,
-                    ),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.orange.shade50,
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(FluidRadii.sm),
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 8),
-
-              // 2. TOMBOL DOWNLOAD EXCEL
-              SizedBox(
-                width: double.infinity,
-                height: 50,
-                child: ElevatedButton.icon(
-                  onPressed: _isExporting ? null : _tampilkanDialogPilihBulan,
-                  icon: _isExporting
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Colors.green,
-                          ),
-                        )
-                      : Icon(
-                          Icons.download_rounded,
-                          color: Colors.green.shade700,
-                        ),
-                  label: Text(
-                    _isExporting
-                        ? "Menyiapkan Excel..."
-                        : "Download Rekap Absensi",
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: Colors.green.shade700,
-                    ),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green.shade50,
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(FluidRadii.sm),
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 8),
-
-              // 3. TOMBOL TAMBAH KARYAWAN
-              SizedBox(
-                width: double.infinity,
-                height: 50,
-                child: ElevatedButton.icon(
-                  onPressed: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const AddKaryawanScreen(),
-                    ),
-                  ),
-                  icon: const Icon(Icons.person_add_alt_1),
-                  label: const Text(
-                    "Tambah Karyawan Baru",
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: FluidColors.surfaceContainerLow,
-                    foregroundColor: FluidColors.primary,
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(FluidRadii.sm),
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 8),
-
-              // 4. TOMBOL RESET DEVICE HP
-              SizedBox(
-                width: double.infinity,
-                height: 50,
-                child: ElevatedButton.icon(
-                  onPressed: () => _tampilkanDialogResetHP(context),
-                  icon: const Icon(Icons.phonelink_erase, color: Colors.red),
-                  label: const Text(
-                    "Reset Perangkat Karyawan",
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: Colors.red,
-                    ),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.red.shade50,
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(FluidRadii.sm),
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 8),
-
-              // 5. TOMBOL UPDATE LOKASI
-              SizedBox(
-                width: double.infinity,
-                height: 50,
-                child: ElevatedButton.icon(
-                  onPressed: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const SetLocationScreen(),
-                    ),
-                  ),
-                  icon: const Icon(Icons.map_outlined),
-                  label: const Text(
-                    "Update Koordinat Kantor",
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: FluidColors.surfaceContainerLow,
-                    foregroundColor: FluidColors.primary,
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(FluidRadii.sm),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-
-            const SizedBox(height: FluidSpacing.section),
-
-            // HEADER RIWAYAT & FILTER TANGGAL
+            // ==========================================
+            // 3. RIWAYAT ABSENSI
+            // ==========================================
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 const Text(
                   "Riwayat Absensi",
                   style: TextStyle(
-                    fontSize: 18,
+                    fontSize: 16,
                     fontWeight: FontWeight.bold,
                     color: FluidColors.onSurface,
                   ),
@@ -847,7 +892,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     Expanded(
                       child: Text(
                         "${DateFormat('dd MMM yyyy').format(_selectedDateRange!.start)} - ${DateFormat('dd MMM yyyy').format(_selectedDateRange!.end)}",
-                        style: TextStyle(
+                        style: const TextStyle(
                           color: FluidColors.primary,
                           fontWeight: FontWeight.bold,
                           fontSize: 12,
@@ -906,35 +951,44 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
             ),
 
-            const SizedBox(height: 24),
+            const SizedBox(height: 16),
 
             // LIST RIWAYAT
             if (_isLoading)
               const Center(
-                child: CircularProgressIndicator(color: FluidColors.primary),
+                child: Padding(
+                  padding: EdgeInsets.all(32.0),
+                  child: CircularProgressIndicator(color: FluidColors.primary),
+                ),
               )
             else if (_errorMsg.isNotEmpty)
               Center(
-                child: Text(
-                  _errorMsg,
-                  style: const TextStyle(color: Colors.red),
+                child: Padding(
+                  padding: const EdgeInsets.all(32.0),
+                  child: Text(
+                    _errorMsg,
+                    style: const TextStyle(color: Colors.red),
+                  ),
                 ),
               )
             else if (_filteredHistory.isEmpty)
               Center(
-                child: Column(
-                  children: [
-                    Icon(
-                      Icons.history_toggle_off,
-                      size: 48,
-                      color: Colors.grey.shade400,
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      "Belum ada data absen.",
-                      style: TextStyle(color: Colors.grey.shade600),
-                    ),
-                  ],
+                child: Padding(
+                  padding: const EdgeInsets.all(32.0),
+                  child: Column(
+                    children: [
+                      Icon(
+                        Icons.history_toggle_off,
+                        size: 48,
+                        color: Colors.grey.shade400,
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        "Belum ada data absen.",
+                        style: TextStyle(color: Colors.grey.shade600),
+                      ),
+                    ],
+                  ),
                 ),
               )
             else
@@ -986,7 +1040,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 "Absen ${log['tipe']} ($formatJam)",
                                 style: const TextStyle(
                                   fontWeight: FontWeight.bold,
-                                  fontSize: 16,
+                                  fontSize: 15,
                                 ),
                               ),
                               const SizedBox(height: 4),
@@ -994,7 +1048,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 formatTgl,
                                 style: TextStyle(
                                   color: Colors.grey.shade600,
-                                  fontSize: 13,
+                                  fontSize: 12,
                                 ),
                               ),
                             ],
@@ -1047,6 +1101,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   );
                 },
               ),
+            const SizedBox(height: 32),
           ],
         ),
       ),
