@@ -146,7 +146,7 @@ class _AnggotaListScreenState extends State<AnggotaListScreen> {
                 height: 230,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: FluidColors.primary.withOpacity(0.06),
+                  color: context.primaryColor.withOpacity(0.06),
                 ),
               ),
             ),
@@ -164,7 +164,7 @@ class _AnggotaListScreenState extends State<AnggotaListScreen> {
             ),
 
             RefreshIndicator(
-              color: FluidColors.primary,
+              color: context.primaryColor,
               onRefresh: _fetchEmployees,
               child: _isLoading
                   ? ListView.builder(
@@ -252,7 +252,7 @@ class _AnggotaListScreenState extends State<AnggotaListScreen> {
                                 radius: 24,
                                 backgroundColor: isSuperAdmin
                                     ? Colors.amber.withOpacity(0.15)
-                                    : FluidColors.primary.withOpacity(0.1),
+                                    : context.primaryColor.withOpacity(0.1),
                                 child: isSuperAdmin
                                     ? const Icon(
                                         Icons.shield_rounded,
@@ -265,7 +265,7 @@ class _AnggotaListScreenState extends State<AnggotaListScreen> {
                                             .substring(0, 1)
                                             .toUpperCase(),
                                         style: const TextStyle(
-                                          color: FluidColors.primary,
+                                          color: context.primaryColor,
                                           fontWeight: FontWeight.bold,
                                           fontSize: 18,
                                         ),

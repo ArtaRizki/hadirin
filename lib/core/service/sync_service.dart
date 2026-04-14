@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:hadirin/core/service/admin_service.dart';
 import 'package:hadirin/core/service/attendance_service.dart';
 import 'package:hadirin/core/service/notification_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -16,19 +17,51 @@ class SyncService {
     required String idAnggota,
     required String clientId,
   }) async {
-    // 1. Setup pengingat harian (idempotent)
-    await _notify.setupReminders();
+    try {
+      // 1. ANALISA RIWAYAT HARIAN (untuk Smart Notification)
+      final history = await AttendanceService().getRiwayat(clientId, idAnggota);
+      bool sudahMasuk = false;
+      bool sudahPulang = false;
 
-    // 2. Cek apakah ada perubahan status pada pengajuan izin/cuti
-    await _checkLeaveStatusChanges(idAnggota, clientId);
+      final todayStr = DateFormat('yyyy-MM-dd').format(DateTime.now());
+      for (var item in history) {
+        if (item['tanggal'] == todayStr) {
+          if (item['tipe'] == 'Masuk') sudahMasuk = true;
+          if (item['tipe'] == 'Pulang') sudahPulang = true;
+        }
+      }
+
+      // 2. UPDATE TEMA DINAMIS (Dynamic Branding)
+      final config = await AdminService().getOfficeConfig(clientId);
+      if (config != null && config.containsKey('theme_color')) {
+        auth.updateThemeColor(config['theme_color']);
+      }
+
+      // 3. SETUP REMINDERS CERDAS
+      await _notify.setupReminders(
+        showMasuk: !sudahMasuk,
+        showPulang: !sudahPulang,
+      );
+
+      // 4. Cek apakah ada perubahan status pada pengajuan izin/cuti
+      await _checkLeaveStatusChangesFromHistory(idAnggota, history);
+    } catch (e) {
+      print("Sync Error: $e");
+    }
   }
 
-  Future<void> _checkLeaveStatusChanges(
+  String _getTodayString() {
+    final now = DateTime.now();
+    // Sesuaikan dengan format 'dd/MM/yyyy' atau 'yyyy-MM-dd' dari server. 
+    // GAS biasanya mengembalikan string yang mengandung tanggal.
+    return "${now.day.toString().padLeft(2, '0')}/${now.month.toString().padLeft(2, '0')}/${now.year}";
+  }
+
+  Future<void> _checkLeaveStatusChangesFromHistory(
     String idAnggota,
-    String clientId,
+    List<dynamic> history,
   ) async {
     try {
-      final history = await _api.getHistory(idAnggota, clientId);
       if (history.isEmpty) return;
 
       final prefs = await SharedPreferences.getInstance();

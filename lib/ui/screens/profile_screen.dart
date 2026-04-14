@@ -161,7 +161,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     height: 200,
                     child: Center(
                       child: CircularProgressIndicator(
-                        color: FluidColors.primary,
+                        color: auth.themeColor,
                       ),
                     ),
                   );
@@ -211,6 +211,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
     if (!mounted) return;
     setState(() => _isRegisteringFace = false);
+    if (result['success'] == true) {
+      auth.setFaceRegistered(true);
+    }
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Row(
@@ -385,7 +389,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
-                backgroundColor: FluidColors.primary,
+                backgroundColor: context.primaryColor,
                 foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -565,7 +569,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
                                 content: Text(result['message']),
-                                backgroundColor: Colors.red,
+                                backgroundColor: context.primaryColor,
                               ),
                             );
                           }
@@ -720,7 +724,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
       body: SafeArea(
         child: RefreshIndicator(
-          color: FluidColors.primary,
+          color: auth.themeColor,
           onRefresh: _fetchHistory,
           child: ListView(
             padding: const EdgeInsets.fromLTRB(20, 4, 20, 40),
@@ -733,9 +737,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: [
-                      FluidColors.primary,
+                      auth.themeColor,
                       Color.lerp(
-                        FluidColors.primary,
+                        auth.themeColor,
                         const Color(0xFF7C3AED),
                         0.55,
                       )!,
@@ -746,7 +750,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   borderRadius: BorderRadius.circular(20),
                   boxShadow: [
                     BoxShadow(
-                      color: FluidColors.primary.withOpacity(0.28),
+                      color: auth.themeColor.withOpacity(0.28),
                       blurRadius: 20,
                       offset: const Offset(0, 8),
                     ),
@@ -817,11 +821,49 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     // Logout
                     GestureDetector(
                       onTap: () {
-                        context.read<AuthProvider>().logout();
-                        Navigator.pushReplacement(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const LoginScreen(),
+                        showDialog(
+                          context: context,
+                          builder: (context) => AlertDialog(
+                            backgroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            title: const Text(
+                              "Konfirmasi Logout",
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                            content: const Text(
+                              "Apakah Anda yakin ingin keluar dari akun ini?",
+                            ),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.pop(context),
+                                child: Text(
+                                  "Batal",
+                                  style: TextStyle(color: Colors.grey.shade500),
+                                ),
+                              ),
+                              ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.red.shade600,
+                                  foregroundColor: Colors.white,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                ),
+                                onPressed: () {
+                                  Navigator.pop(context);
+                                  context.read<AuthProvider>().logout();
+                                  Navigator.pushReplacement(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => const LoginScreen(),
+                                    ),
+                                  );
+                                },
+                                child: const Text("Keluar"),
+                              ),
+                            ],
                           ),
                         );
                       },
@@ -862,7 +904,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     icon: Icons.face_retouching_natural,
                     isLoading: _isRegisteringFace,
                     onTap: _isRegisteringFace ? null : _prosesDaftarWajah,
-                    accentColor: FluidColors.primary,
+                    accentColor: context.primaryColor,
                   ),
                   _buildMenuCard(
                     title: "Pengajuan\nIzin",
@@ -962,12 +1004,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                       decoration: BoxDecoration(
                         color: _selectedDateRange != null
-                            ? FluidColors.primary.withOpacity(0.08)
+                            ? context.primaryColor.withOpacity(0.08)
                             : Colors.white,
                         borderRadius: BorderRadius.circular(10),
                         border: Border.all(
                           color: _selectedDateRange != null
-                              ? FluidColors.primary.withOpacity(0.3)
+                              ? context.primaryColor.withOpacity(0.3)
                               : Colors.grey.shade200,
                         ),
                       ),
@@ -981,7 +1023,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             size: 14,
                             color: _selectedDateRange == null
                                 ? Colors.grey.shade500
-                                : FluidColors.primary,
+                                : context.primaryColor,
                           ),
                           const SizedBox(width: 6),
                           Text(
@@ -991,7 +1033,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               fontWeight: FontWeight.w600,
                               color: _selectedDateRange == null
                                   ? Colors.grey.shade500
-                                  : FluidColors.primary,
+                                  : context.primaryColor,
                             ),
                           ),
                         ],
@@ -1010,10 +1052,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     vertical: 10,
                   ),
                   decoration: BoxDecoration(
-                    color: FluidColors.primary.withOpacity(0.07),
+                    color: context.primaryColor.withOpacity(0.07),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color: FluidColors.primary.withOpacity(0.2),
+                      color: context.primaryColor.withOpacity(0.2),
                     ),
                   ),
                   child: Row(
@@ -1021,14 +1063,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       Icon(
                         Icons.date_range_rounded,
                         size: 14,
-                        color: FluidColors.primary,
+                        color: context.primaryColor,
                       ),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
                           "${DateFormat('dd MMM yyyy').format(_selectedDateRange!.start)} – ${DateFormat('dd MMM yyyy').format(_selectedDateRange!.end)}",
                           style: TextStyle(
-                            color: FluidColors.primary,
+                            color: context.primaryColor,
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
                           ),
@@ -1073,18 +1115,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           ),
                           decoration: BoxDecoration(
                             color: isSelected
-                                ? FluidColors.primary
+                                ? auth.themeColor
                                 : Colors.white,
                             borderRadius: BorderRadius.circular(10),
                             border: Border.all(
                               color: isSelected
-                                  ? FluidColors.primary
+                                  ? auth.themeColor
                                   : Colors.grey.shade200,
                             ),
                             boxShadow: isSelected
                                 ? [
                                     BoxShadow(
-                                      color: FluidColors.primary.withOpacity(
+                                      color: auth.themeColor.withOpacity(
                                         0.25,
                                       ),
                                       blurRadius: 8,
@@ -1118,6 +1160,32 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 errorMessage: _errorMsg,
                 onShowPhoto: (url, tipe, waktu) => _tampilkanFoto(context, url, tipe, waktu),
               ),
+
+              const SizedBox(height: 32),
+              Center(
+                child: Column(
+                  children: [
+                    Text(
+                      "Hadirin v1.0.0",
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.grey.shade400,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      "Masterpiece Edition",
+                      style: TextStyle(
+                        fontSize: 10,
+                        color: Colors.grey.shade400,
+                        letterSpacing: 1.2,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 20),
             ],
           ),
         ),

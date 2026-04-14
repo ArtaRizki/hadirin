@@ -167,7 +167,7 @@ class _LeaveRequestScreenState extends State<LeaveRequestScreen> {
                 height: 200,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: FluidColors.primary.withOpacity(0.06),
+                  color: context.primaryColor.withOpacity(0.06),
                 ),
               ),
             ),
@@ -236,7 +236,7 @@ class _LeaveRequestScreenState extends State<LeaveRequestScreen> {
                         initialValue: _tipeIzin,
                         icon: const Icon(
                           Icons.keyboard_arrow_down_rounded,
-                          color: FluidColors.primary,
+                          color: context.primaryColor,
                         ),
                         decoration: InputDecoration(
                           contentPadding: const EdgeInsets.symmetric(
@@ -303,7 +303,7 @@ class _LeaveRequestScreenState extends State<LeaveRequestScreen> {
                           children: [
                             const Icon(
                               Icons.calendar_month_rounded,
-                              color: FluidColors.primary,
+                              color: context.primaryColor,
                             ),
                             const SizedBox(width: 12),
                             Expanded(
@@ -367,7 +367,7 @@ class _LeaveRequestScreenState extends State<LeaveRequestScreen> {
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(16),
                           borderSide: const BorderSide(
-                            color: FluidColors.primary,
+                            color: context.primaryColor,
                             width: 1.5,
                           ),
                         ),
@@ -404,10 +404,10 @@ class _LeaveRequestScreenState extends State<LeaveRequestScreen> {
                         height: 140,
                         width: double.infinity,
                         decoration: BoxDecoration(
-                          color: FluidColors.primary.withOpacity(0.04),
+                          color: context.primaryColor.withOpacity(0.04),
                           borderRadius: BorderRadius.circular(16),
                           border: Border.all(
-                            color: FluidColors.primary.withOpacity(0.3),
+                            color: context.primaryColor.withOpacity(0.3),
                             width: 1.5,
                           ),
                         ),
@@ -418,14 +418,14 @@ class _LeaveRequestScreenState extends State<LeaveRequestScreen> {
                                   Container(
                                     padding: const EdgeInsets.all(12),
                                     decoration: BoxDecoration(
-                                      color: FluidColors.primary.withOpacity(
+                                      color: context.primaryColor.withOpacity(
                                         0.1,
                                       ),
                                       shape: BoxShape.circle,
                                     ),
                                     child: const Icon(
                                       Icons.camera_alt_rounded,
-                                      color: FluidColors.primary,
+                                      color: context.primaryColor,
                                       size: 28,
                                     ),
                                   ),
@@ -433,7 +433,7 @@ class _LeaveRequestScreenState extends State<LeaveRequestScreen> {
                                   const Text(
                                     "Ambil Foto Surat Keterangan",
                                     style: TextStyle(
-                                      color: FluidColors.primary,
+                                      color: context.primaryColor,
                                       fontWeight: FontWeight.w600,
                                       fontSize: 13,
                                     ),
@@ -461,10 +461,10 @@ class _LeaveRequestScreenState extends State<LeaveRequestScreen> {
                     child: ElevatedButton(
                       onPressed: _isLoading ? null : _submitPengajuan,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: FluidColors.primary,
+                        backgroundColor: context.primaryColor,
                         foregroundColor: Colors.white,
                         elevation: 4,
-                        shadowColor: FluidColors.primary.withOpacity(0.4),
+                        shadowColor: context.primaryColor.withOpacity(0.4),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(16),
                         ),

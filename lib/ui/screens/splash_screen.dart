@@ -92,7 +92,7 @@ class _SplashScreenState extends State<SplashScreen>
                 height: 300,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: FluidColors.primary.withOpacity(0.06),
+                  color: context.primaryColor.withOpacity(0.06),
                 ),
               ),
             ),
@@ -127,7 +127,7 @@ class _SplashScreenState extends State<SplashScreen>
                         shape: BoxShape.circle,
                         boxShadow: [
                           BoxShadow(
-                            color: FluidColors.primary.withOpacity(0.15),
+                            color: context.primaryColor.withOpacity(0.15),
                             blurRadius: 30,
                             spreadRadius: 10,
                             offset: const Offset(0, 10),
@@ -137,13 +137,13 @@ class _SplashScreenState extends State<SplashScreen>
                       child: Container(
                         padding: const EdgeInsets.all(20),
                         decoration: BoxDecoration(
-                          color: FluidColors.primary.withOpacity(0.1),
+                          color: context.primaryColor.withOpacity(0.1),
                           shape: BoxShape.circle,
                         ),
                         child: const Icon(
                           Icons.fingerprint_rounded,
                           size: 72,
-                          color: FluidColors.primary,
+                          color: context.primaryColor,
                         ),
                       ),
                     ),
@@ -178,7 +178,7 @@ class _SplashScreenState extends State<SplashScreen>
                     width: 24,
                     height: 24,
                     child: CircularProgressIndicator(
-                      color: FluidColors.primary,
+                      color: context.primaryColor,
                       strokeWidth: 2.5,
                     ),
                   ),

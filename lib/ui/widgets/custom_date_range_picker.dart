@@ -276,12 +276,12 @@ class _CustomDateRangePickerSheetState
                   Container(
                     padding: const EdgeInsets.all(9),
                     decoration: BoxDecoration(
-                      color: FluidColors.primary.withOpacity(0.1),
+                      color: context.primaryColor.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: const Icon(
                       Icons.date_range_rounded,
-                      color: FluidColors.primary,
+                      color: context.primaryColor,
                       size: 20,
                     ),
                   ),
@@ -351,9 +351,9 @@ class _CustomDateRangePickerSheetState
                   gradient: _startDate != null
                       ? LinearGradient(
                           colors: [
-                            FluidColors.primary,
+                            context.primaryColor,
                             Color.lerp(
-                              FluidColors.primary,
+                              context.primaryColor,
                               const Color(0xFF7C3AED),
                               0.6,
                             )!,
@@ -370,7 +370,7 @@ class _CustomDateRangePickerSheetState
                   boxShadow: _startDate != null
                       ? [
                           BoxShadow(
-                            color: FluidColors.primary.withOpacity(0.25),
+                            color: context.primaryColor.withOpacity(0.25),
                             blurRadius: 12,
                             offset: const Offset(0, 4),
                           ),
@@ -531,7 +531,7 @@ class _CustomDateRangePickerSheetState
                           : null,
                       style: ElevatedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 16),
-                        backgroundColor: FluidColors.primary,
+                        backgroundColor: context.primaryColor,
                         disabledBackgroundColor: Colors.grey.shade200,
                         foregroundColor: Colors.white,
                         elevation: 0,
@@ -612,9 +612,9 @@ class _CustomDateRangePickerSheetState
                       shape: BoxShape.circle,
                       gradient: LinearGradient(
                         colors: [
-                          FluidColors.primary,
+                          context.primaryColor,
                           Color.lerp(
-                            FluidColors.primary,
+                            context.primaryColor,
                             const Color(0xFF7C3AED),
                             0.6,
                           )!,
@@ -624,7 +624,7 @@ class _CustomDateRangePickerSheetState
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: FluidColors.primary.withOpacity(0.35),
+                          color: context.primaryColor.withOpacity(0.35),
                           blurRadius: 8,
                           offset: const Offset(0, 3),
                         ),
@@ -634,7 +634,7 @@ class _CustomDateRangePickerSheetState
                   ? BoxDecoration(
                       shape: BoxShape.circle,
                       border: Border.all(
-                        color: FluidColors.primary,
+                        color: context.primaryColor,
                         width: 1.5,
                       ),
                     )
@@ -652,7 +652,7 @@ class _CustomDateRangePickerSheetState
                         : disabled
                         ? Colors.grey.shade300
                         : inRange
-                        ? FluidColors.primary
+                        ? context.primaryColor
                         : colIndex == 6
                         ? Colors.red.shade300
                         : const Color(0xFF0F172A),
@@ -679,7 +679,7 @@ class _RangeStrip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = FluidColors.primary.withOpacity(0.1);
+    final color = context.primaryColor.withOpacity(0.1);
     return ClipRect(
       child: Align(
         alignment: Alignment.center,

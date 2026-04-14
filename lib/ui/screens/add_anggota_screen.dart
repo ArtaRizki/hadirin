@@ -129,7 +129,7 @@ class _AddAnggotaScreenState extends State<AddAnggotaScreen> {
                 height: 200,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: FluidColors.primary.withOpacity(0.06),
+                  color: context.primaryColor.withOpacity(0.06),
                 ),
               ),
             ),
@@ -205,10 +205,10 @@ class _AddAnggotaScreenState extends State<AddAnggotaScreen> {
                     child: ElevatedButton(
                       onPressed: _isLoading ? null : _simpanAnggota,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: FluidColors.primary,
+                        backgroundColor: context.primaryColor,
                         foregroundColor: Colors.white,
                         elevation: 4,
-                        shadowColor: FluidColors.primary.withOpacity(0.4),
+                        shadowColor: context.primaryColor.withOpacity(0.4),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(16),
                         ),
@@ -266,7 +266,7 @@ class _AddAnggotaScreenState extends State<AddAnggotaScreen> {
           labelText: label,
           hintText: hint,
           labelStyle: TextStyle(color: Colors.grey.shade500),
-          prefixIcon: Icon(icon, color: FluidColors.primary),
+          prefixIcon: Icon(icon, color: context.primaryColor),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16),
             borderSide: BorderSide.none,
@@ -274,7 +274,7 @@ class _AddAnggotaScreenState extends State<AddAnggotaScreen> {
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16),
             borderSide: const BorderSide(
-              color: FluidColors.primary,
+              color: context.primaryColor,
               width: 1.5,
             ),
           ),

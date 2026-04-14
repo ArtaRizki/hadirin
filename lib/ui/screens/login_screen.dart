@@ -133,7 +133,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 height: 250,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: FluidColors.primary.withOpacity(0.06),
+                  color: context.primaryColor.withOpacity(0.06),
                 ),
               ),
             ),
@@ -168,13 +168,13 @@ class _LoginScreenState extends State<LoginScreen> {
                           child: Container(
                             padding: const EdgeInsets.all(16),
                             decoration: BoxDecoration(
-                              color: FluidColors.primary.withOpacity(0.1),
+                              color: context.primaryColor.withOpacity(0.1),
                               shape: BoxShape.circle,
                             ),
                             child: const Icon(
                               Icons.fingerprint_rounded,
                               size: 48,
-                              color: FluidColors.primary,
+                              color: context.primaryColor,
                             ),
                           ),
                         ),
@@ -231,7 +231,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               ),
                               prefixIcon: const Icon(
                                 Icons.business_rounded,
-                                color: FluidColors.primary,
+                                color: context.primaryColor,
                               ),
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(16),
@@ -240,7 +240,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               focusedBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(16),
                                 borderSide: const BorderSide(
-                                  color: FluidColors.primary,
+                                  color: context.primaryColor,
                                   width: 1.5,
                                 ),
                               ),
@@ -274,7 +274,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               ),
                               prefixIcon: const Icon(
                                 Icons.badge_rounded,
-                                color: FluidColors.primary,
+                                color: context.primaryColor,
                               ),
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(16),
@@ -283,7 +283,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               focusedBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(16),
                                 borderSide: const BorderSide(
-                                  color: FluidColors.primary,
+                                  color: context.primaryColor,
                                   width: 1.5,
                                 ),
                               ),
@@ -302,10 +302,10 @@ class _LoginScreenState extends State<LoginScreen> {
                           child: ElevatedButton(
                             onPressed: _isLoading ? null : _prosesLogin,
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: FluidColors.primary,
+                              backgroundColor: context.primaryColor,
                               foregroundColor: Colors.white,
                               elevation: 4,
-                              shadowColor: FluidColors.primary.withOpacity(0.4),
+                              shadowColor: context.primaryColor.withOpacity(0.4),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(16),
                               ),

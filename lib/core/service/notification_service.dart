@@ -124,28 +124,43 @@ class NotificationService {
     );
   }
 
+  Future<void> cancelNotification(int id) async {
+    await _notificationsPlugin.cancel(id);
+  }
+
+  Future<void> cancelAll() async {
+    await _notificationsPlugin.cancelAll();
+  }
+
   // Fungsi Helper untuk Setup Pengingat Rutin (Pagi & Sore)
-  Future<void> setupReminders() async {
+  Future<void> setupReminders({
+    bool showMasuk = true,
+    bool showPulang = true,
+  }) async {
     // Batalkan dulu semua agar tidak duplikat
     await cancelAll();
 
     // 1. Pengingat Pagi (07:30)
-    await scheduleDailyNotification(
-      id: 101,
-      title: "Hadirin: Semangat Pagi! ☀️",
-      body: "Pastikan Anda sudah melakukan Absen Masuk ya. Selamat bekerja!",
-      hour: 7,
-      minute: 30,
-    );
+    if (showMasuk) {
+      await scheduleDailyNotification(
+        id: 101,
+        title: "Hadirin: Semangat Pagi! ☀️",
+        body: "Pastikan Anda sudah melakukan Absen Masuk ya. Selamat bekerja!",
+        hour: 7,
+        minute: 30,
+      );
+    }
 
     // 2. Pengingat Sore (16:30)
-    await scheduleDailyNotification(
-      id: 102,
-      title: "Hadirin: Waktunya Pulang? 🏠",
-      body:
-          "Jangan lupa lakukan Absen Pulang sebelum meninggalkan lokasi. Hati-hati di jalan!",
-      hour: 16,
-      minute: 30,
-    );
+    if (showPulang) {
+      await scheduleDailyNotification(
+        id: 102,
+        title: "Hadirin: Waktunya Pulang? 🏠",
+        body:
+            "Jangan lupa lakukan Absen Pulang sebelum meninggalkan lokasi. Hati-hati di jalan!",
+        hour: 16,
+        minute: 30,
+      );
+    }
   }
 }

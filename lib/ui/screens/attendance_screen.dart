@@ -26,6 +26,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
   DateTime _currentTime = DateTime.now();
   late AnimationController _pulseController;
   late Animation<double> _pulseAnimation;
+  StreamSubscription<Position>? _positionStream;
 
   @override
   void initState() {
@@ -40,15 +41,22 @@ class _AttendanceScreenState extends State<AttendanceScreen>
     _pulseAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
       CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
     );
-
-    // Trigger Proximity Check
-    _checkProximity();
+    
+    // Mulai pantau lokasi secara real-time saat di layar ini
+    _startProximityListener();
   }
 
   bool _hasNotifiedProximity = false;
 
-  Future<void> _checkProximity() async {
+  void _startProximityListener() async {
     try {
+      // Pastikan izin sudah ada
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+      }
+      if (permission == LocationPermission.denied || permission == LocationPermission.deniedForever) return;
+
       final auth = context.read<AuthProvider>();
       if (!auth.isLoggedIn || !auth.isAnggota) return;
 
@@ -59,24 +67,34 @@ class _AttendanceScreenState extends State<AttendanceScreen>
       double offLng = double.parse(config['lng'].toString());
       double radius = double.parse(config['radius'].toString());
 
-      Position pos = await Geolocator.getCurrentPosition();
-      double distance = Geolocator.distanceBetween(
-        pos.latitude,
-        pos.longitude,
-        offLat,
-        offLng,
-      );
-
-      if (distance <= radius && !_hasNotifiedProximity) {
-        NotificationService().showNotification(
-          id: 999,
-          title: "Sudah Sampai di Lokasi?📍",
-          body: "Anda sudah berada dalam radius Instansi. Yuk, segera lakukan Absen Masuk!",
+      _positionStream = Geolocator.getPositionStream(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+          distanceFilter: 10, // Update setiap 10 meter
+        ),
+      ).listen((Position pos) {
+        double distance = Geolocator.distanceBetween(
+          pos.latitude,
+          pos.longitude,
+          offLat,
+          offLng,
         );
-        _hasNotifiedProximity = true;
-      }
+
+        if (distance <= radius && !_hasNotifiedProximity) {
+          NotificationService().showNotification(
+            id: 999,
+            title: "Sudah Sampai di Lokasi?📍",
+            body: "Anda sudah berada dalam radius Instansi. Yuk, segera lakukan Absen Masuk!",
+          );
+          _hasNotifiedProximity = true;
+        } else if (distance > radius + 20) {
+          // Reset flag kalau user keluar radius (beri buffer 20m) 
+          // agar bisa notif lagi kalau masuk lagi
+          _hasNotifiedProximity = false;
+        }
+      });
     } catch (e) {
-      debugPrint("Proximity check failed: $e");
+      debugPrint("Proximity listener failed: $e");
     }
   }
 
@@ -84,6 +102,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
   void dispose() {
     _timer.cancel();
     _pulseController.dispose();
+    _positionStream?.cancel();
     super.dispose();
   }
 
@@ -194,7 +213,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
             ),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
-                backgroundColor: FluidColors.primary,
+                backgroundColor: context.primaryColor,
                 foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -290,7 +309,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                 height: 230,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: FluidColors.primary.withOpacity(0.09),
+                  color: context.primaryColor.withOpacity(0.09),
                 ),
               ),
             ),
@@ -390,17 +409,17 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                                 shape: BoxShape.circle,
                                 gradient: LinearGradient(
                                   colors: [
-                                    FluidColors.primary,
-                                    FluidColors.primary.withOpacity(0.5),
+                                    context.primaryColor,
+                                    context.primaryColor.withOpacity(0.5),
                                   ],
                                 ),
                               ),
-                              child: const CircleAvatar(
+                              child: CircleAvatar(
                                 radius: 24,
                                 backgroundColor: Colors.white,
                                 child: Icon(
                                   Icons.person_rounded,
-                                  color: FluidColors.primary,
+                                  color: context.primaryColor,
                                   size: 24,
                                 ),
                               ),
@@ -409,6 +428,81 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                         ),
                       ],
                     ),
+
+                    if (auth.isAnggota && !auth.isFaceRegistered)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 20),
+                        child: GestureDetector(
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const ProfileScreen(),
+                            ),
+                          ),
+                          child: Container(
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [
+                                  Colors.orange.shade400,
+                                  Colors.orange.shade600,
+                                ],
+                              ),
+                              borderRadius: BorderRadius.circular(16),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.orange.withOpacity(0.3),
+                                  blurRadius: 12,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
+                            ),
+                            child: Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withOpacity(0.2),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Icon(
+                                    Icons.face_retouching_natural_rounded,
+                                    color: Colors.white,
+                                    size: 20,
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                const Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        "Wajah Belum Terdaftar",
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 14,
+                                        ),
+                                      ),
+                                      Text(
+                                        "Klik untuk daftarkan wajah agar bisa absen.",
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                const Icon(
+                                  Icons.chevron_right_rounded,
+                                  color: Colors.white,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
 
                     const Spacer(flex: 1),
 
@@ -419,7 +513,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
                           colors: [
-                            FluidColors.primary,
+                            auth.themeColor,
                             const Color(0xFF7C3AED),
                           ],
                           begin: Alignment.topLeft,
@@ -428,7 +522,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                         borderRadius: BorderRadius.circular(28),
                         boxShadow: [
                           BoxShadow(
-                            color: FluidColors.primary.withOpacity(0.32),
+                            color: context.primaryColor.withOpacity(0.32),
                             blurRadius: 32,
                             offset: const Offset(0, 16),
                           ),
@@ -505,7 +599,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                     if (_isLoading)
                       const Center(
                         child: CircularProgressIndicator(
-                          color: FluidColors.primary,
+                          color: context.primaryColor,
                           strokeWidth: 3,
                         ),
                       )
@@ -516,11 +610,11 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                           width: double.infinity,
                           height: 62,
                           decoration: BoxDecoration(
-                            color: FluidColors.primary,
+                            color: context.primaryColor,
                             borderRadius: BorderRadius.circular(18),
                             boxShadow: [
                               BoxShadow(
-                                color: FluidColors.primary.withOpacity(0.35),
+                                color: context.primaryColor.withOpacity(0.35),
                                 blurRadius: 20,
                                 offset: const Offset(0, 8),
                               ),

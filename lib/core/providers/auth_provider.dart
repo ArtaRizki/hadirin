@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:hadirin/core/utils/color_utils.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 // Tambahkan ini
 
@@ -11,12 +12,16 @@ class AuthProvider extends ChangeNotifier {
   String? _clientId; // Disimpan dengan aman di state
   LoginRole _role = LoginRole.none; // Ubah default jadi none
   bool _isInitialized = false;
+  bool _isFaceRegistered = false;
+  Color _themeColor = const Color(0xFF005147); // Default Emerald Green
 
   String? get idUser => _idUser;
   String? get namaUser => _namaUser;
   String? get clientId => _clientId; // Akses dari UI
   LoginRole get role => _role;
   bool get isInitialized => _isInitialized;
+  bool get isFaceRegistered => _isFaceRegistered;
+  Color get themeColor => _themeColor;
 
   // Getter bantuan untuk kompatibilitas dengan UI yang sudah ada
   bool get isLoggedIn => _role != LoginRole.none;
@@ -50,6 +55,14 @@ class AuthProvider extends ChangeNotifier {
       orElse: () => LoginRole.none,
     );
 
+    _isFaceRegistered = prefs.getBool('isFaceRegistered') ?? false;
+
+    // Load Theme Color
+    final themeHex = prefs.getString('theme_color');
+    if (themeHex != null) {
+      _themeColor = ColorUtils.fromHex(themeHex);
+    }
+
     _isInitialized = true;
     notifyListeners();
   }
@@ -71,7 +84,26 @@ class AuthProvider extends ChangeNotifier {
     _namaUser = nama.trim();
     _clientId = clientId.trim();
     _role = role;
+    _isFaceRegistered = prefs.getBool('is_face_registered_${id.trim()}') ?? false;
     notifyListeners();
+  }
+
+  Future<void> setFaceRegistered(bool registered) async {
+    _isFaceRegistered = registered;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('isFaceRegistered', registered);
+    notifyListeners();
+  }
+
+  void updateThemeColor(String? hexString) async {
+    if (hexString == null) return;
+    final newColor = ColorUtils.fromHex(hexString);
+    if (newColor.value != _themeColor.value) {
+      _themeColor = newColor;
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('theme_color', hexString);
+      notifyListeners();
+    }
   }
 
   Future<void> logout() async {

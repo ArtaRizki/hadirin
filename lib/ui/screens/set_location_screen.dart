@@ -267,9 +267,9 @@ class _SetLocationScreenState extends State<SetLocationScreen> {
                       circles: [
                         CircleMarker(
                           point: _pickedLocation,
-                          color: FluidColors.primary.withOpacity(0.15),
+                          color: context.primaryColor.withOpacity(0.15),
                           borderStrokeWidth: 2,
-                          borderColor: FluidColors.primary,
+                          borderColor: context.primaryColor,
                           useRadiusInMeter: true,
                           radius: _radius,
                         ),
@@ -344,7 +344,7 @@ class _SetLocationScreenState extends State<SetLocationScreen> {
                             hintText: "Cari nama jalan / kota...",
                             prefixIcon: const Icon(
                               Icons.search_rounded,
-                              color: FluidColors.primary,
+                              color: context.primaryColor,
                             ),
                             border: InputBorder.none,
                             contentPadding: const EdgeInsets.symmetric(
@@ -511,7 +511,7 @@ class _SetLocationScreenState extends State<SetLocationScreen> {
                             )
                           : const Icon(
                               Icons.my_location,
-                              color: FluidColors.primary,
+                              color: context.primaryColor,
                             ),
                     ),
                   ),
@@ -629,7 +629,7 @@ class _SetLocationScreenState extends State<SetLocationScreen> {
                           vertical: 4,
                         ),
                         decoration: BoxDecoration(
-                          color: FluidColors.primary.withOpacity(0.1),
+                          color: context.primaryColor.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(
@@ -637,7 +637,7 @@ class _SetLocationScreenState extends State<SetLocationScreen> {
                           style: const TextStyle(
                             fontWeight: FontWeight.w800,
                             fontSize: 12,
-                            color: FluidColors.primary,
+                            color: context.primaryColor,
                           ),
                         ),
                       ),
@@ -647,10 +647,10 @@ class _SetLocationScreenState extends State<SetLocationScreen> {
                   SliderTheme(
                     data: SliderTheme.of(context).copyWith(
                       trackHeight: 4,
-                      activeTrackColor: FluidColors.primary,
-                      inactiveTrackColor: FluidColors.primary.withOpacity(0.1),
-                      thumbColor: FluidColors.primary,
-                      overlayColor: FluidColors.primary.withOpacity(0.2),
+                      activeTrackColor: context.primaryColor,
+                      inactiveTrackColor: context.primaryColor.withOpacity(0.1),
+                      thumbColor: context.primaryColor,
+                      overlayColor: context.primaryColor.withOpacity(0.2),
                       thumbShape: const RoundSliderThumbShape(
                         enabledThumbRadius: 10,
                         elevation: 4,
@@ -669,13 +669,13 @@ class _SetLocationScreenState extends State<SetLocationScreen> {
                     height: 58,
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: FluidColors.primary,
+                        backgroundColor: context.primaryColor,
                         foregroundColor: Colors.white,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(18),
                         ),
                         elevation: 4,
-                        shadowColor: FluidColors.primary.withOpacity(0.3),
+                        shadowColor: context.primaryColor.withOpacity(0.3),
                       ),
                       onPressed: _isSaving ? null : _simpanLokasi,
                       child: _isSaving

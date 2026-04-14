@@ -85,12 +85,12 @@ class AttendanceHistoryList extends StatelessWidget {
         log['tipe'] == "Izin" ||
         log['tipe'] == "Sakit";
 
-    Color accentColor = isMasuk ? FluidColors.primary : Colors.orange.shade600;
+    Color accentColor = isMasuk ? context.primaryColor : Colors.orange.shade600;
     if (isCuti) accentColor = Colors.grey.shade500;
 
     String statusLabel = "";
-    Color statusColor = FluidColors.primary;
-    Color statusBg = FluidColors.primary.withOpacity(0.08);
+    Color statusColor = context.primaryColor;
+    Color statusBg = context.primaryColor.withOpacity(0.08);
 
     if (isMasuk) {
       statusLabel = log['status'] ?? "";

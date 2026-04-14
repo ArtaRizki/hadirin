@@ -66,7 +66,7 @@ class _ApprovalScreenState extends State<ApprovalScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const CircularProgressIndicator(color: FluidColors.primary),
+              CircularProgressIndicator(color: context.primaryColor),
               const SizedBox(height: 24),
               Text(
                 "Memproses $statusBaru...",
@@ -167,7 +167,7 @@ class _ApprovalScreenState extends State<ApprovalScreen> {
                     height: 200,
                     child: Center(
                       child: CircularProgressIndicator(
-                        color: FluidColors.primary,
+                        color: context.primaryColor,
                       ),
                     ),
                   );
@@ -216,7 +216,7 @@ class _ApprovalScreenState extends State<ApprovalScreen> {
       case 'izin':
         return Colors.orange;
       default:
-        return FluidColors.primary;
+        return context.primaryColor;
     }
   }
 
@@ -275,7 +275,7 @@ class _ApprovalScreenState extends State<ApprovalScreen> {
                 height: 230,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: FluidColors.primary.withOpacity(0.06),
+                  color: context.primaryColor.withOpacity(0.06),
                 ),
               ),
             ),
@@ -294,7 +294,7 @@ class _ApprovalScreenState extends State<ApprovalScreen> {
             ),
 
             RefreshIndicator(
-              color: FluidColors.primary,
+              color: context.primaryColor,
               onRefresh: _fetchApprovals,
               child: _isLoading
                   ? const Padding(
@@ -384,7 +384,7 @@ class _ApprovalScreenState extends State<ApprovalScreen> {
                                   children: [
                                     CircleAvatar(
                                       radius: 20,
-                                      backgroundColor: FluidColors.primary
+                                      backgroundColor: context.primaryColor
                                           .withOpacity(0.1),
                                       child: Text(
                                         item['nama']
@@ -392,7 +392,7 @@ class _ApprovalScreenState extends State<ApprovalScreen> {
                                             .substring(0, 1)
                                             .toUpperCase(),
                                         style: const TextStyle(
-                                          color: FluidColors.primary,
+                                          color: context.primaryColor,
                                           fontWeight: FontWeight.bold,
                                           fontSize: 16,
                                         ),
@@ -514,12 +514,12 @@ class _ApprovalScreenState extends State<ApprovalScreen> {
                                         vertical: 8,
                                       ),
                                       decoration: BoxDecoration(
-                                        color: FluidColors.primary.withOpacity(
+                                        color: context.primaryColor.withOpacity(
                                           0.06,
                                         ),
                                         borderRadius: BorderRadius.circular(10),
                                         border: Border.all(
-                                          color: FluidColors.primary
+                                          color: context.primaryColor
                                               .withOpacity(0.15),
                                         ),
                                       ),
@@ -529,13 +529,13 @@ class _ApprovalScreenState extends State<ApprovalScreen> {
                                           Icon(
                                             Icons.attach_file_rounded,
                                             size: 16,
-                                            color: FluidColors.primary,
+                                            color: context.primaryColor,
                                           ),
                                           const SizedBox(width: 6),
                                           const Text(
                                             "Lihat Bukti / Surat",
                                             style: TextStyle(
-                                              color: FluidColors.primary,
+                                              color: context.primaryColor,
                                               fontWeight: FontWeight.w700,
                                               fontSize: 12,
                                             ),

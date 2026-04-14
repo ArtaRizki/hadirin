@@ -15,6 +15,7 @@ import 'package:hadirin/ui/screens/splash_screen.dart';
 import 'package:hadirin/ui/screens/login_screen.dart';
 import 'package:hadirin/ui/screens/admin_register_screen.dart';
 import 'package:hadirin/ui/screens/attendance_screen.dart';
+import 'package:hadirin/core/theme/fluid_theme.dart';
 
 void main() async {
   WidgetsBinding widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
@@ -52,17 +53,17 @@ class MyApp extends StatelessWidget {
             Colors.transparent, // Menghilangkan garis pembatas jika ada
       ),
     );
-    return MaterialApp(
-      title: 'Hadir.in',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF005147),
-        ), // Emerald Green
-        useMaterial3: true,
-      ),
-      // 2. Jadikan AuthWrapper sebagai home (halaman pertama yang dimuat)
-      home: const AuthWrapper(),
+    );
+    return Consumer<AuthProvider>(
+      builder: (context, auth, _) {
+        return MaterialApp(
+          title: 'Hadir.in',
+          debugShowCheckedModeBanner: false,
+          theme: FluidTheme.getTheme(auth.themeColor),
+          // 2. Jadikan AuthWrapper sebagai home (halaman pertama yang dimuat)
+          home: const AuthWrapper(),
+        );
+      },
     );
   }
 }
