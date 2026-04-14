@@ -244,6 +244,11 @@ class _AttendanceScreenState extends State<AttendanceScreen>
   }
 
   void _showSnackBar(String msg, {required bool isError}) {
+    // Beri waktu lebih lama untuk pesan error panjang (seperti deteksi Root/Fake GPS)
+    final int durationInSeconds = isError 
+        ? (msg.length > 50 ? 8 : 5) 
+        : 3;
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Row(
@@ -261,7 +266,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
             : const Color(0xFF16A34A),
         behavior: SnackBarBehavior.floating,
         margin: const EdgeInsets.all(16),
-        duration: Duration(seconds: isError ? 5 : 3),
+        duration: Duration(seconds: durationInSeconds),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
       ),
     );

@@ -4,6 +4,8 @@ import 'package:hadirin/core/service/notification_service.dart';
 import 'package:hadirin/core/service/sync_service.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_native_splash/flutter_native_splash.dart';
+import 'package:hadirin/core/config/app_config.dart';
 
 // Import Provider
 import 'package:hadirin/core/providers/auth_provider.dart';
@@ -13,11 +15,14 @@ import 'package:hadirin/ui/screens/splash_screen.dart';
 import 'package:hadirin/ui/screens/login_screen.dart';
 import 'package:hadirin/ui/screens/admin_register_screen.dart';
 import 'package:hadirin/ui/screens/attendance_screen.dart';
-import 'package:flutter_native_splash/flutter_native_splash.dart';
 
 void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  // Inisialisasi sistem notifikasi saat aplikasi dibuka
+  WidgetsBinding widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
+  FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
+
+  // Validasi variabel lingkungan (GAS_ENDPOINT & API_TOKEN)
+  AppConfig.validate();
+
   await initializeDateFormatting('id_ID');
   await NotificationService().init();
   FlutterNativeSplash.remove();
