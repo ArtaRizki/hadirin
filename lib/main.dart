@@ -53,7 +53,7 @@ class MyApp extends StatelessWidget {
             Colors.transparent, // Menghilangkan garis pembatas jika ada
       ),
     );
-    );
+
     return Consumer<AuthProvider>(
       builder: (context, auth, _) {
         return MaterialApp(
@@ -92,6 +92,7 @@ class _AuthWrapperState extends State<AuthWrapper> {
         SyncService().runSync(
           idAnggota: auth.idAnggota ?? "",
           clientId: auth.clientId ?? "",
+          auth: auth,
         );
       }
     });

@@ -41,7 +41,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
     _pulseAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
       CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
     );
-    
+
     // Mulai pantau lokasi secara real-time saat di layar ini
     _startProximityListener();
   }
@@ -55,7 +55,9 @@ class _AttendanceScreenState extends State<AttendanceScreen>
       if (permission == LocationPermission.denied) {
         permission = await Geolocator.requestPermission();
       }
-      if (permission == LocationPermission.denied || permission == LocationPermission.deniedForever) return;
+      if (permission == LocationPermission.denied ||
+          permission == LocationPermission.deniedForever)
+        return;
 
       final auth = context.read<AuthProvider>();
       if (!auth.isLoggedIn || !auth.isAnggota) return;
@@ -67,32 +69,34 @@ class _AttendanceScreenState extends State<AttendanceScreen>
       double offLng = double.parse(config['lng'].toString());
       double radius = double.parse(config['radius'].toString());
 
-      _positionStream = Geolocator.getPositionStream(
-        locationSettings: const LocationSettings(
-          accuracy: LocationAccuracy.high,
-          distanceFilter: 10, // Update setiap 10 meter
-        ),
-      ).listen((Position pos) {
-        double distance = Geolocator.distanceBetween(
-          pos.latitude,
-          pos.longitude,
-          offLat,
-          offLng,
-        );
+      _positionStream =
+          Geolocator.getPositionStream(
+            locationSettings: const LocationSettings(
+              accuracy: LocationAccuracy.high,
+              distanceFilter: 10, // Update setiap 10 meter
+            ),
+          ).listen((Position pos) {
+            double distance = Geolocator.distanceBetween(
+              pos.latitude,
+              pos.longitude,
+              offLat,
+              offLng,
+            );
 
-        if (distance <= radius && !_hasNotifiedProximity) {
-          NotificationService().showNotification(
-            id: 999,
-            title: "Sudah Sampai di Lokasi?📍",
-            body: "Anda sudah berada dalam radius Instansi. Yuk, segera lakukan Absen Masuk!",
-          );
-          _hasNotifiedProximity = true;
-        } else if (distance > radius + 20) {
-          // Reset flag kalau user keluar radius (beri buffer 20m) 
-          // agar bisa notif lagi kalau masuk lagi
-          _hasNotifiedProximity = false;
-        }
-      });
+            if (distance <= radius && !_hasNotifiedProximity) {
+              NotificationService().showNotification(
+                id: 999,
+                title: "Sudah Sampai di Lokasi?📍",
+                body:
+                    "Anda sudah berada dalam radius Instansi. Yuk, segera lakukan Absen Masuk!",
+              );
+              _hasNotifiedProximity = true;
+            } else if (distance > radius + 20) {
+              // Reset flag kalau user keluar radius (beri buffer 20m)
+              // agar bisa notif lagi kalau masuk lagi
+              _hasNotifiedProximity = false;
+            }
+          });
     } catch (e) {
       debugPrint("Proximity listener failed: $e");
     }
@@ -117,10 +121,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
   Future<bool> _cekStatusIzin(String idAnggota, String clientId) async {
     try {
       // Menggunakan endpoint khusus agar lebih ringan dan cepat
-      return await _attendanceService.cekStatusCutiHariIni(
-        idAnggota,
-        clientId,
-      );
+      return await _attendanceService.cekStatusCutiHariIni(idAnggota, clientId);
     } catch (e) {
       debugPrint("Gagal mengecek status cuti: $e");
     }
@@ -264,9 +265,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
 
   void _showSnackBar(String msg, {required bool isError}) {
     // Beri waktu lebih lama untuk pesan error panjang (seperti deteksi Root/Fake GPS)
-    final int durationInSeconds = isError 
-        ? (msg.length > 50 ? 8 : 5) 
-        : 3;
+    final int durationInSeconds = isError ? (msg.length > 50 ? 8 : 5) : 3;
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -381,7 +380,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                               const SizedBox(height: 5),
                               Text(
                                 auth.namaAnggota ?? "Anggota",
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 24,
                                   fontWeight: FontWeight.w900,
                                   color: Color(0xFF0F172A),
@@ -465,7 +464,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                                     color: Colors.white.withOpacity(0.2),
                                     shape: BoxShape.circle,
                                   ),
-                                  child: const Icon(
+                                  child: Icon(
                                     Icons.face_retouching_natural_rounded,
                                     color: Colors.white,
                                     size: 20,
@@ -474,7 +473,8 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                                 const SizedBox(width: 12),
                                 const Expanded(
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Text(
                                         "Wajah Belum Terdaftar",
@@ -494,7 +494,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                                     ],
                                   ),
                                 ),
-                                const Icon(
+                                Icon(
                                   Icons.chevron_right_rounded,
                                   color: Colors.white,
                                 ),
@@ -512,10 +512,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                       padding: const EdgeInsets.fromLTRB(28, 40, 28, 36),
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
-                          colors: [
-                            auth.themeColor,
-                            const Color(0xFF7C3AED),
-                          ],
+                          colors: [auth.themeColor, const Color(0xFF7C3AED)],
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
                         ),
@@ -536,7 +533,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                             children: [
                               Text(
                                 DateFormat('HH:mm').format(_currentTime),
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 76,
                                   fontWeight: FontWeight.w900,
                                   color: Colors.white,
@@ -597,7 +594,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
 
                     // TOMBOL ABSEN
                     if (_isLoading)
-                      const Center(
+                      Center(
                         child: CircularProgressIndicator(
                           color: context.primaryColor,
                           strokeWidth: 3,

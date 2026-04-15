@@ -138,7 +138,7 @@ class _LeaveRequestScreenState extends State<LeaveRequestScreen> {
                   ),
                 ],
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.arrow_back_ios_new_rounded,
                 color: Color(0xFF0F172A),
                 size: 16,
@@ -234,7 +234,7 @@ class _LeaveRequestScreenState extends State<LeaveRequestScreen> {
                     child: DropdownButtonHideUnderline(
                       child: DropdownButtonFormField<String>(
                         initialValue: _tipeIzin,
-                        icon: const Icon(
+                        icon: Icon(
                           Icons.keyboard_arrow_down_rounded,
                           color: context.primaryColor,
                         ),
@@ -255,9 +255,7 @@ class _LeaveRequestScreenState extends State<LeaveRequestScreen> {
                             value: val,
                             child: Text(
                               val,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.w500,
-                              ),
+                              style: TextStyle(fontWeight: FontWeight.w500),
                             ),
                           );
                         }).toList(),
@@ -301,7 +299,7 @@ class _LeaveRequestScreenState extends State<LeaveRequestScreen> {
                         ),
                         child: Row(
                           children: [
-                            const Icon(
+                            Icon(
                               Icons.calendar_month_rounded,
                               color: context.primaryColor,
                             ),
@@ -366,7 +364,7 @@ class _LeaveRequestScreenState extends State<LeaveRequestScreen> {
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(16),
-                          borderSide: const BorderSide(
+                          borderSide: BorderSide(
                             color: context.primaryColor,
                             width: 1.5,
                           ),
@@ -423,14 +421,14 @@ class _LeaveRequestScreenState extends State<LeaveRequestScreen> {
                                       ),
                                       shape: BoxShape.circle,
                                     ),
-                                    child: const Icon(
+                                    child: Icon(
                                       Icons.camera_alt_rounded,
                                       color: context.primaryColor,
                                       size: 28,
                                     ),
                                   ),
                                   const SizedBox(height: 12),
-                                  const Text(
+                                  Text(
                                     "Ambil Foto Surat Keterangan",
                                     style: TextStyle(
                                       color: context.primaryColor,

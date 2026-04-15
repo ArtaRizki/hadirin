@@ -100,7 +100,7 @@ class _AddAnggotaScreenState extends State<AddAnggotaScreen> {
                   ),
                 ],
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.arrow_back_ios_new_rounded,
                 color: Color(0xFF0F172A),
                 size: 16,
@@ -273,10 +273,7 @@ class _AddAnggotaScreenState extends State<AddAnggotaScreen> {
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16),
-            borderSide: const BorderSide(
-              color: context.primaryColor,
-              width: 1.5,
-            ),
+            borderSide: BorderSide(color: context.primaryColor, width: 1.5),
           ),
           filled: true,
           fillColor: Colors.white,

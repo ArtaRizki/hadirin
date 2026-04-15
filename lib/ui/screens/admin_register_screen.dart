@@ -156,7 +156,7 @@ class _AdminRegisterScreenState extends State<AdminRegisterScreen> {
                   ),
                 ],
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.arrow_back_ios_new_rounded,
                 color: Color(0xFF0F172A),
                 size: 16,
@@ -274,7 +274,7 @@ class _AdminRegisterScreenState extends State<AdminRegisterScreen> {
             decoration: InputDecoration(
               labelText: "Nama Instansi / Kantor",
               labelStyle: TextStyle(color: Colors.grey.shade500),
-              prefixIcon: const Icon(
+              prefixIcon: Icon(
                 Icons.business_rounded,
                 color: context.primaryColor,
               ),
@@ -284,10 +284,7 @@ class _AdminRegisterScreenState extends State<AdminRegisterScreen> {
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(16),
-                borderSide: const BorderSide(
-                  color: context.primaryColor,
-                  width: 1.5,
-                ),
+                borderSide: BorderSide(color: context.primaryColor, width: 1.5),
               ),
               filled: true,
               fillColor: Colors.white,
@@ -417,7 +414,7 @@ class _AdminRegisterScreenState extends State<AdminRegisterScreen> {
                               ),
                               Text(
                                 "${_pickedLocation.latitude.toStringAsFixed(4)}, ${_pickedLocation.longitude.toStringAsFixed(4)}",
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 12,
                                   fontWeight: FontWeight.w600,
                                 ),
@@ -436,7 +433,7 @@ class _AdminRegisterScreenState extends State<AdminRegisterScreen> {
                               ),
                               Text(
                                 "${_radius.toInt()} meter",
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 12,
                                   fontWeight: FontWeight.w600,
                                   color: context.primaryColor,
@@ -456,10 +453,10 @@ class _AdminRegisterScreenState extends State<AdminRegisterScreen> {
                 height: 50,
                 child: OutlinedButton.icon(
                   onPressed: _bukaMapPilihLokasi,
-                  icon: const Icon(Icons.map_rounded),
+                  icon: Icon(Icons.map_rounded),
                   label: Text(
                     _isLocationPicked ? "Ubah Lokasi" : "Buka Peta",
-                    style: const TextStyle(fontWeight: FontWeight.bold),
+                    style: TextStyle(fontWeight: FontWeight.bold),
                   ),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: context.primaryColor,
@@ -543,7 +540,7 @@ class _AdminRegisterScreenState extends State<AdminRegisterScreen> {
                 color: const Color(0xFF16A34A).withOpacity(0.1),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.check_circle_rounded,
                 color: Color(0xFF16A34A),
                 size: 64,
@@ -577,14 +574,16 @@ class _AdminRegisterScreenState extends State<AdminRegisterScreen> {
               decoration: BoxDecoration(
                 color: context.primaryColor.withOpacity(0.08),
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: context.primaryColor.withOpacity(0.3)),
+                border: Border.all(
+                  color: context.primaryColor.withOpacity(0.3),
+                ),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
                     _newClientId!,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 22,
                       fontWeight: FontWeight.w900,
                       letterSpacing: 1.5,
@@ -604,7 +603,7 @@ class _AdminRegisterScreenState extends State<AdminRegisterScreen> {
                       ],
                     ),
                     child: IconButton(
-                      icon: const Icon(
+                      icon: Icon(
                         Icons.copy_rounded,
                         color: context.primaryColor,
                         size: 20,

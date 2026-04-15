@@ -213,14 +213,14 @@ class _SetLocationScreenState extends State<SetLocationScreen> {
         elevation: 0,
         title: Text(
           widget.isSelectionMode ? "Pilih Lokasi" : "Update Lokasi",
-          style: const TextStyle(
+          style: TextStyle(
             color: Color(0xFF0F172A),
             fontWeight: FontWeight.w800,
             fontSize: 18,
           ),
         ),
         leading: IconButton(
-          icon: const Icon(
+          icon: Icon(
             Icons.arrow_back_ios_new_rounded,
             color: Color(0xFF0F172A),
           ),
@@ -277,7 +277,7 @@ class _SetLocationScreenState extends State<SetLocationScreen> {
                     ),
                   ],
                 ),
- 
+
                 // Atribusi OSM (Penting untuk legalitas)
                 Positioned(
                   bottom: 6,
@@ -309,7 +309,7 @@ class _SetLocationScreenState extends State<SetLocationScreen> {
                       // Geser Y ke atas sejauh 22 (sedikit lebih rendah dari 24)
                       // agar ujung lancip pin tepat di tengah lingkaran
                       offset: const Offset(0, -22),
-                      child: const Icon(
+                      child: Icon(
                         Icons.location_on_rounded,
                         size: 48,
                         color: Colors.redAccent,
@@ -342,7 +342,7 @@ class _SetLocationScreenState extends State<SetLocationScreen> {
                               _searchFocusNode, // TAUTKAN FOCUSNODE DI SINI
                           decoration: InputDecoration(
                             hintText: "Cari nama jalan / kota...",
-                            prefixIcon: const Icon(
+                            prefixIcon: Icon(
                               Icons.search_rounded,
                               color: context.primaryColor,
                             ),
@@ -352,7 +352,7 @@ class _SetLocationScreenState extends State<SetLocationScreen> {
                             ),
                             suffixIcon: _searchController.text.isNotEmpty
                                 ? IconButton(
-                                    icon: const Icon(Icons.cancel_rounded),
+                                    icon: Icon(Icons.cancel_rounded),
                                     onPressed: () {
                                       _searchController.clear();
                                       setState(() => _searchResults.clear());
@@ -392,7 +392,7 @@ class _SetLocationScreenState extends State<SetLocationScreen> {
                               return ListTile(
                                 title: Text(
                                   item['display_name'],
-                                  style: const TextStyle(fontSize: 13),
+                                  style: TextStyle(fontSize: 13),
                                 ),
                                 onTap: () => _onLocationSelected(
                                   double.parse(item['lat']),
@@ -461,10 +461,7 @@ class _SetLocationScreenState extends State<SetLocationScreen> {
                           (currentZoom + 1).clamp(1.0, 19.0),
                         );
                       },
-                      child: const Icon(
-                        Icons.add_rounded,
-                        color: Color(0xFF0F172A),
-                      ),
+                      child: Icon(Icons.add_rounded, color: Color(0xFF0F172A)),
                     ),
                   ),
 
@@ -484,7 +481,7 @@ class _SetLocationScreenState extends State<SetLocationScreen> {
                           (currentZoom - 1).clamp(1.0, 19.0),
                         );
                       },
-                      child: const Icon(
+                      child: Icon(
                         Icons.remove_rounded,
                         color: Color(0xFF0F172A),
                       ),
@@ -509,7 +506,7 @@ class _SetLocationScreenState extends State<SetLocationScreen> {
                               height: 20,
                               child: CircularProgressIndicator(strokeWidth: 2),
                             )
-                          : const Icon(
+                          : Icon(
                               Icons.my_location,
                               color: context.primaryColor,
                             ),
@@ -634,7 +631,7 @@ class _SetLocationScreenState extends State<SetLocationScreen> {
                         ),
                         child: Text(
                           "${_radius.toInt()} Meter",
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontWeight: FontWeight.w800,
                             fontSize: 12,
                             color: context.primaryColor,

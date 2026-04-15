@@ -125,11 +125,7 @@ class NotificationService {
   }
 
   Future<void> cancelNotification(int id) async {
-    await _notificationsPlugin.cancel(id);
-  }
-
-  Future<void> cancelAll() async {
-    await _notificationsPlugin.cancelAll();
+    await _notificationsPlugin.cancel(id: id);
   }
 
   // Fungsi Helper untuk Setup Pengingat Rutin (Pagi & Sore)

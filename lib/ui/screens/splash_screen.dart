@@ -109,14 +109,14 @@ class _SplashScreenState extends State<SplashScreen>
                 ),
               ),
             ),
-        
+
             // KONTEN UTAMA
             Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   const Spacer(flex: 3),
-        
+
                   // LOGO ANIMASI
                   ScaleTransition(
                     scale: _scaleAnimation,
@@ -140,7 +140,7 @@ class _SplashScreenState extends State<SplashScreen>
                           color: context.primaryColor.withOpacity(0.1),
                           shape: BoxShape.circle,
                         ),
-                        child: const Icon(
+                        child: Icon(
                           Icons.fingerprint_rounded,
                           size: 72,
                           color: context.primaryColor,
@@ -148,9 +148,9 @@ class _SplashScreenState extends State<SplashScreen>
                       ),
                     ),
                   ),
-        
+
                   const SizedBox(height: 32),
-        
+
                   // NAMA BRAND
                   const Text(
                     "Hadir.in",
@@ -170,11 +170,11 @@ class _SplashScreenState extends State<SplashScreen>
                       color: Colors.grey.shade600,
                     ),
                   ),
-        
+
                   const Spacer(flex: 2),
-        
+
                   // LOADING INDICATOR
-                  const SizedBox(
+                  SizedBox(
                     width: 24,
                     height: 24,
                     child: CircularProgressIndicator(
@@ -183,7 +183,7 @@ class _SplashScreenState extends State<SplashScreen>
                     ),
                   ),
                   const SizedBox(height: 16),
-        
+
                   // STATUS TEXT
                   Text(
                     _statusText,

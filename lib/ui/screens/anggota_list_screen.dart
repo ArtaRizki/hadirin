@@ -117,7 +117,7 @@ class _AnggotaListScreenState extends State<AnggotaListScreen> {
                   ),
                 ],
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.arrow_back_ios_new_rounded,
                 color: Color(0xFF0F172A),
                 size: 16,
@@ -168,7 +168,10 @@ class _AnggotaListScreenState extends State<AnggotaListScreen> {
               onRefresh: _fetchEmployees,
               child: _isLoading
                   ? ListView.builder(
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 16,
+                      ),
                       itemCount: 5,
                       itemBuilder: (context, index) => const CardSkeleton(),
                     )
@@ -254,7 +257,7 @@ class _AnggotaListScreenState extends State<AnggotaListScreen> {
                                     ? Colors.amber.withOpacity(0.15)
                                     : context.primaryColor.withOpacity(0.1),
                                 child: isSuperAdmin
-                                    ? const Icon(
+                                    ? Icon(
                                         Icons.shield_rounded,
                                         color: Colors.amber,
                                         size: 24,
@@ -264,7 +267,7 @@ class _AnggotaListScreenState extends State<AnggotaListScreen> {
                                             .toString()
                                             .substring(0, 1)
                                             .toUpperCase(),
-                                        style: const TextStyle(
+                                        style: TextStyle(
                                           color: context.primaryColor,
                                           fontWeight: FontWeight.bold,
                                           fontSize: 18,
@@ -278,7 +281,7 @@ class _AnggotaListScreenState extends State<AnggotaListScreen> {
                                   children: [
                                     Text(
                                       emp['nama'],
-                                      style: const TextStyle(
+                                      style: TextStyle(
                                         fontWeight: FontWeight.w800,
                                         fontSize: 16,
                                         color: Color(0xFF0F172A),

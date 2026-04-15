@@ -66,7 +66,10 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _isLoading = true);
 
     try {
-      final result = await AdminService().enrollDevice(inputKodeInstansi, inputId);
+      final result = await AdminService().enrollDevice(
+        inputKodeInstansi,
+        inputId,
+      );
 
       if (result['success']) {
         final dataAnggota = result['message'];
@@ -104,7 +107,7 @@ class _LoginScreenState extends State<LoginScreen> {
       SnackBar(
         content: Row(
           children: [
-            const Icon(Icons.error_outline, color: Colors.white),
+            Icon(Icons.error_outline, color: Colors.white),
             const SizedBox(width: 8),
             Expanded(child: Text(msg)),
           ],
@@ -171,7 +174,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               color: context.primaryColor.withOpacity(0.1),
                               shape: BoxShape.circle,
                             ),
-                            child: const Icon(
+                            child: Icon(
                               Icons.fingerprint_rounded,
                               size: 48,
                               color: context.primaryColor,
@@ -229,7 +232,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               labelStyle: TextStyle(
                                 color: Colors.grey.shade500,
                               ),
-                              prefixIcon: const Icon(
+                              prefixIcon: Icon(
                                 Icons.business_rounded,
                                 color: context.primaryColor,
                               ),
@@ -239,7 +242,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               ),
                               focusedBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(16),
-                                borderSide: const BorderSide(
+                                borderSide: BorderSide(
                                   color: context.primaryColor,
                                   width: 1.5,
                                 ),
@@ -272,7 +275,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               labelStyle: TextStyle(
                                 color: Colors.grey.shade500,
                               ),
-                              prefixIcon: const Icon(
+                              prefixIcon: Icon(
                                 Icons.badge_rounded,
                                 color: context.primaryColor,
                               ),
@@ -282,7 +285,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               ),
                               focusedBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(16),
-                                borderSide: const BorderSide(
+                                borderSide: BorderSide(
                                   color: context.primaryColor,
                                   width: 1.5,
                                 ),
@@ -305,7 +308,9 @@ class _LoginScreenState extends State<LoginScreen> {
                               backgroundColor: context.primaryColor,
                               foregroundColor: Colors.white,
                               elevation: 4,
-                              shadowColor: context.primaryColor.withOpacity(0.4),
+                              shadowColor: context.primaryColor.withOpacity(
+                                0.4,
+                              ),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(16),
                               ),

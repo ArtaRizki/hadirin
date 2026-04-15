@@ -140,6 +140,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     String tipe,
     String waktu,
   ) {
+    final auth = context.read<AuthProvider>();
     showDialog(
       context: context,
       builder: (context) => Dialog(
@@ -157,12 +158,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 fit: BoxFit.cover,
                 loadingBuilder: (context, child, loadingProgress) {
                   if (loadingProgress == null) return child;
-                  return const SizedBox(
+                  return SizedBox(
                     height: 200,
                     child: Center(
-                      child: CircularProgressIndicator(
-                        color: auth.themeColor,
-                      ),
+                      child: CircularProgressIndicator(color: auth.themeColor),
                     ),
                   );
                 },
@@ -178,7 +177,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 children: [
                   Text(
                     "Bukti Foto Absen $tipe",
-                    style: const TextStyle(fontWeight: FontWeight.bold),
+                    style: TextStyle(fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 4),
                   Text(
@@ -261,9 +260,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     int selectedMonth = DateTime.now().month;
     int selectedYear = DateTime.now().year;
-    String selectedAnggotaId = auth.isAdmin
-        ? "SEMUA"
-        : (auth.idAnggota ?? "");
+    String selectedAnggotaId = auth.isAdmin ? "SEMUA" : (auth.idAnggota ?? "");
 
     final List<String> namaBulan = [
       "Januari",
@@ -509,7 +506,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   controller: idController,
                   decoration: InputDecoration(
                     labelText: "ID Anggota",
-                    prefixIcon: const Icon(Icons.badge),
+                    prefixIcon: Icon(Icons.badge),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -658,7 +655,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 textAlign: TextAlign.center,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.w700,
                   color: Color(0xFF0F172A),
@@ -675,7 +672,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   // =================================================================
   // COMPONENT: HISTORY ITEM
   // =================================================================
-// History items extracted to AttendanceHistoryList widget
+  // History items extracted to AttendanceHistoryList widget
 
   @override
   Widget build(BuildContext context) {
@@ -704,7 +701,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                 ],
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.arrow_back_ios_new_rounded,
                 color: Color(0xFF0F172A),
                 size: 16,
@@ -779,7 +776,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         children: [
                           Text(
                             auth.namaAnggota ?? "Unknown",
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 17,
                               fontWeight: FontWeight.w800,
                               color: Colors.white,
@@ -873,7 +870,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           color: Colors.white.withOpacity(0.15),
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child: const Icon(
+                        child: Icon(
                           Icons.logout_rounded,
                           color: Colors.white,
                           size: 18,
@@ -1114,9 +1111,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             vertical: 8,
                           ),
                           decoration: BoxDecoration(
-                            color: isSelected
-                                ? auth.themeColor
-                                : Colors.white,
+                            color: isSelected ? auth.themeColor : Colors.white,
                             borderRadius: BorderRadius.circular(10),
                             border: Border.all(
                               color: isSelected
@@ -1126,9 +1121,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             boxShadow: isSelected
                                 ? [
                                     BoxShadow(
-                                      color: auth.themeColor.withOpacity(
-                                        0.25,
-                                      ),
+                                      color: auth.themeColor.withOpacity(0.25),
                                       blurRadius: 8,
                                       offset: const Offset(0, 3),
                                     ),
@@ -1158,7 +1151,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 history: _filteredHistory,
                 isLoading: _isLoading,
                 errorMessage: _errorMsg,
-                onShowPhoto: (url, tipe, waktu) => _tampilkanFoto(context, url, tipe, waktu),
+                onShowPhoto: (url, tipe, waktu) =>
+                    _tampilkanFoto(context, url, tipe, waktu),
               ),
 
               const SizedBox(height: 32),
@@ -1195,7 +1189,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Widget _sectionLabel(String label) => Text(
     label,
-    style: const TextStyle(
+    style: TextStyle(
       fontSize: 14,
       fontWeight: FontWeight.w800,
       color: Color(0xFF0F172A),
@@ -1219,17 +1213,33 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
 
     int total = _listAnggotaStats.length;
-    int wajahOk =
-        _listAnggotaStats.where((a) => a['wajah_terdaftar'] == true).length;
+    int wajahOk = _listAnggotaStats
+        .where((a) => a['wajah_terdaftar'] == true)
+        .length;
     int hpOk = _listAnggotaStats.where((a) => a['sudah_enroll'] == true).length;
 
     return Row(
       children: [
-        _statCard("Anggota", total.toString(), Icons.people_rounded, Colors.blue),
+        _statCard(
+          "Anggota",
+          total.toString(),
+          Icons.people_rounded,
+          Colors.blue,
+        ),
         const SizedBox(width: 8),
-        _statCard("Wajah OK", wajahOk.toString(), Icons.face_rounded, Colors.green),
+        _statCard(
+          "Wajah OK",
+          wajahOk.toString(),
+          Icons.face_rounded,
+          Colors.green,
+        ),
         const SizedBox(width: 8),
-        _statCard("HP OK", hpOk.toString(), Icons.phonelink_setup, Colors.orange),
+        _statCard(
+          "HP OK",
+          hpOk.toString(),
+          Icons.phonelink_setup,
+          Colors.orange,
+        ),
       ],
     );
   }

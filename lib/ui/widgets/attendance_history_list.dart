@@ -36,10 +36,7 @@ class AttendanceHistoryList extends StatelessWidget {
           padding: const EdgeInsets.all(32.0),
           child: Text(
             errorMessage,
-            style: TextStyle(
-              color: Colors.red.shade700,
-              fontSize: 13,
-            ),
+            style: TextStyle(color: Colors.red.shade700, fontSize: 13),
           ),
         ),
       );
@@ -59,10 +56,7 @@ class AttendanceHistoryList extends StatelessWidget {
               const SizedBox(height: 12),
               Text(
                 "Belum ada data absen.",
-                style: TextStyle(
-                  color: Colors.grey.shade500,
-                  fontSize: 13,
-                ),
+                style: TextStyle(color: Colors.grey.shade500, fontSize: 13),
               ),
             ],
           ),
@@ -71,7 +65,9 @@ class AttendanceHistoryList extends StatelessWidget {
     }
 
     return Column(
-      children: history.map((log) => _buildHistoryItem(context, log as Map)).toList(),
+      children: history
+          .map((log) => _buildHistoryItem(context, log as Map))
+          .toList(),
     );
   }
 
@@ -147,7 +143,7 @@ class AttendanceHistoryList extends StatelessWidget {
               children: [
                 Text(
                   "Absen ${log['tipe']}  ·  ${_formatJam(dt)}",
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontWeight: FontWeight.w700,
                     fontSize: 14,
                     color: Color(0xFF0F172A),

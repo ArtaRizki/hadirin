@@ -171,12 +171,20 @@ class _CustomDateRangePickerSheetState
   bool get _isNextDisabled {
     if (widget.allowFuture) {
       if (widget.lastDate != null) {
-        final nextMonth = DateTime(_focusedMonth.year, _focusedMonth.month + 1, 1);
+        final nextMonth = DateTime(
+          _focusedMonth.year,
+          _focusedMonth.month + 1,
+          1,
+        );
         return nextMonth.isAfter(widget.lastDate!);
       }
       // Allow up to 1 year ahead if no lastDate
       final maxFuture = DateTime.now().add(const Duration(days: 365));
-      final nextMonth = DateTime(_focusedMonth.year, _focusedMonth.month + 1, 1);
+      final nextMonth = DateTime(
+        _focusedMonth.year,
+        _focusedMonth.month + 1,
+        1,
+      );
       return nextMonth.isAfter(maxFuture);
     }
 
@@ -279,7 +287,7 @@ class _CustomDateRangePickerSheetState
                       color: context.primaryColor.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: const Icon(
+                    child: Icon(
                       Icons.date_range_rounded,
                       color: context.primaryColor,
                       size: 20,
@@ -438,7 +446,7 @@ class _CustomDateRangePickerSheetState
                             child: Text(
                               "${_monthNames[_focusedMonth.month - 1]} ${_focusedMonth.year}",
                               textAlign: TextAlign.center,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontWeight: FontWeight.w800,
                                 fontSize: 15,
                                 color: Color(0xFF0F172A),

@@ -70,10 +70,7 @@ class _ApprovalScreenState extends State<ApprovalScreen> {
               const SizedBox(height: 24),
               Text(
                 "Memproses $statusBaru...",
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                ),
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
               ),
               const SizedBox(height: 8),
               Text(
@@ -163,7 +160,7 @@ class _ApprovalScreenState extends State<ApprovalScreen> {
                 fit: BoxFit.contain,
                 loadingBuilder: (context, child, loadingProgress) {
                   if (loadingProgress == null) return child;
-                  return const SizedBox(
+                  return SizedBox(
                     height: 200,
                     child: Center(
                       child: CircularProgressIndicator(
@@ -246,7 +243,7 @@ class _ApprovalScreenState extends State<ApprovalScreen> {
                   ),
                 ],
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.arrow_back_ios_new_rounded,
                 color: Color(0xFF0F172A),
                 size: 16,
@@ -391,7 +388,7 @@ class _ApprovalScreenState extends State<ApprovalScreen> {
                                             .toString()
                                             .substring(0, 1)
                                             .toUpperCase(),
-                                        style: const TextStyle(
+                                        style: TextStyle(
                                           color: context.primaryColor,
                                           fontWeight: FontWeight.bold,
                                           fontSize: 16,
@@ -406,7 +403,7 @@ class _ApprovalScreenState extends State<ApprovalScreen> {
                                         children: [
                                           Text(
                                             item['nama'],
-                                            style: const TextStyle(
+                                            style: TextStyle(
                                               fontWeight: FontWeight.w800,
                                               fontSize: 16,
                                               color: Color(0xFF0F172A),
@@ -532,7 +529,7 @@ class _ApprovalScreenState extends State<ApprovalScreen> {
                                             color: context.primaryColor,
                                           ),
                                           const SizedBox(width: 6),
-                                          const Text(
+                                          Text(
                                             "Lihat Bukti / Surat",
                                             style: TextStyle(
                                               color: context.primaryColor,
