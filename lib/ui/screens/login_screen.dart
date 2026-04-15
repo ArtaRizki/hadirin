@@ -74,8 +74,21 @@ class _LoginScreenState extends State<LoginScreen> {
       if (result['success']) {
         final dataAnggota = result['message'];
         final clientIdDariServer = dataAnggota['client_id'];
+        final divisi = (dataAnggota['divisi'] ?? "").toString().toUpperCase();
+        final nama = (dataAnggota['nama_karyawan'] ?? "").toString().toUpperCase();
 
-        LoginRole assignedRole = inputId.toUpperCase().startsWith("INST-")
+        // Logika penentuan role: 
+        // Admin jika ID diawali INST-/ADM-/ADMIN- ATAU Divisi/Nama mengandung kata ADMIN/PEMILIK
+        bool isIdAdmin = inputId.toUpperCase().startsWith("INST-") || 
+                         inputId.toUpperCase().startsWith("ADM-") ||
+                         inputId.toUpperCase().startsWith("ADMIN-");
+        
+        bool isRoleAdmin = divisi.contains("ADMIN") || 
+                          divisi.contains("PEMILIK") ||
+                          nama.contains("ADMIN") ||
+                          nama.contains("PEMILIK");
+
+        LoginRole assignedRole = (isIdAdmin || isRoleAdmin)
             ? LoginRole.admin
             : LoginRole.anggota;
 
@@ -84,6 +97,8 @@ class _LoginScreenState extends State<LoginScreen> {
           dataAnggota['nama_karyawan'],
           assignedRole,
           clientIdDariServer,
+          userPhone: (dataAnggota['no_hp'] ?? "").toString(),
+          adminPhone: (dataAnggota['admin_phone'] ?? "").toString(),
         );
 
         if (!mounted) return;

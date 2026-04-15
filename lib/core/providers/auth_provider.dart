@@ -14,6 +14,8 @@ class AuthProvider extends ChangeNotifier {
   bool _isInitialized = false;
   bool _isFaceRegistered = false;
   Color _themeColor = const Color(0xFF005147); // Default Emerald Green
+  String? _userPhone; // Nomor WA karyawan
+  String? _adminPhone; // Nomor WA Admin Utama
 
   String? get idUser => _idUser;
   String? get namaUser => _namaUser;
@@ -22,6 +24,8 @@ class AuthProvider extends ChangeNotifier {
   bool get isInitialized => _isInitialized;
   bool get isFaceRegistered => _isFaceRegistered;
   Color get themeColor => _themeColor;
+  String? get userPhone => _userPhone;
+  String? get adminPhone => _adminPhone;
 
   // Getter bantuan untuk kompatibilitas dengan UI yang sudah ada
   bool get isLoggedIn => _role != LoginRole.none;
@@ -63,6 +67,9 @@ class AuthProvider extends ChangeNotifier {
       _themeColor = ColorUtils.fromHex(themeHex);
     }
 
+    _userPhone = prefs.getString('user_phone');
+    _adminPhone = prefs.getString('admin_phone');
+
     _isInitialized = true;
     notifyListeners();
   }
@@ -72,18 +79,25 @@ class AuthProvider extends ChangeNotifier {
     String id,
     String nama,
     LoginRole role,
-    String clientId,
-  ) async {
+    String clientId, {
+    String? userPhone,
+    String? adminPhone,
+  }) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('id_user', id.trim());
     await prefs.setString('nama_user', nama.trim());
     await prefs.setString('login_role', role.toString());
     await prefs.setString('client_id', clientId.trim()); // Simpan permanen
 
+    if (userPhone != null) await prefs.setString('user_phone', userPhone);
+    if (adminPhone != null) await prefs.setString('admin_phone', adminPhone);
+
     _idUser = id.trim();
     _namaUser = nama.trim();
     _clientId = clientId.trim();
     _role = role;
+    _userPhone = userPhone;
+    _adminPhone = adminPhone;
     _isFaceRegistered = prefs.getBool('is_face_registered_${id.trim()}') ?? false;
     notifyListeners();
   }

@@ -15,6 +15,7 @@ class _AddAnggotaScreenState extends State<AddAnggotaScreen> {
   final _idController = TextEditingController();
   final _namaController = TextEditingController();
   final _bagianController = TextEditingController();
+  final _hpController = TextEditingController(); // NEW
   bool _isLoading = false;
 
   void _simpanAnggota() async {
@@ -36,6 +37,7 @@ class _AddAnggotaScreenState extends State<AddAnggotaScreen> {
       bagian: _bagianController.text.trim().isEmpty
           ? "-"
           : _bagianController.text.trim(),
+      noHp: _hpController.text.trim(), // NEW
     );
 
     setState(() => _isLoading = false);
@@ -195,6 +197,14 @@ class _AddAnggotaScreenState extends State<AddAnggotaScreen> {
                     hint: "Opsional (Contoh: Guru, Staf)",
                     icon: Icons.work_outline_rounded,
                   ),
+                  const SizedBox(height: 20),
+                  _buildInputField(
+                    controller: _hpController,
+                    label: "No. HP / WhatsApp",
+                    hint: "Contoh: 08123456789",
+                    icon: Icons.phone_android_rounded,
+                    keyboardType: TextInputType.phone,
+                  ),
 
                   const SizedBox(height: 48),
 
@@ -247,6 +257,7 @@ class _AddAnggotaScreenState extends State<AddAnggotaScreen> {
     required String label,
     required String hint,
     required IconData icon,
+    TextInputType keyboardType = TextInputType.text,
   }) {
     return Container(
       decoration: BoxDecoration(
@@ -262,6 +273,7 @@ class _AddAnggotaScreenState extends State<AddAnggotaScreen> {
       ),
       child: TextField(
         controller: controller,
+        keyboardType: keyboardType,
         decoration: InputDecoration(
           labelText: label,
           hintText: hint,

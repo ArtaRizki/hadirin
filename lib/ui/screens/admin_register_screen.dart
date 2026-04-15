@@ -18,6 +18,7 @@ class AdminRegisterScreen extends StatefulWidget {
 
 class _AdminRegisterScreenState extends State<AdminRegisterScreen> {
   final _namaController = TextEditingController();
+  final _hpController = TextEditingController(); // NEW: No. HP Admin Utama
 
   // Default jika belum pilih
   LatLng _pickedLocation = const LatLng(-7.9713634, 112.5847634);
@@ -92,6 +93,7 @@ class _AdminRegisterScreenState extends State<AdminRegisterScreen> {
       lat: _pickedLocation.latitude,
       lng: _pickedLocation.longitude,
       radius: _radius,
+      adminPhone: _hpController.text.trim(), // NEW
     );
 
     setState(() => _isLoading = false);
@@ -290,6 +292,43 @@ class _AdminRegisterScreenState extends State<AdminRegisterScreen> {
               fillColor: Colors.white,
             ),
             textInputAction: TextInputAction.done,
+          ),
+        ),
+        const SizedBox(height: 20),
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.03),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: TextFormField(
+            controller: _hpController,
+            keyboardType: TextInputType.phone,
+            decoration: InputDecoration(
+              labelText: "No. HP / WhatsApp Admin",
+              hintText: "Contoh: 08123456789",
+              labelStyle: TextStyle(color: Colors.grey.shade500),
+              prefixIcon: Icon(
+                Icons.phone_android_rounded,
+                color: context.primaryColor,
+              ),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+                borderSide: BorderSide.none,
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+                borderSide: BorderSide(color: context.primaryColor, width: 1.5),
+              ),
+              filled: true,
+              fillColor: Colors.white,
+            ),
           ),
         ),
 
@@ -638,8 +677,16 @@ class _AdminRegisterScreenState extends State<AdminRegisterScreen> {
               height: 56,
               child: ElevatedButton(
                 onPressed: () {
-                  _newClientId = null;
-                  setState(() {});
+                  setState(() {
+                    _newClientId = null;
+                    _newClientId = null;
+                    _namaController.clear();
+                    _hpController.clear(); // NEW
+                    _pickedLocation = const LatLng(-7.9713634, 112.5847634);
+                    _radius = 100.0;
+                    _pickedAddress = "";
+                    _isLocationPicked = false;
+                  });
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(

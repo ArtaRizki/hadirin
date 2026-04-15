@@ -5,6 +5,7 @@ import 'package:hadirin/core/service/attendance_service.dart';
 import 'package:hadirin/core/service/export_service.dart';
 import 'package:hadirin/core/service/face_service.dart';
 import 'package:hadirin/ui/screens/add_anggota_screen.dart';
+import 'package:hadirin/ui/screens/approval_screen.dart';
 import 'package:hadirin/ui/screens/login_screen.dart';
 import 'package:hadirin/ui/screens/set_location_screen.dart';
 import 'package:hadirin/ui/widgets/custom_date_range_picker.dart';
@@ -13,10 +14,11 @@ import 'package:hadirin/core/theme/fluid_theme.dart';
 import 'package:intl/intl.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:hadirin/ui/widgets/skeleton_loader.dart';
+import 'package:hadirin/core/utils/url_helper.dart';
 import 'package:hadirin/ui/screens/leave_request_screen.dart';
-import 'package:hadirin/ui/screens/approval_screen.dart';
 import 'package:hadirin/ui/screens/anggota_list_screen.dart';
 import 'package:hadirin/ui/widgets/attendance_history_list.dart';
+import 'package:hadirin/ui/screens/leave_history_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -83,6 +85,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
         _errorMsg = e.toString();
         _isLoading = false;
       });
+    }
+  }
+
+  Future<void> _handleRefresh() async {
+    final auth = context.read<AuthProvider>();
+    if (auth.isAdmin) {
+      await Future.wait([_fetchHistory(), _fetchStats()]);
+    } else {
+      await _fetchHistory();
     }
   }
 
@@ -722,7 +733,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       body: SafeArea(
         child: RefreshIndicator(
           color: auth.themeColor,
-          onRefresh: _fetchHistory,
+          onRefresh: _handleRefresh,
           child: ListView(
             padding: const EdgeInsets.fromLTRB(20, 4, 20, 40),
             children: [
@@ -921,6 +932,30 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     onTap: _isExporting ? null : _tampilkanDialogPilihBulan,
                     accentColor: const Color(0xFF16A34A),
                   ),
+                  _buildMenuCard(
+                    title: "Riwayat\nIzin",
+                    icon: Icons.history_edu_rounded,
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const LeaveHistoryScreen(),
+                      ),
+                    ),
+                    accentColor: Colors.blueGrey,
+                  ),
+                  if (!auth.isAdmin &&
+                      auth.adminPhone != null &&
+                      auth.adminPhone!.isNotEmpty)
+                    _buildMenuCard(
+                      title: "Hubungi\nPengelola",
+                      icon: Icons.support_agent_rounded,
+                      onTap: () => UrlHelper.launchWhatsApp(
+                        phone: auth.adminPhone!,
+                        message:
+                            "Halo Bapak/Ibu Admin Hadir.in, saya ${auth.namaUser} ingin menanyakan sesuatu.",
+                      ),
+                      accentColor: const Color(0xFFE11D48), // Rose
+                    ),
                   if (auth.isAdmin) ...[
                     _buildMenuCard(
                       title: "Daftar\nAnggota",

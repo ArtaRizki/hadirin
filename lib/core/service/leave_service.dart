@@ -119,4 +119,34 @@ class LeaveService extends ApiClient {
       return false;
     }
   }
+
+  // =================================================================
+  // AMBIL RIWAYAT IZIN / CUTI KHUSUS MILIK ANGGOTA
+  // =================================================================
+  Future<List<dynamic>> getLeaveHistory(
+    String idAnggota,
+    String clientId, {
+    bool isAdmin = false,
+  }) async {
+    try {
+      final payload = {
+        'api_token': AppConfig.apiToken,
+        'action': 'get_leave_history',
+        'client_id': clientId,
+        'id_karyawan': idAnggota,
+        'is_admin': isAdmin,
+      };
+
+      final response = await sendRequest('get_leave_history', payload);
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['code'] == 200) return data['message'] as List<dynamic>;
+        throw Exception(data['message']);
+      }
+      throw Exception('Gagal terhubung ke server.');
+    } catch (e) {
+      d.log('==== ERROR GET LEAVE HISTORY ==== $e');
+      return [];
+    }
+  }
 }

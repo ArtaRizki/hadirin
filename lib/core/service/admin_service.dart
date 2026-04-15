@@ -70,6 +70,7 @@ class AdminService extends ApiClient {
     required String idAnggotaBaru,
     required String namaAnggotaBaru,
     required String bagian,
+    String noHp = "",
   }) async {
     try {
       final payload = {
@@ -79,6 +80,7 @@ class AdminService extends ApiClient {
         'id_karyawan_baru': idAnggotaBaru,
         'nama_karyawan_baru': namaAnggotaBaru,
         'divisi_baru': bagian,
+        'no_hp': noHp,
       };
 
       final response = await sendRequest('add_karyawan', payload);
@@ -195,6 +197,7 @@ class AdminService extends ApiClient {
     required double lat,
     required double lng,
     required double radius,
+    String adminPhone = "",
   }) async {
     try {
       final payload = {
@@ -204,6 +207,7 @@ class AdminService extends ApiClient {
         'lat': lat,
         'lng': lng,
         'radius': radius,
+        'admin_phone': adminPhone,
       };
 
       final response = await sendRequest(
