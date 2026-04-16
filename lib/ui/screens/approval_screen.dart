@@ -186,7 +186,7 @@ class _ApprovalScreenState extends State<ApprovalScreen> {
                 maxHeight: MediaQuery.of(context).size.height * 0.6,
               ),
               child: Image.network(
-                url,
+                UrlHelper.getDirectUrl(url),
                 fit: BoxFit.contain,
                 loadingBuilder: (context, child, loadingProgress) {
                   if (loadingProgress == null) return child;
@@ -279,7 +279,7 @@ class _ApprovalScreenState extends State<ApprovalScreen> {
                           child: InkWell(
                             onTap: () => _lihatFoto(item['foto']),
                             child: Image.network(
-                              item['foto'],
+                              UrlHelper.getDirectUrl(item['foto']),
                               height: 180,
                               width: double.infinity,
                               fit: BoxFit.cover,

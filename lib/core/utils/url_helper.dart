@@ -38,4 +38,21 @@ class UrlHelper {
       await launchUrl(webUri, mode: LaunchMode.externalApplication);
     }
   }
+
+  /// Konversi URL Google Drive ke Direct Link agar bisa ditampilkan di Image.network
+  static String getDirectUrl(String originalUrl) {
+    if (originalUrl.contains("drive.google.com")) {
+      final fileId = _extractFileId(originalUrl);
+      if (fileId != null) {
+        return "https://drive.google.com/thumbnail?id=$fileId&sz=w1000";
+      }
+    }
+    return originalUrl;
+  }
+
+  static String? _extractFileId(String url) {
+    final regExp = RegExp(r"(?:id=|\/d\/)([a-zA-Z0-9_-]+)");
+    final match = regExp.firstMatch(url);
+    return match?.group(1);
+  }
 }

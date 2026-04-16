@@ -137,14 +137,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   String _formatJam(DateTime dt) => DateFormat('HH:mm').format(dt);
 
-  String getDirectUrl(String originalUrl) {
-    if (originalUrl.contains("drive.google.com")) {
-      final fileId = originalUrl.split("/d/")[1].split("/view")[0];
-      return "https://docs.google.com/uc?export=view&id=$fileId";
-    }
-    return originalUrl;
-  }
-
   void _tampilkanFoto(
     BuildContext context,
     String url,
@@ -165,7 +157,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 top: Radius.circular(20),
               ),
               child: Image.network(
-                getDirectUrl(url),
+                UrlHelper.getDirectUrl(url),
                 fit: BoxFit.cover,
                 loadingBuilder: (context, child, loadingProgress) {
                   if (loadingProgress == null) return child;
