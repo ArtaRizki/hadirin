@@ -18,41 +18,49 @@ class UrlHelper {
       cleanNumber = '62${cleanNumber.substring(1)}';
     }
 
-    final String url = Platform.isIOS
-        ? "https://wa.me/$cleanNumber?text=${Uri.encodeComponent(message)}"
-        : "whatsapp://send?phone=$cleanNumber&text=${Uri.encodeComponent(message)}";
-
+    // Gunakan tautan wa.me yang diakui secara universal (lebih stabil daripada skema khusus aplikasi)
+    final String url =
+        "https://wa.me/$cleanNumber?text=${Uri.encodeComponent(message)}";
     final Uri uri = Uri.parse(url);
 
     try {
       if (await canLaunchUrl(uri)) {
         await launchUrl(uri, mode: LaunchMode.externalApplication);
       } else {
-        // Fallback ke browser jika aplikasi WA tidak terinstall (atau di iOS emulator)
-        final fallbackUri = Uri.parse("https://wa.me/$cleanNumber?text=${Uri.encodeComponent(message)}");
-        await launchUrl(fallbackUri, mode: LaunchMode.externalApplication);
+        throw 'Could not launch $url';
       }
     } catch (e) {
-      // Jika masih gagal, lari ke web link
-      final webUri = Uri.parse("https://wa.me/$cleanNumber?text=${Uri.encodeComponent(message)}");
-      await launchUrl(webUri, mode: LaunchMode.externalApplication);
+      // Fallback: coba buka di browser sistem
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
     }
   }
 
-  /// Konversi URL Google Drive ke Direct Link agar bisa ditampilkan di Image.network
-  static String getDirectUrl(String originalUrl) {
-    if (originalUrl.contains("drive.google.com")) {
-      final fileId = _extractFileId(originalUrl);
-      if (fileId != null) {
-        return "https://drive.google.com/thumbnail?id=$fileId&sz=w1000";
-      }
+  /// Mengonversi tautan berbagi Google Drive menjadi tautan tayangan langsung (direct view).
+  /// Mendukung format: /file/d/[ID]/view, ?id=[ID], /open?id=[ID]
+  static String getDirectDriveUrl(String originalUrl) {
+    if (!originalUrl.contains("drive.google.com")) return originalUrl;
+
+    String? fileId;
+
+    // Pola 1: /file/d/[ID]/view
+    if (originalUrl.contains("/file/d/")) {
+      fileId = originalUrl.split("/file/d/")[1].split("/")[0].split("?")[0];
     }
+    // Pola 2: /d/[ID]/view
+    else if (originalUrl.contains("/d/")) {
+      fileId = originalUrl.split("/d/")[1].split("/")[0].split("?")[0];
+    }
+    // Pola 3: ?id=[ID] atau &id=[ID]
+    else if (originalUrl.contains("id=")) {
+      final uri = Uri.parse(originalUrl);
+      fileId = uri.queryParameters['id'];
+    }
+
+    if (fileId != null && fileId.isNotEmpty) {
+      // Endpoint ekspor/view untuk menampilkan gambar langsung di Image.network
+      return "https://docs.google.com/uc?export=view&id=$fileId";
+    }
+
     return originalUrl;
-  }
-
-  static String? _extractFileId(String url) {
-    final regExp = RegExp(r"(?:id=|\/d\/)([a-zA-Z0-9_-]+)");
-    final match = regExp.firstMatch(url);
-    return match?.group(1);
   }
 }

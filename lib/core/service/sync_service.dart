@@ -95,7 +95,9 @@ class SyncService {
             _notify.showNotification(
               id: waktu.hashCode,
               title: "Update Pengajuan $tipe",
-              body: "Pengajuan Anda pada $waktu telah $status.",
+              body: status == "Disetujui"
+                  ? "Kabar baik! Pengajuan $tipe Anda telah disetujui. ✅"
+                  : "Pengajuan $tipe Anda telah diproses dengan status: $status.",
             );
             hasChanges = true;
           }

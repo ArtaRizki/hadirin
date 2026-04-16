@@ -74,6 +74,26 @@ class _SetLocationScreenState extends State<SetLocationScreen> {
   // --- Fungsi API & Logika Tetap Sama ---
 
   Future<void> _loadSavedLocation() async {
+    final auth = context.read<AuthProvider>();
+    final clientId = auth.clientId ?? "";
+
+    // 1. Coba ambil dari server terlebih dahulu (agar sinkron dengan spreadsheet)
+    final remoteConfig = await AdminService().getOfficeConfig(clientId);
+
+    if (remoteConfig != null && mounted) {
+      setState(() {
+        _pickedLocation = LatLng(
+          double.tryParse(remoteConfig['lat'].toString()) ?? _pickedLocation.latitude,
+          double.tryParse(remoteConfig['lng'].toString()) ?? _pickedLocation.longitude,
+        );
+        _radius = double.tryParse(remoteConfig['radius'].toString()) ?? _radius;
+        _isMapReady = true;
+      });
+      _getAddressFromLatLng(_pickedLocation);
+      return;
+    }
+
+    // 2. Fallback ke SharedPreferences jika gagal/offline
     final prefs = await SharedPreferences.getInstance();
     final lat = prefs.getDouble('office_lat');
     final lng = prefs.getDouble('office_lng');

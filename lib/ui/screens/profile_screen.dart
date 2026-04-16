@@ -137,6 +137,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   String _formatJam(DateTime dt) => DateFormat('HH:mm').format(dt);
 
+
   void _tampilkanFoto(
     BuildContext context,
     String url,
@@ -157,7 +158,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 top: Radius.circular(20),
               ),
               child: Image.network(
-                UrlHelper.getDirectUrl(url),
+                UrlHelper.getDirectDriveUrl(url),
                 fit: BoxFit.cover,
                 loadingBuilder: (context, child, loadingProgress) {
                   if (loadingProgress == null) return child;
