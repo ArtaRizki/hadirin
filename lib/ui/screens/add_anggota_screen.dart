@@ -31,8 +31,12 @@ class _AddAnggotaScreenState extends State<AddAnggotaScreen> {
     final clientId = auth.idUser ?? "";
 
     String phone = _hpController.text.trim();
-    if (phone.isNotEmpty && phone.startsWith('8')) {
-      phone = '0$phone';
+    if (phone.isNotEmpty) {
+      if (phone.startsWith('8')) {
+        phone = '62$phone';
+      } else if (phone.startsWith('0')) {
+        phone = '62${phone.substring(1)}';
+      }
     }
 
     final result = await AdminService().tambahAnggota(

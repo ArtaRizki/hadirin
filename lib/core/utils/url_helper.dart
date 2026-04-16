@@ -40,13 +40,15 @@ class UrlHelper {
     }
   }
 
-  /// Memastikan nomor HP memiliki awalan '0' untuk keperluan tampilan.
-  /// Misal: "813..." -> "0813..."
+  /// Memastikan nomor HP memiliki awalan '62' untuk keperluan tampilan & WhatsApp.
+  /// Misal: "813..." -> "62813...", "0813..." -> "62813..."
   static String formatPhoneNumber(String phone) {
     if (phone.isEmpty) return phone;
     String clean = phone.replaceAll(RegExp(r'\D'), '');
     if (clean.startsWith('8')) {
-      return '0$clean';
+      return '62$clean';
+    } else if (clean.startsWith('0')) {
+      return '62${clean.substring(1)}';
     }
     return phone;
   }
