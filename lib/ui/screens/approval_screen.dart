@@ -43,7 +43,9 @@ class _ApprovalScreenState extends State<ApprovalScreen> {
         final nama = (item['nama'] ?? "").toString().toLowerCase();
         final tipe = (item['tipe'] ?? "").toString().toLowerCase();
         final alasan = (item['alasan'] ?? "").toString().toLowerCase();
-        return nama.contains(query) || tipe.contains(query) || alasan.contains(query);
+        return nama.contains(query) ||
+            tipe.contains(query) ||
+            alasan.contains(query);
       }).toList();
     });
   }
@@ -77,7 +79,11 @@ class _ApprovalScreenState extends State<ApprovalScreen> {
     }
   }
 
-  Future<void> _prosesApproval(int rowIndex, String statusBaru, int listIndex) async {
+  Future<void> _prosesApproval(
+    int rowIndex,
+    String statusBaru,
+    int listIndex,
+  ) async {
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -93,7 +99,10 @@ class _ApprovalScreenState extends State<ApprovalScreen> {
               const SizedBox(height: 24),
               Text(
                 "Memproses $statusBaru...",
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
               ),
               const SizedBox(height: 8),
               Text(
@@ -115,7 +124,7 @@ class _ApprovalScreenState extends State<ApprovalScreen> {
         rowIndex,
         statusBaru,
       );
-      
+
       if (!mounted) return;
       Navigator.pop(context); // Tutup loading dialog
 
@@ -166,9 +175,9 @@ class _ApprovalScreenState extends State<ApprovalScreen> {
 
   void _lihatFoto(String url) {
     if (url.isEmpty || url == "No Photo" || url == "null") {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Tidak ada lampiran foto.")),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Tidak ada lampiran foto.")));
       return;
     }
     showDialog(
@@ -186,7 +195,7 @@ class _ApprovalScreenState extends State<ApprovalScreen> {
                 maxHeight: MediaQuery.of(context).size.height * 0.6,
               ),
               child: Image.network(
-                UrlHelper.getDirectUrl(url),
+                UrlHelper.getDirectDriveUrl(url),
                 fit: BoxFit.contain,
                 loadingBuilder: (context, child, loadingProgress) {
                   if (loadingProgress == null) return child;
@@ -211,9 +220,14 @@ class _ApprovalScreenState extends State<ApprovalScreen> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF0F172A),
                     foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
-                  child: const Text("Tutup", style: TextStyle(fontWeight: FontWeight.bold)),
+                  child: const Text(
+                    "Tutup",
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
                 ),
               ),
             ),
@@ -256,14 +270,23 @@ class _ApprovalScreenState extends State<ApprovalScreen> {
                 ),
                 const SizedBox(height: 24),
                 _buildDetailRow("Karyawan", item['nama'] ?? "-"),
-                _buildDetailRow("Jenis Izin", item['tipe']?.toString().toUpperCase() ?? "-"),
+                _buildDetailRow(
+                  "Jenis Izin",
+                  item['tipe']?.toString().toUpperCase() ?? "-",
+                ),
                 _buildDetailRow("Periode", item['rentang'] ?? "-"),
                 _buildDetailRow("Alasan", item['alasan'] ?? "-"),
-                _buildDetailRow("Waktu Pengajuan", item['waktu_pengajuan'] ?? "-"),
-                if (item['no_hp'] != null && item['no_hp'].toString().isNotEmpty)
+                _buildDetailRow(
+                  "Waktu Pengajuan",
+                  item['waktu_pengajuan'] ?? "-",
+                ),
+                if (item['no_hp'] != null &&
+                    item['no_hp'].toString().isNotEmpty)
                   _buildDetailRow("No. WhatsApp", item['no_hp'].toString()),
-                
-                if (item['foto'] != null && item['foto'].toString() != "No Photo" && item['foto'].toString() != "null")
+
+                if (item['foto'] != null &&
+                    item['foto'].toString() != "No Photo" &&
+                    item['foto'].toString() != "null")
                   Padding(
                     padding: const EdgeInsets.only(top: 24),
                     child: Column(
@@ -271,7 +294,11 @@ class _ApprovalScreenState extends State<ApprovalScreen> {
                       children: [
                         const Text(
                           "Lampiran Dokumen:",
-                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.grey),
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13,
+                            color: Colors.grey,
+                          ),
                         ),
                         const SizedBox(height: 12),
                         ClipRRect(
@@ -279,18 +306,21 @@ class _ApprovalScreenState extends State<ApprovalScreen> {
                           child: InkWell(
                             onTap: () => _lihatFoto(item['foto']),
                             child: Image.network(
-                              UrlHelper.getDirectUrl(item['foto']),
+                              UrlHelper.getDirectDriveUrl(item['foto']),
                               height: 180,
                               width: double.infinity,
                               fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) => Container(
-                                height: 100,
-                                decoration: BoxDecoration(
-                                  color: Colors.grey.shade100,
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: const Center(child: Text("Gagal memuat lampiran")),
-                              ),
+                              errorBuilder: (context, error, stackTrace) =>
+                                  Container(
+                                    height: 100,
+                                    decoration: BoxDecoration(
+                                      color: Colors.grey.shade100,
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: const Center(
+                                      child: Text("Gagal memuat lampiran"),
+                                    ),
+                                  ),
                             ),
                           ),
                         ),
@@ -306,10 +336,15 @@ class _ApprovalScreenState extends State<ApprovalScreen> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF0F172A),
                       foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
                       elevation: 0,
                     ),
-                    child: const Text("Tutup Dashboard", style: TextStyle(fontWeight: FontWeight.bold)),
+                    child: const Text(
+                      "Tutup Dashboard",
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
                   ),
                 ),
               ],
@@ -326,9 +361,24 @@ class _ApprovalScreenState extends State<ApprovalScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: TextStyle(fontSize: 12, color: Colors.grey.shade500, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              color: Colors.grey.shade500,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 0.5,
+            ),
+          ),
           const SizedBox(height: 4),
-          Text(value, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: Color(0xFF1E293B))),
+          Text(
+            value,
+            style: const TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w600,
+              color: Color(0xFF1E293B),
+            ),
+          ),
         ],
       ),
     );
@@ -356,12 +406,20 @@ class _ApprovalScreenState extends State<ApprovalScreen> {
         elevation: 0,
         centerTitle: true,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Color(0xFF0F172A), size: 16),
+          icon: const Icon(
+            Icons.arrow_back_ios_new_rounded,
+            color: Color(0xFF0F172A),
+            size: 16,
+          ),
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
           "Persetujuan Izin",
-          style: TextStyle(color: Color(0xFF0F172A), fontWeight: FontWeight.w800, fontSize: 18),
+          style: TextStyle(
+            color: Color(0xFF0F172A),
+            fontWeight: FontWeight.w800,
+            fontSize: 18,
+          ),
         ),
       ),
       body: SafeArea(
@@ -375,7 +433,11 @@ class _ApprovalScreenState extends State<ApprovalScreen> {
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: [
-                    BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4)),
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
                   ],
                 ),
                 child: TextField(
@@ -383,8 +445,14 @@ class _ApprovalScreenState extends State<ApprovalScreen> {
                   onChanged: (_) => setState(() {}),
                   decoration: InputDecoration(
                     hintText: "Cari nama, jenis, atau alasan...",
-                    hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 14),
-                    prefixIcon: Icon(Icons.search_rounded, color: context.primaryColor),
+                    hintStyle: TextStyle(
+                      color: Colors.grey.shade400,
+                      fontSize: 14,
+                    ),
+                    prefixIcon: Icon(
+                      Icons.search_rounded,
+                      color: context.primaryColor,
+                    ),
                     suffixIcon: _searchController.text.isNotEmpty
                         ? IconButton(
                             icon: const Icon(Icons.clear_rounded, size: 20),
@@ -434,126 +502,225 @@ class _ApprovalScreenState extends State<ApprovalScreen> {
                     color: context.primaryColor,
                     onRefresh: _fetchApprovals,
                     child: _isLoading
-                        ? const Padding(padding: EdgeInsets.symmetric(horizontal: 20), child: CardSkeletonList(itemCount: 4))
+                        ? const Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 20),
+                            child: CardSkeletonList(itemCount: 4),
+                          )
                         : _filteredApprovalList.isEmpty
-                            ? _buildEmptyState()
-                            : ListView.builder(
-                                padding: const EdgeInsets.fromLTRB(20, 0, 20, 40),
-                                itemCount: _filteredApprovalList.length,
-                                itemBuilder: (context, index) {
-                                  final item = _filteredApprovalList[index];
-                                  final badgeColor = _getBadgeColor(item['tipe'] ?? "");
-                                  final listIndex = _approvalList.indexOf(item);
+                        ? _buildEmptyState()
+                        : ListView.builder(
+                            padding: const EdgeInsets.fromLTRB(20, 0, 20, 40),
+                            itemCount: _filteredApprovalList.length,
+                            itemBuilder: (context, index) {
+                              final item = _filteredApprovalList[index];
+                              final badgeColor = _getBadgeColor(
+                                item['tipe'] ?? "",
+                              );
+                              final listIndex = _approvalList.indexOf(item);
 
-                                  return Container(
-                                    margin: const EdgeInsets.only(bottom: 16),
-                                    decoration: BoxDecoration(
-                                      color: Colors.white,
-                                      borderRadius: BorderRadius.circular(20),
-                                      boxShadow: [
-                                        BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 12, offset: const Offset(0, 4)),
-                                      ],
+                              return Container(
+                                margin: const EdgeInsets.only(bottom: 16),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(20),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.04),
+                                      blurRadius: 12,
+                                      offset: const Offset(0, 4),
                                     ),
-                                    child: Padding(
-                                      padding: const EdgeInsets.all(20.0),
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                  ],
+                                ),
+                                child: Padding(
+                                  padding: const EdgeInsets.all(20.0),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      // HEADER
+                                      Row(
                                         children: [
-                                          // HEADER
-                                          Row(
-                                            children: [
-                                              CircleAvatar(
-                                                radius: 20,
-                                                backgroundColor: badgeColor.withOpacity(0.1),
-                                                child: Text(
-                                                  (item['nama'] ?? "A").substring(0, 1).toUpperCase(),
-                                                  style: TextStyle(color: badgeColor, fontWeight: FontWeight.bold),
-                                                ),
+                                          CircleAvatar(
+                                            radius: 20,
+                                            backgroundColor: badgeColor
+                                                .withOpacity(0.1),
+                                            child: Text(
+                                              (item['nama'] ?? "A")
+                                                  .substring(0, 1)
+                                                  .toUpperCase(),
+                                              style: TextStyle(
+                                                color: badgeColor,
+                                                fontWeight: FontWeight.bold,
                                               ),
-                                              const SizedBox(width: 12),
-                                              Expanded(
-                                                child: Column(
-                                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                                  children: [
-                                                    Text(
-                                                      item['nama'] ?? "Tanpa Nama",
-                                                      style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
-                                                    ),
-                                                    Text(
-                                                      "Diajukan: ${item['waktu_pengajuan'] ?? "-"}",
-                                                      style: TextStyle(color: Colors.grey.shade500, fontSize: 11),
-                                                    ),
-                                                  ],
-                                                ),
-                                              ),
-                                              if (item['no_hp'] != null && item['no_hp'].toString().isNotEmpty)
-                                                IconButton(
-                                                  onPressed: () => UrlHelper.launchWhatsApp(
-                                                    phone: item['no_hp'].toString(),
-                                                    message: "Halo ${item['nama']}, ini Admin Hadir.in mengenai pengajuan ${item['tipe']} Anda.",
-                                                  ),
-                                                  icon: const Icon(Icons.phone, color: Color(0xFF16A34A)),
-                                                ),
-                                              Container(
-                                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                                                decoration: BoxDecoration(color: badgeColor.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
-                                                child: Text(item['tipe'].toString().toUpperCase(), style: TextStyle(color: badgeColor, fontSize: 10, fontWeight: FontWeight.w900)),
-                                              ),
-                                            ],
+                                            ),
                                           ),
-                                          const Divider(height: 32),
-                                          // CONTENT (INLINE)
-                                          _buildInfoRow(Icons.calendar_month_rounded, item['rentang'] ?? "-"),
-                                          const SizedBox(height: 12),
-                                          _buildInfoRow(Icons.notes_rounded, item['alasan'] ?? "-"),
-                                          
-                                          const SizedBox(height: 24),
-                                          // ACTIONS
-                                          Row(
-                                            children: [
-                                              Expanded(
-                                                child: OutlinedButton(
-                                                  onPressed: () => _showDetailDialog(item),
-                                                  style: OutlinedButton.styleFrom(
-                                                    foregroundColor: Colors.grey.shade700,
-                                                    side: BorderSide(color: Colors.grey.shade300),
-                                                    padding: const EdgeInsets.symmetric(vertical: 14),
-                                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                          const SizedBox(width: 12),
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  item['nama'] ?? "Tanpa Nama",
+                                                  style: const TextStyle(
+                                                    fontWeight: FontWeight.w800,
+                                                    fontSize: 16,
                                                   ),
-                                                  child: const Text("Detail", style: TextStyle(fontWeight: FontWeight.bold)),
                                                 ),
-                                              ),
-                                              const SizedBox(width: 12),
-                                              Expanded(
-                                                child: ElevatedButton(
-                                                  onPressed: () => _prosesApproval(item['row_index'], "Disetujui", listIndex),
-                                                  style: ElevatedButton.styleFrom(
-                                                    backgroundColor: const Color(0xFF16A34A),
-                                                    foregroundColor: Colors.white,
-                                                    padding: const EdgeInsets.symmetric(vertical: 14),
-                                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                                    elevation: 0,
+                                                Text(
+                                                  "Diajukan: ${item['waktu_pengajuan'] ?? "-"}",
+                                                  style: TextStyle(
+                                                    color: Colors.grey.shade500,
+                                                    fontSize: 11,
                                                   ),
-                                                  child: const Text("Setujui", style: TextStyle(fontWeight: FontWeight.bold)),
                                                 ),
+                                              ],
+                                            ),
+                                          ),
+                                          if (item['no_hp'] != null &&
+                                              item['no_hp']
+                                                  .toString()
+                                                  .isNotEmpty)
+                                            IconButton(
+                                              onPressed: () =>
+                                                  UrlHelper.launchWhatsApp(
+                                                    phone: item['no_hp']
+                                                        .toString(),
+                                                    message:
+                                                        "Halo ${item['nama']}, ini Admin Hadir.in mengenai pengajuan ${item['tipe']} Anda.",
+                                                  ),
+                                              icon: const Icon(
+                                                Icons.phone,
+                                                color: Color(0xFF16A34A),
                                               ),
-                                              const SizedBox(width: 8),
-                                              IconButton(
-                                                onPressed: () => _prosesApproval(item['row_index'], "Ditolak", listIndex),
-                                                icon: const Icon(Icons.close_rounded, color: Colors.red),
-                                                style: IconButton.styleFrom(
-                                                  backgroundColor: Colors.red.withOpacity(0.1),
-                                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                                ),
+                                            ),
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 10,
+                                              vertical: 5,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color: badgeColor.withOpacity(
+                                                0.1,
                                               ),
-                                            ],
+                                              borderRadius:
+                                                  BorderRadius.circular(8),
+                                            ),
+                                            child: Text(
+                                              item['tipe']
+                                                  .toString()
+                                                  .toUpperCase(),
+                                              style: TextStyle(
+                                                color: badgeColor,
+                                                fontSize: 10,
+                                                fontWeight: FontWeight.w900,
+                                              ),
+                                            ),
                                           ),
                                         ],
                                       ),
-                                    ),
-                                  );
-                                },
-                              ),
+                                      const Divider(height: 32),
+                                      // CONTENT (INLINE)
+                                      _buildInfoRow(
+                                        Icons.calendar_month_rounded,
+                                        item['rentang'] ?? "-",
+                                      ),
+                                      const SizedBox(height: 12),
+                                      _buildInfoRow(
+                                        Icons.notes_rounded,
+                                        item['alasan'] ?? "-",
+                                      ),
+
+                                      const SizedBox(height: 24),
+                                      // ACTIONS
+                                      Row(
+                                        children: [
+                                          Expanded(
+                                            child: OutlinedButton(
+                                              onPressed: () =>
+                                                  _showDetailDialog(item),
+                                              style: OutlinedButton.styleFrom(
+                                                foregroundColor:
+                                                    Colors.grey.shade700,
+                                                side: BorderSide(
+                                                  color: Colors.grey.shade300,
+                                                ),
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                      vertical: 14,
+                                                    ),
+                                                shape: RoundedRectangleBorder(
+                                                  borderRadius:
+                                                      BorderRadius.circular(12),
+                                                ),
+                                              ),
+                                              child: const Text(
+                                                "Detail",
+                                                style: TextStyle(
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                          const SizedBox(width: 12),
+                                          Expanded(
+                                            child: ElevatedButton(
+                                              onPressed: () => _prosesApproval(
+                                                item['row_index'],
+                                                "Disetujui",
+                                                listIndex,
+                                              ),
+                                              style: ElevatedButton.styleFrom(
+                                                backgroundColor: const Color(
+                                                  0xFF16A34A,
+                                                ),
+                                                foregroundColor: Colors.white,
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                      vertical: 14,
+                                                    ),
+                                                shape: RoundedRectangleBorder(
+                                                  borderRadius:
+                                                      BorderRadius.circular(12),
+                                                ),
+                                                elevation: 0,
+                                              ),
+                                              child: const Text(
+                                                "Setujui",
+                                                style: TextStyle(
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                          const SizedBox(width: 8),
+                                          IconButton(
+                                            onPressed: () => _prosesApproval(
+                                              item['row_index'],
+                                              "Ditolak",
+                                              listIndex,
+                                            ),
+                                            icon: const Icon(
+                                              Icons.close_rounded,
+                                              color: Colors.red,
+                                            ),
+                                            style: IconButton.styleFrom(
+                                              backgroundColor: Colors.red
+                                                  .withOpacity(0.1),
+                                              shape: RoundedRectangleBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(12),
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
                   ),
                 ],
               ),
@@ -570,7 +737,16 @@ class _ApprovalScreenState extends State<ApprovalScreen> {
       children: [
         Icon(icon, size: 16, color: Colors.grey.shade400),
         const SizedBox(width: 8),
-        Expanded(child: Text(text, style: TextStyle(color: Colors.grey.shade700, fontSize: 13, height: 1.4))),
+        Expanded(
+          child: Text(
+            text,
+            style: TextStyle(
+              color: Colors.grey.shade700,
+              fontSize: 13,
+              height: 1.4,
+            ),
+          ),
+        ),
       ],
     );
   }
@@ -582,11 +758,22 @@ class _ApprovalScreenState extends State<ApprovalScreen> {
         Center(
           child: Column(
             children: [
-              Icon(Icons.inventory_2_outlined, size: 64, color: Colors.grey.shade300),
+              Icon(
+                Icons.inventory_2_outlined,
+                size: 64,
+                color: Colors.grey.shade300,
+              ),
               const SizedBox(height: 24),
-              const Text("Semua Beres!", style: TextStyle(fontWeight: FontWeight.w800, fontSize: 20)),
+              const Text(
+                "Semua Beres!",
+                style: TextStyle(fontWeight: FontWeight.w800, fontSize: 20),
+              ),
               const SizedBox(height: 8),
-              Text("Tidak ada pengajuan yang menunggu persetujuan.", textAlign: TextAlign.center, style: TextStyle(color: Colors.grey.shade500)),
+              Text(
+                "Tidak ada pengajuan yang menunggu persetujuan.",
+                textAlign: TextAlign.center,
+                style: TextStyle(color: Colors.grey.shade500),
+              ),
             ],
           ),
         ),
