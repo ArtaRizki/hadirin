@@ -140,9 +140,9 @@ class _AttendanceScreenState extends State<AttendanceScreen>
     // --- VALIDASI JAM OPERASIONAL (TIME-FENCING) ---
     if (tipeAbsen == "Masuk") {
       // Absen masuk hanya boleh jam 04:00 pagi sampai 14:59 siang
-      if (hour < 4 || hour >= 15) {
+      if (hour < 4 || hour >= 7) {
         _showSnackBar(
-          "Gagal! Absen Masuk hanya tersedia pukul 04:00 - 15:00.",
+          "Gagal! Absen Masuk hanya tersedia pukul 04:00 - 07:00.",
           isError: true,
         );
         return;

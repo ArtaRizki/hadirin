@@ -3,7 +3,7 @@ import 'dart:io';
 
 class UrlHelper {
   /// Membuka chat WhatsApp dengan nomor tertentu.
-  /// Format nomor: "08123..." atau "628123..."
+  /// Format nomor: "08123...", "628123...", atau "8123..."
   static Future<void> launchWhatsApp({
     required String phone,
     String message = "Halo, saya menghubungi Anda dari aplikasi Hadir.in",
@@ -13,12 +13,17 @@ class UrlHelper {
     // Bersihkan karakter non-digit
     String cleanNumber = phone.replaceAll(RegExp(r'\D'), '');
 
-    // Konversi format Indonesia (08 -> 628)
+    // Konversi format Indonesia
+    // 08 -> 628
     if (cleanNumber.startsWith('0')) {
       cleanNumber = '62${cleanNumber.substring(1)}';
     }
+    // 8 -> 628 (Jika user input tanpa 0 di depan)
+    else if (cleanNumber.startsWith('8')) {
+      cleanNumber = '62$cleanNumber';
+    }
 
-    // Gunakan tautan wa.me yang diakui secara universal (lebih stabil daripada skema khusus aplikasi)
+    // Gunakan tautan wa.me yang diakui secara universal
     final String url =
         "https://wa.me/$cleanNumber?text=${Uri.encodeComponent(message)}";
     final Uri uri = Uri.parse(url);
@@ -30,9 +35,20 @@ class UrlHelper {
         throw 'Could not launch $url';
       }
     } catch (e) {
-      // Fallback: coba buka di browser sistem
+      // Fallback
       await launchUrl(uri, mode: LaunchMode.externalApplication);
     }
+  }
+
+  /// Memastikan nomor HP memiliki awalan '0' untuk keperluan tampilan.
+  /// Misal: "813..." -> "0813..."
+  static String formatPhoneNumber(String phone) {
+    if (phone.isEmpty) return phone;
+    String clean = phone.replaceAll(RegExp(r'\D'), '');
+    if (clean.startsWith('8')) {
+      return '0$clean';
+    }
+    return phone;
   }
 
   /// Mengonversi tautan berbagi Google Drive menjadi tautan tayangan langsung (direct view).

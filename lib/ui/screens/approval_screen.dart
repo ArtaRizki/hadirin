@@ -281,8 +281,12 @@ class _ApprovalScreenState extends State<ApprovalScreen> {
                   item['waktu_pengajuan'] ?? "-",
                 ),
                 if (item['no_hp'] != null &&
-                    item['no_hp'].toString().isNotEmpty)
-                  _buildDetailRow("No. WhatsApp", item['no_hp'].toString()),
+                    item['no_hp'].toString().isNotEmpty &&
+                    item['no_hp'].toString() != "null")
+                  _buildDetailRow(
+                    "No. WhatsApp",
+                    UrlHelper.formatPhoneNumber(item['no_hp'].toString()),
+                  ),
 
                 if (item['foto'] != null &&
                     item['foto'].toString() != "No Photo" &&
