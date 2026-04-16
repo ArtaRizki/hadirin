@@ -18,6 +18,7 @@ class AdminService extends ApiClient {
     double lng,
     double radius,
   ) async {
+    if (clientId.isEmpty) return false;
     try {
       final payload = {
         'api_token': AppConfig.apiToken,
@@ -43,6 +44,7 @@ class AdminService extends ApiClient {
   // AMBIL KONFIGURASI KANTOR (lat, lng, radius)
   // =================================================================
   Future<Map<String, dynamic>?> getOfficeConfig(String clientId) async {
+    if (clientId.isEmpty) return null;
     try {
       final payload = {
         'api_token': AppConfig.apiToken,
@@ -105,6 +107,7 @@ class AdminService extends ApiClient {
   // AMBIL SEMUA DATA ANGGOTA SATU INSTANSI
   // =================================================================
   Future<List<dynamic>> getAllAnggota(String clientId) async {
+    if (clientId.isEmpty) throw Exception("Kode Instansi tidak boleh kosong.");
     try {
       final payload = {
         'api_token': AppConfig.apiToken,
@@ -133,6 +136,7 @@ class AdminService extends ApiClient {
     String bulanTahun,
     String idAnggotaTarget,
   ) async {
+    if (clientId.isEmpty) throw Exception("Kode Instansi tidak boleh kosong.");
     try {
       final payload = {
         'api_token': AppConfig.apiToken,
@@ -167,6 +171,7 @@ class AdminService extends ApiClient {
     String clientId,
     String targetId,
   ) async {
+    if (clientId.isEmpty) throw Exception("Kode Instansi tidak boleh kosong.");
     try {
       final payload = {
         'api_token': AppConfig.apiToken,
@@ -240,6 +245,7 @@ class AdminService extends ApiClient {
     String clientId,
     String idAnggota,
   ) async {
+    if (clientId.isEmpty) throw Exception("Kode Instansi tidak boleh kosong.");
     try {
       final androidInfo = await _deviceInfo.androidInfo;
       final deviceId = androidInfo.id;
