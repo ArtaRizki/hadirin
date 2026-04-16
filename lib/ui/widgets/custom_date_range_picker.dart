@@ -548,7 +548,7 @@ class _CustomDateRangePickerSheetState
                         ),
                       ),
                       child: Text(
-                        "Terapkan Filter",
+                        "Pilih Tanggal",
                         style: TextStyle(
                           fontWeight: FontWeight.w800,
                           fontSize: 14,

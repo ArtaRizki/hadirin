@@ -140,8 +140,8 @@ class NotificationService {
     if (showMasuk) {
       await scheduleDailyNotification(
         id: 101,
-        title: "Hadirin: Semangat Pagi! ☀️",
-        body: "Pastikan Anda sudah melakukan Absen Masuk ya. Selamat bekerja!",
+        title: "Selamat Pagi! ✨",
+        body: "Awali hari Anda dengan semangat. Jangan lupa absen masuk ya!",
         hour: 7,
         minute: 30,
       );
@@ -151,9 +151,9 @@ class NotificationService {
     if (showPulang) {
       await scheduleDailyNotification(
         id: 102,
-        title: "Hadirin: Waktunya Pulang? 🏠",
+        title: "Kerja Bagus Hari Ini! 🌟",
         body:
-            "Jangan lupa lakukan Absen Pulang sebelum meninggalkan lokasi. Hati-hati di jalan!",
+            "Jangan lupa absen pulang sebelum beristirahat. Hati-hati di jalan pulang!",
         hour: 16,
         minute: 30,
       );
