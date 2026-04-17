@@ -71,10 +71,7 @@ class FluidTheme {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(FluidRadii.sm),
-          borderSide: BorderSide(
-            color: colors.primaryGhost,
-            width: 2.0,
-          ),
+          borderSide: BorderSide(color: colors.primaryGhost, width: 2.0),
         ),
       ),
     );

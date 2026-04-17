@@ -45,9 +45,9 @@ class AdminService extends ApiClient {
   // =================================================================
   Future<bool> updateJamKerja({
     required String clientId,
-    required int jamMasukMulai,
-    required int batasJamMasuk,
-    required int jamPulangMulai,
+    required String jamMasukMulai,
+    required String batasJamMasuk,
+    required String jamPulangMulai,
   }) async {
     try {
       final payload = {

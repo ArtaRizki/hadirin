@@ -29,9 +29,9 @@ class _AttendanceScreenState extends State<AttendanceScreen>
   StreamSubscription<Position>? _positionStream;
 
   // Variabel Jam Kerja Dinamis (Default sesuai req)
-  int _jamMasukMulai = 4;
-  int _batasJamMasuk = 7;
-  int _jamPulangMulai = 13;
+  String _jamMasukMulai = "04:00";
+  String _batasJamMasuk = "07:00";
+  String _jamPulangMulai = "13:00";
   bool _isConfigLoaded = false;
 
   @override
@@ -59,12 +59,9 @@ class _AttendanceScreenState extends State<AttendanceScreen>
       final config = await AdminService().getOfficeConfig(auth.clientId ?? "");
       if (config != null && mounted) {
         setState(() {
-          _jamMasukMulai =
-              int.tryParse(config['jam_masuk_mulai'].toString()) ?? 4;
-          _batasJamMasuk =
-              int.tryParse(config['batas_jam_masuk'].toString()) ?? 7;
-          _jamPulangMulai =
-              int.tryParse(config['jam_pulang_mulai'].toString()) ?? 13;
+          _jamMasukMulai = config['jam_masuk_mulai'].toString();
+          _batasJamMasuk = config['batas_jam_masuk'].toString();
+          _jamPulangMulai = config['jam_pulang_mulai'].toString();
           _isConfigLoaded = true;
         });
       }
@@ -74,6 +71,15 @@ class _AttendanceScreenState extends State<AttendanceScreen>
   }
 
   bool _hasNotifiedProximity = false;
+
+  int _timeToMinutes(String s) {
+    try {
+      final parts = s.split(':');
+      return (int.parse(parts[0]) * 60) + int.parse(parts[1]);
+    } catch (e) {
+      return 0;
+    }
+  }
 
   void _startProximityListener() async {
     try {
@@ -162,26 +168,25 @@ class _AttendanceScreenState extends State<AttendanceScreen>
     if (_isLoading) return;
 
     final now = DateTime.now();
-    final hour = now.hour;
+    final currentMinutes = (now.hour * 60) + now.minute;
 
     // --- VALIDASI JAM OPERASIONAL (TIME-FENCING DINAMIS) ---
     if (tipeAbsen == "Masuk") {
-      // Absen masuk hanya boleh dari _jamMasukMulai sampai _batasJamMasuk (atau fleksibel?)
-      // Note: Di backend 'batasJam' digunakan untuk status 'Terlambat'.
-      // User ingin batas jam 7 (artinya 7:01 sudah terlambat).
-      // Untuk time-fencing, kita izinkan masuk dari jam_mulai sampai jam_pulang_mulai - 1.
-      if (hour < _jamMasukMulai || hour >= _jamPulangMulai) {
+      final startMin = _timeToMinutes(_jamMasukMulai);
+      final endMin = _timeToMinutes(_jamPulangMulai);
+
+      if (currentMinutes < startMin || currentMinutes >= endMin) {
         _showSnackBar(
-          "Gagal! Absen Masuk hanya tersedia pukul ${_jamMasukMulai.toString().padLeft(2, '0')}:00 - ${(_jamPulangMulai - 1).toString().padLeft(2, '0')}:59.",
+          "Gagal! Absen Masuk hanya tersedia pukul $_jamMasukMulai - $_jamPulangMulai.",
           isError: true,
         );
         return;
       }
     } else {
-      // Absen pulang hanya boleh mulai dari _jamPulangMulai sampai 23:59
-      if (hour < _jamPulangMulai) {
+      final pulangMin = _timeToMinutes(_jamPulangMulai);
+      if (currentMinutes < pulangMin) {
         _showSnackBar(
-          "Belum saatnya pulang! Absen Pulang dibuka mulai pukul ${_jamPulangMulai.toString().padLeft(2, '0')}:00.",
+          "Belum saatnya pulang! Absen Pulang dibuka mulai pukul $_jamPulangMulai.",
           isError: true,
         );
         return;
@@ -628,7 +633,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Text(
-                                "Masuk: ${_jamMasukMulai.toString().padLeft(2, '0')}:00 | Batas: ${_batasJamMasuk.toString().padLeft(2, '0')}:00 | Pulang: ${_jamPulangMulai.toString().padLeft(2, '0')}:00",
+                                "Masuk: $_jamMasukMulai | Batas: $_batasJamMasuk | Pulang: $_jamPulangMulai",
                                 style: const TextStyle(
                                   color: Colors.white,
                                   fontSize: 11,
