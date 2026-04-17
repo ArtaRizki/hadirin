@@ -31,7 +31,7 @@
             ]
         },
         {
-            "name": "Hadir.in - SMAPGRIMAJALENGKA_TEST",
+            "name": "Hadir.in - SMAPGRIMAJALENGKA",
             "request": "launch",
             "type": "dart",
             "args": [
