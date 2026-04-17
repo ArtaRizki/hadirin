@@ -1,0 +1,213 @@
+<script>
+  // STATE MANAGEMENT
+  let currentUser = null;
+  let chartInstance = null;
+
+  // ROUTING
+  function switchView(viewId) {
+    // Update Sidebar
+    const navItems = document.querySelectorAll('.nav-item');
+    navItems.forEach(item => {
+      if (item.getAttribute('onclick').includes(`'${viewId}'`)) {
+        item.classList.add('active');
+      } else {
+        item.classList.remove('active');
+      }
+    });
+
+    // Update View
+    const views = document.querySelectorAll('.content-view');
+    views.forEach(v => v.style.display = 'none');
+    document.getElementById(`view-${viewId}`).style.display = 'block';
+
+    // Special behavior for view loading
+    if (viewId === 'dashboard') {
+      loadDashboardData();
+    } else if (viewId === 'history') {
+      loadHistoryData();
+    }
+    
+    // Refresh icons
+    lucide.createIcons();
+  }
+
+  // AUTHENTICATION
+  function handleLogin() {
+    const id = document.getElementById('login-id').value;
+    const pin = document.getElementById('login-pin').value;
+    const btn = event.target;
+    
+    if (!id || !pin) return;
+
+    btn.disabled = true;
+    btn.innerHTML = '<span class="loading">Memasuk...</span>';
+
+    google.script.run
+      .withSuccessHandler(function(response) {
+        btn.disabled = false;
+        btn.innerText = 'Masuk Dashboard';
+        
+        if (response.success) {
+          currentUser = response.user;
+          setupUIForUser();
+        } else {
+          showLoginError(response.message);
+        }
+      })
+      .withFailureHandler(function(err) {
+        btn.disabled = false;
+        btn.innerText = 'Masuk Dashboard';
+        showLoginError("Gagal terhubung ke server. Periksa koneksi.");
+      })
+      .login(id, pin);
+  }
+
+  function setupUIForUser() {
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('app-container').style.display = 'flex';
+    
+    document.getElementById('user-name').innerText = currentUser.nama;
+    document.getElementById('user-id').innerText = "ID: " + currentUser.id;
+    
+    if (currentUser.role === 'admin' || currentUser.role === 'superAdmin') {
+      document.getElementById('admin-menus').style.display = 'block';
+    } else {
+      document.getElementById('admin-menus').style.display = 'none';
+    }
+    
+    switchView('dashboard');
+  }
+
+  function handleLogout() {
+    currentUser = null;
+    document.getElementById('app-container').style.display = 'none';
+    document.getElementById('login-screen').style.display = 'flex';
+    document.getElementById('login-id').value = '';
+    document.getElementById('login-pin').value = '';
+  }
+
+  function showLoginError(msg) {
+    const err = document.getElementById('login-error');
+    err.innerText = msg;
+    err.style.display = 'block';
+    setTimeout(() => err.style.display = 'none', 3000);
+  }
+
+  // DASHBOARD DATA
+  function loadDashboardData() {
+    google.script.run
+      .withSuccessHandler(function(data) {
+        document.getElementById('stat-present').innerText = data.present || 0;
+        document.getElementById('stat-leave').innerText = data.leave || 0;
+        document.getElementById('stat-late').innerText = data.late || 0;
+        
+        renderTrendChart(data.trendLabels, data.trendValues);
+      })
+      .getDashboardStats(currentUser.id, currentUser.clientId);
+  }
+
+  function renderTrendChart(labels, values) {
+    const ctx = document.getElementById('attendanceChart').getContext('2d');
+    
+    if (chartInstance) {
+      chartInstance.destroy();
+    }
+
+    chartInstance = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: labels || [],
+        datasets: [{
+          label: 'Total Kehadiran',
+          data: values || [],
+          borderColor: '#4F46E5',
+          backgroundColor: 'rgba(79, 70, 229, 0.1)',
+          fill: true,
+          tension: 0.4,
+          borderWidth: 3,
+          pointBackgroundColor: '#fff',
+          pointBorderColor: '#4F46E5',
+          pointBorderWidth: 2,
+          pointRadius: 4,
+          pointHoverRadius: 6
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: '#0F172A',
+            titleFont: { weight: 'bold' },
+            padding: 12,
+            cornerRadius: 10,
+            displayColors: false
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            grid: { color: 'rgba(0,0,0,0.05)' },
+            ticks: { font: { size: 11 } }
+          },
+          x: {
+            grid: { display: false },
+            ticks: { font: { size: 10 } }
+          }
+        }
+      }
+    });
+  }
+
+  // HISTORY DATA
+  function loadHistoryData() {
+    const tbody = document.getElementById('history-body');
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 40px; color: var(--text-muted);">Memuat riwayat...</td></tr>';
+
+    google.script.run
+      .withSuccessHandler(function(history) {
+        tbody.innerHTML = '';
+        if (history.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 40px;">Belum ada riwayat absen.</td></tr>';
+          return;
+        }
+
+        history.forEach(log => {
+          const row = document.createElement('tr');
+          const isLate = log.status === 'Terlambat';
+          
+          row.innerHTML = `
+            <td style="font-weight: 600;">${formatDate(log.waktu)}</td>
+            <td>${formatTime(log.waktu)}</td>
+            <td><span class="badge-tipe">${log.tipe}</span></td>
+            <td>
+              <span style="color: ${isLate ? '#EF4444' : '#10B981'}; font-weight: 700;">
+                ${log.status}
+              </span>
+            </td>
+            <td>
+              <button class="btn" style="padding: 6px 12px; font-size: 0.75rem; border: 1px solid #E2E8F0;" onclick="viewDetail('${log.id}')">
+                Detail
+              </button>
+            </td>
+          `;
+          tbody.appendChild(row);
+        });
+      })
+      .getAttendanceHistory(currentUser.id, currentUser.clientId);
+  }
+
+  // HELPERS
+  function formatDate(isoStr) {
+    if (!isoStr) return "-";
+    const d = new Date(isoStr);
+    return d.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
+  }
+
+  function formatTime(isoStr) {
+    if (!isoStr) return "-";
+    const d = new Date(isoStr);
+    return d.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+  }
+</script>

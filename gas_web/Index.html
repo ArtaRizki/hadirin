@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hadir.in Dashboard</title>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <!-- Lucide Icons (CDN) -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Chart.js (CDN) -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <?!= include('styles'); ?>
+  </head>
+  <body>
+    <!-- LOGIN SCREEN -->
+    <div id="login-screen">
+      <div class="card glass login-card">
+        <div class="logo">Hadir.in</div>
+        <p style="color: var(--text-muted); margin-bottom: 30px;">Silakan login untuk mengakses dashboard.</p>
+        
+        <div class="input-group">
+          <label>ID Anggota</label>
+          <input type="text" id="login-id" placeholder="Masukkan ID">
+        </div>
+        
+        <div class="input-group">
+          <label>PIN / Password</label>
+          <input type="password" id="login-pin" placeholder="••••••">
+        </div>
+        
+        <button class="btn btn-primary" style="width: 100%; margin-top: 10px;" onclick="handleLogin()">
+          Masuk Dashboard
+        </button>
+        
+        <div id="login-error" style="color: #ef4444; font-size: 0.85rem; margin-top: 15px; display: none;">
+          ID atau PIN salah. Silakan coba lagi.
+        </div>
+      </div>
+    </div>
+
+    <!-- MAIN DASHBOARD (HIDDEN UNTIL LOGIN) -->
+    <div id="app-container" style="display: none;">
+      <!-- SIDEBAR -->
+      <aside id="sidebar" class="glass">
+        <div class="logo" style="font-size: 1.5rem; margin-bottom: 40px; text-align: left;">Hadir.in</div>
+        
+        <nav style="flex: 1;">
+          <a class="nav-item active" onclick="switchView('dashboard')">
+            <i data-lucide="layout-dashboard"></i>
+            <span>Dashboard</span>
+          </a>
+          <a class="nav-item" onclick="switchView('history')">
+            <i data-lucide="calendar"></i>
+            <span>Riwayat Absen</span>
+          </a>
+          <div id="admin-menus" style="display: none;">
+            <div style="font-size: 0.7rem; font-weight: 800; color: var(--text-muted); margin: 24px 0 12px 12px; text-transform: uppercase;">Admin Area</div>
+            <a class="nav-item" onclick="switchView('members')">
+              <i data-lucide="users"></i>
+              <span>Data Anggota</span>
+            </a>
+            <a class="nav-item" onclick="switchView('reports')">
+              <i data-lucide="file-text"></i>
+              <span>Laporan Cetak</span>
+            </a>
+          </div>
+        </nav>
+        
+        <div class="user-info" style="margin-top: auto; padding: 20px 0; border-top: 1px solid var(--glass-border);">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <div style="width: 40px; height: 40px; border-radius: 12px; background: var(--primary-gradient); display: flex; align-items: center; justify-content: center; color: white;">
+              <i data-lucide="user"></i>
+            </div>
+            <div style="overflow: hidden;">
+              <div id="user-name" style="font-weight: 700; font-size: 0.9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">User Name</div>
+              <div id="user-id" style="font-size: 0.7rem; color: var(--text-muted);">ID: 12345</div>
+            </div>
+          </div>
+          <button class="btn" style="width: 100%; margin-top: 20px; color: #ef4444; background: rgba(239, 68, 68, 0.05); font-size: 0.8rem;" onclick="handleLogout()">
+            <i data-lucide="log-out" style="width: 14px;"></i> Logout
+          </button>
+        </div>
+      </aside>
+
+      <!-- MAIN CONTENT -->
+      <main id="main-content">
+        <!-- Dashboard View -->
+        <div id="view-dashboard" class="content-view">
+          <header style="margin-bottom: 40px;">
+            <h1 style="font-size: 2rem; font-weight: 800;">Selamat Datang Kembali! 👋</h1>
+            <p style="color: var(--text-muted);">Berikut adalah ringkasan kehadiran hari ini.</p>
+          </header>
+
+          <!-- Stats Grid -->
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 24px; margin-bottom: 40px;">
+            <div class="card stat-card">
+              <span class="stat-label">Hadir Hari Ini</span>
+              <div class="stat-value" id="stat-present" style="color: #10B981;">0</div>
+            </div>
+            <div class="card stat-card">
+              <span class="stat-label">Izin / Cuti</span>
+              <div class="stat-value" id="stat-leave" style="color: #F59E0B;">0</div>
+            </div>
+            <div class="card stat-card">
+              <span class="stat-label">Terlambat</span>
+              <div class="stat-value" id="stat-late" style="color: #EF4444;">0</div>
+            </div>
+          </div>
+
+          <!-- Trend Chart -->
+          <div class="card" style="margin-bottom: 40px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+              <h2 style="font-size: 1.25rem; font-weight: 800;">Tren Kehadiran (30 Hari Terakhir)</h2>
+              <div class="glass" style="padding: 4px 12px; font-size: 0.8rem; border-radius: 8px; color: var(--text-muted);">Live Sync</div>
+            </div>
+            <div style="height: 300px; width: 100%;">
+              <canvas id="attendanceChart"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- History View -->
+        <div id="view-history" class="content-view" style="display: none;">
+          <header style="margin-bottom: 40px;">
+            <h1 style="font-size: 2rem; font-weight: 800;">Riwayat Absensi</h1>
+            <p style="color: var(--text-muted);">Pantau daftar kehadiran Anda di sini.</p>
+          </header>
+          
+          <div class="card">
+            <div class="table-container">
+              <table id="history-table">
+                <thead>
+                  <tr>
+                    <th>Tanggal</th>
+                    <th>Jam</th>
+                    <th>Tipe</th>
+                    <th>Status</th>
+                    <th>Aksi</th>
+                  </tr>
+                </thead>
+                <tbody id="history-body">
+                  <!-- Dynamic rows -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Other views will be defined here -->
+      </main>
+    </div>
+
+    <!-- INITIALIZATION & SCRIPTS -->
+    <script>
+      // Lucide icons initialization
+      lucide.createIcons();
+    </script>
+    <?!= include('scripts'); ?>
+  </body>
+</html>

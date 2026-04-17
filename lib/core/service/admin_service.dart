@@ -40,6 +40,36 @@ class AdminService extends ApiClient {
   }
 
   // =================================================================
+  // UPDATE JAM KERJA (masuk, batas, pulang)
+  // =================================================================
+  Future<bool> updateJamKerja({
+    required String clientId,
+    required int jamMasukMulai,
+    required int batasJamMasuk,
+    required int jamPulangMulai,
+  }) async {
+    try {
+      final payload = {
+        'api_token': AppConfig.apiToken,
+        'action': 'update_jam_kerja',
+        'client_id': clientId,
+        'jam_masuk_mulai': jamMasukMulai,
+        'batas_jam_masuk': batasJamMasuk,
+        'jam_pulang_mulai': jamPulangMulai,
+      };
+
+      final response = await sendRequest('update_jam_kerja', payload);
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body)['code'] == 200;
+      }
+      return false;
+    } catch (e) {
+      d.log('==== ERROR UPDATE JAM KERJA ==== $e');
+      return false;
+    }
+  }
+
+  // =================================================================
   // AMBIL KONFIGURASI KANTOR (lat, lng, radius)
   // =================================================================
   Future<Map<String, dynamic>?> getOfficeConfig(String clientId) async {
@@ -145,7 +175,7 @@ class AdminService extends ApiClient {
       final response = await sendRequest(
         'get_monthly_report',
         payload,
-        timeout: const Duration(seconds: 30),
+        timeout: const Duration(seconds: 60),
       );
 
       if (response.statusCode == 200) {

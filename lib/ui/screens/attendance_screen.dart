@@ -28,6 +28,12 @@ class _AttendanceScreenState extends State<AttendanceScreen>
   late Animation<double> _pulseAnimation;
   StreamSubscription<Position>? _positionStream;
 
+  // Variabel Jam Kerja Dinamis (Default sesuai req)
+  int _jamMasukMulai = 4;
+  int _batasJamMasuk = 7;
+  int _jamPulangMulai = 13;
+  bool _isConfigLoaded = false;
+
   @override
   void initState() {
     super.initState();
@@ -42,8 +48,29 @@ class _AttendanceScreenState extends State<AttendanceScreen>
       CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
     );
 
-    // Mulai pantau lokasi secara real-time saat di layar ini
+    // Mulai pantau lokasi & fetch config jam
+    _fetchOfficeConfig();
     _startProximityListener();
+  }
+
+  Future<void> _fetchOfficeConfig() async {
+    try {
+      final auth = context.read<AuthProvider>();
+      final config = await AdminService().getOfficeConfig(auth.clientId ?? "");
+      if (config != null && mounted) {
+        setState(() {
+          _jamMasukMulai =
+              int.tryParse(config['jam_masuk_mulai'].toString()) ?? 4;
+          _batasJamMasuk =
+              int.tryParse(config['batas_jam_masuk'].toString()) ?? 7;
+          _jamPulangMulai =
+              int.tryParse(config['jam_pulang_mulai'].toString()) ?? 13;
+          _isConfigLoaded = true;
+        });
+      }
+    } catch (e) {
+      debugPrint("Gagal fetch config jam: $e");
+    }
   }
 
   bool _hasNotifiedProximity = false;
@@ -137,21 +164,24 @@ class _AttendanceScreenState extends State<AttendanceScreen>
     final now = DateTime.now();
     final hour = now.hour;
 
-    // --- VALIDASI JAM OPERASIONAL (TIME-FENCING) ---
+    // --- VALIDASI JAM OPERASIONAL (TIME-FENCING DINAMIS) ---
     if (tipeAbsen == "Masuk") {
-      // Absen masuk hanya boleh jam 04:00 pagi sampai 14:59 siang
-      if (hour < 4 || hour >= 15) {
+      // Absen masuk hanya boleh dari _jamMasukMulai sampai _batasJamMasuk (atau fleksibel?)
+      // Note: Di backend 'batasJam' digunakan untuk status 'Terlambat'.
+      // User ingin batas jam 7 (artinya 7:01 sudah terlambat).
+      // Untuk time-fencing, kita izinkan masuk dari jam_mulai sampai jam_pulang_mulai - 1.
+      if (hour < _jamMasukMulai || hour >= _jamPulangMulai) {
         _showSnackBar(
-          "Gagal! Absen Masuk hanya tersedia pukul 04:00 - 15:00.",
+          "Gagal! Absen Masuk hanya tersedia pukul ${_jamMasukMulai.toString().padLeft(2, '0')}:00 - ${(_jamPulangMulai - 1).toString().padLeft(2, '0')}:59.",
           isError: true,
         );
         return;
       }
     } else {
-      // Absen pulang hanya boleh setelah jam 13:00 siang sampai 23:59 malam
-      if (hour < 13) {
+      // Absen pulang hanya boleh mulai dari _jamPulangMulai sampai 23:59
+      if (hour < _jamPulangMulai) {
         _showSnackBar(
-          "Belum saatnya pulang! Absen Pulang dibuka mulai pukul 13:00.",
+          "Belum saatnya pulang! Absen Pulang dibuka mulai pukul ${_jamPulangMulai.toString().padLeft(2, '0')}:00.",
           isError: true,
         );
         return;
@@ -586,6 +616,27 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                               ),
                             ],
                           ),
+                          if (_isConfigLoaded) ...[
+                            const SizedBox(height: 12),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 6,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.15),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Text(
+                                "Masuk: ${_jamMasukMulai.toString().padLeft(2, '0')}:00 | Batas: ${_batasJamMasuk.toString().padLeft(2, '0')}:00 | Pulang: ${_jamPulangMulai.toString().padLeft(2, '0')}:00",
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ],
                         ],
                       ),
                     ),

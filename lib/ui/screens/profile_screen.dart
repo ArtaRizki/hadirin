@@ -19,6 +19,7 @@ import 'package:hadirin/ui/screens/leave_request_screen.dart';
 import 'package:hadirin/ui/screens/anggota_list_screen.dart';
 import 'package:hadirin/ui/widgets/attendance_history_list.dart';
 import 'package:hadirin/ui/screens/leave_history_screen.dart';
+import 'package:hadirin/ui/screens/set_worktime_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -136,7 +137,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
       DateFormat('EEEE, d MMMM yyyy', 'id_ID').format(dt);
 
   String _formatJam(DateTime dt) => DateFormat('HH:mm').format(dt);
-
 
   void _tampilkanFoto(
     BuildContext context,
@@ -993,6 +993,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ),
                       ),
                       accentColor: const Color(0xFF059669),
+                    ),
+                    _buildMenuCard(
+                      title: "Atur\nJam Kerja",
+                      icon: Icons.access_time_filled_rounded,
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const SetWorktimeScreen(),
+                        ),
+                      ),
+                      accentColor: const Color(0xFFEA580C), // Orange-ish
                     ),
                     _buildMenuCard(
                       title: "Reset\nPerangkat",
