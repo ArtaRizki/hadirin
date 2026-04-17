@@ -30,6 +30,15 @@ class _AddAnggotaScreenState extends State<AddAnggotaScreen> {
     final auth = context.read<AuthProvider>();
     final clientId = auth.idUser ?? "";
 
+    String phone = _hpController.text.trim();
+    if (phone.isNotEmpty) {
+      if (phone.startsWith('8')) {
+        phone = '62$phone';
+      } else if (phone.startsWith('0')) {
+        phone = '62${phone.substring(1)}';
+      }
+    }
+
     final result = await AdminService().tambahAnggota(
       clientId: clientId,
       idAnggotaBaru: _idController.text.trim(),
@@ -37,7 +46,7 @@ class _AddAnggotaScreenState extends State<AddAnggotaScreen> {
       bagian: _bagianController.text.trim().isEmpty
           ? "-"
           : _bagianController.text.trim(),
-      noHp: _hpController.text.trim(), // NEW
+      noHp: phone, // UPDATED
     );
 
     setState(() => _isLoading = false);

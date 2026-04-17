@@ -35,7 +35,10 @@ class _LeaveRequestScreenState extends State<LeaveRequestScreen> {
 
   Future<void> _pickImage() async {
     final picker = ImagePicker();
-    final pickedFile = await picker.pickImage(source: ImageSource.camera);
+    final pickedFile = await picker.pickImage(
+      source: ImageSource.camera,
+      preferredCameraDevice: CameraDevice.rear,
+    );
     if (pickedFile != null) {
       setState(() => _suratDokter = File(pickedFile.path));
     }

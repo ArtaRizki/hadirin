@@ -114,7 +114,7 @@ class _LeaveHistoryScreenState extends State<LeaveHistoryScreen> {
                 maxHeight: MediaQuery.of(context).size.height * 0.6,
               ),
               child: Image.network(
-                url,
+                UrlHelper.getDirectDriveUrl(url),
                 fit: BoxFit.contain,
                 loadingBuilder: (context, child, loadingProgress) {
                   if (loadingProgress == null) return child;

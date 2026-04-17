@@ -67,16 +67,30 @@ abstract class ApiClient {
   // =================================================================
   Map<String, dynamic> parseResponse(String body) {
     try {
+      // Jika body mengandung error JS yang khas, lempar exception ramah
+      if (body.contains("cannot read properties of undefined") ||
+          body.contains("spreadsheetId")) {
+        throw const FormatException("KODE_INSTANSI_TIDAK_VALID");
+      }
+
       final data = jsonDecode(body) as Map<String, dynamic>;
-      if (data['code'] == 200) {
+      if (data['code'] == 200 || data['code'] == 201) {
         return {'success': true, 'message': data['message']};
       }
       throw Exception(data['message'] ?? 'Respons tidak valid dari server.');
-    } on FormatException {
+    } on FormatException catch (e) {
+      if (e.toString().contains("KODE_INSTANSI_TIDAK_VALID")) {
+        throw Exception(
+          "Kode Instansi tidak ditemukan atau belum terdaftar di sistem.",
+        );
+      }
       if (body.contains('Absen berhasil dicatat')) {
         return {'success': true, 'message': 'Absen berhasil dicatat.'};
       }
-      throw Exception('Respons server bukan JSON valid. Cek konfigurasi GAS.');
+      d.log("==== FORMAT ERROR: SERVER CRASH? ====\n$body");
+      throw Exception(
+        "Server sedang mengalami kendala teknis. Harap hubungi Admin.",
+      );
     }
   }
 

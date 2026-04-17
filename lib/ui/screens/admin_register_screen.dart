@@ -88,12 +88,21 @@ class _AdminRegisterScreenState extends State<AdminRegisterScreen> {
 
     setState(() => _isLoading = true);
 
+    String phone = _hpController.text.trim();
+    if (phone.isNotEmpty) {
+      if (phone.startsWith('8')) {
+        phone = '62$phone';
+      } else if (phone.startsWith('0')) {
+        phone = '62${phone.substring(1)}';
+      }
+    }
+
     final result = await AdminService().registerKlien(
       namaInstansi: _namaController.text.trim(),
       lat: _pickedLocation.latitude,
       lng: _pickedLocation.longitude,
       radius: _radius,
-      adminPhone: _hpController.text.trim(), // NEW
+      adminPhone: phone, // UPDATED
     );
 
     setState(() => _isLoading = false);

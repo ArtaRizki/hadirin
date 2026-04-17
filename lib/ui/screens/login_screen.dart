@@ -108,10 +108,18 @@ class _LoginScreenState extends State<LoginScreen> {
           MaterialPageRoute(builder: (_) => const AttendanceScreen()),
         );
       } else {
-        _showError(result['message'].toString());
+        String serverMsg = result['message'].toString();
+        if (serverMsg.contains("Kode Instansi") && inputKodeInstansi.contains("MASTER")) {
+          serverMsg += "\n\nPetunjuk: Kosongkan kotak pertama untuk login Super Admin.";
+        }
+        _showError(serverMsg);
       }
     } catch (e) {
-      _showError("Gagal terhubung ke server: $e");
+      String errorMsg = e.toString().replaceAll('Exception: ', '');
+      if (errorMsg.contains("Kode Instansi") && inputKodeInstansi.contains("MASTER")) {
+        errorMsg += "\n\nPetunjuk: Kosongkan kotak pertama untuk login Super Admin.";
+      }
+      _showError("Gagal terhubung ke server: $errorMsg");
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
