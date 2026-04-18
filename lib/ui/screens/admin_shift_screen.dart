@@ -21,6 +21,7 @@ class _AdminShiftScreenState extends State<AdminShiftScreen>
   List<dynamic> _shifts = [];
   Map<String, dynamic> _plotting = {};
   List<dynamic> _employees = [];
+  Map<String, dynamic>? _officeConfig;
 
   // BATCH SAVE TRACKING
   final Set<String> _dirtyIds = {};
@@ -48,16 +49,19 @@ class _AdminShiftScreenState extends State<AdminShiftScreen>
           month: _selectedDate.month,
         ),
         _adminService.getAllAnggota(clientId),
+        _adminService.getOfficeConfig(clientId),
       ]);
 
       final shiftRes = results[0] as Map<String, dynamic>;
       final empRes = results[1] as List<dynamic>;
+      final configRes = results[2] as Map<String, dynamic>?;
 
       if (shiftRes['success']) {
         setState(() {
           _shifts = shiftRes['data']['shifts'];
           _plotting = shiftRes['data']['plotting'];
           _employees = empRes;
+          _officeConfig = configRes;
           _dirtyIds.clear(); // Clear dirty on new load
           _isLoading = false;
         });
@@ -241,58 +245,116 @@ class _AdminShiftScreenState extends State<AdminShiftScreen>
   }
 
   Widget _buildMasterShiftTab() {
-    return ListView.builder(
-      padding: const EdgeInsets.all(24),
-      itemCount: _shifts.length,
-      itemBuilder: (context, index) {
-        final s = _shifts[index];
-        return Container(
-          margin: const EdgeInsets.only(bottom: 16),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(24),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.04),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: ListTile(
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 20,
-              vertical: 8,
+    return Column(
+      children: [
+        if (_officeConfig != null)
+          Container(
+            padding: const EdgeInsets.all(16),
+            margin: const EdgeInsets.fromLTRB(24, 24, 24, 8),
+            decoration: BoxDecoration(
+              color: context.primaryColor.withOpacity(0.05),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: context.primaryColor.withOpacity(0.1)),
             ),
-            leading: Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: _getShiftColor(s['id']).withOpacity(0.1),
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Icon(
-                Icons.access_time_rounded,
-                color: _getShiftColor(s['id']),
-              ),
-            ),
-            title: Text(
-              s['nama'].toString(),
-              style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16),
-            ),
-            subtitle: Text(
-              "${s['masuk']} - ${s['pulang']}",
-              style: TextStyle(
-                color: Colors.grey.shade600,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            trailing: IconButton(
-              icon: const Icon(Icons.edit_note_rounded, color: Colors.blueGrey),
-              onPressed: () => _showEditShiftDialog(shift: s),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.business_rounded,
+                  color: context.primaryColor,
+                  size: 20,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        "Jam Kerja Kantor (Standar)",
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
+                        ),
+                      ),
+                      Text(
+                        "${_officeConfig!['jam_masuk_mulai']} - ${_officeConfig!['jam_pulang_mulai']}",
+                        style: TextStyle(
+                          color: Colors.grey.shade600,
+                          fontSize: 11,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                TextButton.icon(
+                  onPressed: () => Navigator.pushNamed(context, '/atur-jam'),
+                  icon: const Icon(Icons.settings_rounded, size: 14),
+                  label: const Text("Ubah", style: TextStyle(fontSize: 12)),
+                ),
+              ],
             ),
           ),
-        );
-      },
+        Expanded(
+          child: ListView.builder(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+            itemCount: _shifts.length,
+            itemBuilder: (context, index) {
+              final s = _shifts[index];
+              return Container(
+                margin: const EdgeInsets.only(bottom: 16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(24),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.04),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: ListTile(
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 8,
+                  ),
+                  leading: Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: _getShiftColor(s['id']).withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Icon(
+                      Icons.access_time_rounded,
+                      color: _getShiftColor(s['id']),
+                    ),
+                  ),
+                  title: Text(
+                    s['nama'].toString(),
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w900,
+                      fontSize: 16,
+                    ),
+                  ),
+                  subtitle: Text(
+                    "${s['masuk']} - ${s['pulang']}",
+                    style: TextStyle(
+                      color: Colors.grey.shade600,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  trailing: IconButton(
+                    icon: const Icon(
+                      Icons.edit_note_rounded,
+                      color: Colors.blueGrey,
+                    ),
+                    onPressed: () => _showEditShiftDialog(shift: s),
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 
@@ -712,90 +774,191 @@ class _AdminShiftScreenState extends State<AdminShiftScreen>
       text: shift?['id'] ?? "S${_shifts.length + 1}",
     );
     final namaCtrl = TextEditingController(text: shift?['nama'] ?? "");
-    final masukCtrl = TextEditingController(text: shift?['masuk'] ?? "08:00");
-    final pulangCtrl = TextEditingController(text: shift?['pulang'] ?? "16:00");
+    String masukStr =
+        shift?['masuk']?.toString().split('T').last.substring(0, 5) ?? "08:00";
+    String pulangStr =
+        shift?['pulang']?.toString().split('T').last.substring(0, 5) ?? "16:00";
 
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
-        title: Text(
-          shift == null ? "Tambah Shift Baru" : "Edit Shift",
-          style: const TextStyle(fontWeight: FontWeight.w900),
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: idCtrl,
-              decoration: const InputDecoration(
-                labelText: "ID Shift",
-                hintText: "Misal: S1",
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) {
+          Future<void> pickTime(bool isMasuk) async {
+            final initial = TimeOfDay(
+              hour: int.parse((isMasuk ? masukStr : pulangStr).split(':')[0]),
+              minute: int.parse((isMasuk ? masukStr : pulangStr).split(':')[1]),
+            );
+            final picked = await showTimePicker(
+              context: context,
+              initialTime: initial,
+            );
+            if (picked != null) {
+              setDialogState(() {
+                final formatted =
+                    "${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}";
+                if (isMasuk)
+                  masukStr = formatted;
+                else
+                  pulangStr = formatted;
+              });
+            }
+          }
+
+          return AlertDialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(28),
+            ),
+            title: Text(
+              shift == null ? "Tambah Shift Baru" : "Edit Shift",
+              style: const TextStyle(fontWeight: FontWeight.w900),
+            ),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: idCtrl,
+                    decoration: const InputDecoration(
+                      labelText: "ID Shift",
+                      hintText: "Misal: S1",
+                    ),
+                    enabled: shift == null,
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: namaCtrl,
+                    decoration: const InputDecoration(labelText: "Nama Shift"),
+                  ),
+                  if (_officeConfig != null)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 16),
+                      child: OutlinedButton.icon(
+                        onPressed: () {
+                          setDialogState(() {
+                            masukStr =
+                                _officeConfig!['jam_masuk_mulai'] ?? "08:00";
+                            pulangStr =
+                                _officeConfig!['jam_pulang_mulai'] ?? "16:00";
+                            if (namaCtrl.text.isEmpty) {
+                              namaCtrl.text = "Jam Kantor";
+                            }
+                          });
+                        },
+                        icon: const Icon(Icons.sync_rounded, size: 18),
+                        label: const Text("Gunakan Jam Kantor"),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: context.primaryColor,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                      ),
+                    ),
+                  const SizedBox(height: 24),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _buildTimePickerTile(
+                          context,
+                          "Masuk",
+                          masukStr,
+                          () => pickTime(true),
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: _buildTimePickerTile(
+                          context,
+                          "Pulang",
+                          pulangStr,
+                          () => pickTime(false),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: namaCtrl,
-              decoration: const InputDecoration(labelText: "Nama Shift"),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text(
+                  "Batal",
+                  style: TextStyle(color: Colors.grey),
+                ),
+              ),
+              ElevatedButton(
+                onPressed: () async {
+                  final newShifts = List.from(_shifts);
+                  final newS = {
+                    'id': idCtrl.text,
+                    'nama': namaCtrl.text,
+                    'masuk': masukStr,
+                    'pulang': pulangStr,
+                  };
+                  if (shift == null) {
+                    newShifts.add(newS);
+                  } else {
+                    final idx = newShifts.indexWhere(
+                      (x) => x['id'] == shift['id'],
+                    );
+                    if (idx != -1) newShifts[idx] = newS;
+                  }
+
+                  final res = await _adminService.saveShifts(
+                    context.read<AuthProvider>().clientId!,
+                    newShifts,
+                  );
+                  if (res['success']) {
+                    Navigator.pop(context);
+                    _loadAllData();
+                  }
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: context.primaryColor,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: const Text("Simpan"),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildTimePickerTile(
+    BuildContext context,
+    String label,
+    String time,
+    VoidCallback onTap,
+  ) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.grey.shade50,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.grey.shade200),
+        ),
+        child: Column(
+          children: [
+            Text(
+              label,
+              style: TextStyle(color: Colors.grey.shade500, fontSize: 10),
             ),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: masukCtrl,
-                    decoration: const InputDecoration(labelText: "Masuk"),
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: TextField(
-                    controller: pulangCtrl,
-                    decoration: const InputDecoration(labelText: "Pulang"),
-                  ),
-                ),
-              ],
+            const SizedBox(height: 4),
+            Text(
+              time,
+              style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 18),
             ),
           ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text("Batal", style: TextStyle(color: Colors.grey)),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              final newShifts = List.from(_shifts);
-              final newS = {
-                'id': idCtrl.text,
-                'nama': namaCtrl.text,
-                'masuk': masukCtrl.text,
-                'pulang': pulangCtrl.text,
-              };
-              if (shift == null)
-                newShifts.add(newS);
-              else
-                newShifts[newShifts.indexWhere((x) => x['id'] == shift['id'])] =
-                    newS;
-              final res = await _adminService.saveShifts(
-                context.read<AuthProvider>().clientId!,
-                newShifts,
-              );
-              if (res['success']) {
-                Navigator.pop(context);
-                _loadAllData();
-              }
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: context.primaryColor,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-            child: const Text("Simpan"),
-          ),
-        ],
       ),
     );
   }

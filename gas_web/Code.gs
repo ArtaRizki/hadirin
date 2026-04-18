@@ -652,7 +652,24 @@ function toMinutes(val) {
   } 
   return parseInt(s) * 60; 
 }
-function formatTime(val, def) { if (!val) return def; var s = String(val); if (s.indexOf(':') !== -1) return s; var h = parseInt(s); return (h < 10 ? "0" + h : h) + ":00"; }
+function formatTime(val, def) {
+    if (!val) return def;
+    if (val instanceof Date) {
+        return Utilities.formatDate(val, "GMT+7", "HH:mm");
+    }
+    var s = String(val);
+    if (s.indexOf(':') !== -1) {
+        // Handle ISO String from Date.toJSON() if it accidental happens
+        if (s.indexOf('T') !== -1) {
+            var parts = s.split('T')[1].split(':');
+            return parts[0] + ":" + parts[1];
+        }
+        return s.substring(0, 5);
+    }
+    var h = parseInt(s);
+    return (h < 10 ? "0" + h : h) + ":00";
+}
+
 function handleCekStatusHariIni(payload) {
     var config = getSemuaConfig()[payload.client_id];
     var logs = SpreadsheetApp.openById(config.spreadsheetId).getSheetByName("Log_Absensi").getDataRange().getValues();
@@ -677,7 +694,12 @@ function getShiftSettings(clientId, year, month) {
         var shiftData = shiftSheet.getDataRange().getValues();
         var shifts = [];
         for (var i = 1; i < shiftData.length; i++) { 
-            shifts.push({ id: shiftData[i][0], nama: shiftData[i][1], masuk: shiftData[i][2], pulang: shiftData[i][3] }); 
+            shifts.push({ 
+                id: shiftData[i][0], 
+                nama: shiftData[i][1], 
+                masuk: formatTime(shiftData[i][2], "08:00"), 
+                pulang: formatTime(shiftData[i][3], "16:00") 
+            }); 
         }
 
         // 2. Get Plotting for Month
