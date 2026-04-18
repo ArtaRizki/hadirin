@@ -229,7 +229,11 @@
         history.forEach(log => {
           const row = document.createElement('tr');
           const logStatus = log.status || "Tepat Waktu";
-          const isLate = logStatus === 'Terlambat';
+          const statusSlug = logStatus.toLowerCase().replace(/\s+/g, '');
+          let statusClass = "status-tepat";
+          if (statusSlug.startsWith('tl')) statusClass = "status-" + statusSlug;
+          if (statusSlug.startsWith('psw')) statusClass = "status-" + statusSlug;
+
           row.innerHTML = `
             <td>
               <div style="font-weight: 700; color: var(--text-main);">${formatDate(log.waktu)}</div>
@@ -237,7 +241,7 @@
             </td>
             <td><span class="badge-tipe">${log.tipe || "-"}</span></td>
             <td>
-              <span style="color: ${isLate ? '#EF4444' : '#10B981'}; font-weight: 800; font-size: 0.85rem;">
+              <span class="${statusClass}" style="font-weight: 800; font-size: 0.85rem;">
                 ${logStatus.toUpperCase()}
               </span>
             </td>

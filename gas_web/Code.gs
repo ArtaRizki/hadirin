@@ -126,11 +126,9 @@ function getDashboardStats(clientId, id) {
     var allConfigs = getSemuaConfig();
     var lookupId = String(clientId || "").trim().toUpperCase();
     var config = allConfigs[lookupId];
-    if (!config) return { present: 0, leave: 0, late: 0, trendLabels: [], trendValues: [] };
-    
     var ss = SpreadsheetApp.openById(config.spreadsheetId);
     var data = ss.getSheetByName('Log_Absensi').getDataRange().getValues();
-    
+    var schedule = getEffectiveSchedule(ss, config);
     var today = new Date();
     today.setHours(0,0,0,0);
     
@@ -145,9 +143,9 @@ function getDashboardStats(clientId, id) {
 
         rowDate.setHours(0,0,0,0);
         if (rowDate.getTime() === today.getTime()) {
-            if (rowStatus === "Tepat Waktu") stats.present++;
-            if (rowStatus === "Terlambat") { stats.present++; stats.late++; }
-            if (["Izin", "Sakit", "Cuti"].indexOf(rowStatus) !== -1 || rowStatus.toLowerCase().indexOf("izin") !== -1) stats.leave++;
+            if (rowStatus === "Tepat Waktu" || rowStatus.startsWith("TL") || rowStatus.startsWith("PSW")) stats.present++;
+            if (rowStatus.startsWith("TL")) stats.late++;
+            if (["Izin", "Sakit", "Cuti"].indexOf(rowStatus) !== -1 || rowStatus.toLowerCase().indexOf("izin") !== -1 || rowStatus === "Menunggu Approval") stats.leave++;
         }
     }
     
@@ -163,7 +161,8 @@ function getDashboardStats(clientId, id) {
         if (!logW || logW === "") continue;
         var rDate = new Date(logW);
         rDate.setHours(0,0,0,0);
-        if (rDate.getTime() === date.getTime() && (data[j][6] === "Tepat Waktu" || data[j][6] === "Terlambat")) count++;
+        var s = String(data[j][6]);
+        if (rDate.getTime() === date.getTime() && (s === "Tepat Waktu" || s.startsWith("TL") || s.startsWith("PSW"))) count++;
       }
       stats.trendValues.push(count);
     }
@@ -283,25 +282,90 @@ function getSemuaConfig() {
     } catch (e) { return {}; }
 }
 
+function getEffectiveSchedule(ss, config) {
+    var now = new Date();
+    var todayStr = Utilities.formatDate(now, "GMT+7", "yyyy-MM-dd");
+    
+    // 1. Cek Jadwal_Khusus
+    var sheetJadwal = ss.getSheetByName("Jadwal_Khusus");
+    if (!sheetJadwal) {
+        // Buat jika tidak ada
+        sheetJadwal = ss.insertSheet("Jadwal_Khusus");
+        sheetJadwal.appendRow(["Tanggal", "Jam_Masuk", "Jam_Pulang", "Keterangan"]);
+        sheetJadwal.getRange("A1:D1").setFontWeight("bold").setBackground("#f3f3f3");
+    }
+    
+    var dataJadwal = sheetJadwal.getDataRange().getValues();
+    for (var i = 1; i < dataJadwal.length; i++) {
+        var tglCell = dataJadwal[i][0];
+        if (!tglCell) continue;
+        var tglStr = (tglCell instanceof Date) ? Utilities.formatDate(tglCell, "GMT+7", "yyyy-MM-dd") : String(tglCell);
+        if (tglStr === todayStr) {
+            return {
+                masuk: dataJadwal[i][1],
+                pulang: dataJadwal[i][2],
+                is_khusus: true,
+                keterangan: dataJadwal[i][3]
+            };
+        }
+    }
+    
+    // 2. Fallback ke Config_Kantor
+    var configData = ss.getSheetByName("Config_Kantor").getRange("A2:G2").getValues()[0];
+    return {
+        masuk: (configData[5] !== "" && configData[5] !== undefined) ? configData[5] : config.batasJam,
+        pulang: (configData[6] !== "" && configData[6] !== undefined) ? configData[6] : "17:00",
+        is_khusus: false
+    };
+}
+
 function handleAbsensi(payload) {
     var config = getSemuaConfig()[payload.client_id];
     var ss = SpreadsheetApp.openById(config.spreadsheetId);
-    var configData = ss.getSheetByName("Config_Kantor").getRange("A2:G2").getValues()[0];
+    var schedule = getEffectiveSchedule(ss, config);
+    
     var now = new Date();
     var currentMinutes = (parseInt(Utilities.formatDate(now, "GMT+7", "HH")) * 60) + parseInt(Utilities.formatDate(now, "GMT+7", "mm"));
-    var valBatas = (configData[5] !== "" && configData[5] !== undefined) ? configData[5] : config.batasJam;
-    var batasMinutes = toMinutes(valBatas);
-    var status = (currentMinutes >= batasMinutes && payload.tipe_absen === "Masuk") ? "Terlambat" : "Tepat Waktu";
+    
+    var status = "Tepat Waktu";
+    if (payload.tipe_absen === "Masuk") {
+        var limitMasuk = toMinutes(schedule.masuk);
+        if (currentMinutes > limitMasuk) {
+            var diff = currentMinutes - limitMasuk;
+            var tier = Math.ceil(diff / 30);
+            status = "TL" + (tier > 4 ? 4 : tier);
+        }
+    } else if (payload.tipe_absen === "Pulang") {
+        var limitPulang = toMinutes(schedule.pulang);
+        if (currentMinutes < limitPulang) {
+            var diff = limitPulang - currentMinutes;
+            var tier = Math.ceil(diff / 30);
+            status = "PSW" + (tier > 4 ? 4 : tier);
+        }
+    }
+
     var fotoUrl = "No Photo";
     if (payload.foto_base64 && payload.foto_base64.length > 0) {
         try {
             var folder = DriveApp.getFolderById(config.folderDriveId);
             var blob = Utilities.newBlob(Utilities.base64Decode(payload.foto_base64), "image/jpeg", "Absen_" + payload.id_karyawan + "_" + Utilities.formatDate(now, "GMT+7", "yyyyMMdd_HHmmss") + ".jpg");
-            fotoUrl = folder.createFile(blob).getUrl();
+            var file = folder.createFile(blob);
+            file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+            fotoUrl = "https://docs.google.com/uc?export=view&id=" + file.getId();
         } catch (e) { fotoUrl = "Error: " + e.message; }
     }
-    ss.getSheetByName("Log_Absensi").appendRow([Utilities.formatDate(now, "GMT+7", "yyyy-MM-dd HH:mm:ss"), payload.id_karyawan, payload.tipe_absen, payload.lat_long, fotoUrl, "Valid", status]);
-    return responseJSON(200, "success", "Berhasil.");
+    
+    ss.getSheetByName("Log_Absensi").appendRow([
+      Utilities.formatDate(now, "GMT+7", "yyyy-MM-dd HH:mm:ss"), 
+      payload.id_karyawan, 
+      payload.tipe_absen, 
+      payload.lat_long, 
+      fotoUrl, 
+      "Valid", 
+      status
+    ]);
+    
+    return responseJSON(200, "success", "Absen " + payload.tipe_absen + " Berhasil (" + status + ")");
 }
 
 function handleGetAllAnggota(payload) {
@@ -383,6 +447,32 @@ function handleEnrollDevice(payload) {
     return responseJSON(404, "error", "User tidak ditemukan.");
 }
 
+function handleRegisterFace(payload) {
+    var config = getSemuaConfig()[payload.client_id];
+    var ss = SpreadsheetApp.openById(config.spreadsheetId);
+    var sheet = ss.getSheetByName("Master_Karyawan");
+    var data = sheet.getDataRange().getValues();
+    for (var i = 1; i < data.length; i++) {
+        if (String(data[i][0]) === String(payload.id_karyawan)) {
+            sheet.getRange(i + 1, 5).setValue(payload.face_embedding);
+            return responseJSON(200, "success", "Wajah Berhasil Didaftarkan");
+        }
+    }
+    return responseJSON(404, "error", "User tidak ditemukan.");
+}
+
+function handleGetFace(payload) {
+    var config = getSemuaConfig()[payload.client_id];
+    var ss = SpreadsheetApp.openById(config.spreadsheetId);
+    var data = ss.getSheetByName("Master_Karyawan").getDataRange().getValues();
+    for (var i = 1; i < data.length; i++) {
+        if (String(data[i][0]) === String(payload.id_karyawan)) {
+            return responseJSON(200, "success", data[i][4] || null);
+        }
+    }
+    return responseJSON(404, "error", "Data wajah tidak ditemukan.");
+}
+
 function handleAddAnggota(payload) {
     var config = getSemuaConfig()[payload.client_id];
     var sheet = SpreadsheetApp.openById(config.spreadsheetId).getSheetByName("Master_Karyawan");
@@ -399,7 +489,9 @@ function handleAjukanIzin(payload) {
         try {
             var folder = DriveApp.getFolderById(config.folderDriveId);
             var blob = Utilities.newBlob(Utilities.base64Decode(payload.foto_base64), "image/jpeg", "Lampiran_" + payload.id_karyawan + "_" + Utilities.formatDate(new Date(), "GMT+7", "yyyyMMdd_HHmmss") + ".jpg");
-            fotoUrl = folder.createFile(blob).getUrl();
+            var file = folder.createFile(blob);
+            file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+            fotoUrl = "https://docs.google.com/uc?export=view&id=" + file.getId();
         } catch (e) { fotoUrl = "ERROR: " + e.message; }
     }
     sheet.appendRow([Utilities.formatDate(new Date(), "GMT+7", "yyyy-MM-dd HH:mm:ss"), payload.id_karyawan, payload.tipe_izin, payload.rentang_tanggal, fotoUrl, payload.alasan, payload.is_admin ? "Disetujui" : "Menunggu Approval"]);
@@ -467,7 +559,17 @@ function handleGetMonthlyReport(payload) {
 }
 
 function responseJSON(code, status, message) { return ContentService.createTextOutput(JSON.stringify({ code: code, status: status, message: message })).setMimeType(ContentService.MimeType.JSON); }
-function toMinutes(val) { var s = String(val); if (s.indexOf(':') !== -1) { var p = s.split(':'); return (parseInt(p[0]) * 60) + parseInt(p[1]); } return parseInt(s) * 60; }
+function toMinutes(val) { 
+  if (val instanceof Date) {
+    return (val.getHours() * 60) + val.getMinutes();
+  }
+  var s = String(val); 
+  if (s.indexOf(':') !== -1) { 
+    var p = s.split(':'); 
+    return (parseInt(p[0]) * 60) + parseInt(p[1]); 
+  } 
+  return parseInt(s) * 60; 
+}
 function formatTime(val, def) { if (!val) return def; var s = String(val); if (s.indexOf(':') !== -1) return s; var h = parseInt(s); return (h < 10 ? "0" + h : h) + ":00"; }
 function handleCekStatusHariIni(payload) {
     var config = getSemuaConfig()[payload.client_id];

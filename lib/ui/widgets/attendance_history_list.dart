@@ -74,7 +74,9 @@ class AttendanceHistoryList extends StatelessWidget {
   Widget _buildHistoryItem(BuildContext context, Map log) {
     final dt =
         DateTime.tryParse(log['waktu'].toString())?.toLocal() ?? DateTime.now();
-    final isTerlambat = log['status'] == "Terlambat";
+    final status = log['status']?.toString() ?? "";
+    final isLate = status.startsWith("TL") || status == "Terlambat";
+    final isEarlyLeave = status.startsWith("PSW");
     final isMasuk = log['tipe'] == "Masuk";
     final isCuti =
         log['tipe'] == "Cuti" ||
@@ -84,18 +86,19 @@ class AttendanceHistoryList extends StatelessWidget {
     Color accentColor = isMasuk ? context.primaryColor : Colors.orange.shade600;
     if (isCuti) accentColor = Colors.grey.shade500;
 
-    String statusLabel = "";
+    String statusLabel = status;
     Color statusColor = context.primaryColor;
     Color statusBg = context.primaryColor.withOpacity(0.08);
 
     if (isMasuk) {
-      statusLabel = log['status'] ?? "";
-      statusColor = isTerlambat ? Colors.red.shade700 : const Color(0xFF16A34A);
-      statusBg = isTerlambat
+      statusColor = isLate ? Colors.red.shade700 : const Color(0xFF16A34A);
+      statusBg = isLate
           ? Colors.red.shade50
           : const Color(0xFF16A34A).withOpacity(0.08);
+    } else if (isEarlyLeave) {
+      statusColor = Colors.orange.shade800;
+      statusBg = Colors.orange.shade50;
     } else if (isCuti) {
-      statusLabel = log['status'] ?? "";
       statusColor = log['status'] == 'Disetujui'
           ? const Color(0xFF16A34A)
           : Colors.orange.shade700;

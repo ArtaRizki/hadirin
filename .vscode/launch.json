@@ -26,7 +26,7 @@
             "request": "launch",
             "type": "dart",
             "args": [
-                "--dart-define=GAS_ENDPOINT=https://script.google.com/macros/s/AKfycbx7ZUuvd4jKKIKBwc1yUy5rYN3gFvoJElTQCKJ2aSt9XdlMyQEML7DRKAkcr1fDUaLa/exec",
+                "--dart-define=GAS_ENDPOINT=https://script.google.com/macros/s/AKfycbzG4Y6KPvMjKkcuB6OmUwqXGNmcg9d0x3riZlEpFGT5R7af2IgkBVLppbYR7KCP14Xq/exec",
                 "--dart-define=API_TOKEN=SUPER_SECRET_UMKM001_8xZ2"
             ]
         },
