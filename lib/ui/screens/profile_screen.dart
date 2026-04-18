@@ -20,6 +20,7 @@ import 'package:hadirin/ui/screens/anggota_list_screen.dart';
 import 'package:hadirin/ui/widgets/attendance_history_list.dart';
 import 'package:hadirin/ui/screens/leave_history_screen.dart';
 import 'package:hadirin/ui/screens/set_worktime_screen.dart';
+import 'package:hadirin/ui/screens/admin_shift_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -1004,6 +1005,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ),
                       ),
                       accentColor: const Color(0xFFEA580C), // Orange-ish
+                    ),
+                    _buildMenuCard(
+                      title: "Manajemen\nShift",
+                      icon: Icons.calendar_month_rounded,
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const AdminShiftScreen(),
+                        ),
+                      ),
+                      accentColor: Colors.teal.shade600,
                     ),
                     _buildMenuCard(
                       title: "Reset\nPerangkat",

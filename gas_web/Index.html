@@ -87,6 +87,10 @@
               <i data-lucide="check-square"></i>
               <span>Persetujuan Izin</span>
             </a>
+            <a class="nav-item" onclick="switchView('shifts')">
+              <i data-lucide="calendar-days"></i>
+              <span>Plotting Shift</span>
+            </a>
             <a class="nav-item" onclick="switchView('settings')">
               <i data-lucide="settings"></i>
               <span>Setelan Kantor</span>
@@ -221,6 +225,62 @@
             <p style="color: var(--text-muted); font-weight: 500;">Proses pengajuan izin, sakit, dan cuti.</p>
           </header>
           <div id="approvals-list" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 24px;"></div>
+        </div>
+
+        <!-- Admin: Multi-Shift & Plotting -->
+        <div id="view-shifts" class="content-view" style="display: none;">
+          <header style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 40px;">
+            <div>
+              <h1 style="font-size: 2.2rem; font-weight: 900; letter-spacing: -1px;">Shift & Plotting</h1>
+              <p style="color: var(--text-muted); font-weight: 500;">Kelola jenis shift dan plotting jadwal karyawan.</p>
+            </div>
+            <div style="display: flex; gap: 12px;">
+               <input type="month" id="shift-month-picker" class="glass" style="padding: 10px 16px; border-radius: 12px; border: 1px solid var(--glass-border); font-weight: 600;">
+               <button class="btn btn-primary" onclick="saveActivePlotting()">
+                 <i data-lucide="save"></i> Simpan Plotting
+               </button>
+            </div>
+          </header>
+
+          <div style="display: flex; gap: 10px; margin-bottom: 24px;">
+            <button class="tab-btn active" onclick="switchShiftTab('calendar')">Kalender Plotting</button>
+            <button class="tab-btn" onclick="switchShiftTab('list')">Daftar Jenis Shift</button>
+          </div>
+
+          <!-- Tab: Calendar -->
+          <div id="shift-tab-calendar" class="card glass" style="padding: 0; overflow: hidden;">
+            <div class="calendar-wrapper">
+              <table id="shift-calendar-table" class="plotting-table">
+                <thead id="shift-calendar-head"></thead>
+                <tbody id="shift-calendar-body"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Tab: List Shift -->
+          <div id="shift-tab-list" class="card glass" style="display: none;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+              <h3 style="font-weight: 800;">Daftar Master Shift</h3>
+              <button class="btn" style="background: rgba(16, 185, 129, 0.1); color: #10B981;" onclick="addNewShiftRow()">
+                <i data-lucide="plus"></i> Tambah Shift
+              </button>
+            </div>
+            <div class="table-container">
+              <table>
+                <thead>
+                  <tr>
+                    <th>ID Shift</th>
+                    <th>Nama Shift</th>
+                    <th>Jam Masuk</th>
+                    <th>Jam Pulang</th>
+                    <th>Aksi</th>
+                  </tr>
+                </thead>
+                <tbody id="shift-list-body"></tbody>
+              </table>
+            </div>
+            <button class="btn btn-primary" style="margin-top: 20px; width: 100%;" onclick="saveShiftDefinitions()">Simpan Master Shift</button>
+          </div>
         </div>
 
       </main>

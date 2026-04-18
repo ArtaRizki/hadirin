@@ -32,6 +32,8 @@ class _AttendanceScreenState extends State<AttendanceScreen>
   String _jamMasukMulai = "04:00";
   String _batasJamMasuk = "07:00";
   String _jamPulangMulai = "13:00";
+  String _shiftName = "Normal";
+  bool _isOff = false;
   bool _isConfigLoaded = false;
 
   @override
@@ -56,12 +58,17 @@ class _AttendanceScreenState extends State<AttendanceScreen>
   Future<void> _fetchOfficeConfig() async {
     try {
       final auth = context.read<AuthProvider>();
-      final config = await AdminService().getOfficeConfig(auth.clientId ?? "");
+      final config = await AdminService().getOfficeConfig(
+        auth.clientId ?? "",
+        idKaryawan: auth.idAnggota,
+      );
       if (config != null && mounted) {
         setState(() {
           _jamMasukMulai = config['jam_masuk_mulai'].toString();
           _batasJamMasuk = config['batas_jam_masuk'].toString();
           _jamPulangMulai = config['jam_pulang_mulai'].toString();
+          _shiftName = config['shift_name'] ?? "Normal";
+          _isOff = config['is_off'] ?? false;
           _isConfigLoaded = true;
         });
       }
@@ -95,7 +102,10 @@ class _AttendanceScreenState extends State<AttendanceScreen>
       final auth = context.read<AuthProvider>();
       if (!auth.isLoggedIn || !auth.isAnggota) return;
 
-      final config = await AdminService().getOfficeConfig(auth.clientId ?? "");
+      final config = await AdminService().getOfficeConfig(
+        auth.clientId ?? "",
+        idKaryawan: auth.idAnggota,
+      );
       if (config == null) return;
 
       double offLat = double.parse(config['lat'].toString());
@@ -632,13 +642,26 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                                 color: Colors.white.withOpacity(0.15),
                                 borderRadius: BorderRadius.circular(12),
                               ),
-                              child: Text(
-                                "Masuk: $_jamMasukMulai | Batas: $_batasJamMasuk | Pulang: $_jamPulangMulai",
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.bold,
-                                ),
+                              child: Column(
+                                children: [
+                                  Text(
+                                    "Shift: $_shiftName",
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w900,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    "Masuk: $_jamMasukMulai | Pulang: $_jamPulangMulai",
+                                    style: TextStyle(
+                                      color: Colors.white.withOpacity(0.9),
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                           ],
@@ -654,6 +677,43 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                         child: CircularProgressIndicator(
                           color: context.primaryColor,
                           strokeWidth: 3,
+                        ),
+                      )
+                    else if (_isOff)
+                      // OFF STATE UI
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(24),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(24),
+                          border: Border.all(color: Colors.orange.shade100),
+                        ),
+                        child: Column(
+                          children: [
+                            Icon(
+                              Icons.beach_access_rounded,
+                              size: 48,
+                              color: Colors.orange.shade400,
+                            ),
+                            const SizedBox(height: 16),
+                            const Text(
+                              "Selamat Beristirahat!✨",
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w900,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              "Hari ini jadwal Anda LIBUR / OFF. Tidak perlu melakukan absensi.",
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: Colors.grey.shade600,
+                                fontSize: 13,
+                              ),
+                            ),
+                          ],
                         ),
                       )
                     else ...[

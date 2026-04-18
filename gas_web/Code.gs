@@ -128,7 +128,7 @@ function getDashboardStats(clientId, id) {
     var config = allConfigs[lookupId];
     var ss = SpreadsheetApp.openById(config.spreadsheetId);
     var data = ss.getSheetByName('Log_Absensi').getDataRange().getValues();
-    var schedule = getEffectiveSchedule(ss, config);
+    var schedule = getEffectiveSchedule(ss, config, id);
     var today = new Date();
     today.setHours(0,0,0,0);
     
@@ -248,6 +248,18 @@ function doPost(e) {
             case "get_history": return handleGetHistory(payload);
             case "get_office_config": return handleGetOfficeConfig(payload);
             case "update_lokasi": return handleUpdateLokasi(payload);
+            case "get_shift_list": 
+                var resShift = getShiftSettings(payload.client_id, payload.year || 2026, payload.month || 4);
+                return responseJSON(resShift.success ? 200 : 400, resShift.success ? "success" : "error", resShift);
+            case "save_shifts":
+                var resSaveS = saveShiftDefinitions(payload.client_id, payload.shift_list);
+                return responseJSON(resSaveS.success ? 200 : 400, resSaveS.success ? "success" : "error", resSaveS.message);
+            case "save_plotting":
+                var resSaveP = savePlottingAssignments(payload.client_id, payload.plotting_list);
+                return responseJSON(resSaveP.success ? 200 : 400, resSaveP.success ? "success" : "error", resSaveP.message);
+            case "update_default_shift":
+                var resUpdD = updateDefaultShift(payload.client_id, payload.id_karyawan_target, payload.new_shift_id);
+                return responseJSON(resUpdD.success ? 200 : 400, resUpdD.success ? "success" : "error", resUpdD.message);
             case "update_jam_kerja": return handleUpdateJamKerja(payload);
             case "enroll_device": return handleEnrollDevice(payload);
             case "register_face": return handleRegisterFace(payload);
@@ -282,47 +294,89 @@ function getSemuaConfig() {
     } catch (e) { return {}; }
 }
 
-function getEffectiveSchedule(ss, config) {
+function getEffectiveSchedule(ss, config, idKaryawan) {
     var now = new Date();
     var todayStr = Utilities.formatDate(now, "GMT+7", "yyyy-MM-dd");
-    
-    // 1. Cek Jadwal_Khusus
+
+    // 1. Cek Jadwal_Khusus (Global/Fakultatif)
     var sheetJadwal = ss.getSheetByName("Jadwal_Khusus");
     if (!sheetJadwal) {
-        // Buat jika tidak ada
         sheetJadwal = ss.insertSheet("Jadwal_Khusus");
         sheetJadwal.appendRow(["Tanggal", "Jam_Masuk", "Jam_Pulang", "Keterangan"]);
         sheetJadwal.getRange("A1:D1").setFontWeight("bold").setBackground("#f3f3f3");
     }
-    
+
     var dataJadwal = sheetJadwal.getDataRange().getValues();
     for (var i = 1; i < dataJadwal.length; i++) {
         var tglCell = dataJadwal[i][0];
         if (!tglCell) continue;
         var tglStr = (tglCell instanceof Date) ? Utilities.formatDate(tglCell, "GMT+7", "yyyy-MM-dd") : String(tglCell);
         if (tglStr === todayStr) {
-            return {
-                masuk: dataJadwal[i][1],
-                pulang: dataJadwal[i][2],
-                is_khusus: true,
-                keterangan: dataJadwal[i][3]
-            };
+            return { masuk: dataJadwal[i][1], pulang: dataJadwal[i][2], is_khusus: true, keterangan: dataJadwal[i][3], is_off: (String(dataJadwal[i][1]).toUpperCase() === "LIBUR") };
         }
     }
-    
-    // 2. Fallback ke Config_Kantor
+
+    // 2. Cek Plotting Kalender Harian (Jadwal_Shift)
+    var sheetPlot = ss.getSheetByName("Jadwal_Shift");
+    if (sheetPlot) {
+        var plottingData = sheetPlot.getDataRange().getValues();
+        var plottingKey = todayStr + "_" + idKaryawan;
+        for (var j = 1; j < plottingData.length; j++) {
+            if (String(plottingData[j][0]) === plottingKey) {
+                return getShiftDetails(ss, plottingData[j][3], config);
+            }
+        }
+    }
+
+    // 3. Cek Default Shift di Master_Karyawan
+    var masterSheet = ss.getSheetByName("Master_Karyawan");
+    var masterData = masterSheet.getDataRange().getValues();
+    for (var k = 1; k < masterData.length; k++) {
+        if (String(masterData[k][0]) === String(idKaryawan)) {
+            var defaultShiftId = masterData[k][6] || "S1"; // Kolom G
+            return getShiftDetails(ss, defaultShiftId, config);
+        }
+    }
+
+    // 4. Final Fallback ke Config_Kantor
     var configData = ss.getSheetByName("Config_Kantor").getRange("A2:G2").getValues()[0];
     return {
         masuk: (configData[5] !== "" && configData[5] !== undefined) ? configData[5] : config.batasJam,
         pulang: (configData[6] !== "" && configData[6] !== undefined) ? configData[6] : "17:00",
-        is_khusus: false
+        is_khusus: false,
+        is_off: false
     };
+}
+
+function getShiftDetails(ss, shiftId, config) {
+    if (!shiftId || String(shiftId).toUpperCase() === "LIBUR" || String(shiftId).toUpperCase() === "OFF") {
+        return { masuk: "00:00", pulang: "00:00", is_off: true, shift_name: "LIBUR" };
+    }
+
+    var sheetShift = ss.getSheetByName("Config_Shift");
+    if (!sheetShift) {
+        sheetShift = ss.insertSheet("Config_Shift");
+        sheetShift.appendRow(["ID_Shift", "Nama_Shift", "Jam_Masuk", "Jam_Pulang"]);
+        sheetShift.appendRow(["S1", "Shift 1", "07:30", "15:00"]);
+        sheetShift.getRange("A1:D1").setFontWeight("bold").setBackground("#f3f3f3");
+    }
+
+    var data = sheetShift.getDataRange().getValues();
+    for (var i = 1; i < data.length; i++) {
+        if (String(data[i][0]) === String(shiftId)) {
+            return { masuk: data[i][2], pulang: data[i][3], is_off: false, shifting: true, shift_name: data[i][1] };
+        }
+    }
+    return { masuk: config.batasJam, pulang: "17:00", is_off: false, shift_name: "Shift 1" };
 }
 
 function handleAbsensi(payload) {
     var config = getSemuaConfig()[payload.client_id];
     var ss = SpreadsheetApp.openById(config.spreadsheetId);
-    var schedule = getEffectiveSchedule(ss, config);
+    var schedule = getEffectiveSchedule(ss, config, payload.id_karyawan);
+    
+    if (schedule.is_off) return responseJSON(403, "error", "Hari ini jadwal Anda LIBUR. Tidak perlu absen.");
+
     
     var now = new Date();
     var currentMinutes = (parseInt(Utilities.formatDate(now, "GMT+7", "HH")) * 60) + parseInt(Utilities.formatDate(now, "GMT+7", "mm"));
@@ -365,14 +419,29 @@ function handleAbsensi(payload) {
       status
     ]);
     
-    return responseJSON(200, "success", "Absen " + payload.tipe_absen + " Berhasil (" + status + ")");
+    var msg = "Absen " + payload.tipe_absen + " Berhasil (" + status + ")";
+    if (schedule.shifting) msg += " [" + schedule.shift_name + "]";
+    
+    return responseJSON(200, "success", msg);
 }
 
 function handleGetAllAnggota(payload) {
     var config = getSemuaConfig()[payload.client_id];
     var data = SpreadsheetApp.openById(config.spreadsheetId).getSheetByName("Master_Karyawan").getDataRange().getValues();
     var results = [];
-    for (var i = 1; i < data.length; i++) { if (data[i][0] !== "") results.push({ id: String(data[i][0]), nama: String(data[i][1]), bagian: String(data[i][2] || "-"), sudah_enroll: (data[i][3] !== ""), wajah_terdaftar: (data[i][4] !== ""), no_hp: String(data[i][5] || "") }); }
+    for (var i = 1; i < data.length; i++) { 
+        if (data[i][0] !== "") {
+            results.push({ 
+                id: String(data[i][0]), 
+                nama: String(data[i][1]), 
+                bagian: String(data[i][2] || "-"), 
+                sudah_enroll: (data[i][3] !== ""), 
+                wajah_terdaftar: (data[i][4] !== ""), 
+                id_shift_default: String(data[i][6] || "S1"),
+                no_hp: String(data[i][5] || "") 
+            }); 
+        } 
+    }
     return results;
 }
 
@@ -476,7 +545,8 @@ function handleGetFace(payload) {
 function handleAddAnggota(payload) {
     var config = getSemuaConfig()[payload.client_id];
     var sheet = SpreadsheetApp.openById(config.spreadsheetId).getSheetByName("Master_Karyawan");
-    sheet.appendRow([payload.id_karyawan_baru, payload.nama_karyawan_baru, payload.divisi_baru || "-", "", "", payload.no_hp || ""]);
+    var shiftId = payload.default_shift || "S1";
+    sheet.appendRow([payload.id_karyawan_baru, payload.nama_karyawan_baru, payload.divisi_baru || "-", "", "", payload.no_hp || "", shiftId]);
     return responseJSON(200, "success", "Anggota Ditambahkan.");
 }
 
@@ -510,10 +580,22 @@ function handleVerifySuperAdmin(payload) { return (payload.password === SUPER_AD
 function handleGetOfficeConfig(payload) {
     var config = getSemuaConfig()[payload.client_id];
     if (!config) return responseJSON(404, "error", "Instansi tidak ditemukan.");
-    var data = SpreadsheetApp.openById(config.spreadsheetId).getSheetByName("Config_Kantor").getRange("A2:G2").getValues();
+    var ss = SpreadsheetApp.openById(config.spreadsheetId);
+    var data = ss.getSheetByName("Config_Kantor").getRange("A2:G2").getValues();
+    
+    // Fetch personalized schedule if id_karyawan is provided
+    var schedule = (payload.id_karyawan) ? getEffectiveSchedule(ss, config, payload.id_karyawan) : null;
+
     return responseJSON(200, "success", {
-        nama: data[0][0], lat: data[0][1], lng: data[0][2], radius: data[0][3] || config.radius,
-        jam_masuk_mulai: formatTime(data[0][4], "04:00"), batas_jam_masuk: formatTime(data[0][5], "07:00"), jam_pulang_mulai: formatTime(data[0][6], "13:00")
+        nama: data[0][0],
+        lat: data[0][1],
+        lng: data[0][2],
+        radius: data[0][3] || config.radius,
+        jam_masuk_mulai: schedule ? schedule.masuk : formatTime(data[0][4], "04:00"),
+        batas_jam_masuk: schedule ? schedule.masuk : formatTime(data[0][5], "07:00"), // We use the same 'masuk' for shift-based
+        jam_pulang_mulai: schedule ? schedule.pulang : formatTime(data[0][6], "13:00"),
+        shift_name: schedule ? (schedule.shift_name || "Normal") : "Normal",
+        is_off: schedule ? schedule.is_off : false
     });
 }
 
@@ -579,3 +661,111 @@ function handleCekStatusHariIni(payload) {
     return responseJSON(200, "success", false);
 }
 String.prototype.padLeft = function (size, char) { var s = this; while (s.length < (size || 2)) { s = char + s; } return s; }
+
+/**
+ * ADMIN: Ambil Semua Data Shift & Plotting Bulan Tertentu
+ */
+function getShiftSettings(clientId, year, month) {
+    try {
+        var config = getSemuaConfig()[clientId];
+        var ss = SpreadsheetApp.openById(config.spreadsheetId);
+        
+        // 1. Get Shift Definitions
+        var shiftSheet = ss.getSheetByName("Config_Shift");
+        if (!shiftSheet) getShiftDetails(ss, "INIT", config); // Trigger init
+        shiftSheet = ss.getSheetByName("Config_Shift");
+        var shiftData = shiftSheet.getDataRange().getValues();
+        var shifts = [];
+        for (var i = 1; i < shiftData.length; i++) { 
+            shifts.push({ id: shiftData[i][0], nama: shiftData[i][1], masuk: shiftData[i][2], pulang: shiftData[i][3] }); 
+        }
+
+        // 2. Get Plotting for Month
+        var plotSheet = ss.getSheetByName("Jadwal_Shift");
+        if (!plotSheet) {
+            plotSheet = ss.insertSheet("Jadwal_Shift");
+            plotSheet.appendRow(["ID_Plotting", "Tanggal", "ID_Karyawan", "ID_Shift"]);
+            plotSheet.getRange("A1:D1").setFontWeight("bold").setBackground("#d9ead3");
+        }
+        var plotData = plotSheet.getDataRange().getValues();
+        var plotting = {};
+        var monthPrefix = year + "-" + String(month).padLeft(2, '0');
+        
+        for (var j = 1; j < plotData.length; j++) {
+            if (String(plotData[j][1]).startsWith(monthPrefix)) {
+                plotting[String(plotData[j][0])] = plotData[j][3];
+            }
+        }
+
+        return { success: true, shifts: shifts, plotting: plotting };
+    } catch (e) { return { success: false, message: e.toString() }; }
+}
+
+/**
+ * ADMIN: Simpan Definisi Shift
+ */
+function saveShiftDefinitions(clientId, shiftDataList) {
+    try {
+        var config = getSemuaConfig()[clientId];
+        var ss = SpreadsheetApp.openById(config.spreadsheetId);
+        var sheet = ss.getSheetByName("Config_Shift");
+        sheet.clearContents();
+        sheet.appendRow(["ID_Shift", "Nama_Shift", "Jam_Masuk", "Jam_Pulang"]);
+        sheet.getRange("A1:D1").setFontWeight("bold").setBackground("#f3f3f3");
+        
+        shiftDataList.forEach(function(s) {
+            sheet.appendRow([s.id, s.nama, s.masuk, s.pulang]);
+        });
+        return { success: true };
+    } catch (e) { return { success: false, message: e.toString() }; }
+}
+
+/**
+ * ADMIN: Simpan Plotting Kalender
+ */
+function savePlottingAssignments(clientId, plottingList) {
+    try {
+        var config = getSemuaConfig()[clientId];
+        var ss = SpreadsheetApp.openById(config.spreadsheetId);
+        var sheet = ss.getSheetByName("Jadwal_Shift");
+        
+        var existingData = sheet.getDataRange().getValues();
+        var keyRowMap = {};
+        for (var i = 1; i < existingData.length; i++) { keyRowMap[existingData[i][0]] = i + 1; }
+
+        plottingList.forEach(function(p) {
+            var row = keyRowMap[p.key_id];
+            if (row) {
+                if (p.id_shift === "") { // Delete if empty
+                   // Optimization: Keep rows for now or delete if needed. 
+                   // We'll just update it to "S1" or keep it.
+                   sheet.getRange(row, 4).setValue(p.id_shift);
+                } else {
+                   sheet.getRange(row, 4).setValue(p.id_shift);
+                }
+            } else if (p.id_shift !== "") {
+                sheet.appendRow([p.key_id, p.tanggal, p.id_karyawan, p.id_shift]);
+            }
+        });
+        return { success: true };
+    } catch (e) { return { success: false, message: e.toString() }; }
+}
+
+/**
+ * ADMIN: Update Global/Default Shift in Master_Karyawan
+ */
+function updateDefaultShift(clientId, idKaryawan, newShiftId) {
+    try {
+        var config = getSemuaConfig()[clientId];
+        var ss = SpreadsheetApp.openById(config.spreadsheetId);
+        var sheet = ss.getSheetByName("Master_Karyawan");
+        var data = sheet.getDataRange().getValues();
+        for (var i = 1; i < data.length; i++) {
+            if (String(data[i][0]) === String(idKaryawan)) {
+                sheet.getRange(i + 1, 7).setValue(newShiftId);
+                return { success: true };
+            }
+        }
+        return { success: false, message: "User not found" };
+    } catch (e) { return { success: false, message: e.toString() }; }
+}

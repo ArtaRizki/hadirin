@@ -71,15 +71,19 @@ class AdminService extends ApiClient {
   }
 
   // =================================================================
-  // AMBIL KONFIGURASI KANTOR (lat, lng, radius)
+  // AMBIL KONFIGURASI KANTOR (lat, lng, radius) + SHIFT PERSONAL
   // =================================================================
-  Future<Map<String, dynamic>?> getOfficeConfig(String clientId) async {
+  Future<Map<String, dynamic>?> getOfficeConfig(
+    String clientId, {
+    String? idKaryawan,
+  }) async {
     if (clientId.isEmpty) return null;
     try {
       final payload = {
         'api_token': AppConfig.apiToken,
         'action': 'get_office_config',
         'client_id': clientId,
+        'id_karyawan': idKaryawan,
       };
 
       final response = await sendRequest('get_office_config', payload);
@@ -103,6 +107,7 @@ class AdminService extends ApiClient {
     required String namaAnggotaBaru,
     required String bagian,
     String noHp = "",
+    String? defaultShift,
   }) async {
     try {
       final payload = {
@@ -113,6 +118,7 @@ class AdminService extends ApiClient {
         'nama_karyawan_baru': namaAnggotaBaru,
         'divisi_baru': bagian,
         'no_hp': noHp,
+        'default_shift': defaultShift,
       };
 
       final response = await sendRequest('add_karyawan', payload);
@@ -340,6 +346,122 @@ class AdminService extends ApiClient {
         'success': false,
         'message': e.toString().replaceAll('Exception: ', ''),
       };
+    }
+  }
+  // =================================================================
+  // GET SHIFT LIST & PLOTTING SETTINGS
+  // =================================================================
+  Future<Map<String, dynamic>> getShiftList(
+    String clientId, {
+    int? year,
+    int? month,
+  }) async {
+    try {
+      final payload = {
+        'api_token': AppConfig.apiToken,
+        'action': 'get_shift_list',
+        'client_id': clientId,
+        'year': year ?? DateTime.now().year,
+        'month': month ?? DateTime.now().month,
+      };
+
+      final response = await sendRequest('get_shift_list', payload);
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['code'] == 200) {
+          return {'success': true, 'data': data['message']};
+        }
+        throw Exception(data['message']);
+      }
+      throw Exception('Gagal terhubung ke server.');
+    } catch (e) {
+      return {
+        'success': false,
+        'message': e.toString().replaceAll('Exception: ', ''),
+      };
+    }
+  }
+
+  // =================================================================
+  // SAVE SHIFT DEFINITIONS
+  // =================================================================
+  Future<Map<String, dynamic>> saveShifts(
+    String clientId,
+    List<dynamic> shifts,
+  ) async {
+    try {
+      final payload = {
+        'api_token': AppConfig.apiToken,
+        'action': 'save_shifts',
+        'client_id': clientId,
+        'shift_list': shifts,
+      };
+
+      final response = await sendRequest('save_shifts', payload);
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['code'] == 200) return {'success': true};
+        throw Exception(data['message']);
+      }
+      throw Exception('Gagal menyimpan.');
+    } catch (e) {
+      return {'success': false, 'message': e.toString()};
+    }
+  }
+
+  // =================================================================
+  // SAVE PLOTTING ASSIGNMENTS
+  // =================================================================
+  Future<Map<String, dynamic>> savePlotting(
+    String clientId,
+    List<dynamic> plottingList,
+  ) async {
+    try {
+      final payload = {
+        'api_token': AppConfig.apiToken,
+        'action': 'save_plotting',
+        'client_id': clientId,
+        'plotting_list': plottingList,
+      };
+
+      final response = await sendRequest('save_plotting', payload);
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['code'] == 200) return {'success': true};
+        throw Exception(data['message'] ?? 'Gagal menyimpan plotting.');
+      }
+      throw Exception('Gagal terhubung ke server.');
+    } catch (e) {
+      return {'success': false, 'message': e.toString()};
+    }
+  }
+
+  // =================================================================
+  // UPDATE DEFAULT SHIFT FOR USER
+  // =================================================================
+  Future<Map<String, dynamic>> updateDefaultShift(
+    String clientId,
+    String targetId,
+    String newShiftId,
+  ) async {
+    try {
+      final payload = {
+        'api_token': AppConfig.apiToken,
+        'action': 'update_default_shift',
+        'client_id': clientId,
+        'id_karyawan_target': targetId,
+        'new_shift_id': newShiftId,
+      };
+
+      final response = await sendRequest('update_default_shift', payload);
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['code'] == 200) return {'success': true};
+        throw Exception(data['message']);
+      }
+      throw Exception('Gagal menyimpan setelan default.');
+    } catch (e) {
+      return {'success': false, 'message': e.toString()};
     }
   }
 }

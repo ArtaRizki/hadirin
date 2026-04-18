@@ -54,6 +54,7 @@
     if (viewId === 'history') loadHistoryData();
     if (viewId === 'members') loadMembersData();
     if (viewId === 'approvals') loadApprovalsData();
+    if (viewId === 'shifts') loadShiftData();
     
     lucide.createIcons();
   }
@@ -110,6 +111,15 @@
       document.getElementById('admin-section').style.display = 'none';
       document.getElementById('member-action-section').style.display = 'block';
       document.getElementById('admin-mobile-nav').style.display = 'none';
+    }
+
+    // Set Month Picker default to current month
+    const now = new Date();
+    const monthVal = now.getFullYear() + "-" + String(now.getMonth() + 1).padLeft(2, '0');
+    const mPicker = document.getElementById('shift-month-picker');
+    if (mPicker) {
+        mPicker.value = monthVal;
+        mPicker.addEventListener('change', loadShiftData);
     }
     
     switchView('dashboard');
@@ -485,4 +495,161 @@
     // Reset input supaya bisa milih file yang sama lagi jika gagal
     e.target.value = "";
   });
+
+  // =================================================================
+  // MULTI-SHIFT & PLOTTING LOGIC
+  // =================================================================
+  let cachedShifts = [];
+  let masterKaryawan = [];
+
+  function switchShiftTab(tab) {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      event.target.classList.add('active');
+      document.getElementById('shift-tab-calendar').style.display = (tab === 'calendar' ? 'block' : 'none');
+      document.getElementById('shift-tab-list').style.display = (tab === 'list' ? 'block' : 'none');
+  }
+
+  function loadShiftData() {
+      const monthInput = document.getElementById('shift-month-picker').value;
+      if (!monthInput) return;
+      const [year, month] = monthInput.split('-');
+
+      // Load Karyawan first, then Shifts
+      google.script.run
+        .withSuccessHandler(function(karyawan) {
+            masterKaryawan = karyawan;
+            google.script.run
+                .withSuccessHandler(function(res) {
+                    if (res.success) {
+                        cachedShifts = res.shifts;
+                        renderShiftList(res.shifts);
+                        renderShiftCalendar(year, month, res.plotting);
+                    }
+                })
+                .getShiftSettings(currentUser.clientId, year, month);
+        })
+        .handleGetAllAnggota({ client_id: currentUser.clientId });
+  }
+
+  function renderShiftList(shifts) {
+      const body = document.getElementById('shift-list-body');
+      body.innerHTML = '';
+      shifts.forEach((s, idx) => {
+          body.innerHTML += `
+            <tr>
+              <td><input type="text" class="glass" value="${s.id}" style="width: 80px;" id="s-id-${idx}"></td>
+              <td><input type="text" class="glass" value="${s.nama}" id="s-nama-${idx}"></td>
+              <td><input type="time" class="glass" value="${s.masuk}" id="s-masuk-${idx}"></td>
+              <td><input type="time" class="glass" value="${s.pulang}" id="s-pulang-${idx}"></td>
+              <td><button class="btn" style="color:#ef4444" onclick="removeShiftRow(this)">Hapus</button></td>
+            </tr>
+          `;
+      });
+  }
+
+  function addNewShiftRow() {
+      const body = document.getElementById('shift-list-body');
+      const idx = body.children.length;
+      body.innerHTML += `
+            <tr>
+              <td><input type="text" class="glass" value="S${idx+1}" style="width: 80px;" id="s-id-${idx}"></td>
+              <td><input type="text" class="glass" value="Shift Baru" id="s-nama-${idx}"></td>
+              <td><input type="time" class="glass" value="08:00" id="s-masuk-${idx}"></td>
+              <td><input type="time" class="glass" value="16:00" id="s-pulang-${idx}"></td>
+              <td><button class="btn" style="color:#ef4444" onclick="removeShiftRow(this)">Hapus</button></td>
+            </tr>
+      `;
+  }
+
+  function removeShiftRow(btn) {
+      if (confirm("Hapus baris shift ini?")) {
+          btn.closest('tr').remove();
+      }
+  }
+
+  function saveShiftDefinitions() {
+      const body = document.getElementById('shift-list-body');
+      const data = [];
+      for (let i=0; i < body.children.length; i++) {
+          data.push({
+              id: document.getElementById(`s-id-${i}`).value,
+              nama: document.getElementById(`s-nama-${i}`).value,
+              masuk: document.getElementById(`s-masuk-${i}`).value,
+              pulang: document.getElementById(`s-pulang-${i}`).value
+          });
+      }
+      google.script.run
+        .withSuccessHandler(() => { alert("Master Shift Disimpan!"); loadShiftData(); })
+        .saveShiftDefinitions(currentUser.clientId, data);
+  }
+
+  function renderShiftCalendar(year, month, plotting) {
+      const daysInMonth = new Date(year, month, 0).getDate();
+      const head = document.getElementById('shift-calendar-head');
+      const body = document.getElementById('shift-calendar-body');
+      
+      let headerHtml = '<tr><th style="min-width: 180px;">Nama Karyawan</th>';
+      for (let d = 1; d <= daysInMonth; d++) {
+          headerHtml += `<th>${d}</th>`;
+      }
+      headerHtml += '</tr>';
+      head.innerHTML = headerHtml;
+
+      let bodyHtml = '';
+      masterKaryawan.forEach(k => {
+          bodyHtml += `<tr><td style="text-align: left;"><b>${k.nama}</b><br><small>${k.bagian}</small></td>`;
+          for (let d = 1; d <= daysInMonth; d++) {
+              const dateKey = `${year}-${String(month).padLeft(2, '0')}-${String(d).padLeft(2, '0')}`;
+              const key = `${dateKey}_${k.id}`;
+              const activeShift = plotting[key] || "";
+              
+              bodyHtml += `<td>
+                <select class="plotting-select" data-id="${k.id}" data-date="${dateKey}">
+                    <option value="">-</option>
+                    ${cachedShifts.map(s => `<option value="${s.id}" ${s.id === activeShift ? 'selected' : ''}>${s.nama}</option>`).join('')}
+                    <option value="LIBUR" ${activeShift === 'LIBUR' ? 'selected' : ''}>LIBUR</option>
+                </select>
+              </td>`;
+          }
+          bodyHtml += '</tr>';
+      });
+      bodyHtml += `<tr><td colspan="${daysInMonth+1}" style="background:var(--bg-light); padding:20px; text-align:center;"><button class="btn" onclick="autoFillDefaultShifts()">Auto-Fill Pakai Shift Default</button></td></tr>`;
+      body.innerHTML = bodyHtml;
+  }
+
+  function autoFillDefaultShifts() {
+      if (!confirm("Isi semua kotak yang kosong dengan Shift Default tiap karyawan?")) return;
+      document.querySelectorAll('.plotting-select').forEach(sel => {
+          if (sel.value === "") {
+              const id = sel.getAttribute('data-id');
+              const found = masterKaryawan.find(m => m.id === id);
+              if (found) sel.value = found.id_shift_default || "S1";
+          }
+      });
+  }
+
+  function saveActivePlotting() {
+      const assigns = [];
+      document.querySelectorAll('.plotting-select').forEach(sel => {
+          assigns.push({
+              key_id: sel.getAttribute('data-date') + "_" + sel.getAttribute('data-id'),
+              tanggal: sel.getAttribute('data-date'),
+              id_karyawan: sel.getAttribute('data-id'),
+              id_shift: sel.value
+          });
+      });
+      
+      const btn = event.currentTarget;
+      btn.disabled = true;
+      btn.innerHTML = '<span class="loading"></span> Saving...';
+
+      google.script.run
+        .withSuccessHandler(() => {
+            btn.disabled = false;
+            btn.innerHTML = '<i data-lucide="save"></i> Simpan Plotting';
+            alert("Plotting Berhasil Disimpan!");
+            lucide.createIcons();
+        })
+        .savePlottingAssignments(currentUser.clientId, assigns);
+  }
 </script>
