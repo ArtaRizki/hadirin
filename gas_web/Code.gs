@@ -1,5 +1,5 @@
 /**
- * HADIRIN UNIFIED BACKEND - v3.1 (Mobile API + Web Dashboard)
+ * HADIRIN UNIFIED BACKEND - v3.5 (Mobile API + Web Dashboard - Diagnostic)
  * 
  * Tanggung Jawab:
  * 1. doPost(e) - Melayani API Mobile App (Attendance, Enroll, etc.)
@@ -23,9 +23,9 @@ const SUPER_ADMIN_PASSWORD = "HADIRIN_MASTER_2026_AHHH";
 function doGet(e) {
   var template = HtmlService.createTemplateFromFile('Index');
   return template.evaluate()
-      .setTitle('Hadir.in Dashboard')
-      .addMetaTag('viewport', 'width=device-width, initial-scale=1')
-      .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+    .setTitle('Hadir.in Dashboard v3.5')
+    .addMetaTag('viewport', 'width=device-width, initial-scale=1')
+    .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
 }
 
 function include(filename) {
@@ -123,7 +123,11 @@ function submitAbsenWeb(payload) {
  */
 function getDashboardStats(clientId, id) {
   try {
-    var config = getSemuaConfig()[clientId];
+    var allConfigs = getSemuaConfig();
+    var lookupId = String(clientId || "").trim().toUpperCase();
+    var config = allConfigs[lookupId];
+    if (!config) return { present: 0, leave: 0, late: 0, trendLabels: [], trendValues: [] };
+    
     var ss = SpreadsheetApp.openById(config.spreadsheetId);
     var data = ss.getSheetByName('Log_Absensi').getDataRange().getValues();
     
@@ -171,17 +175,36 @@ function getDashboardStats(clientId, id) {
  * AMBIL RIWAYAT ABSENSI (Web)
  */
 function getAttendanceHistory(clientId, id) {
+  var debug = [];
   try {
     var allConfigs = getSemuaConfig();
     var lookupId = String(clientId || "").trim().toUpperCase();
     var config = allConfigs[lookupId];
-    
+    if (!config) throw new Error("Config not found for: " + lookupId);
+
     var ss = SpreadsheetApp.openById(config.spreadsheetId);
-    var data = ss.getSheetByName('Log_Absensi').getDataRange().getValues();
+    var sheet = ss.getSheetByName('Log_Absensi');
+    
+    // Antigravity Fix: Flexible sheet matching if exact match fails
+    if (!sheet) {
+      var sheets = ss.getSheets();
+      for (var s = 0; s < sheets.length; s++) {
+        if (sheets[s].getName().trim().toLowerCase() === "log_absensi") {
+          sheet = sheets[s];
+          debug.push("Matched via flexible name: " + sheets[s].getName());
+          break;
+        }
+      }
+    }
+
+    if (!sheet) throw new Error("Sheet 'Log_Absensi' not found in spreadsheet " + config.spreadsheetId);
+
+    var data = sheet.getDataRange().getValues();
     var history = [];
     var searchId = String(id).trim().toLowerCase();
 
-    // Logika Sederhana (Sama dengan Mobile): Kolom B (index 1) adalah ID
+    debug.push("Data rows: " + data.length + " | SearchID: " + searchId);
+
     for (var i = data.length - 1; i >= 1; i--) {
       var rowId = String(data[i][1] || "").trim().toLowerCase();
       if (rowId === searchId || searchId === "admin") {
@@ -194,9 +217,14 @@ function getAttendanceHistory(clientId, id) {
         if (history.length >= 50) break;
       }
     }
+    
+    if (history.length === 0) {
+      return [{ error: "No data found for ID " + searchId, debug: debug.join(" | ") }];
+    }
+
     return history;
   } catch (e) { 
-    return []; 
+    return [{ error: e.toString(), debug: debug.join(" | ") }]; 
   }
 }
 
