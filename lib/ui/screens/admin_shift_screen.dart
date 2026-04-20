@@ -515,34 +515,41 @@ class _AdminShiftScreenState extends State<AdminShiftScreen>
                               : [],
                         ),
                         child: Stack(
+                          alignment: Alignment.center,
                           children: [
+                            // "HARI INI" BADGE - Positioned at top to avoid shifting central text
+                            if (isToday)
+                              Positioned(
+                                top: 6,
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 6,
+                                    vertical: 2,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: isSelected
+                                        ? Colors.white
+                                        : context.primaryColor,
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                  child: Text(
+                                    "HARI INI",
+                                    style: TextStyle(
+                                      fontSize: 7,
+                                      fontWeight: FontWeight.w900,
+                                      color: isSelected
+                                          ? context.primaryColor
+                                          : Colors.white,
+                                    ),
+                                  ),
+                                ),
+                              ),
+
                             Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                if (isToday)
-                                  Container(
-                                    margin: const EdgeInsets.only(bottom: 2),
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 6,
-                                      vertical: 2,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: isSelected
-                                          ? Colors.white
-                                          : context.primaryColor,
-                                      borderRadius: BorderRadius.circular(4),
-                                    ),
-                                    child: Text(
-                                      "HARI INI",
-                                      style: TextStyle(
-                                        fontSize: 7,
-                                        fontWeight: FontWeight.w900,
-                                        color: isSelected
-                                            ? context.primaryColor
-                                            : Colors.white,
-                                      ),
-                                    ),
-                                  ),
+                                // Center the names and numbers
+                                const SizedBox(height: 8),
                                 Text(
                                   DateFormat('E', 'id_ID').format(date),
                                   style: TextStyle(
@@ -570,9 +577,11 @@ class _AdminShiftScreenState extends State<AdminShiftScreen>
                                     fontWeight: FontWeight.w800,
                                   ),
                                 ),
+                                const SizedBox(height: 10), // Bottom Balance
                               ],
                             ),
-                            // DENSITY INDICATOR BAR
+
+                            // DENSITY INDICATOR BAR - Fixed at bottom
                             Positioned(
                               left: 10,
                               right: 10,
