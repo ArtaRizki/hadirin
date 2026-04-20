@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:hadirin/core/providers/auth_provider.dart';
-import 'package:hadirin/core/service/admin_service.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
+import 'dart:ui';
 import 'package:hadirin/core/theme/fluid_theme.dart';
+import 'package:hadirin/ui/screens/set_worktime_screen.dart';
+import 'package:hadirin/core/service/admin_service.dart';
 
 class AdminShiftScreen extends StatefulWidget {
   const AdminShiftScreen({super.key});
@@ -186,26 +189,7 @@ class _AdminShiftScreenState extends State<AdminShiftScreen>
                     ),
                   ),
                 ),
-                IconButton(
-                  icon: const Icon(
-                    Icons.calendar_month_rounded,
-                    color: Colors.white,
-                  ),
-                  onPressed: () async {
-                    final d = await showDatePicker(
-                      context: context,
-                      initialDate: _selectedDate,
-                      firstDate: DateTime.now().subtract(
-                        const Duration(days: 365),
-                      ),
-                      lastDate: DateTime.now().add(const Duration(days: 365)),
-                    );
-                    if (d != null) {
-                      setState(() => _selectedDate = d);
-                      _loadAllData();
-                    }
-                  },
-                ),
+                const SizedBox(width: 48), // Balance
               ],
             ),
           ),
@@ -249,46 +233,86 @@ class _AdminShiftScreenState extends State<AdminShiftScreen>
       children: [
         if (_officeConfig != null)
           Container(
-            padding: const EdgeInsets.all(16),
-            margin: const EdgeInsets.fromLTRB(24, 24, 24, 8),
+            padding: const EdgeInsets.all(20),
+            margin: const EdgeInsets.fromLTRB(24, 24, 24, 12),
             decoration: BoxDecoration(
-              color: context.primaryColor.withOpacity(0.05),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: context.primaryColor.withOpacity(0.1)),
+              color: Colors.white.withOpacity(0.6),
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(color: context.primaryColor.withOpacity(0.15)),
+              boxShadow: [
+                BoxShadow(
+                  color: context.primaryColor.withOpacity(0.05),
+                  blurRadius: 20,
+                  offset: const Offset(0, 8),
+                ),
+              ],
             ),
             child: Row(
               children: [
-                Icon(
-                  Icons.business_rounded,
-                  color: context.primaryColor,
-                  size: 20,
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: context.primaryColor.withOpacity(0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.auto_awesome_rounded,
+                    color: context.primaryColor,
+                    size: 18,
+                  ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 16),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
-                        "Jam Kerja Kantor (Standar)",
+                      Text(
+                        "Jam Kerja Standar",
                         style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 12,
+                          fontWeight: FontWeight.w900,
+                          fontSize: 14,
+                          color: Colors.grey.shade800,
+                          letterSpacing: -0.3,
                         ),
                       ),
+                      const SizedBox(height: 2),
                       Text(
-                        "${_officeConfig!['jam_masuk_mulai']} - ${_officeConfig!['jam_pulang_mulai']}",
+                        "${_formatTime(_officeConfig!['jam_masuk_mulai'])} - ${_formatTime(_officeConfig!['jam_pulang_mulai'])}",
                         style: TextStyle(
-                          color: Colors.grey.shade600,
-                          fontSize: 11,
+                          color: context.primaryColor,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
                     ],
                   ),
                 ),
-                TextButton.icon(
-                  onPressed: () => Navigator.pushNamed(context, '/atur-jam'),
-                  icon: const Icon(Icons.settings_rounded, size: 14),
-                  label: const Text("Ubah", style: TextStyle(fontSize: 12)),
+                CupertinoButton(
+                  padding: EdgeInsets.zero,
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const SetWorktimeScreen(),
+                    ),
+                  ).then((_) => _loadAllData()),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
+                    decoration: BoxDecoration(
+                      color: context.primaryColor,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Text(
+                      "Ubah",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
                 ),
               ],
             ),
@@ -336,7 +360,7 @@ class _AdminShiftScreenState extends State<AdminShiftScreen>
                     ),
                   ),
                   subtitle: Text(
-                    "${s['masuk']} - ${s['pulang']}",
+                    "${_formatTime(s['masuk'])} - ${_formatTime(s['pulang'])}",
                     style: TextStyle(
                       color: Colors.grey.shade600,
                       fontWeight: FontWeight.w600,
@@ -428,6 +452,8 @@ class _AdminShiftScreenState extends State<AdminShiftScreen>
             },
           ),
         ),
+
+        _buildPlottingSummaryBar(),
 
         Expanded(
           child: _shifts.isEmpty
@@ -543,14 +569,14 @@ class _AdminShiftScreenState extends State<AdminShiftScreen>
                             scrollDirection: Axis.horizontal,
                             child: Row(
                               children: [
-                                _buildShiftChip(
+                                _buildModernShiftChip(
                                   "OFF",
                                   "",
                                   currentShift == "",
                                   eid,
                                 ),
                                 ..._shifts.map(
-                                  (s) => _buildShiftChip(
+                                  (s) => _buildModernShiftChip(
                                     s['id'].toString(),
                                     s['id'].toString(),
                                     currentShift == s['id'],
@@ -570,43 +596,118 @@ class _AdminShiftScreenState extends State<AdminShiftScreen>
     );
   }
 
-  Widget _buildShiftChip(
+  Widget _buildPlottingSummaryBar() {
+    final dateStr = DateFormat('yyyy-MM-dd').format(_selectedDate);
+    final stats = <String, int>{};
+    for (var emp in _employees) {
+      final key = dateStr + "_" + emp['id'].toString();
+      final sId = _plotting[key] ?? "";
+      stats[sId] = (stats[sId] ?? 0) + 1;
+    }
+
+    return Container(
+      height: 40,
+      margin: const EdgeInsets.only(bottom: 16),
+      child: ListView(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 24),
+        children: [
+          _buildStatChip("OFF", stats[""] ?? 0, Colors.grey),
+          ..._shifts.map((s) {
+            final id = s['id'].toString();
+            return _buildStatChip(id, stats[id] ?? 0, _getShiftColor(id));
+          }),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatChip(String label, int count, Color color) {
+    if (count == 0) return const SizedBox.shrink();
+    return Container(
+      margin: const EdgeInsets.only(right: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.08),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: color.withOpacity(0.2)),
+      ),
+      child: Row(
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.w900,
+              color: color,
+            ),
+          ),
+          const SizedBox(width: 6),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+            decoration: BoxDecoration(
+              color: color,
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: Text(
+              count.toString(),
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 9,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildModernShiftChip(
     String label,
     String val,
     bool isSelected,
     String employeeId,
   ) {
     final color = _getShiftColor(val);
-    return Padding(
-      padding: const EdgeInsets.only(right: 8),
-      child: ChoiceChip(
-        label: Text(label),
-        selected: isSelected,
-        onSelected: (selected) {
-          if (selected) {
-            final dateStr = DateFormat('yyyy-MM-dd').format(_selectedDate);
-            final key = dateStr + "_" + employeeId;
-            setState(() {
-              _plotting[key] = val;
-              _dirtyIds.add(employeeId);
-            });
-          }
-        },
-        selectedColor: color.withOpacity(0.2),
-        backgroundColor: Colors.grey.shade100,
-        labelStyle: TextStyle(
-          color: isSelected ? color : Colors.grey.shade600,
-          fontWeight: FontWeight.bold,
-          fontSize: 12,
-        ),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-          side: BorderSide(
-            color: isSelected ? color : Colors.transparent,
+    return GestureDetector(
+      onTap: () {
+        final dateStr = DateFormat('yyyy-MM-dd').format(_selectedDate);
+        final key = dateStr + "_" + employeeId;
+        setState(() {
+          _plotting[key] = val;
+          _dirtyIds.add(employeeId);
+        });
+      },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        margin: const EdgeInsets.only(right: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        decoration: BoxDecoration(
+          color: isSelected ? color : Colors.grey.shade50,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isSelected ? color : Colors.grey.shade200,
             width: 1.5,
           ),
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: color.withOpacity(0.3),
+                    blurRadius: 8,
+                    offset: const Offset(0, 4),
+                  ),
+                ]
+              : [],
         ),
-        showCheckmark: false,
+        child: Text(
+          label,
+          style: TextStyle(
+            color: isSelected ? Colors.white : Colors.grey.shade600,
+            fontWeight: FontWeight.w900,
+            fontSize: 12,
+          ),
+        ),
       ),
     );
   }
@@ -774,34 +875,116 @@ class _AdminShiftScreenState extends State<AdminShiftScreen>
       text: shift?['id'] ?? "S${_shifts.length + 1}",
     );
     final namaCtrl = TextEditingController(text: shift?['nama'] ?? "");
-    String masukStr =
-        shift?['masuk']?.toString().split('T').last.substring(0, 5) ?? "08:00";
-    String pulangStr =
-        shift?['pulang']?.toString().split('T').last.substring(0, 5) ?? "16:00";
+    String masukStr = _formatTime(shift?['masuk'] ?? "08:00");
+    String pulangStr = _formatTime(shift?['pulang'] ?? "16:00");
 
     showDialog(
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) {
           Future<void> pickTime(bool isMasuk) async {
-            final initial = TimeOfDay(
-              hour: int.parse((isMasuk ? masukStr : pulangStr).split(':')[0]),
-              minute: int.parse((isMasuk ? masukStr : pulangStr).split(':')[1]),
+            final initialParts = (isMasuk ? masukStr : pulangStr).split(':');
+            DateTime tempDate = DateTime(
+              2024,
+              1,
+              1,
+              int.parse(initialParts[0]),
+              int.parse(initialParts[1]),
             );
-            final picked = await showTimePicker(
+
+            showCupertinoModalPopup(
               context: context,
-              initialTime: initial,
+              builder: (val) => BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+                child: Material(
+                  type: MaterialType.transparency,
+                  child: Container(
+                    height: 350,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.9),
+                      borderRadius: const BorderRadius.vertical(
+                        top: Radius.circular(32),
+                      ),
+                    ),
+                    child: Column(
+                      children: [
+                        const SizedBox(height: 12),
+                        Container(
+                          width: 40,
+                          height: 4,
+                          decoration: BoxDecoration(
+                            color: Colors.grey.shade300,
+                            borderRadius: BorderRadius.circular(2),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 24,
+                            vertical: 8,
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              CupertinoButton(
+                                padding: EdgeInsets.zero,
+                                onPressed: () => Navigator.pop(val),
+                                child: Text(
+                                  "Batal",
+                                  style: TextStyle(
+                                    color: Colors.grey.shade400,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                              Text(
+                                isMasuk ? "Jam Masuk" : "Jam Pulang",
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w900,
+                                  fontSize: 18,
+                                  color: Colors.black,
+                                ),
+                              ),
+                              CupertinoButton(
+                                padding: EdgeInsets.zero,
+                                onPressed: () {
+                                  setDialogState(() {
+                                    final formatted =
+                                        "${tempDate.hour.toString().padLeft(2, '0')}:${tempDate.minute.toString().padLeft(2, '0')}";
+                                    if (isMasuk)
+                                      masukStr = formatted;
+                                    else
+                                      pulangStr = formatted;
+                                  });
+                                  Navigator.pop(val);
+                                },
+                                child: Text(
+                                  "Selesai",
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w900,
+                                    color: context.primaryColor,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Expanded(
+                          child: CupertinoDatePicker(
+                            mode: CupertinoDatePickerMode.time,
+                            use24hFormat: true,
+                            initialDateTime: tempDate,
+                            onDateTimeChanged: (dt) => tempDate = dt,
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
             );
-            if (picked != null) {
-              setDialogState(() {
-                final formatted =
-                    "${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}";
-                if (isMasuk)
-                  masukStr = formatted;
-                else
-                  pulangStr = formatted;
-              });
-            }
           }
 
           return AlertDialog(
@@ -928,6 +1111,20 @@ class _AdminShiftScreenState extends State<AdminShiftScreen>
         },
       ),
     );
+  }
+
+  String _formatTime(dynamic val) {
+    if (val == null || val == "") return "00:00";
+    String s = val.toString();
+
+    // Prioritaskan mencari pola HH:mm di dalam string (bisa ISO, Long Date, atau HH:mm langsung)
+    final match = RegExp(r'(\d{1,2}:\d{2})').firstMatch(s);
+    if (match != null) {
+      final parts = match.group(1)!.split(':');
+      return "${parts[0].padLeft(2, '0')}:${parts[1].padLeft(2, '0')}";
+    }
+
+    return s.length > 5 ? s.substring(0, 5) : s;
   }
 
   Widget _buildTimePickerTile(
