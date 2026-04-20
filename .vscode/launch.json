@@ -38,6 +38,15 @@
                 "--dart-define=GAS_ENDPOINT=https://script.google.com/macros/s/AKfycby7JOsxqE9BndQq5Vf45WrtEBnMyO1GYRQYgSSfdA4giOP117le8OWJAGPNkw8y_zl20w/exec",
                 "--dart-define=API_TOKEN=SUPER_SECRET_SMAPGRIMAJALENGKA_8xZ2"
             ]
+        },
+        {
+            "name": "Hadir.in - Habil",
+            "request": "launch",
+            "type": "dart",
+            "args": [
+                "--dart-define=GAS_ENDPOINT=https://script.google.com/macros/s/AKfycbxMLc_rqxjVArOQJsDPf-DqbcXpAByyqYJfBx_3OOaxUUyWCBK_XqRawLceBG5Z5RCw/exec",
+                "--dart-define=API_TOKEN=kicau-mania"
+            ]
         }
     ]
 }
