@@ -19,6 +19,8 @@ class _SetWorktimeScreenState extends State<SetWorktimeScreen> {
   String _jamMasukMulai = "04:00";
   String _batasJamMasuk = "07:00";
   String _jamPulangMulai = "13:00";
+  int _tlInterval = 30;
+  int _maxTier = 0; // 0 = Unlimited
 
   @override
   void initState() {
@@ -34,6 +36,8 @@ class _SetWorktimeScreenState extends State<SetWorktimeScreen> {
         _jamMasukMulai = config['jam_masuk_mulai'].toString();
         _batasJamMasuk = config['batas_jam_masuk'].toString();
         _jamPulangMulai = config['jam_pulang_mulai'].toString();
+        _tlInterval = int.tryParse(config['tl_interval']?.toString() ?? "30") ?? 30;
+        _maxTier = int.tryParse(config['max_tier']?.toString() ?? "0") ?? 0;
         _isLoading = false;
       });
     } else {
@@ -69,6 +73,8 @@ class _SetWorktimeScreenState extends State<SetWorktimeScreen> {
       jamMasukMulai: _jamMasukMulai,
       batasJamMasuk: _batasJamMasuk,
       jamPulangMulai: _jamPulangMulai,
+      tlInterval: _tlInterval,
+      maxTier: _maxTier,
     );
 
     if (mounted) {
@@ -194,6 +200,52 @@ class _SetWorktimeScreenState extends State<SetWorktimeScreen> {
     );
   }
 
+  void _showNumberPickerDialog(String title, int current, int min, int max, Function(int) onPicked) {
+    int tempValue = current;
+    showCupertinoModalPopup(
+      context: context,
+      builder: (context) => Material(
+        color: Colors.transparent,
+        child: Container(
+          height: 320,
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.only(topLeft: Radius.circular(32), topRight: Radius.circular(32)),
+          ),
+          child: Column(
+            children: [
+              const SizedBox(height: 12),
+              Container(width: 40, height: 5, decoration: BoxDecoration(color: Colors.grey.withOpacity(0.2), borderRadius: BorderRadius.circular(10))),
+              Container(
+                padding: const EdgeInsets.all(24),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    TextButton(onPressed: () => Navigator.pop(context), child: const Text("Batal")),
+                    Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                    ElevatedButton(
+                      onPressed: () { onPicked(tempValue); Navigator.pop(context); },
+                      style: ElevatedButton.styleFrom(backgroundColor: context.primaryColor, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+                      child: const Text("Pilih", style: TextStyle(color: Colors.white)),
+                    ),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: CupertinoPicker(
+                  itemExtent: 40,
+                  onSelectedItemChanged: (index) { tempValue = min + index; },
+                  scrollController: FixedExtentScrollController(initialItem: current - min),
+                  children: List.generate(max - min + 1, (index) => Center(child: Text("${min + index}"))),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   void _showErrorSnackBar(String msg) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -304,6 +356,33 @@ class _SetWorktimeScreenState extends State<SetWorktimeScreen> {
               onTap: () => _showTimePicker(_jamPulangMulai, (val) => setState(() => _jamPulangMulai = val)),
               icon: Icons.logout_rounded,
               accentColor: const Color(0xFF7C3AED),
+            ),
+
+            const SizedBox(height: 32),
+            const Text(
+              "Aturan Keterlambatan",
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: Color(0xFF0F172A), letterSpacing: -0.5),
+            ),
+            const SizedBox(height: 16),
+
+            _buildSettingCard(
+              title: "Interval Kategori",
+              description: "Tiap berapa menit kategori TL/PSW berubah (TL1, TL2, dst).",
+              value: "$_tlInterval Menit",
+              onTap: () => _showNumberPickerDialog("Interval (Menit)", _tlInterval, 1, 120, (val) => setState(() => _tlInterval = val)),
+              icon: Icons.history_rounded,
+              accentColor: Colors.blue.shade700,
+            ),
+
+            const SizedBox(height: 16),
+
+            _buildSettingCard(
+              title: "Batas Kategori (Tier)",
+              description: "Maksimal angka TL/PSW. Set 0 untuk Tak Terbatas.",
+              value: _maxTier == 0 ? "Unlimited" : "Max Tier $_maxTier",
+              onTap: () => _showNumberPickerDialog("Batas Kategori", _maxTier, 0, 100, (val) => setState(() => _maxTier = val)),
+              icon: Icons.format_list_numbered_rounded,
+              accentColor: Colors.teal.shade700,
             ),
 
             const SizedBox(height: 48),
