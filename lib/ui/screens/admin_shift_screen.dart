@@ -7,6 +7,7 @@ import 'dart:ui';
 import 'package:hadirin/core/theme/fluid_theme.dart';
 import 'package:hadirin/ui/screens/set_worktime_screen.dart';
 import 'package:hadirin/core/service/admin_service.dart';
+import 'package:hadirin/ui/widgets/custom_date_range_picker.dart';
 
 class AdminShiftScreen extends StatefulWidget {
   const AdminShiftScreen({super.key});
@@ -18,8 +19,13 @@ class AdminShiftScreen extends StatefulWidget {
 class _AdminShiftScreenState extends State<AdminShiftScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = "";
+  final Set<String> _selectedIds = {};
+  String _selectedShiftFilter = "All";
   final AdminService _adminService = AdminService();
   bool _isLoading = true;
+  bool _isRefreshing = false; // Add refresh state
 
   List<dynamic> _shifts = [];
   Map<String, dynamic> _plotting = {};
@@ -39,8 +45,16 @@ class _AdminShiftScreenState extends State<AdminShiftScreen>
     _loadAllData();
   }
 
-  Future<void> _loadAllData() async {
-    setState(() => _isLoading = true);
+  @override
+  void dispose() {
+    _tabController.dispose();
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadAllData({bool quiet = false}) async {
+    if (!quiet) setState(() => _isLoading = true);
+    if (quiet) setState(() => _isRefreshing = true);
     try {
       final auth = context.read<AuthProvider>();
       final clientId = auth.clientId ?? "";
@@ -71,7 +85,15 @@ class _AdminShiftScreenState extends State<AdminShiftScreen>
       }
     } catch (e) {
       debugPrint("Error loading shift data: $e");
-      setState(() => _isLoading = false);
+      setState(() {
+        _isLoading = false;
+        _isRefreshing = false;
+      });
+    } finally {
+      setState(() {
+        _isLoading = false;
+        _isRefreshing = false;
+      });
     }
   }
 
@@ -96,15 +118,10 @@ class _AdminShiftScreenState extends State<AdminShiftScreen>
 
             // 2. TAB CONTENT
             Expanded(
-              child: _isLoading
-                  ? _buildSkeleton()
-                  : TabBarView(
-                      controller: _tabController,
-                      children: [
-                        _buildMasterShiftTab(),
-                        _buildDailyPlottingTab(),
-                      ],
-                    ),
+              child: TabBarView(
+                controller: _tabController,
+                children: [_buildMasterShiftTab(), _buildDailyPlottingTab()],
+              ),
             ),
           ],
         ),
@@ -137,7 +154,27 @@ class _AdminShiftScreenState extends State<AdminShiftScreen>
                         ),
                       ),
                     )
-                  : null),
+                  : FloatingActionButton.extended(
+                      onPressed: () => _showPlotMassalSheet(
+                        isFromSelection: _selectedIds.isNotEmpty,
+                      ),
+                      backgroundColor: primaryColor,
+                      icon: Icon(
+                        _selectedIds.isNotEmpty
+                            ? Icons.checklist_rtl_rounded
+                            : Icons.auto_awesome_motion_rounded,
+                        color: Colors.white,
+                      ),
+                      label: Text(
+                        _selectedIds.isNotEmpty
+                            ? "Plot Terpilih (${_selectedIds.length})"
+                            : "Plot Massal Semua",
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    )),
       ),
     );
   }
@@ -145,12 +182,12 @@ class _AdminShiftScreenState extends State<AdminShiftScreen>
   Widget _buildHeader(Color primaryColor) {
     return Container(
       padding: EdgeInsets.only(
-        top: MediaQuery.of(context).padding.top + 20,
-        bottom: 10,
+        top: MediaQuery.of(context).padding.top + 8,
+        bottom: 6,
       ),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [primaryColor, primaryColor.withBlue(255).withOpacity(0.8)],
+          colors: [primaryColor, primaryColor.withOpacity(0.8)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -183,7 +220,7 @@ class _AdminShiftScreenState extends State<AdminShiftScreen>
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       color: Colors.white,
-                      fontSize: 20,
+                      fontSize: 18,
                       fontWeight: FontWeight.w900,
                       letterSpacing: -0.5,
                     ),
@@ -197,7 +234,7 @@ class _AdminShiftScreenState extends State<AdminShiftScreen>
           // CUSTOM TAB BAR
           Container(
             margin: const EdgeInsets.symmetric(horizontal: 24),
-            height: 48,
+            height: 42,
             decoration: BoxDecoration(
               color: Colors.white.withOpacity(0.15),
               borderRadius: BorderRadius.circular(16),
@@ -213,7 +250,7 @@ class _AdminShiftScreenState extends State<AdminShiftScreen>
               unselectedLabelColor: Colors.white,
               labelStyle: const TextStyle(
                 fontWeight: FontWeight.w900,
-                fontSize: 13,
+                fontSize: 11,
               ),
               dividerColor: Colors.transparent,
               tabs: const [
@@ -222,19 +259,20 @@ class _AdminShiftScreenState extends State<AdminShiftScreen>
               ],
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 4),
         ],
       ),
     );
   }
 
   Widget _buildMasterShiftTab() {
+    if (_isLoading) return _buildSkeleton();
     return Column(
       children: [
         if (_officeConfig != null)
           Container(
-            padding: const EdgeInsets.all(20),
-            margin: const EdgeInsets.fromLTRB(24, 24, 24, 12),
+            padding: const EdgeInsets.all(16),
+            margin: const EdgeInsets.fromLTRB(24, 16, 24, 8),
             decoration: BoxDecoration(
               color: Colors.white.withOpacity(0.6),
               borderRadius: BorderRadius.circular(24),
@@ -270,7 +308,7 @@ class _AdminShiftScreenState extends State<AdminShiftScreen>
                         "Jam Kerja Standar",
                         style: TextStyle(
                           fontWeight: FontWeight.w900,
-                          fontSize: 14,
+                          fontSize: 13,
                           color: Colors.grey.shade800,
                           letterSpacing: -0.3,
                         ),
@@ -280,7 +318,7 @@ class _AdminShiftScreenState extends State<AdminShiftScreen>
                         "${_formatTime(_officeConfig!['jam_masuk_mulai'])} - ${_formatTime(_officeConfig!['jam_pulang_mulai'])}",
                         style: TextStyle(
                           color: context.primaryColor,
-                          fontSize: 12,
+                          fontSize: 11,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -324,7 +362,7 @@ class _AdminShiftScreenState extends State<AdminShiftScreen>
             itemBuilder: (context, index) {
               final s = _shifts[index];
               return Container(
-                margin: const EdgeInsets.only(bottom: 16),
+                margin: const EdgeInsets.only(bottom: 12),
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(24),
@@ -338,8 +376,8 @@ class _AdminShiftScreenState extends State<AdminShiftScreen>
                 ),
                 child: ListTile(
                   contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 20,
-                    vertical: 8,
+                    horizontal: 16,
+                    vertical: 4,
                   ),
                   leading: Container(
                     padding: const EdgeInsets.all(12),
@@ -356,7 +394,7 @@ class _AdminShiftScreenState extends State<AdminShiftScreen>
                     s['nama'].toString(),
                     style: const TextStyle(
                       fontWeight: FontWeight.w900,
-                      fontSize: 16,
+                      fontSize: 14,
                     ),
                   ),
                   subtitle: Text(
@@ -364,6 +402,7 @@ class _AdminShiftScreenState extends State<AdminShiftScreen>
                     style: TextStyle(
                       color: Colors.grey.shade600,
                       fontWeight: FontWeight.w600,
+                      fontSize: 11,
                     ),
                   ),
                   trailing: IconButton(
@@ -385,211 +424,495 @@ class _AdminShiftScreenState extends State<AdminShiftScreen>
   Widget _buildDailyPlottingTab() {
     return Column(
       children: [
-        // MODERN DATE PICKER BAR
         Container(
-          height: 100,
-          padding: const EdgeInsets.symmetric(vertical: 16),
-          child: ListView.builder(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            itemCount: 30, // 1 Month range from now
-            itemBuilder: (context, index) {
-              final date = DateTime.now().add(Duration(days: index - 2));
-              final isSelected =
-                  DateFormat('yyyy-MM-dd').format(date) ==
-                  DateFormat('yyyy-MM-dd').format(_selectedDate);
-
-              return GestureDetector(
-                onTap: () async {
-                  if (_dirtyIds.isNotEmpty) {
-                    bool? discard = await _showDiscardDialog();
-                    if (discard != true) return;
-                  }
-                  setState(() => _selectedDate = date);
-                  _loadAllData();
-                },
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 300),
-                  width: 65,
-                  margin: const EdgeInsets.only(right: 12),
-                  decoration: BoxDecoration(
-                    color: isSelected ? context.primaryColor : Colors.white,
-                    borderRadius: BorderRadius.circular(20),
-                    boxShadow: isSelected
-                        ? [
-                            BoxShadow(
-                              color: context.primaryColor.withOpacity(0.3),
-                              blurRadius: 10,
-                              offset: const Offset(0, 4),
-                            ),
-                          ]
-                        : [],
-                  ),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        DateFormat('E').format(date),
-                        style: TextStyle(
-                          color: isSelected ? Colors.white70 : Colors.grey,
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                        ),
+          height: 90,
+          padding: const EdgeInsets.only(top: 16, bottom: 4),
+          child: Row(
+            children: [
+              // JUMP TO DATE BUTTON
+              Padding(
+                padding: const EdgeInsets.only(left: 20, right: 8),
+                child: IconButton.filled(
+                  onPressed: () async {
+                    final picked = await showDatePicker(
+                      context: context,
+                      initialDate: _selectedDate,
+                      firstDate: DateTime.now().subtract(
+                        const Duration(days: 90),
                       ),
-                      const SizedBox(height: 4),
-                      Text(
-                        date.day.toString(),
-                        style: TextStyle(
-                          color: isSelected ? Colors.white : Colors.black87,
-                          fontSize: 18,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                    ],
+                      lastDate: DateTime.now().add(const Duration(days: 365)),
+                    );
+                    if (picked != null) {
+                      setState(() => _selectedDate = picked);
+                      _loadAllData(quiet: true);
+                    }
+                  },
+                  icon: const Icon(Icons.calendar_month_rounded, size: 20),
+                  style: IconButton.styleFrom(
+                    backgroundColor: context.primaryColor.withOpacity(0.1),
+                    foregroundColor: context.primaryColor,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
                   ),
                 ),
-              );
-            },
+              ),
+              Expanded(
+                child: ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.only(right: 20),
+                  itemCount: 90, // 3 Months range
+                  itemBuilder: (context, index) {
+                    final date = DateTime.now().add(Duration(days: index - 14));
+                    final isSelected =
+                        DateFormat('yyyy-MM-dd').format(date) ==
+                        DateFormat('yyyy-MM-dd').format(_selectedDate);
+                    final isToday =
+                        DateFormat('yyyy-MM-dd').format(date) ==
+                        DateFormat('yyyy-MM-dd').format(DateTime.now());
+                    final isSunday = date.weekday == DateTime.sunday;
+                    final isSaturday = date.weekday == DateTime.saturday;
+
+                    double density = 0;
+                    if (_employees.isNotEmpty) {
+                      final dateKeyStr = DateFormat('yyyy-MM-dd').format(date);
+                      int plotted = 0;
+                      for (var emp in _employees) {
+                        final key = dateKeyStr + "_" + emp['id'].toString();
+                        if (_plotting.containsKey(key)) plotted++;
+                      }
+                      density = plotted / _employees.length;
+                    }
+
+                    return GestureDetector(
+                      onTap: () async {
+                        if (_dirtyIds.isNotEmpty) {
+                          bool? discard = await _showDiscardDialog();
+                          if (discard != true) return;
+                        }
+                        setState(() => _selectedDate = date);
+                        _loadAllData(quiet: true);
+                      },
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 300),
+                        width: 58,
+                        margin: const EdgeInsets.only(right: 10),
+                        decoration: BoxDecoration(
+                          color: isSelected
+                              ? context.primaryColor
+                              : Colors.white,
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: isSelected
+                              ? [
+                                  BoxShadow(
+                                    color: context.primaryColor.withOpacity(
+                                      0.3,
+                                    ),
+                                    blurRadius: 10,
+                                    offset: const Offset(0, 4),
+                                  ),
+                                ]
+                              : [],
+                        ),
+                        child: Stack(
+                          children: [
+                            Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                if (isToday)
+                                  Container(
+                                    margin: const EdgeInsets.only(bottom: 2),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 6,
+                                      vertical: 2,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: isSelected
+                                          ? Colors.white
+                                          : context.primaryColor,
+                                      borderRadius: BorderRadius.circular(4),
+                                    ),
+                                    child: Text(
+                                      "HARI INI",
+                                      style: TextStyle(
+                                        fontSize: 7,
+                                        fontWeight: FontWeight.w900,
+                                        color: isSelected
+                                            ? context.primaryColor
+                                            : Colors.white,
+                                      ),
+                                    ),
+                                  ),
+                                Text(
+                                  DateFormat('E', 'id_ID').format(date),
+                                  style: TextStyle(
+                                    color: isSelected
+                                        ? Colors.white70
+                                        : (isSunday
+                                              ? Colors.red.shade400
+                                              : (isSaturday
+                                                    ? Colors.orange.shade400
+                                                    : Colors.grey)),
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                const SizedBox(height: 3),
+                                Text(
+                                  date.day.toString(),
+                                  style: TextStyle(
+                                    color: isSelected
+                                        ? Colors.white
+                                        : (isSunday
+                                              ? Colors.red.shade600
+                                              : Colors.black87),
+                                    fontSize: 17,
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            // DENSITY INDICATOR BAR
+                            Positioned(
+                              left: 10,
+                              right: 10,
+                              bottom: 6,
+                              child: Container(
+                                height: 3,
+                                decoration: BoxDecoration(
+                                  color: isSelected
+                                      ? Colors.white.withOpacity(0.3)
+                                      : Colors.grey.shade100,
+                                  borderRadius: BorderRadius.circular(2),
+                                ),
+                                child: FractionallySizedBox(
+                                  alignment: Alignment.centerLeft,
+                                  widthFactor: density,
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      color: isSelected
+                                          ? Colors.white
+                                          : context.primaryColor,
+                                      borderRadius: BorderRadius.circular(2),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
           ),
         ),
 
         _buildPlottingSummaryBar(),
 
-        Expanded(
-          child: _shifts.isEmpty
-              ? _buildEmptyShiftHint()
-              : ListView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 24),
-                  itemCount: _employees.length,
-                  itemBuilder: (context, index) {
-                    final emp = _employees[index];
-                    final eid = emp['id'].toString();
-                    final dateKey =
-                        DateFormat('yyyy-MM-dd').format(_selectedDate) +
-                        "_" +
-                        eid;
-                    final currentShift = _plotting[dateKey] ?? "";
+        // SEARCH BAR
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 6),
+          child: Container(
+            height: 48,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: context.primaryColor.withOpacity(0.15),
+                width: 1.5,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.04),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: TextField(
+              controller: _searchController,
+              onChanged: (v) => setState(() => _searchQuery = v),
+              decoration: InputDecoration(
+                hintText: "Cari nama atau ID karyawan...",
+                hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 14),
+                prefixIcon: Icon(
+                  Icons.search_rounded,
+                  color: context.primaryColor,
+                ),
+                suffixIcon: _searchQuery.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.clear_rounded, size: 20),
+                        onPressed: () {
+                          _searchController.clear();
+                          setState(() => _searchQuery = "");
+                        },
+                      )
+                    : null,
+                border: InputBorder.none,
+                contentPadding: const EdgeInsets.symmetric(vertical: 12),
+              ),
+            ),
+          ),
+        ),
 
-                    return Container(
-                      margin: const EdgeInsets.only(bottom: 20),
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(28),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.04),
-                            blurRadius: 15,
-                            offset: const Offset(0, 6),
-                          ),
-                        ],
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              CircleAvatar(
-                                backgroundColor: context.primaryColor
-                                    .withOpacity(0.1),
-                                child: Text(
-                                  emp['nama'][0],
-                                  style: TextStyle(
-                                    color: context.primaryColor,
-                                    fontWeight: FontWeight.bold,
-                                  ),
+        // SHIFT FILTER CHIPS
+        Container(
+          height: 36,
+          margin: const EdgeInsets.only(bottom: 8),
+          child: ListView(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            children: [
+              _buildFilterChip("Semua", "All"),
+              _buildFilterChip("Belum Ter-plot", "Unassigned"),
+              ..._shifts.map((s) {
+                final id = s['id'].toString();
+                return _buildFilterChip("Shift $id", id);
+              }),
+            ],
+          ),
+        ),
+
+        // SELECTION TOOLS (Select All / Clear)
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 2),
+          child: Row(
+            children: [
+              Text(
+                "Daftar Karyawan",
+                style: TextStyle(
+                  fontWeight: FontWeight.w900,
+                  color: Colors.grey.shade800,
+                  fontSize: 10,
+                ),
+              ),
+              const Spacer(),
+              if (_selectedIds.isNotEmpty)
+                TextButton.icon(
+                  onPressed: () => setState(() => _selectedIds.clear()),
+                  icon: const Icon(Icons.close_rounded, size: 16),
+                  label: const Text("Batal", style: TextStyle(fontSize: 12)),
+                  style: TextButton.styleFrom(foregroundColor: Colors.red),
+                ),
+              TextButton.icon(
+                onPressed: () {
+                  final filtered = _getFilteredEmployees();
+                  setState(() {
+                    if (_selectedIds.length == filtered.length) {
+                      _selectedIds.clear();
+                    } else {
+                      _selectedIds.addAll(
+                        filtered.map((e) => e['id'].toString()),
+                      );
+                    }
+                  });
+                },
+                icon: Icon(
+                  _selectedIds.length == _getFilteredEmployees().length &&
+                          _selectedIds.isNotEmpty
+                      ? Icons.check_box_rounded
+                      : Icons.check_box_outline_blank_rounded,
+                  size: 16,
+                ),
+                label: Text(
+                  _selectedIds.length == _getFilteredEmployees().length &&
+                          _selectedIds.isNotEmpty
+                      ? "Batal Semua"
+                      : "Pilih Semua",
+                  style: const TextStyle(fontSize: 12),
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        Expanded(
+          child: _isLoading
+              ? _buildSkeleton()
+              : Stack(
+                  children: [
+                    if (_shifts.isEmpty)
+                      _buildEmptyShiftHint()
+                    else
+                      ListView.builder(
+                        padding: const EdgeInsets.symmetric(horizontal: 24),
+                        itemCount: _getFilteredEmployees().length,
+                        itemBuilder: (context, index) {
+                          final emp = _getFilteredEmployees()[index];
+                          final eid = emp['id'].toString();
+                          final isSelected = _selectedIds.contains(eid);
+                          final dateKey =
+                              DateFormat('yyyy-MM-dd').format(_selectedDate) +
+                              "_" +
+                              eid;
+                          final currentShift = _plotting[dateKey] ?? "";
+
+                          return Container(
+                            margin: const EdgeInsets.only(bottom: 10),
+                            padding: const EdgeInsets.all(14),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(20),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.04),
+                                  blurRadius: 15,
+                                  offset: const Offset(0, 6),
                                 ),
-                              ),
-                              const SizedBox(width: 14),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
+                              ],
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
                                   children: [
-                                    Text(
-                                      emp['nama'].toString(),
-                                      style: const TextStyle(
-                                        fontWeight: FontWeight.w900,
-                                        fontSize: 16,
+                                    CircleAvatar(
+                                      radius: 13,
+                                      backgroundColor: context.primaryColor
+                                          .withOpacity(0.1),
+                                      child: Text(
+                                        emp['nama'][0],
+                                        style: TextStyle(
+                                          color: context.primaryColor,
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 12,
+                                        ),
                                       ),
                                     ),
-                                    Row(
-                                      children: [
-                                        Text(
-                                          "ID: $eid",
-                                          style: TextStyle(
-                                            color: Colors.grey.shade500,
-                                            fontSize: 12,
-                                          ),
-                                        ),
-                                        const SizedBox(width: 8),
-                                        GestureDetector(
-                                          onTap: () =>
-                                              _showPlotMassalDialog(emp),
-                                          child: Container(
-                                            padding: const EdgeInsets.symmetric(
-                                              horizontal: 8,
-                                              vertical: 2,
+                                    const SizedBox(width: 10),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            emp['nama'].toString(),
+                                            style: const TextStyle(
+                                              fontWeight: FontWeight.w900,
+                                              fontSize: 14,
                                             ),
-                                            decoration: BoxDecoration(
+                                          ),
+                                          Text(
+                                            "ID: $eid",
+                                            style: TextStyle(
+                                              color: Colors.grey.shade500,
+                                              fontSize: 10,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    // IMPROVED PLOT BUTTON
+                                    CupertinoButton(
+                                      padding: EdgeInsets.zero,
+                                      onPressed: () =>
+                                          _showPlotMassalSheet(emp: emp),
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 12,
+                                          vertical: 6,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: context.primaryColor,
+                                          borderRadius: BorderRadius.circular(
+                                            14,
+                                          ),
+                                          boxShadow: [
+                                            BoxShadow(
                                               color: context.primaryColor
-                                                  .withOpacity(0.1),
-                                              borderRadius:
-                                                  BorderRadius.circular(8),
+                                                  .withOpacity(0.3),
+                                              blurRadius: 8,
+                                              offset: const Offset(0, 4),
                                             ),
-                                            child: Row(
-                                              children: [
-                                                Icon(
-                                                  Icons.date_range_rounded,
-                                                  size: 12,
-                                                  color: context.primaryColor,
-                                                ),
-                                                const SizedBox(width: 4),
-                                                Text(
-                                                  "Plot Massal",
-                                                  style: TextStyle(
-                                                    color: context.primaryColor,
-                                                    fontSize: 10,
-                                                    fontWeight: FontWeight.bold,
-                                                  ),
-                                                ),
-                                              ],
+                                          ],
+                                        ),
+                                        child: const Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Icon(
+                                              Icons.edit_calendar_rounded,
+                                              size: 14,
+                                              color: Colors.white,
                                             ),
+                                            const SizedBox(width: 8),
+                                            const Text(
+                                              "Plot",
+                                              style: TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 10,
+                                                fontWeight: FontWeight.w900,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    // CHECKBOX AT FAR RIGHT
+                                    Transform.scale(
+                                      scale: 1.0,
+                                      child: Checkbox(
+                                        value: isSelected,
+                                        activeColor: context.primaryColor,
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(
+                                            6,
                                           ),
                                         ),
-                                      ],
+                                        onChanged: (val) {
+                                          setState(() {
+                                            if (val == true) {
+                                              _selectedIds.add(eid);
+                                            } else {
+                                              _selectedIds.remove(eid);
+                                            }
+                                          });
+                                        },
+                                      ),
                                     ),
                                   ],
                                 ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 20),
-                          // SHIFT CHIPS SELECTOR
-                          SingleChildScrollView(
-                            scrollDirection: Axis.horizontal,
-                            child: Row(
-                              children: [
-                                _buildModernShiftChip(
-                                  "OFF",
-                                  "",
-                                  currentShift == "",
-                                  eid,
-                                ),
-                                ..._shifts.map(
-                                  (s) => _buildModernShiftChip(
-                                    s['id'].toString(),
-                                    s['id'].toString(),
-                                    currentShift == s['id'],
-                                    eid,
+                                const SizedBox(height: 6),
+                                // SHIFT CHIPS SELECTOR
+                                SingleChildScrollView(
+                                  scrollDirection: Axis.horizontal,
+                                  child: Row(
+                                    children: [
+                                      _buildModernShiftChip(
+                                        "OFF",
+                                        "",
+                                        currentShift == "",
+                                        eid,
+                                      ),
+                                      ..._shifts.map(
+                                        (s) => _buildModernShiftChip(
+                                          s['id'].toString(),
+                                          s['id'].toString(),
+                                          currentShift == s['id'],
+                                          eid,
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ),
                               ],
                             ),
-                          ),
-                        ],
+                          );
+                        },
                       ),
-                    );
-                  },
+                    if (_isRefreshing)
+                      Positioned.fill(
+                        child: Container(
+                          color: Colors.white.withOpacity(0.5),
+                          child: const Center(
+                            child: CircularProgressIndicator(),
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
         ),
       ],
@@ -606,8 +929,8 @@ class _AdminShiftScreenState extends State<AdminShiftScreen>
     }
 
     return Container(
-      height: 40,
-      margin: const EdgeInsets.only(bottom: 16),
+      height: 36,
+      margin: const EdgeInsets.only(bottom: 12),
       child: ListView(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -626,11 +949,11 @@ class _AdminShiftScreenState extends State<AdminShiftScreen>
     if (count == 0) return const SizedBox.shrink();
     return Container(
       margin: const EdgeInsets.only(right: 12),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
         color: color.withOpacity(0.08),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: color.withOpacity(0.2)),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color.withOpacity(0.15)),
       ),
       child: Row(
         children: [
@@ -681,11 +1004,11 @@ class _AdminShiftScreenState extends State<AdminShiftScreen>
       },
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        margin: const EdgeInsets.only(right: 10),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        margin: const EdgeInsets.only(right: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         decoration: BoxDecoration(
           color: isSelected ? color : Colors.grey.shade50,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: isSelected ? color : Colors.grey.shade200,
             width: 1.5,
@@ -746,40 +1069,111 @@ class _AdminShiftScreenState extends State<AdminShiftScreen>
     );
   }
 
-  void _showPlotMassalDialog(dynamic emp) async {
-    DateTimeRange? range = await showDateRangePicker(
+  void _showPlotMassalSheet({dynamic emp, bool isFromSelection = false}) async {
+    final isBulk = emp == null;
+    final targetEmpIds = isFromSelection
+        ? _selectedIds.toList()
+        : (isBulk
+              ? _employees.map((e) => e['id'].toString()).toList()
+              : [emp['id'].toString()]);
+
+    DateTimeRange? range = await showCustomDateRangePicker(
       context: context,
+      allowFuture: true,
       firstDate: DateTime.now().subtract(const Duration(days: 30)),
       lastDate: DateTime.now().add(const Duration(days: 365)),
-      helpText: "Pilih Rentang Jadwal untuk ${emp['nama']}",
+      initialDateRange: DateTimeRange(
+        start: _selectedDate,
+        end: _selectedDate.add(const Duration(days: 6)),
+      ),
     );
 
     if (range == null) return;
 
-    String? selectedShift;
+    if (!mounted) return;
 
-    // Show Shift Picker Dialog
-    selectedShift = await showDialog<String>(
+    // SHOW MODERN BOTTOM SHEET FOR SHIFT PICKER
+    String? selectedShift = await showModalBottomSheet<String>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text("Pilih Shift Massal"),
-        content: Column(
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) => Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
+        ),
+        padding: const EdgeInsets.all(24),
+        child: Column(
           mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              "Pilih shift yang akan diterapkan pada rentang tanggal terpilih:",
-            ),
-            const SizedBox(height: 16),
-            ...["OFF", ..._shifts.map((s) => s['id'].toString())].map(
-              (sid) => ListTile(
-                title: Text(sid == "OFF" ? "LIBUR (OFF)" : sid),
-                trailing: Icon(
-                  Icons.chevron_right_rounded,
-                  color: context.primaryColor,
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade300,
+                  borderRadius: BorderRadius.circular(2),
                 ),
-                onTap: () => Navigator.pop(context, sid == "OFF" ? "" : sid),
               ),
             ),
+            const SizedBox(height: 24),
+            Text(
+              "Pilih Shift",
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w900,
+                color: Colors.grey.shade900,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              isFromSelection
+                  ? "Pilih shift untuk ${targetEmpIds.length} karyawan terpilih."
+                  : (isBulk
+                        ? "Pilih shift untuk semua karyawan pada rentang ini."
+                        : "Pilih shift untuk ${emp['nama']} pada rentang ini."),
+              style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
+            ),
+            const SizedBox(height: 24),
+            // OPTIONS
+            ...["OFF", ..._shifts.map((s) => s['id'].toString())].map((sid) {
+              final isOff = sid == "OFF";
+              final color = _getShiftColor(sid);
+              return Container(
+                margin: const EdgeInsets.only(bottom: 12),
+                child: ListTile(
+                  onTap: () => Navigator.pop(context, isOff ? "" : sid),
+                  leading: Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: color.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(
+                      isOff ? Icons.beach_access_rounded : Icons.timer_rounded,
+                      color: color,
+                    ),
+                  ),
+                  title: Text(
+                    isOff ? "LIBUR (OFF)" : "Shift $sid",
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 15,
+                    ),
+                  ),
+                  trailing: Icon(
+                    Icons.chevron_right_rounded,
+                    color: Colors.grey.shade400,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    side: BorderSide(color: Colors.grey.shade100),
+                  ),
+                ),
+              );
+            }),
+            const SizedBox(height: 20),
           ],
         ),
       ),
@@ -789,15 +1183,20 @@ class _AdminShiftScreenState extends State<AdminShiftScreen>
 
     // Apply to local state
     setState(() {
+      final updatedPlotting = Map<String, dynamic>.from(_plotting);
       DateTime current = range.start;
       while (current.isBefore(range.end) ||
           current.isAtSameMomentAs(range.end)) {
         final dateStr = DateFormat('yyyy-MM-dd').format(current);
-        final key = dateStr + "_" + emp['id'].toString();
-        _plotting[key] = selectedShift;
+
+        for (var eid in targetEmpIds) {
+          final key = dateStr + "_" + eid;
+          updatedPlotting[key] = selectedShift;
+          _dirtyIds.add(eid);
+        }
         current = current.add(const Duration(days: 1));
       }
-      _dirtyIds.add(emp['id'].toString());
+      _plotting = updatedPlotting;
     });
   }
 
@@ -814,8 +1213,104 @@ class _AdminShiftScreenState extends State<AdminShiftScreen>
   }
 
   void _saveBatchPlotting() async {
-    setState(() => _isLoading = true);
+    // 1. REVIEW CHANGES DIALOG
     final dateStr = DateFormat('yyyy-MM-dd').format(_selectedDate);
+    final bool? confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(28),
+          ),
+          title: const Text(
+            "Tinjau Perubahan",
+            style: TextStyle(fontWeight: FontWeight.w900),
+          ),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "Anda akan menyimpan ${_dirtyIds.length} perubahan jadwal pada tanggal $dateStr.",
+                  style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
+                ),
+                const SizedBox(height: 16),
+                Flexible(
+                  child: ListView.builder(
+                    shrinkWrap: true,
+                    itemCount: _dirtyIds.length,
+                    itemBuilder: (context, index) {
+                      final eid = _dirtyIds.elementAt(index);
+                      final emp = _employees.firstWhere(
+                        (e) => e['id'].toString() == eid,
+                        orElse: () => {'nama': 'Karyawan $eid'},
+                      );
+                      final key = dateStr + "_" + eid;
+                      final sid = _plotting[key] ?? "";
+                      final color = _getShiftColor(sid);
+
+                      return ListTile(
+                        dense: true,
+                        contentPadding: EdgeInsets.zero,
+                        leading: CircleAvatar(
+                          radius: 12,
+                          backgroundColor: color.withOpacity(0.1),
+                          child: Text(
+                            emp['nama'][0],
+                            style: TextStyle(color: color, fontSize: 10),
+                          ),
+                        ),
+                        title: Text(
+                          emp['nama'],
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        trailing: Text(
+                          sid == "" ? "LIBUR" : "Shift $sid",
+                          style: TextStyle(
+                            color: color,
+                            fontWeight: FontWeight.w900,
+                            fontSize: 10,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text(
+                "Kembali",
+                style: TextStyle(color: Colors.grey),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(context, true),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF16A34A),
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: const Text("Simpan Sekarang"),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirm != true) return;
+
+    setState(() => _isLoading = true);
     final auth = context.read<AuthProvider>();
 
     List<Map<String, dynamic>> batch = [];
@@ -1158,5 +1653,56 @@ class _AdminShiftScreenState extends State<AdminShiftScreen>
         ),
       ),
     );
+  }
+
+  // ADVANCED FILTERING HELPERS
+  bool _matchesFilters(Map<String, dynamic> emp) {
+    final dateStr = DateFormat('yyyy-MM-dd').format(_selectedDate);
+    final matchSearch =
+        emp['nama'].toString().toLowerCase().contains(
+          _searchQuery.toLowerCase(),
+        ) ||
+        emp['id'].toString().toLowerCase().contains(_searchQuery.toLowerCase());
+
+    if (!matchSearch) return false;
+
+    // Filter by shift
+    final key = dateStr + "_" + emp['id'].toString();
+    final currentShift = _plotting[key] ?? "";
+
+    if (_selectedShiftFilter == "All") return true;
+    if (_selectedShiftFilter == "Unassigned") return currentShift == "";
+    return currentShift == _selectedShiftFilter;
+  }
+
+  Widget _buildFilterChip(String label, String val) {
+    final isSelected = _selectedShiftFilter == val;
+    return GestureDetector(
+      onTap: () => setState(() => _selectedShiftFilter = val),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        margin: const EdgeInsets.only(right: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: isSelected ? context.primaryColor : Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isSelected ? context.primaryColor : Colors.grey.shade200,
+          ),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: isSelected ? Colors.white : Colors.grey.shade700,
+            fontSize: 10,
+            fontWeight: isSelected ? FontWeight.w900 : FontWeight.bold,
+          ),
+        ),
+      ),
+    );
+  }
+
+  List<dynamic> _getFilteredEmployees() {
+    return _employees.where((e) => _matchesFilters(e)).toList();
   }
 }
