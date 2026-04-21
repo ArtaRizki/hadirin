@@ -252,6 +252,94 @@ function getDashboardDataWeb(clientId, id) {
 }
 
 /**
+ * ABSENSI HARI INI — ADMIN VIEW (Web & Mobile)
+ * Menggabungkan Master_Karyawan + Log_Absensi hari ini
+ * Return: array per anggota { id, nama, bagian, masuk, pulang, status_masuk, status_pulang, tipe_izin, status_absen }
+ */
+function getTodayAttendanceAdmin(clientId) {
+  try {
+    var allConfigs = getSemuaConfig();
+    var lookupId = String(clientId || "").trim().toUpperCase();
+    var config = allConfigs[lookupId];
+    if (!config) throw new Error("Config not found for: " + lookupId);
+
+    var ss = SpreadsheetApp.openById(config.spreadsheetId);
+    var todayStr = Utilities.formatDate(new Date(), "GMT+7", "yyyy-MM-dd");
+
+    // 1. Kumpulkan semua karyawan
+    var employees = ss.getSheetByName("Master_Karyawan").getDataRange().getValues();
+    var result = [];
+    var empMap = {}; // id_lower -> index in result
+
+    for (var i = 1; i < employees.length; i++) {
+      if (employees[i][0] === "" || employees[i][0] === null) continue;
+      var emp = {
+        id: String(employees[i][0]),
+        nama: String(employees[i][1] || "-"),
+        bagian: String(employees[i][2] || "-"),
+        masuk: null,
+        pulang: null,
+        status_masuk: null,
+        status_pulang: null,
+        tipe_izin: null,
+        status_absen: "Belum Absen"
+      };
+      empMap[emp.id.toLowerCase()] = result.length;
+      result.push(emp);
+    }
+
+    // 2. Proses Log_Absensi hari ini
+    var logs = ss.getSheetByName("Log_Absensi").getDataRange().getValues();
+    for (var j = 1; j < logs.length; j++) {
+      var logWaktu = logs[j][0];
+      if (!logWaktu) continue;
+
+      // Ambil string tanggal dari log (Date object atau string)
+      var logDateStr = (logWaktu instanceof Date)
+        ? Utilities.formatDate(logWaktu, "GMT+7", "yyyy-MM-dd")
+        : String(logWaktu).substring(0, 10);
+
+      if (logDateStr !== todayStr) continue;
+
+      var logId = String(logs[j][1] || "").trim().toLowerCase();
+      var logTipe = String(logs[j][2] || "");
+      var logStatus = String(logs[j][6] || "");
+      var logJam = (logWaktu instanceof Date)
+        ? Utilities.formatDate(logWaktu, "GMT+7", "HH:mm")
+        : String(logWaktu).substring(11, 16);
+
+      if (!(logId in empMap)) continue;
+      var idx = empMap[logId];
+
+      if (logTipe === "Masuk") {
+        result[idx].masuk = logJam;
+        result[idx].status_masuk = logStatus;
+        result[idx].status_absen = logStatus.startsWith("TL") ? "Terlambat" : "Hadir";
+      } else if (logTipe === "Pulang") {
+        result[idx].pulang = logJam;
+        result[idx].status_pulang = logStatus;
+      } else if (["Izin", "Sakit", "Cuti"].indexOf(logTipe) !== -1) {
+        result[idx].tipe_izin = logTipe;
+        result[idx].status_absen = logTipe;
+      }
+    }
+
+    return result;
+  } catch (e) {
+    return [{ error: e.toString() }];
+  }
+}
+
+/**
+ * HANDLER MOBILE: get_today_attendance
+ */
+function handleGetTodayAttendance(payload) {
+  var clientId = String(payload.client_id || "").trim().toUpperCase();
+  var results = getTodayAttendanceAdmin(clientId);
+  return responseJSON(200, "success", results);
+}
+
+/**
  * AMBIL RIWAYAT ABSENSI (Web)
  */
 function getAttendanceHistory(clientId, id) {
@@ -279,22 +367,24 @@ function getAttendanceHistory(clientId, id) {
 
     var data = sheet.getDataRange().getValues();
     var history = [];
+    // Riwayat Absen selalu filter berdasarkan ID pengguna sendiri (bukan semua data)
     var searchId = String(id || "").trim().toLowerCase();
-    var clientIdUpper = String(clientId || "").trim().toUpperCase();
-    var allConfigs = getSemuaConfig();
-    var config = allConfigs[clientIdUpper];
-    
-    // Admin check: if ID matches clientId OR is string "admin", they see all logs
-    var isAdmin = searchId === "admin" || searchId === clientId.toLowerCase();
 
     for (var i = data.length - 1; i >= 1; i--) {
       var rawId = data[i][1];
       var rowId = (rawId === null || rawId === undefined) ? "" : String(rawId).trim().toLowerCase();
       
-      if (rowId === searchId || isAdmin) {
+      if (rowId === searchId) {
+        // Convert Date objects to string - google.script.run cannot serialize Date objects
+        var waktu = data[i][0];
+        if (waktu instanceof Date) {
+          waktu = Utilities.formatDate(waktu, "GMT+7", "yyyy-MM-dd HH:mm:ss");
+        } else {
+          waktu = String(waktu || "");
+        }
         history.push({
           id: i,
-          waktu: data[i][0],
+          waktu: waktu,
           tipe: data[i][2] || "-",
           status: data[i][6] || "Tepat Waktu",
           keterangan: data[i][5] || "-"
@@ -303,7 +393,7 @@ function getAttendanceHistory(clientId, id) {
       }
     }
 
-    return history; // Return empty array if not found, not an error object
+    return history;
   } catch (e) {
     console.error("getAttendanceHistory Error: " + e.toString());
     return [{ error: e.toString() }];
@@ -410,6 +500,8 @@ function doPost(e) {
         return handleGetMonthlyReport(payload);
       case "delete_karyawan":
         return responseJSON(200, "success", handleDeleteKaryawan(payload));
+      case "get_today_attendance":
+        return handleGetTodayAttendance(payload);
       default:
         return responseJSON(400, "error", "Action Unknown.");
     }
@@ -965,22 +1057,11 @@ function handleGetOfficeConfig(payload) {
     lat: rawData[1],
     lng: rawData[2],
     radius: rawData[3] || config.radius,
-    jam_masuk_mulai: formatTime(
-      schedule ? schedule.masuk : rawData[4],
-      "04:00",
-    ),
-    batas_jam_masuk: formatTime(
-      schedule ? schedule.masuk : rawData[5],
-      "07:00",
-    ),
-    jam_pulang_mulai: formatTime(
-      schedule ? schedule.pulang : rawData[6],
-      "13:00",
-    ),
+    jam_masuk_mulai: formatTime(rawData[4], "04:00"),
+    batas_jam_masuk: formatTime(rawData[5], "07:00"),
+    jam_pulang_mulai: formatTime(rawData[6], "13:00"),
     tl_interval: parseInt(rawData[7]) || 30,
     max_tier: parseInt(rawData[8]) || 0,
-    shift_name: schedule ? schedule.shift_name || "Normal" : "Normal",
-    is_off: schedule ? schedule.is_off : false,
   });
 }
 
@@ -1232,8 +1313,6 @@ function savePlottingAssignments(clientId, plottingList) {
       if (row) {
         if (p.id_shift === "") {
           // Delete if empty
-          // Optimization: Keep rows for now or delete if needed.
-          // We'll just update it to "S1" or keep it.
           sheet.getRange(row, 4).setValue(p.id_shift);
         } else {
           sheet.getRange(row, 4).setValue(p.id_shift);

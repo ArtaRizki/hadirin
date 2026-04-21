@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:hadirin/core/providers/auth_provider.dart';
 import 'package:hadirin/core/service/attendance_service.dart';
@@ -6,6 +7,7 @@ import 'package:hadirin/core/service/admin_service.dart';
 import 'package:hadirin/core/service/notification_service.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:hadirin/ui/screens/profile_screen.dart';
+import 'package:hadirin/ui/screens/today_attendance_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:hadirin/core/theme/fluid_theme.dart';
 import 'package:intl/intl.dart';
@@ -772,6 +774,78 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                         ),
                       ),
                     ],
+
+                    // --- ADMIN SHORTCUT: ABSENSI HARI INI ---
+                    if (auth.isAdmin) ...[
+                      const SizedBox(height: 20),
+                      GestureDetector(
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const TodayAttendanceScreen(),
+                          ),
+                        ),
+                        child: Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(20),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(20),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.04),
+                                blurRadius: 10,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(10),
+                                decoration: BoxDecoration(
+                                  color: context.primaryColor.withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Icon(
+                                  Icons.assessment_rounded,
+                                  color: context.primaryColor,
+                                  size: 24,
+                                ),
+                              ),
+                              const SizedBox(width: 16),
+                              const Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      "Absensi Hari Ini",
+                                      style: TextStyle(
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.w800,
+                                        color: Color(0xFF0F172A),
+                                      ),
+                                    ),
+                                    Text(
+                                      "Pantau kehadiran anggota hari ini",
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: Colors.grey,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Icon(
+                                Icons.chevron_right_rounded,
+                                color: Colors.grey.shade400,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+
                     const SizedBox(height: 24),
                   ],
                 ),

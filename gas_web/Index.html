@@ -1,527 +1,629 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <base target="_top">
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hadir.in Dashboard</title>
-    <!-- PWA & Mobile Meta -->
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="Hadir.in">
-    <meta name="theme-color" content="#005147">
-    <link rel="apple-touch-icon" href="https://via.placeholder.com/180/005147/ffffff?text=H">
-    <!-- Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-    <!-- Lucide Icons (CDN) -->
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <!-- Chart.js (CDN) -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- Face API (CDN) -->
-    <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
-    <!-- SweetAlert2 (CDN) -->
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <!-- SheetJS (Excel) -->
-    <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
-    
-    <?!= include('styles'); ?>
-  </head>
-  <body>
-    <!-- LOGIN SCREEN -->
-    <div id="login-screen">
-      <div class="card glass login-card">
-        <div class="logo">Hadir.in</div>
-        <p style="color: var(--text-muted); margin-bottom: 30px; font-weight: 500;">Silakan masukkan detail akun untuk mengakses dashboard.</p>
-        
-        <div class="input-group">
-          <label>Kode Instansi (Client ID)</label>
-          <input type="text" id="login-client-id" placeholder="CONTOH: INST-123456">
-        </div>
-        
-        <div class="input-group">
-          <label>ID Anggota</label>
-          <input type="text" id="login-id" placeholder="Masukkan ID">
-        </div>
 
-        <div id="admin-password-group" class="input-group" style="display: none;">
-          <label>Password Super Admin</label>
-          <input type="password" id="login-password" placeholder="••••••••">
-        </div>
-        
-        <button class="btn btn-primary" style="width: 100%; margin-top: 10px;" onclick="handleLogin()">
-          Masuk Dashboard
-        </button>
-        
-        <div id="login-error" style="color: #ef4444; font-size: 0.85rem; margin-top: 15px; display: none; font-weight: 600;">
-          Data tidak ditemukan. Silakan periksa kembali.
-        </div>
+<head>
+  <base target="_top">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hadir.in Dashboard</title>
+  <!-- PWA & Mobile Meta -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Hadir.in">
+  <meta name="theme-color" content="#005147">
+  <link rel="apple-touch-icon" href="https://via.placeholder.com/180/005147/ffffff?text=H">
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap"
+    rel="stylesheet">
+  <!-- Lucide Icons (CDN) -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Chart.js (CDN) -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Face API (CDN) -->
+  <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+  <!-- SweetAlert2 (CDN) -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <!-- SheetJS (Excel) -->
+  <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+
+  <?!= include('styles'); ?>
+</head>
+
+<body>
+  <!-- LOGIN SCREEN -->
+  <div id="login-screen">
+    <div class="card glass login-card">
+      <div class="logo">Hadir.in</div>
+      <p style="color: var(--text-muted); margin-bottom: 30px; font-weight: 500;">Silakan masukkan detail akun untuk
+        mengakses dashboard.</p>
+
+      <div class="input-group">
+        <label>Kode Instansi (Client ID)</label>
+        <input type="text" id="login-client-id" placeholder="CONTOH: INST-123456">
+      </div>
+
+      <div class="input-group">
+        <label>ID Anggota</label>
+        <input type="text" id="login-id" placeholder="Masukkan ID">
+      </div>
+
+      <div id="admin-password-group" class="input-group" style="display: none;">
+        <label>Password Super Admin</label>
+        <input type="password" id="login-password" placeholder="••••••••">
+      </div>
+
+      <button class="btn btn-primary" style="width: 100%; margin-top: 10px;" onclick="handleLogin()">
+        Masuk Dashboard
+      </button>
+
+      <div id="login-error"
+        style="color: #ef4444; font-size: 0.85rem; margin-top: 15px; display: none; font-weight: 600;">
+        Data tidak ditemukan. Silakan periksa kembali.
       </div>
     </div>
+  </div>
 
-    <!-- MAIN DASHBOARD -->
-    <div id="app-container" style="display: none;">
-      <!-- MOBILE HEADER -->
-      <header class="mobile-header">
-        <div class="logo" style="font-size: 1.2rem; margin-bottom: 0;">Hadir.in</div>
-      </header>
-      
-      <!-- SIDEBAR -->
-      <aside id="sidebar" class="glass">
-        <div class="logo" style="font-size: 1.5rem; margin-bottom: 40px; text-align: left;">Hadir.in</div>
-        
-        <nav style="flex: 1;">
-          <a class="nav-item active" onclick="switchView('dashboard')">
-            <i data-lucide="layout-dashboard"></i>
-            <span>Dashboard</span>
-          </a>
-          <a class="nav-item" onclick="switchView('history')">
-            <i data-lucide="calendar"></i>
-            <span>Riwayat Absen</span>
-          </a>
-          
-          <div id="admin-section" style="display: none; flex-direction: column;">
-            <div style="font-size: 0.7rem; font-weight: 800; color: var(--text-muted); margin: 24px 0 12px 12px; text-transform: uppercase; letter-spacing: 1px;">Admin Area</div>
-            <a class="nav-item" onclick="switchView('members')" style="display: flex;">
-              <i data-lucide="users"></i>
-              <span>Data Anggota</span>
-            </a>
-            <a class="nav-item" onclick="switchView('approvals')" style="display: flex;">
-              <i data-lucide="check-square"></i>
-              <span>Persetujuan Izin</span>
-            </a>
-            <a class="nav-item" onclick="switchView('shifts')" style="display: flex;">
-              <i data-lucide="calendar-days"></i>
-              <span>Plotting Shift</span>
-            </a>
-            <a class="nav-item" onclick="switchView('reports')" style="display: flex;">
-              <i data-lucide="file-text"></i>
-              <span>Laporan Absensi</span>
-            </a>
-            <a class="nav-item" onclick="switchView('settings')" style="display: flex;">
-              <i data-lucide="settings"></i>
-              <span>Setelan Kantor</span>
-            </a>
-          </div>
-        </nav>
-        
-        <div class="user-info" style="margin-top: auto; padding: 20px 0; border-top: 1px solid var(--glass-border);">
-          <div style="display: flex; align-items: center; gap: 12px;">
-            <div style="width: 44px; height: 44px; border-radius: 14px; background: var(--primary-gradient); display: flex; align-items: center; justify-content: center; color: white;">
-              <i data-lucide="user"></i>
-            </div>
-            <div style="overflow: hidden;">
-              <div id="user-name" style="font-weight: 800; font-size: 0.95rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text-main);">User Name</div>
-              <div id="user-id-display" style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600;">ID: 12345</div>
-            </div>
-          </div>
-          <button class="btn" id="btn-re-register-face" style="display: none; width: 100%; margin-top: 10px; background: rgba(124, 58, 237, 0.05); color: var(--primary); font-size: 0.85rem; padding: 12px;" onclick="startReRegisterFace()">
-            <i data-lucide="face-id" style="width: 16px;"></i> Update Wajah Web
-          </button>
-          <button class="btn" style="width: 100%; margin-top: 10px; color: #ef4444; background: rgba(239, 68, 68, 0.05); font-size: 0.85rem; padding: 12px;" onclick="handleLogout()">
-            <i data-lucide="log-out" style="width: 16px;"></i> Keluar
-          </button>
-        </div>
-      </aside>
+  <!-- MAIN DASHBOARD -->
+  <div id="app-container" style="display: none;">
+    <!-- MOBILE HEADER -->
+    <header class="mobile-header">
+      <div class="logo" style="font-size: 1.2rem; margin-bottom: 0;">Hadir.in</div>
+    </header>
 
-      <!-- MAIN CONTENT -->
-      <main id="main-content">
-        <!-- Dashboard View -->
-        <div id="view-dashboard" class="content-view">
-          <header style="margin-bottom: 40px;">
-            <h1 style="font-size: 2.2rem; font-weight: 900; letter-spacing: -1px;">Dashboard Kehadiran</h1>
-            <p style="color: var(--text-muted); font-weight: 500;">Pantau ringkasan aktivitas absensi hari ini.</p>
-          </header>
+    <!-- SIDEBAR -->
+    <aside id="sidebar" class="glass">
+      <div class="logo" style="font-size: 1.5rem; margin-bottom: 40px; text-align: left;">Hadir.in</div>
 
-          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 24px; margin-bottom: 40px;">
-            <div class="card stat-card">
-              <span class="stat-label">Hadir Hari Ini</span>
-              <div class="stat-value" id="stat-present" style="color: #10B981;">0</div>
-            </div>
-            <div class="card stat-card" style="border-left-color: #F59E0B;">
-              <span class="stat-label">Izin / Sakit</span>
-              <div class="stat-value" id="stat-leave" style="color: #F59E0B;">0</div>
-            </div>
-            <div class="card stat-card" style="border-left-color: #EF4444;">
-              <span class="stat-label">Terlambat</span>
-              <div class="stat-value" id="stat-late" style="color: #EF4444;">0</div>
-            </div>
-          </div>
-          <!-- MEMBER ACTION SECTION (Hidden for Admins) -->
-          <div id="member-action-section" style="display: none; margin-bottom: 40px;">
-            <!-- TODAY'S SCHEDULE CARD -->
-            <div id="today-schedule-card" class="shift-info-display" style="display: none;">
-              <div>
-                <div class="shift-label">Shift Hari Ini</div>
-                <div id="display-shift-name" class="shift-name-text">Memuat...</div>
-                <div id="display-shift-time" class="shift-time-text">00:00 - 00:00</div>
-              </div>
-              <div style="text-align: right;">
-                <div class="shift-label">Status</div>
-                <div id="display-shift-status" style="font-weight: 800; font-size: 0.9rem;">AKTIF</div>
-              </div>
-            </div>
-
-            <div class="card glass">
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                <h2 style="font-size: 1.1rem; font-weight: 800; margin: 0;">Menu Absensi</h2>
-                <button class="btn" style="padding: 8px 16px; font-size: 0.75rem; background: rgba(124, 58, 237, 0.1); color: var(--primary);" onclick="openLeaveModal()">
-                  <i data-lucide="file-text" style="width: 14px;"></i> Ajukan Izin
-                </button>
-              </div>
-              <div class="member-actions">
-                <button class="btn-absen" onclick="handleWebAbsen('Masuk')">
-                  <i data-lucide="camera"></i>
-                  <span>Absen Masuk</span>
-                </button>
-                <button class="btn-absen pulang" onclick="handleWebAbsen('Pulang')">
-                  <i data-lucide="log-out"></i>
-                  <span>Absen Pulang</span>
-                </button>
-              </div>
-            </div>
-          </div>
-          <div class="card glass" style="margin-bottom: 40px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
-              <h2 style="font-size: 1.25rem; font-weight: 800;">Tren 7 Hari Terakhir</h2>
-              <div class="glass" style="padding: 6px 14px; font-size: 0.75rem; border-radius: 10px; color: var(--primary); font-weight: 700; background: rgba(124, 58, 237, 0.05);">Live Data</div>
-            </div>
-            <div style="height: 350px;">
-              <canvas id="attendanceChart"></canvas>
-            </div>
-          </div>
-        </div>
-
-        <!-- History View -->
-        <div id="view-history" class="content-view" style="display: none;">
-          <header style="margin-bottom: 40px;">
-            <h1 style="font-size: 2.2rem; font-weight: 900; letter-spacing: -1px;">Riwayat Absensi</h1>
-            <p style="color: var(--text-muted); font-weight: 500;">Daftar aktivitas masuk dan pulang Anda.</p>
-          </header>
-          
-          <div class="card glass">
-            <div class="table-container">
-              <table id="history-table">
-                <thead>
-                  <tr>
-                    <th>Waktu</th>
-                    <th>Tipe</th>
-                    <th>Status</th>
-                    <th>Keterangan</th>
-                  </tr>
-                </thead>
-                <tbody id="history-body"></tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-
-        <!-- Admin: Data Anggota -->
-        <div id="view-members" class="content-view" style="display: none;">
-          <header style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px;">
-            <div>
-              <h1 style="font-size: 2.2rem; font-weight: 900; letter-spacing: -1px;">Data Anggota</h1>
-              <p style="color: var(--text-muted); font-weight: 500;">Kelola daftar anggota instansi Anda.</p>
-            </div>
-            <button class="btn btn-primary" onclick="openAddMemberModal()">
-              <i data-lucide="plus"></i> Tambah Anggota
-            </button>
-          </header>
-          
-          <div class="card glass">
-            <div class="table-container">
-              <table>
-                <thead>
-                  <tr>
-                    <th>ID</th>
-                    <th>Nama</th>
-                    <th>Bagian</th>
-                    <th>Enrollment</th>
-                    <th>Aksi</th>
-                  </tr>
-                </thead>
-                <tbody id="members-body"></tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-
-        <!-- Admin: Persetujuan -->
-        <div id="view-approvals" class="content-view" style="display: none;">
-          <header style="margin-bottom: 40px;">
-            <h1 style="font-size: 2.2rem; font-weight: 900; letter-spacing: -1px;">Persetujuan Izin</h1>
-            <p style="color: var(--text-muted); font-weight: 500;">Proses pengajuan izin, sakit, dan cuti.</p>
-          </header>
-          <div id="approvals-list" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 24px;"></div>
-        </div>
-
-        <!-- Admin: Multi-Shift & Plotting -->
-        <div id="view-shifts" class="content-view" style="display: none;">
-          <header style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 40px;">
-            <div>
-              <h1 style="font-size: 2.2rem; font-weight: 900; letter-spacing: -1px;">Shift & Plotting</h1>
-              <p style="color: var(--text-muted); font-weight: 500;">Kelola jenis shift dan plotting jadwal karyawan.</p>
-            </div>
-            <div style="display: flex; gap: 12px;">
-               <input type="month" id="shift-month-picker" class="glass" style="padding: 10px 16px; border-radius: 12px; border: 1px solid var(--glass-border); font-weight: 600;">
-               <button class="btn btn-primary" onclick="saveActivePlotting()">
-                 <i data-lucide="save"></i> Simpan Plotting
-               </button>
-            </div>
-          </header>
-
-          <div style="display: flex; gap: 10px; margin-bottom: 24px;">
-            <button class="tab-btn active" onclick="switchShiftTab('calendar')">Kalender Plotting</button>
-            <button class="tab-btn" onclick="switchShiftTab('list')">Daftar Jenis Shift</button>
-          </div>
-
-          <!-- Tab: Calendar -->
-          <div id="shift-tab-calendar" class="card glass" style="padding: 0; overflow: hidden;">
-            <div class="calendar-wrapper">
-              <table id="shift-calendar-table" class="plotting-table">
-                <thead id="shift-calendar-head"></thead>
-                <tbody id="shift-calendar-body"></tbody>
-              </table>
-            </div>
-          </div>
-
-          <!-- Tab: List Shift -->
-          <div id="shift-tab-list" class="card glass" style="display: none;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
-              <h3 style="font-weight: 800;">Daftar Master Shift</h3>
-              <button class="btn" style="background: rgba(16, 185, 129, 0.1); color: #10B981;" onclick="addNewShiftRow()">
-                <i data-lucide="plus"></i> Tambah Shift
-              </button>
-            </div>
-            <div class="table-container">
-              <table>
-                <thead>
-                  <tr>
-                    <th>ID Shift</th>
-                    <th>Nama Shift</th>
-                    <th>Jam Masuk</th>
-                    <th>Jam Pulang</th>
-                    <th>Aksi</th>
-                  </tr>
-                </thead>
-                <tbody id="shift-list-body"></tbody>
-              </table>
-            </div>
-            <button class="btn btn-primary" style="margin-top: 20px; width: 100%;" onclick="saveShiftDefinitions()">Simpan Master Shift</button>
-          </div>
-        </div>
-
-        <!-- Admin: Laporan Absensi -->
-        <div id="view-reports" class="content-view" style="display: none;">
-          <header style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 40px;">
-            <div>
-              <h1 style="font-size: 2.2rem; font-weight: 900; letter-spacing: -1px;">Laporan Kehadiran</h1>
-              <p style="color: var(--text-muted); font-weight: 500;">Unduh ringkasan absensi per bulan.</p>
-            </div>
-            <div style="display: flex; gap: 12px;">
-               <input type="month" id="report-month-picker" class="glass" style="padding: 10px 16px; border-radius: 12px; border: 1px solid var(--glass-border); font-weight: 600;">
-               <button class="btn btn-primary" onclick="downloadReport()">
-                 <i data-lucide="download"></i> Download CSV
-               </button>
-            </div>
-          </header>
-          
-          <div class="card glass">
-            <div class="table-container">
-              <table id="report-table">
-                <thead>
-                  <tr>
-                    <th>Waktu</th>
-                    <th>ID</th>
-                    <th>Nama</th>
-                    <th>Tipe</th>
-                    <th>Status</th>
-                  </tr>
-                </thead>
-                <tbody id="report-body"></tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-
-        <!-- Admin: Setelan Kantor -->
-        <div id="view-settings" class="content-view" style="display: none;">
-          <header style="margin-bottom: 40px;">
-            <h1 style="font-size: 2.2rem; font-weight: 900; letter-spacing: -1px;">Setelan Kantor</h1>
-            <p style="color: var(--text-muted); font-weight: 500;">Konfigurasi lokasi dan aturan jam kerja.</p>
-          </header>
-
-          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 24px;">
-            <div class="card glass">
-              <h3 style="font-weight: 800; margin-bottom: 24px;">Lokasi & Radius</h3>
-              <div class="leave-form-group">
-                <label>Latitude</label>
-                <input type="text" id="set-lat" placeholder="-6.12345">
-              </div>
-              <div class="leave-form-group">
-                <label>Longitude</label>
-                <input type="text" id="set-lng" placeholder="106.12345">
-              </div>
-              <div class="leave-form-group">
-                <label>Radius Absensi (Meter)</label>
-                <input type="number" id="set-radius" placeholder="100">
-              </div>
-              <p style="font-size: 0.75rem; color: var(--text-muted); margin: 10px 0 20px;">* Dapatkan koordinat dari Google Maps.</p>
-              <button class="btn btn-primary" style="width: 100%;" onclick="saveOfficeLocation()">Simpan Lokasi</button>
-            </div>
-
-            <div class="card glass">
-              <h3 style="font-weight: 800; margin-bottom: 24px;">Aturan Jam Kerja</h3>
-              <div class="leave-form-group">
-                <label>Buka Absen Masuk</label>
-                <input type="time" id="set-jam-masuk">
-              </div>
-              <div class="leave-form-group">
-                <label>Batas Jam Masuk (TL)</label>
-                <input type="time" id="set-batas-masuk">
-              </div>
-              <div class="leave-form-group">
-                <label>Jam Pulang Mulai</label>
-                <input type="time" id="set-jam-pulang">
-              </div>
-              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-                <div class="leave-form-group">
-                  <label>Interval TL (Menit)</label>
-                  <input type="number" id="set-interval" value="30">
-                </div>
-                <div class="leave-form-group">
-                  <label>Max Tier (0=Unlimited)</label>
-                  <input type="number" id="set-max-tier" value="0">
-                </div>
-              </div>
-              <button class="btn btn-primary" style="width: 100%; margin-top: 10px;" onclick="saveWorkHours()">Simpan Jam Kerja</button>
-            </div>
-          </div>
-        </div>
-
-      </main>
-
-      <!-- BOTTOM NAVIGATION (Mobile Only) -->
-      <nav class="bottom-nav">
-        <a class="bottom-nav-item active" id="m-nav-dashboard" onclick="switchView('dashboard')">
+      <nav style="flex: 1;">
+        <a class="nav-item active" onclick="switchView('dashboard')">
           <i data-lucide="layout-dashboard"></i>
-          <span>Home</span>
+          <span>Dashboard</span>
         </a>
-        <a class="bottom-nav-item" id="m-nav-history" onclick="switchView('history')">
+        <a class="nav-item" onclick="switchView('history')">
           <i data-lucide="calendar"></i>
-          <span>Riwayat</span>
+          <span>Riwayat Absen</span>
         </a>
-        <div id="admin-mobile-nav" style="display: contents;">
-          <a class="bottom-nav-item" id="m-nav-members" onclick="switchView('members')">
-            <i data-lucide="users"></i>
-            <span>Anggota</span>
+
+        <div id="admin-section" style="display: none; flex-direction: column;">
+          <div
+            style="font-size: 0.7rem; font-weight: 800; color: var(--text-muted); margin: 24px 0 12px 12px; text-transform: uppercase; letter-spacing: 1px;">
+            Admin Area</div>
+          <a class="nav-item" onclick="switchView('today')" style="display: flex;">
+            <i data-lucide="monitor"></i>
+            <span>Absensi Hari Ini</span>
           </a>
-          <a class="bottom-nav-item" id="m-nav-approvals" onclick="switchView('approvals')">
+          <a class="nav-item" onclick="switchView('members')" style="display: flex;">
+            <i data-lucide="users"></i>
+            <span>Data Anggota</span>
+          </a>
+          <a class="nav-item" onclick="switchView('approvals')" style="display: flex;">
             <i data-lucide="check-square"></i>
-            <span>Izin</span>
+            <span>Persetujuan Izin</span>
+          </a>
+          <a class="nav-item" onclick="switchView('shifts')" style="display: flex;">
+            <i data-lucide="calendar-days"></i>
+            <span>Plotting Shift</span>
+          </a>
+          <a class="nav-item" onclick="switchView('reports')" style="display: flex;">
+            <i data-lucide="file-text"></i>
+            <span>Laporan Absensi</span>
+          </a>
+          <a class="nav-item" onclick="switchView('settings')" style="display: flex;">
+            <i data-lucide="settings"></i>
+            <span>Setelan Kantor</span>
           </a>
         </div>
       </nav>
-    </div>
 
-    <!-- HIDDEN CAMERA INPUT -->
-    <input type="file" id="camera-input" accept="image/*" capture="user" style="display: none;">
-
-    <!-- LEAVE MODAL -->
-    <div id="leave-modal" class="modal">
-      <div class="modal-content">
-        <h2 style="font-weight: 900; margin-bottom: 10px;">Ajukan Izin / Sakit</h2>
-        <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 25px;">Lengkapi data berikut untuk mengajukan izin.</p>
-        
-        <div class="leave-form-group">
-          <label>Jenis Pengajuan</label>
-          <select id="leave-type">
-            <option value="Izin">Izin</option>
-            <option value="Sakit">Sakit</option>
-            <option value="Cuti">Cuti</option>
-          </select>
-        </div>
-
-        <div class="leave-form-group">
-          <label>Rentang Tanggal (Contoh: 21 Apr - 22 Apr)</label>
-          <input type="text" id="leave-range" placeholder="Contoh: 21 April 2026">
-        </div>
-
-        <div class="leave-form-group">
-          <label>Alasan / Keterangan</label>
-          <textarea id="leave-reason" rows="3" placeholder="Tuliskan alasan Anda..."></textarea>
-        </div>
-
-        <div class="leave-form-group">
-          <label>Foto Bukti (Opsional)</label>
-          <div class="file-input-wrapper" onclick="document.getElementById('leave-file').click()">
-            <i data-lucide="upload-cloud" style="color: var(--text-muted); margin-bottom: 8px;"></i>
-            <span style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted);">Klik untuk ambil foto / upload</span>
-            <img id="leave-preview" class="file-preview">
+      <div class="user-info" style="margin-top: auto; padding: 20px 0; border-top: 1px solid var(--glass-border);">
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <div
+            style="width: 44px; height: 44px; border-radius: 14px; background: var(--primary-gradient); display: flex; align-items: center; justify-content: center; color: white;">
+            <i data-lucide="user"></i>
           </div>
-          <input type="file" id="leave-file" accept="image/*" capture="environment" style="display: none;" onchange="previewLeaveFile(event)">
+          <div style="overflow: hidden;">
+            <div id="user-name"
+              style="font-weight: 800; font-size: 0.95rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text-main);">
+              User Name</div>
+            <div id="user-id-display" style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600;">ID: 12345
+            </div>
+          </div>
         </div>
+        <button class="btn" id="btn-re-register-face"
+          style="display: none; width: 100%; margin-top: 10px; background: rgba(124, 58, 237, 0.05); color: var(--primary); font-size: 0.85rem; padding: 12px;"
+          onclick="startReRegisterFace()">
+          <i data-lucide="face-id" style="width: 16px;"></i> Update Wajah Web
+        </button>
+        <button class="btn"
+          style="width: 100%; margin-top: 10px; color: #ef4444; background: rgba(239, 68, 68, 0.05); font-size: 0.85rem; padding: 12px;"
+          onclick="handleLogout()">
+          <i data-lucide="log-out" style="width: 16px;"></i> Keluar
+        </button>
+      </div>
+    </aside>
 
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 30px;">
-          <button class="btn" style="background: #F1F5F9; color: var(--text-muted);" onclick="closeLeaveModal()">Batal</button>
-          <button class="btn btn-primary" id="btn-submit-leave" onclick="submitLeaveRequest()">Kirim Pengajuan</button>
+    <!-- MAIN CONTENT -->
+    <main id="main-content">
+      <!-- Dashboard View -->
+      <div id="view-dashboard" class="content-view">
+        <header style="margin-bottom: 40px;">
+          <h1 style="font-size: 2.2rem; font-weight: 900; letter-spacing: -1px;">Dashboard Kehadiran</h1>
+          <p style="color: var(--text-muted); font-weight: 500;">Pantau ringkasan aktivitas absensi hari ini.</p>
+        </header>
+
+        <div
+          style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 24px; margin-bottom: 40px;">
+          <div class="card stat-card">
+            <span class="stat-label">Hadir Hari Ini</span>
+            <div class="stat-value" id="stat-present" style="color: #10B981;">0</div>
+          </div>
+          <div class="card stat-card" style="border-left-color: #F59E0B;">
+            <span class="stat-label">Izin / Sakit</span>
+            <div class="stat-value" id="stat-leave" style="color: #F59E0B;">0</div>
+          </div>
+          <div class="card stat-card" style="border-left-color: #EF4444;">
+            <span class="stat-label">Terlambat</span>
+            <div class="stat-value" id="stat-late" style="color: #EF4444;">0</div>
+          </div>
+        </div>
+        <!-- MEMBER ACTION SECTION (Hidden for Admins) -->
+        <div id="member-action-section" style="display: none; margin-bottom: 40px;">
+          <!-- TODAY'S SCHEDULE CARD -->
+          <div id="today-schedule-card" class="shift-info-display" style="display: none;">
+            <div>
+              <div class="shift-label">Shift Hari Ini</div>
+              <div id="display-shift-name" class="shift-name-text">Memuat...</div>
+              <div id="display-shift-time" class="shift-time-text">00:00 - 00:00</div>
+            </div>
+            <div style="text-align: right;">
+              <div class="shift-label">Status</div>
+              <div id="display-shift-status" style="font-weight: 800; font-size: 0.9rem;">AKTIF</div>
+            </div>
+          </div>
+
+          <div class="card glass">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+              <h2 style="font-size: 1.1rem; font-weight: 800; margin: 0;">Menu Absensi</h2>
+              <button class="btn"
+                style="padding: 8px 16px; font-size: 0.75rem; background: rgba(124, 58, 237, 0.1); color: var(--primary);"
+                onclick="openLeaveModal()">
+                <i data-lucide="file-text" style="width: 14px;"></i> Ajukan Izin
+              </button>
+            </div>
+            <div class="member-actions">
+              <button class="btn-absen" onclick="handleWebAbsen('Masuk')">
+                <i data-lucide="camera"></i>
+                <span>Absen Masuk</span>
+              </button>
+              <button class="btn-absen pulang" onclick="handleWebAbsen('Pulang')">
+                <i data-lucide="log-out"></i>
+                <span>Absen Pulang</span>
+              </button>
+            </div>
+          </div>
+        </div>
+        <div class="card glass" style="margin-bottom: 40px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+            <h2 style="font-size: 1.25rem; font-weight: 800;">Tren 7 Hari Terakhir</h2>
+            <div class="glass"
+              style="padding: 6px 14px; font-size: 0.75rem; border-radius: 10px; color: var(--primary); font-weight: 700; background: rgba(124, 58, 237, 0.05);">
+              Live Data</div>
+          </div>
+          <div style="height: 350px;">
+            <canvas id="attendanceChart"></canvas>
+          </div>
         </div>
       </div>
-    </div>
 
-    <!-- ADD MEMBER MODAL -->
-    <div id="add-member-modal" class="modal">
-      <div class="modal-content">
-        <h2 style="font-weight: 900; margin-bottom: 10px;">Tambah Anggota Baru</h2>
-        <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 25px;">Masukkan detail anggota untuk didaftarkan.</p>
-        
-        <div class="leave-form-group">
-          <label>ID Anggota (Manual)</label>
-          <input type="text" id="add-m-id" placeholder="CONTOH: 0804">
-        </div>
-        <div class="leave-form-group">
-          <label>Nama Lengkap</label>
-          <input type="text" id="add-m-nama" placeholder="Masukkan Nama">
-        </div>
-        <div class="leave-form-group">
-          <label>Bagian / Divisi</label>
-          <input type="text" id="add-m-divisi" placeholder="Contoh: Guru / Staff">
-        </div>
-        <div class="leave-form-group">
-          <label>No. WhatsApp</label>
-          <input type="text" id="add-m-hp" placeholder="6281xxxx">
-        </div>
-        <div class="leave-form-group">
-          <label>Shift Default</label>
-          <select id="add-m-shift">
-            <option value="S1">Shift 1 (S1)</option>
-            <option value="S2">Shift 2 (S2)</option>
-            <option value="S3">Shift 3 (S3)</option>
-          </select>
-        </div>
+      <!-- History View -->
+      <div id="view-history" class="content-view" style="display: none;">
+        <header style="margin-bottom: 40px;">
+          <h1 style="font-size: 2.2rem; font-weight: 900; letter-spacing: -1px;">Riwayat Absensi</h1>
+          <p style="color: var(--text-muted); font-weight: 500;">Daftar aktivitas masuk dan pulang Anda.</p>
+        </header>
 
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 30px;">
-          <button class="btn" style="background: #F1F5F9; color: var(--text-muted);" onclick="closeAddMemberModal()">Batal</button>
-          <button class="btn btn-primary" id="btn-submit-add-m" onclick="submitAddMember()">Simpan Anggota</button>
+        <div class="card glass">
+          <div class="table-container">
+            <table id="history-table">
+              <thead>
+                <tr>
+                  <th>Waktu</th>
+                  <th>Tipe</th>
+                  <th>Status</th>
+                  <th>Keterangan</th>
+                </tr>
+              </thead>
+              <tbody id="history-body"></tbody>
+            </table>
+          </div>
         </div>
       </div>
-    </div>
 
-    <!-- LOADING OVERLAY -->
-    <div id="processing-overlay" class="modal" style="background: rgba(15, 23, 42, 0.8);">
-      <div class="modal-content" style="background: transparent; border: none; box-shadow: none;">
-        <div style="width: 80px; height: 80px; border: 4px solid rgba(255, 255, 255, 0.1); border-top-color: #10B981; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 20px;"></div>
-        <h2 id="processing-text" style="color: white; font-weight: 800;">Memproses Wajah...</h2>
-        <p style="color: rgba(255, 255, 255, 0.6); font-size: 0.9rem;">Mohon tunggu sebentar, AI sedang memverifikasi foto Anda.</p>
+      <!-- Admin: Absensi Hari Ini -->
+      <div id="view-today" class="content-view" style="display: none;">
+        <header style="margin-bottom: 30px;">
+          <h1 style="font-size: 2.2rem; font-weight: 900; letter-spacing: -1px;">Absensi Hari Ini</h1>
+          <p style="color: var(--text-muted); font-weight: 500;">Pantau kehadiran real-time seluruh anggota.</p>
+        </header>
+
+        <div
+          style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 30px;">
+          <div class="card glass" style="padding: 20px; text-align: center; border-left: 4px solid #16a34a;">
+            <div
+              style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); font-weight: 800; margin-bottom: 5px;">
+              Hadir</div>
+            <div id="today-h-count" style="font-size: 2rem; font-weight: 900; color: #16a34a;">0</div>
+          </div>
+          <div class="card glass" style="padding: 20px; text-align: center; border-left: 4px solid #d97706;">
+            <div
+              style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); font-weight: 800; margin-bottom: 5px;">
+              Terlambat</div>
+            <div id="today-t-count" style="font-size: 2rem; font-weight: 900; color: #d97706;">0</div>
+          </div>
+          <div class="card glass" style="padding: 20px; text-align: center; border-left: 4px solid #dc2626;">
+            <div
+              style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); font-weight: 800; margin-bottom: 5px;">
+              Belum Absen</div>
+            <div id="today-b-count" style="font-size: 2rem; font-weight: 900; color: #dc2626;">0</div>
+          </div>
+          <div class="card glass" style="padding: 20px; text-align: center; border-left: 4px solid #2563eb;">
+            <div
+              style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); font-weight: 800; margin-bottom: 5px;">
+              Izin/Sakit</div>
+            <div id="today-i-count" style="font-size: 2rem; font-weight: 900; color: #2563eb;">0</div>
+          </div>
+        </div>
+
+        <div class="card glass">
+          <div style="margin-bottom: 20px;">
+            <input type="text" id="today-search" placeholder="Cari nama atau bagian..."
+              style="width: 100%; max-width: 400px; padding: 12px 20px; border-radius: 12px; border: 1px solid rgba(0,0,0,0.1); outline: none;"
+              oninput="applyTodayFilter()">
+          </div>
+          <div class="table-container">
+            <table id="today-table">
+              <thead>
+                <tr>
+                  <th>Anggota</th>
+                  <th>Bagian</th>
+                  <th>Masuk</th>
+                  <th>Pulang</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="today-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Admin: Data Anggota -->
+      <div id="view-members" class="content-view" style="display: none;">
+        <header style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px;">
+          <div>
+            <h1 style="font-size: 2.2rem; font-weight: 900; letter-spacing: -1px;">Data Anggota</h1>
+            <p style="color: var(--text-muted); font-weight: 500;">Kelola daftar anggota instansi Anda.</p>
+          </div>
+          <button class="btn btn-primary" onclick="openAddMemberModal()">
+            <i data-lucide="plus"></i> Tambah Anggota
+          </button>
+        </header>
+
+        <div class="card glass">
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Nama</th>
+                  <th>Bagian</th>
+                  <th>Enrollment</th>
+                  <th>Aksi</th>
+                </tr>
+              </thead>
+              <tbody id="members-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Admin: Persetujuan -->
+      <div id="view-approvals" class="content-view" style="display: none;">
+        <header style="margin-bottom: 40px;">
+          <h1 style="font-size: 2.2rem; font-weight: 900; letter-spacing: -1px;">Persetujuan Izin</h1>
+          <p style="color: var(--text-muted); font-weight: 500;">Proses pengajuan izin, sakit, dan cuti.</p>
+        </header>
+        <div id="approvals-list"
+          style="display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 24px;"></div>
+      </div>
+
+      <!-- Admin: Multi-Shift & Plotting -->
+      <div id="view-shifts" class="content-view" style="display: none;">
+        <header style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 40px;">
+          <div>
+            <h1 style="font-size: 2.2rem; font-weight: 900; letter-spacing: -1px;">Shift & Plotting</h1>
+            <p style="color: var(--text-muted); font-weight: 500;">Kelola jenis shift dan plotting jadwal karyawan.</p>
+          </div>
+          <div style="display: flex; gap: 12px;">
+            <input type="month" id="shift-month-picker" class="glass"
+              style="padding: 10px 16px; border-radius: 12px; border: 1px solid var(--glass-border); font-weight: 600;">
+            <button class="btn btn-primary" onclick="saveActivePlotting()">
+              <i data-lucide="save"></i> Simpan Plotting
+            </button>
+          </div>
+        </header>
+
+        <div style="display: flex; gap: 10px; margin-bottom: 24px;">
+          <button class="tab-btn active" onclick="switchShiftTab('calendar')">Kalender Plotting</button>
+          <button class="tab-btn" onclick="switchShiftTab('list')">Daftar Jenis Shift</button>
+        </div>
+
+        <!-- Tab: Calendar -->
+        <div id="shift-tab-calendar" class="card glass" style="padding: 0; overflow: hidden;">
+          <div class="calendar-wrapper">
+            <table id="shift-calendar-table" class="plotting-table">
+              <thead id="shift-calendar-head"></thead>
+              <tbody id="shift-calendar-body"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Tab: List Shift -->
+        <div id="shift-tab-list" class="card glass" style="display: none;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+            <h3 style="font-weight: 800;">Daftar Master Shift</h3>
+            <button class="btn" style="background: rgba(16, 185, 129, 0.1); color: #10B981;" onclick="addNewShiftRow()">
+              <i data-lucide="plus"></i> Tambah Shift
+            </button>
+          </div>
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>ID Shift</th>
+                  <th>Nama Shift</th>
+                  <th>Jam Masuk</th>
+                  <th>Jam Pulang</th>
+                  <th>Aksi</th>
+                </tr>
+              </thead>
+              <tbody id="shift-list-body"></tbody>
+            </table>
+          </div>
+          <button class="btn btn-primary" style="margin-top: 20px; width: 100%;" onclick="saveShiftDefinitions()">Simpan
+            Master Shift</button>
+        </div>
+      </div>
+
+      <!-- Admin: Laporan Absensi -->
+      <div id="view-reports" class="content-view" style="display: none;">
+        <header style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 40px;">
+          <div>
+            <h1 style="font-size: 2.2rem; font-weight: 900; letter-spacing: -1px;">Laporan Kehadiran</h1>
+            <p style="color: var(--text-muted); font-weight: 500;">Unduh ringkasan absensi per bulan.</p>
+          </div>
+          <div style="display: flex; gap: 12px;">
+            <input type="month" id="report-month-picker" class="glass"
+              style="padding: 10px 16px; border-radius: 12px; border: 1px solid var(--glass-border); font-weight: 600;">
+            <button class="btn btn-primary" onclick="downloadReport()">
+              <i data-lucide="download"></i> Download CSV
+            </button>
+          </div>
+        </header>
+
+        <div class="card glass">
+          <div class="table-container">
+            <table id="report-table">
+              <thead>
+                <tr>
+                  <th>Waktu</th>
+                  <th>ID</th>
+                  <th>Nama</th>
+                  <th>Tipe</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="report-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Admin: Setelan Kantor -->
+      <div id="view-settings" class="content-view" style="display: none;">
+        <header style="margin-bottom: 40px;">
+          <h1 style="font-size: 2.2rem; font-weight: 900; letter-spacing: -1px;">Setelan Kantor</h1>
+          <p style="color: var(--text-muted); font-weight: 500;">Konfigurasi lokasi dan aturan jam kerja.</p>
+        </header>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 24px;">
+          <div class="card glass">
+            <h3 style="font-weight: 800; margin-bottom: 24px;">Lokasi & Radius</h3>
+            <div class="leave-form-group">
+              <label>Latitude</label>
+              <input type="text" id="set-lat" placeholder="-6.12345">
+            </div>
+            <div class="leave-form-group">
+              <label>Longitude</label>
+              <input type="text" id="set-lng" placeholder="106.12345">
+            </div>
+            <div class="leave-form-group">
+              <label>Radius Absensi (Meter)</label>
+              <input type="number" id="set-radius" placeholder="100">
+            </div>
+            <p style="font-size: 0.75rem; color: var(--text-muted); margin: 10px 0 20px;">* Dapatkan koordinat dari
+              Google Maps.</p>
+            <button class="btn btn-primary" style="width: 100%;" onclick="saveOfficeLocation()">Simpan Lokasi</button>
+          </div>
+
+          <div class="card glass">
+            <h3 style="font-weight: 800; margin-bottom: 24px;">Aturan Jam Kerja</h3>
+            <div class="leave-form-group">
+              <label>Buka Absen Masuk</label>
+              <input type="time" id="set-jam-masuk">
+            </div>
+            <div class="leave-form-group">
+              <label>Batas Jam Masuk (TL)</label>
+              <input type="time" id="set-batas-masuk">
+            </div>
+            <div class="leave-form-group">
+              <label>Jam Pulang Mulai</label>
+              <input type="time" id="set-jam-pulang">
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+              <div class="leave-form-group">
+                <label>Interval TL (Menit)</label>
+                <input type="number" id="set-interval" value="30">
+              </div>
+              <div class="leave-form-group">
+                <label>Max Tier (0=Unlimited)</label>
+                <input type="number" id="set-max-tier" value="0">
+              </div>
+            </div>
+            <button class="btn btn-primary" style="width: 100%; margin-top: 10px;" onclick="saveWorkHours()">Simpan Jam
+              Kerja</button>
+          </div>
+        </div>
+      </div>
+
+    </main>
+
+    <!-- BOTTOM NAVIGATION (Mobile Only) -->
+    <nav class="bottom-nav">
+      <a class="bottom-nav-item active" id="m-nav-dashboard" onclick="switchView('dashboard')">
+        <i data-lucide="layout-dashboard"></i>
+        <span>Home</span>
+      </a>
+      <a class="bottom-nav-item" id="m-nav-history" onclick="switchView('history')">
+        <i data-lucide="calendar"></i>
+        <span>Riwayat</span>
+      </a>
+      <div id="admin-mobile-nav" style="display: contents;">
+        <a class="bottom-nav-item" id="m-nav-members" onclick="switchView('members')">
+          <i data-lucide="users"></i>
+          <span>Anggota</span>
+        </a>
+        <a class="bottom-nav-item" id="m-nav-approvals" onclick="switchView('approvals')">
+          <i data-lucide="check-square"></i>
+          <span>Izin</span>
+        </a>
+      </div>
+    </nav>
+  </div>
+
+  <!-- HIDDEN CAMERA INPUT -->
+  <input type="file" id="camera-input" accept="image/*" capture="user" style="display: none;">
+
+  <!-- LEAVE MODAL -->
+  <div id="leave-modal" class="modal">
+    <div class="modal-content">
+      <h2 style="font-weight: 900; margin-bottom: 10px;">Ajukan Izin / Sakit</h2>
+      <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 25px;">Lengkapi data berikut untuk
+        mengajukan izin.</p>
+
+      <div class="leave-form-group">
+        <label>Jenis Pengajuan</label>
+        <select id="leave-type">
+          <option value="Izin">Izin</option>
+          <option value="Sakit">Sakit</option>
+          <option value="Cuti">Cuti</option>
+        </select>
+      </div>
+
+      <div class="leave-form-group">
+        <label>Rentang Tanggal (Contoh: 21 Apr - 22 Apr)</label>
+        <input type="text" id="leave-range" placeholder="Contoh: 21 April 2026">
+      </div>
+
+      <div class="leave-form-group">
+        <label>Alasan / Keterangan</label>
+        <textarea id="leave-reason" rows="3" placeholder="Tuliskan alasan Anda..."></textarea>
+      </div>
+
+      <div class="leave-form-group">
+        <label>Foto Bukti (Opsional)</label>
+        <div class="file-input-wrapper" onclick="document.getElementById('leave-file').click()">
+          <i data-lucide="upload-cloud" style="color: var(--text-muted); margin-bottom: 8px;"></i>
+          <span style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted);">Klik untuk ambil foto /
+            upload</span>
+          <img id="leave-preview" class="file-preview">
+        </div>
+        <input type="file" id="leave-file" accept="image/*" capture="environment" style="display: none;"
+          onchange="previewLeaveFile(event)">
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 30px;">
+        <button class="btn" style="background: #F1F5F9; color: var(--text-muted);"
+          onclick="closeLeaveModal()">Batal</button>
+        <button class="btn btn-primary" id="btn-submit-leave" onclick="submitLeaveRequest()">Kirim Pengajuan</button>
       </div>
     </div>
+  </div>
 
-    <!-- SCRIPTS -->
-    <script>lucide.createIcons();</script>
-    <?!= include('scripts'); ?>
-  </body>
-  <style>
-    @keyframes spin { to { transform: rotate(360deg); } }
-  </style>
+  <!-- ADD MEMBER MODAL -->
+  <div id="add-member-modal" class="modal">
+    <div class="modal-content">
+      <h2 style="font-weight: 900; margin-bottom: 10px;">Tambah Anggota Baru</h2>
+      <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 25px;">Masukkan detail anggota untuk
+        didaftarkan.</p>
+
+      <div class="leave-form-group">
+        <label>ID Anggota (Manual)</label>
+        <input type="text" id="add-m-id" placeholder="CONTOH: 0804">
+      </div>
+      <div class="leave-form-group">
+        <label>Nama Lengkap</label>
+        <input type="text" id="add-m-nama" placeholder="Masukkan Nama">
+      </div>
+      <div class="leave-form-group">
+        <label>Bagian / Divisi</label>
+        <input type="text" id="add-m-divisi" placeholder="Contoh: Guru / Staff">
+      </div>
+      <div class="leave-form-group">
+        <label>No. WhatsApp</label>
+        <input type="text" id="add-m-hp" placeholder="6281xxxx">
+      </div>
+      <div class="leave-form-group">
+        <label>Shift Default</label>
+        <select id="add-m-shift">
+          <option value="S1">Shift 1 (S1)</option>
+          <option value="S2">Shift 2 (S2)</option>
+          <option value="S3">Shift 3 (S3)</option>
+        </select>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 30px;">
+        <button class="btn" style="background: #F1F5F9; color: var(--text-muted);"
+          onclick="closeAddMemberModal()">Batal</button>
+        <button class="btn btn-primary" id="btn-submit-add-m" onclick="submitAddMember()">Simpan Anggota</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- LOADING OVERLAY -->
+  <div id="processing-overlay" class="modal" style="background: rgba(15, 23, 42, 0.8);">
+    <div class="modal-content" style="background: transparent; border: none; box-shadow: none;">
+      <div
+        style="width: 80px; height: 80px; border: 4px solid rgba(255, 255, 255, 0.1); border-top-color: #10B981; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 20px;">
+      </div>
+      <h2 id="processing-text" style="color: white; font-weight: 800;">Memproses Wajah...</h2>
+      <p style="color: rgba(255, 255, 255, 0.6); font-size: 0.9rem;">Mohon tunggu sebentar, AI sedang memverifikasi foto
+        Anda.</p>
+    </div>
+  </div>
+
+  <!-- SCRIPTS -->
+  <script>lucide.createIcons();</script>
+  <?!= include('scripts'); ?>
+</body>
+<style>
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+</style>
+
 </html>

@@ -306,9 +306,10 @@ function doPost(e) {
       return responseJSON(401, "error", "Unauthorized.");
     const skipCheck = ["register_klien", "verify_super_admin"];
     if (skipCheck.indexOf(payload.action) === -1) {
-      var config = getSemuaConfig()[payload.client_id];
+      var lookupClientId = String(payload.client_id || "").trim().toUpperCase();
+      var config = getSemuaConfig()[lookupClientId];
       if (!config || !config.spreadsheetId)
-        return responseJSON(404, "error", "Kode Instansi tidak ditemukan.");
+        return responseJSON(404, "error", "Kode Instansi tidak ditemukan untuk ID: " + lookupClientId);
     }
     switch (payload.action) {
       case "absen":
@@ -413,7 +414,8 @@ function getSemuaConfig() {
       .getValues();
     var result = {};
     for (var i = 1; i < rows.length; i++) {
-      result[rows[i][0]] = {
+      var cid = String(rows[i][0]).trim().toUpperCase();
+      result[cid] = {
         spreadsheetId: rows[i][2],
         folderDriveId: rows[i][3],
         batasJam: rows[i][4],

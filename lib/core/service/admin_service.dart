@@ -476,4 +476,30 @@ class AdminService extends ApiClient {
       return {'success': false, 'message': e.toString()};
     }
   }
+
+  // =================================================================
+  // ABSENSI HARI INI (Admin View)
+  // =================================================================
+  Future<List<dynamic>> getTodayAttendance(String clientId) async {
+    try {
+      final payload = {
+        'api_token': AppConfig.apiToken,
+        'action': 'get_today_attendance',
+        'client_id': clientId,
+      };
+
+      final response = await sendRequest('get_today_attendance', payload);
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['code'] == 200) {
+          return data['message'] as List<dynamic>;
+        }
+        throw Exception(data['message']);
+      }
+      throw Exception('Gagal terhubung ke server.');
+    } catch (e) {
+      d.log('==== ERROR GET TODAY ATTENDANCE ==== $e');
+      throw Exception('Gagal mengambil data absensi hari ini: $e');
+    }
+  }
 }
