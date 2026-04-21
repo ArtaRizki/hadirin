@@ -48,6 +48,8 @@ class AdminService extends ApiClient {
     required String jamMasukMulai,
     required String batasJamMasuk,
     required String jamPulangMulai,
+    int tlInterval = 30,
+    int maxTier = 0,
   }) async {
     try {
       final payload = {
@@ -57,6 +59,8 @@ class AdminService extends ApiClient {
         'jam_masuk_mulai': jamMasukMulai,
         'batas_jam_masuk': batasJamMasuk,
         'jam_pulang_mulai': jamPulangMulai,
+        'tl_interval': tlInterval,
+        'max_tier': maxTier,
       };
 
       final response = await sendRequest('update_jam_kerja', payload);
@@ -85,7 +89,14 @@ class AdminService extends ApiClient {
       final response = await sendRequest('get_office_config', payload);
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        if (data['code'] == 200) return data['message'];
+        if (data['code'] == 200) {
+          final msg = data['message'];
+          return {
+            ...msg,
+            'tl_interval': int.tryParse(msg['tl_interval']?.toString() ?? "30") ?? 30,
+            'max_tier': int.tryParse(msg['max_tier']?.toString() ?? "0") ?? 0,
+          };
+        }
       }
       return null;
     } catch (e) {

@@ -59,15 +59,36 @@ function doPost(e) {
 function handleAbsensi(payload) {
     var config = getSemuaConfig()[payload.client_id];
     var ss = SpreadsheetApp.openById(config.spreadsheetId);
-    var configData = ss.getSheetByName("Config_Kantor").getRange("A2:G2").getValues()[0];
+    
+    // Default Schedule (Tanpa Shift)
+    var configData = ss.getSheetByName("Config_Kantor").getRange("A2:I2").getValues()[0];
+    var jamMasuk = configData[4] || "04:00";
+    var batasMasuk = configData[5] || "07:00";
+    var jamPulang = configData[6] || "13:00";
+    var interval = parseInt(configData[7]) || 30;
+    var maxTier = parseInt(configData[8]) || 0;
 
     var now = new Date();
     var currentMinutes = (parseInt(Utilities.formatDate(now, "GMT+7", "HH")) * 60) + parseInt(Utilities.formatDate(now, "GMT+7", "mm"));
 
-    var valBatas = (configData[5] !== "" && configData[5] !== undefined) ? configData[5] : config.batasJam;
-    var batasMinutes = toMinutes(valBatas);
-
-    var status = (currentMinutes >= batasMinutes && payload.tipe_absen === "Masuk") ? "Terlambat" : "Tepat Waktu";
+    var status = "Tepat Waktu";
+    if (payload.tipe_absen === "Masuk") {
+        var limitMasuk = toMinutes(batasMasuk);
+        if (currentMinutes > limitMasuk) {
+            var diff = currentMinutes - limitMasuk;
+            var tier = Math.ceil(diff / interval);
+            if (maxTier > 0 && tier > maxTier) tier = maxTier;
+            status = "TL" + tier;
+        }
+    } else if (payload.tipe_absen === "Pulang") {
+        var limitPulang = toMinutes(jamPulang);
+        if (currentMinutes < limitPulang) {
+            var diff = limitPulang - currentMinutes;
+            var tier = Math.ceil(diff / interval);
+            if (maxTier > 0 && tier > maxTier) tier = maxTier;
+            status = "PSW" + tier;
+        }
+    }
 
     var fotoUrl = "No Photo";
     if (payload.foto_base64 && payload.foto_base64.length > 0) {
@@ -92,7 +113,7 @@ function handleAbsensi(payload) {
         status
     ]);
 
-    return responseJSON(200, "success", "Berhasil.");
+    return responseJSON(200, "success", "Berhasil (" + status + ").");
 }
 
 function handleRegisterInstansi(payload) {
@@ -116,8 +137,8 @@ function handleRegisterInstansi(payload) {
 function handleUpdateJamKerja(payload) {
     var config = getSemuaConfig()[payload.client_id];
     if (!config) return responseJSON(404, "error", "Instansi tidak ditemukan.");
-    SpreadsheetApp.openById(config.spreadsheetId).getSheetByName("Config_Kantor").getRange("E2:G2").setValues([
-        [payload.jam_masuk_mulai, payload.batas_jam_masuk, payload.jam_pulang_mulai]
+    SpreadsheetApp.openById(config.spreadsheetId).getSheetByName("Config_Kantor").getRange("E2:I2").setValues([
+        [payload.jam_masuk_mulai, payload.batas_jam_masuk, payload.jam_pulang_mulai, payload.tl_interval || 30, payload.max_tier || 0]
     ]);
     return responseJSON(200, "success", "Jam kerja diperbarui.");
 }
@@ -125,7 +146,7 @@ function handleUpdateJamKerja(payload) {
 function handleGetOfficeConfig(payload) {
     var config = getSemuaConfig()[payload.client_id];
     if (!config) return responseJSON(404, "error", "Instansi tidak ditemukan.");
-    var data = SpreadsheetApp.openById(config.spreadsheetId).getSheetByName("Config_Kantor").getRange("A2:G2").getValues();
+    var data = SpreadsheetApp.openById(config.spreadsheetId).getSheetByName("Config_Kantor").getRange("A2:I2").getValues();
     return responseJSON(200, "success", {
         nama: data[0][0],
         lat: data[0][1],
@@ -133,27 +154,45 @@ function handleGetOfficeConfig(payload) {
         radius: data[0][3] || config.radius,
         jam_masuk_mulai: formatTime(data[0][4], "04:00"),
         batas_jam_masuk: formatTime(data[0][5], "07:00"),
-        jam_pulang_mulai: formatTime(data[0][6], "13:00")
+        jam_pulang_mulai: formatTime(data[0][6], "13:00"),
+        tl_interval: data[0][7] || 30,
+        max_tier: data[0][8] || 0
     });
 }
 
 function toMinutes(val) {
-    if (val === undefined || val === null || val === "") return 0;
-    if (typeof val === 'number') return val * 60;
-    var s = String(val);
-    if (s.indexOf(':') !== -1) {
-        var parts = s.split(':');
-        return (parseInt(parts[0]) * 60) + parseInt(parts[1]);
-    }
-    return parseInt(s) * 60;
+  if (val instanceof Date) {
+    return val.getHours() * 60 + val.getMinutes();
+  }
+  var s = String(val);
+  if (s.indexOf(":") !== -1) {
+    var p = s.split(":");
+    return parseInt(p[0]) * 60 + parseInt(p[1]);
+  }
+  return parseInt(s) * 60;
 }
 
 function formatTime(val, def) {
-    if (val === undefined || val === null || val === "") return def;
-    var s = String(val);
-    if (s.indexOf(':') !== -1) return s;
-    var h = parseInt(s);
-    return (h < 10 ? "0" + h : h) + ":00";
+  if (!val) return def;
+  if (val instanceof Date) {
+    return Utilities.formatDate(val, "GMT+7", "HH:mm");
+  }
+  var s = String(val);
+  if (s.indexOf(":") !== -1) {
+    // Handle ISO String: 2026-04-20T08:00:00.000Z
+    if (s.indexOf("T") !== -1) {
+      var parts = s.split("T");
+      return parts[parts.length - 1].substring(0, 5);
+    }
+    // Handle Long Date: Sat Dec 30 1899 08:00:00...
+    var match = s.match(/(\d{2}:\d{2})/);
+    if (match) return match[1];
+
+    return s.substring(0, 5);
+  }
+  var h = parseInt(s);
+  if (isNaN(h)) return def;
+  return (h < 10 ? "0" + h : h) + ":00";
 }
 
 function handleUpdateLokasi(payload) {
