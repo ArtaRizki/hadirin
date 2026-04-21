@@ -9,6 +9,8 @@ import 'package:hadirin/ui/screens/profile_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:hadirin/core/theme/fluid_theme.dart';
 import 'package:intl/intl.dart';
+import 'package:hadirin/core/service/school_service.dart';
+import 'package:hadirin/core/models/school_models.dart';
 
 class AttendanceScreen extends StatefulWidget {
   const AttendanceScreen({super.key});
@@ -21,6 +23,10 @@ class _AttendanceScreenState extends State<AttendanceScreen>
     with SingleTickerProviderStateMixin {
   bool _isLoading = false;
   final AttendanceService _attendanceService = AttendanceService();
+  final SchoolService _schoolService = SchoolService();
+
+  List<BannerModel> _banners = [];
+  bool _isBannersLoading = true;
 
   late Timer _timer;
   DateTime _currentTime = DateTime.now();
@@ -50,7 +56,23 @@ class _AttendanceScreenState extends State<AttendanceScreen>
 
     // Mulai pantau lokasi & fetch config jam
     _fetchOfficeConfig();
+    _fetchBanners();
     _startProximityListener();
+  }
+
+  Future<void> _fetchBanners() async {
+    try {
+      final auth = context.read<AuthProvider>();
+      final banners = await _schoolService.getBanners(auth.clientId ?? "");
+      if (mounted) {
+        setState(() {
+          _banners = banners;
+          _isBannersLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) setState(() => _isBannersLoading = false);
+    }
   }
 
   Future<void> _fetchOfficeConfig() async {
@@ -646,6 +668,12 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                       ),
                     ),
 
+                    // =================================================================
+                    // 1. BANNER PENGUMUMAN (DASHBOARD)
+                    // =================================================================
+                    const SizedBox(height: 24),
+                    _buildBannerSection(),
+
                     const Spacer(flex: 2),
 
                     // TOMBOL ABSEN
@@ -720,6 +748,111 @@ class _AttendanceScreenState extends State<AttendanceScreen>
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildBannerSection() {
+    if (_isBannersLoading) {
+      return SizedBox(
+        height: 160,
+        child: ListView.builder(
+          scrollDirection: Axis.horizontal,
+          itemCount: 3,
+          padding: const EdgeInsets.symmetric(horizontal: 0),
+          itemBuilder: (context, index) => Container(
+            width: MediaQuery.of(context).size.width * 0.8,
+            margin: const EdgeInsets.only(right: 16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+          ),
+        ),
+      );
+    }
+
+    if (_banners.isEmpty) return const SizedBox.shrink();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text(
+              "Pengumuman Sekolah",
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w800,
+                color: Color(0xFF1E293B),
+              ),
+            ),
+            Text(
+              "Lihat Semua",
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: context.primaryColor,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        SizedBox(
+          height: 160,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            itemCount: _banners.length,
+            itemBuilder: (context, index) {
+              final banner = _banners[index];
+              return Container(
+                width: MediaQuery.of(context).size.width * 0.85,
+                margin: const EdgeInsets.only(right: 16),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(20),
+                  image: DecorationImage(
+                    image: NetworkImage(banner.urlGambar),
+                    fit: BoxFit.cover,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.1),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(20),
+                    gradient: LinearGradient(
+                      begin: Alignment.bottomCenter,
+                      end: Alignment.topCenter,
+                      colors: [
+                        Colors.black.withOpacity(0.7),
+                        Colors.transparent,
+                      ],
+                    ),
+                  ),
+                  padding: const EdgeInsets.all(16),
+                  alignment: Alignment.bottomLeft,
+                  child: Text(
+                    banner.judul,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 }

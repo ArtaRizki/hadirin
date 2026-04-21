@@ -44,7 +44,7 @@
             "request": "launch",
             "type": "dart",
             "args": [
-                "--dart-define=GAS_ENDPOINT=https://script.google.com/macros/s/AKfycbxMLc_rqxjVArOQJsDPf-DqbcXpAByyqYJfBx_3OOaxUUyWCBK_XqRawLceBG5Z5RCw/exec",
+                "--dart-define=GAS_ENDPOINT=https://script.google.com/macros/s/AKfycbzHDKXZzz0VOLgaxi9PBSEbfhKRO4Zbhrf08HIPIpcYagJkwZtdpyxQvHP87kGwOpN6/exec",
                 "--dart-define=API_TOKEN=kicau-mania"
             ]
         }
