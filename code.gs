@@ -147,6 +147,8 @@ function getDashboardStats(clientId, id) {
     var config = allConfigs[lookupId];
     var ss = SpreadsheetApp.openById(config.spreadsheetId);
     var data = ss.getSheetByName("Log_Absensi").getDataRange().getValues();
+    var sId = String(id || "").trim().toLowerCase();
+    var isAdmin = (sId === "admin" || sId === clientId.toLowerCase()); // Simple check for admin role
     var schedule = getEffectiveSchedule(ss, config, id);
     var today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -168,6 +170,9 @@ function getDashboardStats(clientId, id) {
 
       rowDate.setHours(0, 0, 0, 0);
       if (rowDate.getTime() === today.getTime()) {
+        // If not admin, only count for self
+        if (!isAdmin && rowId !== sId) continue;
+        
         if (
           rowStatus === "Tepat Waktu" ||
           rowStatus.startsWith("TL") ||
@@ -212,68 +217,96 @@ function getDashboardStats(clientId, id) {
 }
 
 /**
+ * AMBIL DATA DASHBOARD LENGKAP (Web Member)
+ */
+function getDashboardDataWeb(clientId, id) {
+  try {
+    var stats = getDashboardStats(clientId, id);
+    var allConfigs = getSemuaConfig();
+    var config = allConfigs[clientId.toUpperCase()];
+    var ss = SpreadsheetApp.openById(config.spreadsheetId);
+    
+    // Get Schedule Today
+    var schedule = getEffectiveSchedule(ss, config, id);
+    
+    // Get Office Config (Radius/Location)
+    var officeRaw = ss.getSheetByName("Config_Kantor").getRange("A2:D2").getValues()[0];
+    
+    return {
+      stats: stats,
+      schedule: {
+        shift_name: schedule.is_off ? "LIBUR" : (schedule.shift_name || "Normal"),
+        masuk: schedule.masuk,
+        pulang: schedule.pulang,
+        is_off: schedule.is_off
+      },
+      office: {
+        lat: officeRaw[1],
+        lng: officeRaw[2],
+        radius: officeRaw[3] || 100
+      }
+    };
+  } catch (e) {
+    return { error: e.toString() };
+  }
+}
+
+/**
  * AMBIL RIWAYAT ABSENSI (Web)
  */
 function getAttendanceHistory(clientId, id) {
   var debug = [];
   try {
     var allConfigs = getSemuaConfig();
-    var lookupId = String(clientId || "")
-      .trim()
-      .toUpperCase();
+    var lookupId = String(clientId || "").trim().toUpperCase();
     var config = allConfigs[lookupId];
     if (!config) throw new Error("Config not found for: " + lookupId);
 
     var ss = SpreadsheetApp.openById(config.spreadsheetId);
     var sheet = ss.getSheetByName("Log_Absensi");
 
-    // Antigravity Fix: Flexible sheet matching if exact match fails
     if (!sheet) {
       var sheets = ss.getSheets();
       for (var s = 0; s < sheets.length; s++) {
         if (sheets[s].getName().trim().toLowerCase() === "log_absensi") {
           sheet = sheets[s];
-          debug.push("Matched via flexible name: " + sheets[s].getName());
           break;
         }
       }
     }
 
-    if (!sheet)
-      throw new Error(
-        "Sheet 'Log_Absensi' not found in spreadsheet " + config.spreadsheetId,
-      );
+    if (!sheet) throw new Error("Sheet 'Log_Absensi' tidak ditemukan.");
 
     var data = sheet.getDataRange().getValues();
     var history = [];
-    var searchId = String(id).trim().toLowerCase();
-
-    debug.push("Data rows: " + data.length + " | SearchID: " + searchId);
+    var searchId = String(id || "").trim().toLowerCase();
+    var clientIdUpper = String(clientId || "").trim().toUpperCase();
+    var allConfigs = getSemuaConfig();
+    var config = allConfigs[clientIdUpper];
+    
+    // Admin check: if ID matches clientId OR is string "admin", they see all logs
+    var isAdmin = searchId === "admin" || searchId === clientId.toLowerCase();
 
     for (var i = data.length - 1; i >= 1; i--) {
-      var rowId = String(data[i][1] || "")
-        .trim()
-        .toLowerCase();
-      if (rowId === searchId || searchId === "admin") {
+      var rawId = data[i][1];
+      var rowId = (rawId === null || rawId === undefined) ? "" : String(rawId).trim().toLowerCase();
+      
+      if (rowId === searchId || isAdmin) {
         history.push({
           id: i,
           waktu: data[i][0],
           tipe: data[i][2] || "-",
           status: data[i][6] || "Tepat Waktu",
+          keterangan: data[i][5] || "-"
         });
         if (history.length >= 50) break;
       }
     }
 
-    if (history.length === 0) {
-      return [
-        { error: "No data found for ID " + searchId, debug: debug.join(" | ") },
-      ];
-    }
-
-    return history;
+    return history; // Return empty array if not found, not an error object
   } catch (e) {
-    return [{ error: e.toString(), debug: debug.join(" | ") }];
+    console.error("getAttendanceHistory Error: " + e.toString());
+    return [{ error: e.toString() }];
   }
 }
 
@@ -375,6 +408,8 @@ function doPost(e) {
         return handleGetLeaveHistory(payload);
       case "get_monthly_report":
         return handleGetMonthlyReport(payload);
+      case "delete_karyawan":
+        return responseJSON(200, "success", handleDeleteKaryawan(payload));
       default:
         return responseJSON(400, "error", "Action Unknown.");
     }
@@ -569,10 +604,10 @@ function handleAbsensi(payload) {
         Utilities.base64Decode(payload.foto_base64),
         "image/jpeg",
         "Absen_" +
-          payload.id_karyawan +
-          "_" +
-          Utilities.formatDate(now, "GMT+7", "yyyyMMdd_HHmmss") +
-          ".jpg",
+        payload.id_karyawan +
+        "_" +
+        Utilities.formatDate(now, "GMT+7", "yyyyMMdd_HHmmss") +
+        ".jpg",
       );
       var file = folder.createFile(blob);
       file.setSharing(
@@ -676,6 +711,30 @@ function handleResetDevice(payload) {
     }
   }
   return false;
+}
+
+/**
+ * ADMIN: Hapus Anggota Karyawan
+ */
+function handleDeleteKaryawan(payload) {
+  try {
+    var config = getSemuaConfig()[payload.client_id];
+    var ss = SpreadsheetApp.openById(config.spreadsheetId);
+    var sheet = ss.getSheetByName("Master_Karyawan");
+    var data = sheet.getDataRange().getValues();
+    
+    var targetId = String(payload.target_id).trim().toLowerCase();
+    
+    for (var i = 1; i < data.length; i++) {
+      if (String(data[i][0]).trim().toLowerCase() === targetId) {
+        sheet.deleteRow(i + 1);
+        return { success: true, message: "Anggota Berhasil Dihapus" };
+      }
+    }
+    return { success: false, message: "ID Anggota tidak ditemukan." };
+  } catch (e) {
+    return { success: false, message: e.toString() };
+  }
 }
 
 function handleRegisterInstansi(payload) {
@@ -841,10 +900,10 @@ function handleAjukanIzin(payload) {
         Utilities.base64Decode(payload.foto_base64),
         "image/jpeg",
         "Lampiran_" +
-          payload.id_karyawan +
-          "_" +
-          Utilities.formatDate(new Date(), "GMT+7", "yyyyMMdd_HHmmss") +
-          ".jpg",
+        payload.id_karyawan +
+        "_" +
+        Utilities.formatDate(new Date(), "GMT+7", "yyyyMMdd_HHmmss") +
+        ".jpg",
       );
       var file = folder.createFile(blob);
       file.setSharing(
@@ -1063,7 +1122,7 @@ function handleCekStatusHariIni(payload) {
     if (
       String(logs[i][1]) === String(payload.id_karyawan) &&
       Utilities.formatDate(new Date(logs[i][0]), "GMT+7", "yyyy-MM-dd") ===
-        today &&
+      today &&
       logs[i][6] === "Disetujui"
     )
       return responseJSON(200, "success", true);

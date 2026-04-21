@@ -159,15 +159,22 @@ function getDashboardStats(clientId, id) {
       trendValues: [],
     };
 
+    var sId = String(id || "").trim().toLowerCase();
+    var isAdmin = (sId === "admin" || sId === clientId.toLowerCase());
+
     for (var i = 1; i < data.length; i++) {
       var logWaktu = data[i][0];
       if (!logWaktu || logWaktu === "") continue;
 
+      var rowId = String(data[i][1] || "").trim().toLowerCase();
       var rowDate = new Date(logWaktu);
       var rowStatus = String(data[i][6]);
 
       rowDate.setHours(0, 0, 0, 0);
       if (rowDate.getTime() === today.getTime()) {
+        // If not admin, only count for self
+        if (!isAdmin && rowId !== sId) continue;
+        
         if (
           rowStatus === "Tepat Waktu" ||
           rowStatus.startsWith("TL") ||
@@ -194,6 +201,11 @@ function getDashboardStats(clientId, id) {
       for (var j = 1; j < data.length; j++) {
         var logW = data[j][0];
         if (!logW || logW === "") continue;
+        
+        var rId = String(data[j][1] || "").trim().toLowerCase();
+        // If not admin, only count for self
+        if (!isAdmin && rId !== sId) continue;
+
         var rDate = new Date(logW);
         rDate.setHours(0, 0, 0, 0);
         var s = String(data[j][6]);
@@ -248,18 +260,22 @@ function getAttendanceHistory(clientId, id) {
     var history = [];
     var searchId = String(id).trim().toLowerCase();
 
-    debug.push("Data rows: " + data.length + " | SearchID: " + searchId);
+    var searchId = String(id || "").trim().toLowerCase();
+    
+    // Admin check: if ID matches clientId OR is string "admin", they see all logs
+    var isAdmin = searchId === "admin" || searchId === clientId.toLowerCase();
 
     for (var i = data.length - 1; i >= 1; i--) {
-      var rowId = String(data[i][1] || "")
-        .trim()
-        .toLowerCase();
-      if (rowId === searchId || searchId === "admin") {
+      var rawId = data[i][1];
+      var rowId = (rawId === null || rawId === undefined) ? "" : String(rawId).trim().toLowerCase();
+      
+      if (rowId === searchId || isAdmin) {
         history.push({
           id: i,
           waktu: data[i][0],
           tipe: data[i][2] || "-",
           status: data[i][6] || "Tepat Waktu",
+          keterangan: data[i][5] || "-"
         });
         if (history.length >= 50) break;
       }

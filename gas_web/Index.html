@@ -21,6 +21,10 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- Face API (CDN) -->
     <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+    <!-- SweetAlert2 (CDN) -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <!-- SheetJS (Excel) -->
+    <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
     
     <?!= include('styles'); ?>
   </head>
@@ -77,21 +81,25 @@
             <span>Riwayat Absen</span>
           </a>
           
-          <div id="admin-section" style="display: none;">
+          <div id="admin-section" style="display: none; flex-direction: column;">
             <div style="font-size: 0.7rem; font-weight: 800; color: var(--text-muted); margin: 24px 0 12px 12px; text-transform: uppercase; letter-spacing: 1px;">Admin Area</div>
-            <a class="nav-item" onclick="switchView('members')">
+            <a class="nav-item" onclick="switchView('members')" style="display: flex;">
               <i data-lucide="users"></i>
               <span>Data Anggota</span>
             </a>
-            <a class="nav-item" onclick="switchView('approvals')">
+            <a class="nav-item" onclick="switchView('approvals')" style="display: flex;">
               <i data-lucide="check-square"></i>
               <span>Persetujuan Izin</span>
             </a>
-            <a class="nav-item" onclick="switchView('shifts')">
+            <a class="nav-item" onclick="switchView('shifts')" style="display: flex;">
               <i data-lucide="calendar-days"></i>
               <span>Plotting Shift</span>
             </a>
-            <a class="nav-item" onclick="switchView('settings')">
+            <a class="nav-item" onclick="switchView('reports')" style="display: flex;">
+              <i data-lucide="file-text"></i>
+              <span>Laporan Absensi</span>
+            </a>
+            <a class="nav-item" onclick="switchView('settings')" style="display: flex;">
               <i data-lucide="settings"></i>
               <span>Setelan Kantor</span>
             </a>
@@ -108,7 +116,10 @@
               <div id="user-id-display" style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600;">ID: 12345</div>
             </div>
           </div>
-          <button class="btn" style="width: 100%; margin-top: 20px; color: #ef4444; background: rgba(239, 68, 68, 0.05); font-size: 0.85rem; padding: 12px;" onclick="handleLogout()">
+          <button class="btn" id="btn-re-register-face" style="display: none; width: 100%; margin-top: 10px; background: rgba(124, 58, 237, 0.05); color: var(--primary); font-size: 0.85rem; padding: 12px;" onclick="startReRegisterFace()">
+            <i data-lucide="face-id" style="width: 16px;"></i> Update Wajah Web
+          </button>
+          <button class="btn" style="width: 100%; margin-top: 10px; color: #ef4444; background: rgba(239, 68, 68, 0.05); font-size: 0.85rem; padding: 12px;" onclick="handleLogout()">
             <i data-lucide="log-out" style="width: 16px;"></i> Keluar
           </button>
         </div>
@@ -139,8 +150,26 @@
           </div>
           <!-- MEMBER ACTION SECTION (Hidden for Admins) -->
           <div id="member-action-section" style="display: none; margin-bottom: 40px;">
+            <!-- TODAY'S SCHEDULE CARD -->
+            <div id="today-schedule-card" class="shift-info-display" style="display: none;">
+              <div>
+                <div class="shift-label">Shift Hari Ini</div>
+                <div id="display-shift-name" class="shift-name-text">Memuat...</div>
+                <div id="display-shift-time" class="shift-time-text">00:00 - 00:00</div>
+              </div>
+              <div style="text-align: right;">
+                <div class="shift-label">Status</div>
+                <div id="display-shift-status" style="font-weight: 800; font-size: 0.9rem;">AKTIF</div>
+              </div>
+            </div>
+
             <div class="card glass">
-              <h2 style="font-size: 1.1rem; font-weight: 800; margin-bottom: 20px;">Menu Absensi Wajah</h2>
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2 style="font-size: 1.1rem; font-weight: 800; margin: 0;">Menu Absensi</h2>
+                <button class="btn" style="padding: 8px 16px; font-size: 0.75rem; background: rgba(124, 58, 237, 0.1); color: var(--primary);" onclick="openLeaveModal()">
+                  <i data-lucide="file-text" style="width: 14px;"></i> Ajukan Izin
+                </button>
+              </div>
               <div class="member-actions">
                 <button class="btn-absen" onclick="handleWebAbsen('Masuk')">
                   <i data-lucide="camera"></i>
@@ -195,7 +224,7 @@
               <h1 style="font-size: 2.2rem; font-weight: 900; letter-spacing: -1px;">Data Anggota</h1>
               <p style="color: var(--text-muted); font-weight: 500;">Kelola daftar anggota instansi Anda.</p>
             </div>
-            <button class="btn btn-primary" onclick="alert('Buka modal tambah anggota')">
+            <button class="btn btn-primary" onclick="openAddMemberModal()">
               <i data-lucide="plus"></i> Tambah Anggota
             </button>
           </header>
@@ -283,6 +312,94 @@
           </div>
         </div>
 
+        <!-- Admin: Laporan Absensi -->
+        <div id="view-reports" class="content-view" style="display: none;">
+          <header style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 40px;">
+            <div>
+              <h1 style="font-size: 2.2rem; font-weight: 900; letter-spacing: -1px;">Laporan Kehadiran</h1>
+              <p style="color: var(--text-muted); font-weight: 500;">Unduh ringkasan absensi per bulan.</p>
+            </div>
+            <div style="display: flex; gap: 12px;">
+               <input type="month" id="report-month-picker" class="glass" style="padding: 10px 16px; border-radius: 12px; border: 1px solid var(--glass-border); font-weight: 600;">
+               <button class="btn btn-primary" onclick="downloadReport()">
+                 <i data-lucide="download"></i> Download CSV
+               </button>
+            </div>
+          </header>
+          
+          <div class="card glass">
+            <div class="table-container">
+              <table id="report-table">
+                <thead>
+                  <tr>
+                    <th>Waktu</th>
+                    <th>ID</th>
+                    <th>Nama</th>
+                    <th>Tipe</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody id="report-body"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Admin: Setelan Kantor -->
+        <div id="view-settings" class="content-view" style="display: none;">
+          <header style="margin-bottom: 40px;">
+            <h1 style="font-size: 2.2rem; font-weight: 900; letter-spacing: -1px;">Setelan Kantor</h1>
+            <p style="color: var(--text-muted); font-weight: 500;">Konfigurasi lokasi dan aturan jam kerja.</p>
+          </header>
+
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 24px;">
+            <div class="card glass">
+              <h3 style="font-weight: 800; margin-bottom: 24px;">Lokasi & Radius</h3>
+              <div class="leave-form-group">
+                <label>Latitude</label>
+                <input type="text" id="set-lat" placeholder="-6.12345">
+              </div>
+              <div class="leave-form-group">
+                <label>Longitude</label>
+                <input type="text" id="set-lng" placeholder="106.12345">
+              </div>
+              <div class="leave-form-group">
+                <label>Radius Absensi (Meter)</label>
+                <input type="number" id="set-radius" placeholder="100">
+              </div>
+              <p style="font-size: 0.75rem; color: var(--text-muted); margin: 10px 0 20px;">* Dapatkan koordinat dari Google Maps.</p>
+              <button class="btn btn-primary" style="width: 100%;" onclick="saveOfficeLocation()">Simpan Lokasi</button>
+            </div>
+
+            <div class="card glass">
+              <h3 style="font-weight: 800; margin-bottom: 24px;">Aturan Jam Kerja</h3>
+              <div class="leave-form-group">
+                <label>Buka Absen Masuk</label>
+                <input type="time" id="set-jam-masuk">
+              </div>
+              <div class="leave-form-group">
+                <label>Batas Jam Masuk (TL)</label>
+                <input type="time" id="set-batas-masuk">
+              </div>
+              <div class="leave-form-group">
+                <label>Jam Pulang Mulai</label>
+                <input type="time" id="set-jam-pulang">
+              </div>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                <div class="leave-form-group">
+                  <label>Interval TL (Menit)</label>
+                  <input type="number" id="set-interval" value="30">
+                </div>
+                <div class="leave-form-group">
+                  <label>Max Tier (0=Unlimited)</label>
+                  <input type="number" id="set-max-tier" value="0">
+                </div>
+              </div>
+              <button class="btn btn-primary" style="width: 100%; margin-top: 10px;" onclick="saveWorkHours()">Simpan Jam Kerja</button>
+            </div>
+          </div>
+        </div>
+
       </main>
 
       <!-- BOTTOM NAVIGATION (Mobile Only) -->
@@ -310,6 +427,86 @@
 
     <!-- HIDDEN CAMERA INPUT -->
     <input type="file" id="camera-input" accept="image/*" capture="user" style="display: none;">
+
+    <!-- LEAVE MODAL -->
+    <div id="leave-modal" class="modal">
+      <div class="modal-content">
+        <h2 style="font-weight: 900; margin-bottom: 10px;">Ajukan Izin / Sakit</h2>
+        <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 25px;">Lengkapi data berikut untuk mengajukan izin.</p>
+        
+        <div class="leave-form-group">
+          <label>Jenis Pengajuan</label>
+          <select id="leave-type">
+            <option value="Izin">Izin</option>
+            <option value="Sakit">Sakit</option>
+            <option value="Cuti">Cuti</option>
+          </select>
+        </div>
+
+        <div class="leave-form-group">
+          <label>Rentang Tanggal (Contoh: 21 Apr - 22 Apr)</label>
+          <input type="text" id="leave-range" placeholder="Contoh: 21 April 2026">
+        </div>
+
+        <div class="leave-form-group">
+          <label>Alasan / Keterangan</label>
+          <textarea id="leave-reason" rows="3" placeholder="Tuliskan alasan Anda..."></textarea>
+        </div>
+
+        <div class="leave-form-group">
+          <label>Foto Bukti (Opsional)</label>
+          <div class="file-input-wrapper" onclick="document.getElementById('leave-file').click()">
+            <i data-lucide="upload-cloud" style="color: var(--text-muted); margin-bottom: 8px;"></i>
+            <span style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted);">Klik untuk ambil foto / upload</span>
+            <img id="leave-preview" class="file-preview">
+          </div>
+          <input type="file" id="leave-file" accept="image/*" capture="environment" style="display: none;" onchange="previewLeaveFile(event)">
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 30px;">
+          <button class="btn" style="background: #F1F5F9; color: var(--text-muted);" onclick="closeLeaveModal()">Batal</button>
+          <button class="btn btn-primary" id="btn-submit-leave" onclick="submitLeaveRequest()">Kirim Pengajuan</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ADD MEMBER MODAL -->
+    <div id="add-member-modal" class="modal">
+      <div class="modal-content">
+        <h2 style="font-weight: 900; margin-bottom: 10px;">Tambah Anggota Baru</h2>
+        <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 25px;">Masukkan detail anggota untuk didaftarkan.</p>
+        
+        <div class="leave-form-group">
+          <label>ID Anggota (Manual)</label>
+          <input type="text" id="add-m-id" placeholder="CONTOH: 0804">
+        </div>
+        <div class="leave-form-group">
+          <label>Nama Lengkap</label>
+          <input type="text" id="add-m-nama" placeholder="Masukkan Nama">
+        </div>
+        <div class="leave-form-group">
+          <label>Bagian / Divisi</label>
+          <input type="text" id="add-m-divisi" placeholder="Contoh: Guru / Staff">
+        </div>
+        <div class="leave-form-group">
+          <label>No. WhatsApp</label>
+          <input type="text" id="add-m-hp" placeholder="6281xxxx">
+        </div>
+        <div class="leave-form-group">
+          <label>Shift Default</label>
+          <select id="add-m-shift">
+            <option value="S1">Shift 1 (S1)</option>
+            <option value="S2">Shift 2 (S2)</option>
+            <option value="S3">Shift 3 (S3)</option>
+          </select>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 30px;">
+          <button class="btn" style="background: #F1F5F9; color: var(--text-muted);" onclick="closeAddMemberModal()">Batal</button>
+          <button class="btn btn-primary" id="btn-submit-add-m" onclick="submitAddMember()">Simpan Anggota</button>
+        </div>
+      </div>
+    </div>
 
     <!-- LOADING OVERLAY -->
     <div id="processing-overlay" class="modal" style="background: rgba(15, 23, 42, 0.8);">

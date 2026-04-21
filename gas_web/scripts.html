@@ -3,14 +3,16 @@
   let currentUser = null;
   let chartInstance = null;
   let isAdminMode = false;
+  let currentSchedule = null;
+  let officeConfig = null;
 
   // SECRET TRIGGER FOR ADMIN (Backdoor)
-  document.addEventListener('DOMContentLoaded', function() {
+  document.addEventListener('DOMContentLoaded', function () {
     const loginIdInput = document.getElementById('login-id');
     const passGroup = document.getElementById('admin-password-group');
-    
+
     if (loginIdInput) {
-      loginIdInput.addEventListener('input', function(e) {
+      loginIdInput.addEventListener('input', function (e) {
         if (e.target.value.toUpperCase() === 'ADMIN') {
           passGroup.style.display = 'block';
           isAdminMode = true;
@@ -27,8 +29,10 @@
     // Update Sidebar (Desktop)
     const navItems = document.querySelectorAll('.nav-item');
     navItems.forEach(item => {
-      if (item.getAttribute('onclick').includes(`'${viewId}'`)) {
+      const oc = item.getAttribute('onclick') || "";
+      if (oc.indexOf(`'${viewId}'`) !== -1) {
         item.classList.add('active');
+        item.style.display = 'flex'; // Ensure visible 
       } else {
         item.classList.remove('active');
       }
@@ -55,27 +59,32 @@
     if (viewId === 'members') loadMembersData();
     if (viewId === 'approvals') loadApprovalsData();
     if (viewId === 'shifts') loadShiftData();
-    
+    if (viewId === 'reports') initReportView();
+    if (viewId === 'settings') loadOfficeSettings();
+
     lucide.createIcons();
   }
 
   // AUTHENTICATION
   function handleLogin() {
-    const clientId = document.getElementById('login-client-id').value;
-    const userId = document.getElementById('login-id').value;
-    const pin = document.getElementById('login-password').value; // Only used in admin mode
-    const btn = event.target;
-    
-    if (!clientId || !userId) return;
+    const clientId = document.getElementById('login-client-id').value.trim();
+    const userId = document.getElementById('login-id').value.trim().toLowerCase();
+    const pin = document.getElementById('login-password').value;
+    const btn = event.currentTarget || event.target;
+
+    if (!clientId || !userId) {
+      alert("Kode Instansi dan ID wajib diisi.");
+      return;
+    }
 
     btn.disabled = true;
-    btn.innerHTML = '<span class="loading"></span>';
+    btn.innerHTML = '<span class="loading"></span> Masuk...';
 
     google.script.run
-      .withSuccessHandler(function(response) {
+      .withSuccessHandler(function (response) {
         btn.disabled = false;
         btn.innerText = 'Masuk Dashboard';
-        
+
         if (response.success) {
           currentUser = response.user;
           setupUIForUser();
@@ -83,7 +92,7 @@
           showLoginError(response.message);
         }
       })
-      .withFailureHandler(function(err) {
+      .withFailureHandler(function (err) {
         btn.disabled = false;
         btn.innerText = 'Masuk Dashboard';
         showLoginError("Gagal terhubung ke server.");
@@ -97,20 +106,24 @@
 
     document.getElementById('login-screen').style.display = 'none';
     document.getElementById('app-container').style.display = 'flex';
-    
+
     document.getElementById('user-name').innerText = currentUser.nama;
     document.getElementById('user-id-display').innerHTML = "ID: " + currentUser.id + " <br><small style='color:var(--primary); font-weight:700;'>v3.5 Diagnostic Mode</small>";
-    
+
     // Show Admin Section if role is Admin/SuperAdmin
-    const isAdmin = currentUser.role.toLowerCase() === 'admin' || currentUser.role === 'superAdmin';
+    const role = (currentUser && currentUser.role) ? currentUser.role.toLowerCase() : "";
+    const isAdmin = role === 'admin' || role === 'superadmin' || role === 'super admin';
+
     if (isAdmin) {
       document.getElementById('admin-section').style.display = 'block';
       document.getElementById('member-action-section').style.display = 'none';
-      document.getElementById('admin-mobile-nav').style.display = 'contents';
+      if (document.getElementById('admin-mobile-nav')) document.getElementById('admin-mobile-nav').style.display = 'contents';
+      document.getElementById('btn-re-register-face').style.display = 'none';
     } else {
       document.getElementById('admin-section').style.display = 'none';
       document.getElementById('member-action-section').style.display = 'block';
-      document.getElementById('admin-mobile-nav').style.display = 'none';
+      if (document.getElementById('admin-mobile-nav')) document.getElementById('admin-mobile-nav').style.display = 'none';
+      document.getElementById('btn-re-register-face').style.display = 'flex';
     }
 
     // Set Month Picker default to current month
@@ -118,11 +131,14 @@
     const monthVal = now.getFullYear() + "-" + String(now.getMonth() + 1).padLeft(2, '0');
     const mPicker = document.getElementById('shift-month-picker');
     if (mPicker) {
-        mPicker.value = monthVal;
-        mPicker.addEventListener('change', loadShiftData);
+      mPicker.value = monthVal;
+      mPicker.addEventListener('change', loadShiftData);
     }
-    
+
     switchView('dashboard');
+
+    // Diagnostic log
+    console.log("UI Adjusted for Role:", role, "isAdmin:", isAdmin);
 
     // Cek jika ada pesan sukses dari redirect kamera
     const urlMsg = "<?!= msg ?>";
@@ -145,7 +161,7 @@
   }
 
   // AUTO LOGIN IF SESSION EXISTS
-  document.addEventListener('DOMContentLoaded', function() {
+  document.addEventListener('DOMContentLoaded', function () {
     const saved = localStorage.getItem('hadirin_user');
     if (saved) {
       currentUser = JSON.parse(saved);
@@ -163,13 +179,38 @@
   // DATA FETCHING: DASHBOARD
   function loadDashboardData() {
     google.script.run
-      .withSuccessHandler(function(data) {
+      .withSuccessHandler(function (response) {
+        if (response.error) {
+          console.error("Dashboard Error:", response.error);
+          return;
+        }
+
+        const data = response.stats;
         document.getElementById('stat-present').innerText = data.present || 0;
         document.getElementById('stat-leave').innerText = data.leave || 0;
         document.getElementById('stat-late').innerText = data.late || 0;
         renderTrendChart(data.trendLabels, data.trendValues);
+
+        // Update Schedule Card
+        currentSchedule = response.schedule;
+        officeConfig = response.office;
+
+        if (currentSchedule) {
+          document.getElementById('today-schedule-card').style.display = 'flex';
+          document.getElementById('display-shift-name').innerText = currentSchedule.shift_name;
+          document.getElementById('display-shift-time').innerText = `${currentSchedule.masuk} - ${currentSchedule.pulang}`;
+
+          const statusEl = document.getElementById('display-shift-status');
+          if (currentSchedule.is_off) {
+            statusEl.innerText = "LIBUR";
+            statusEl.style.color = "#94A3B8";
+          } else {
+            statusEl.innerText = "AKTIF";
+            statusEl.style.color = "#10B981";
+          }
+        }
       })
-      .getDashboardStats(currentUser.clientId, currentUser.id);
+      .getDashboardDataWeb(currentUser.clientId, currentUser.id);
   }
 
   function renderTrendChart(labels, values) {
@@ -203,7 +244,7 @@
         plugins: { legend: { display: false } },
         scales: {
           y: { beginAtZero: true, grid: { color: '#f1f5f9' }, ticks: { font: { weight: 600 } } },
-          x: { grid: { display : false }, ticks: { font: { weight: 600 } } }
+          x: { grid: { display: false }, ticks: { font: { weight: 600 } } }
         }
       }
     });
@@ -215,10 +256,10 @@
     tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 40px;">Memuat data...</td></tr>';
 
     google.script.run
-      .withFailureHandler(function(err) {
+      .withFailureHandler(function (err) {
         tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 40px; color: #ef4444;">Gagal memuat data: ' + err.message + '</td></tr>';
       })
-      .withSuccessHandler(function(history) {
+      .withSuccessHandler(function (history) {
         tbody.innerHTML = '';
         console.log("History received:", history);
 
@@ -230,8 +271,7 @@
         // Check for Diagnostic Errors from Server
         if (history[0] && history[0].error) {
           tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; padding: 20px;">
-            <div style="color: #ef4444; font-weight: 700; margin-bottom: 8px;">DEBUG: ${history[0].error}</div>
-            <div style="font-size: 0.75rem; color: #64748b; background: #f8fafc; padding: 10px; border-radius: 8px; border: 1px solid #e2e8f0;">${history[0].debug || '-'}</div>
+            <div style="color: #ef4444; font-weight: 700; margin-bottom: 8px;">Gagal Memuat: ${history[0].error}</div>
           </td></tr>`;
           return;
         }
@@ -255,7 +295,7 @@
                 ${logStatus.toUpperCase()}
               </span>
             </td>
-            <td><button class="btn" style="padding: 8px 16px; font-size: 0.75rem; border: 1px solid #E2E8F0; width: auto;">Detail</button></td>
+            <td title="${log.keterangan || ''}"><button class="btn" style="padding: 8px 16px; font-size: 0.75rem; border: 1px solid #E2E8F0; width: auto;" onclick="alert('Detail: ${log.keterangan || '-'}')">Detail</button></td>
           `;
           tbody.appendChild(row);
         });
@@ -269,16 +309,16 @@
     tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 40px;">Mengambil data anggota...</td></tr>';
 
     google.script.run
-      .withSuccessHandler(function(response) {
+      .withSuccessHandler(function (response) {
         tbody.innerHTML = '';
         const members = response.message || response; // Handle different return shapes
-        
+
         members.forEach(m => {
           const row = document.createElement('tr');
           row.innerHTML = `
             <td style="font-weight: 700;">${m.id}</td>
             <td style="font-weight: 600;">${m.nama}</td>
-            <td><span class="badge-tipe">${m.bagian}</span></td>
+            <td><span class="badge-tipe">${m.bagian || m.divisi || '-'}</span></td>
             <td>
                <div style="display: flex; align-items: center; gap: 6px; font-size: 0.8rem; font-weight: 600; color: ${m.sudah_enroll ? '#10B981' : '#EF4444'}">
                  <i data-lucide="${m.sudah_enroll ? 'smartphone' : 'alert-circle'}" style="width: 14px;"></i>
@@ -286,7 +326,17 @@
                </div>
             </td>
             <td>
-              <button class="btn" style="padding: 8px 12px; font-size: 0.7rem; color: #ef4444; background: rgba(239, 68, 68, 0.05);" onclick="handleResetDevice('${m.id}')">Reset Device</button>
+              <div style="display: flex; gap: 8px;">
+                <button class="btn" style="padding: 8px; background: rgba(0, 81, 71, 0.05); color: var(--primary);" onclick="window.open('https://wa.me/${m.no_hp || ''}', '_blank')" title="WhatsApp">
+                  <i data-lucide="message-circle" style="width: 16px;"></i>
+                </button>
+                <button class="btn" style="padding: 8px; background: rgba(245, 158, 11, 0.05); color: #F59E0B;" onclick="handleResetDevice('${m.id}')" title="Reset Device ID">
+                  <i data-lucide="refresh-cw" style="width: 16px;"></i>
+                </button>
+                <button class="btn" style="padding: 8px; background: rgba(239, 68, 68, 0.05); color: #EF4444;" onclick="handleDeleteMember('${m.id}')" title="Hapus Anggota">
+                  <i data-lucide="trash-2" style="width: 16px;"></i>
+                </button>
+              </div>
             </td>
           `;
           tbody.appendChild(row);
@@ -302,7 +352,7 @@
     container.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 40px;">Memuat pengajuan...</div>';
 
     google.script.run
-      .withSuccessHandler(function(response) {
+      .withSuccessHandler(function (response) {
         container.innerHTML = '';
         const approvals = response.message || response;
 
@@ -364,7 +414,7 @@
     return d.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
   }
   // FACE RECOGNITION LOGIC (WEB - PHOTO CAPTURE METHOD)
-  let currentTipeAbsen = "Masuk"; 
+  let currentTipeAbsen = "Masuk";
   let isFaceModelLoaded = false;
 
   async function initFaceAI() {
@@ -379,21 +429,59 @@
     } catch (e) { console.error("Face AI Init Error:", e); }
   }
 
-  function handleWebAbsen(tipe) {
+  async function handleWebAbsen(tipe) {
+    if (!currentSchedule) {
+      alert("Memuat data jadwal...");
+      return;
+    }
+
+    if (currentSchedule.is_off) {
+      Swal.fire('Libur', 'Hari ini Anda LIBUR. Tidak perlu absen.', 'info');
+      return;
+    }
+
+    // CHECK TIME FENCING (STRICT)
+    const now = new Date();
+    const currentMins = now.getHours() * 60 + now.getMinutes();
+
+    const toM = (t) => {
+      const [h, m] = t.split(':').map(Number);
+      return h * 60 + m;
+    };
+
+    if (tipe === "Masuk") {
+      const masM = toM(currentSchedule.masuk);
+      const pulM = toM(currentSchedule.pulang);
+      if (currentMins < masM - 120) { // Buffer 2 jam sebelum mulai
+        Swal.fire('Terlalu Awal', `Absen Masuk baru bisa dilakukan mulai pukul ${currentSchedule.masuk}`, 'warning');
+        return;
+      }
+      if (currentMins >= pulM) {
+        Swal.fire('Gagal', `Sudah masuk jam pulang. Silakan hubungi Admin.`, 'error');
+        return;
+      }
+    } else {
+      const pulM = toM(currentSchedule.pulang);
+      if (currentMins < pulM) {
+        Swal.fire('Belum Waktunya', `Absen Pulang baru dibuka pukul ${currentSchedule.pulang}`, 'warning');
+        return;
+      }
+    }
+
     currentTipeAbsen = tipe;
-    // Trigger input file (iPhone akan membuka kamera otomatis)
+    // Trigger input file
     document.getElementById('camera-input').click();
   }
 
   // EVENT LISTENER UNTUK INPUT FOTO
-  document.getElementById('camera-input').addEventListener('change', async function(e) {
+  document.getElementById('camera-input').addEventListener('change', async function (e) {
     const file = e.target.files[0];
     if (!file) return;
 
     const overlay = document.getElementById('processing-overlay');
     const statusText = document.getElementById('processing-text');
     overlay.style.display = 'flex';
-    
+
     try {
       // 1. Load Model jika belum
       statusText.innerText = "Memuat AI...";
@@ -402,12 +490,12 @@
       // 2. Baca file ke Image
       statusText.innerText = "Membaca Foto...";
       const img = await faceapi.bufferToImage(file);
-      
+
       // 3. Deteksi Wajah dari Foto
       statusText.innerText = "Memverifikasi Wajah...";
       const detection = await faceapi.detectSingleFace(img, new faceapi.TinyFaceDetectorOptions({ inputSize: 224 }))
-                                    .withFaceLandmarks()
-                                    .withFaceDescriptor();
+        .withFaceLandmarks()
+        .withFaceDescriptor();
 
       if (!detection) {
         throw new Error("Wajah tidak terdeteksi jelas dalam foto. Harap ambil foto dari depan dengan pencahayaan cukup.");
@@ -428,32 +516,55 @@
         statusText.innerText = "Mengambil Lokasi...";
         navigator.geolocation.getCurrentPosition(async (pos) => {
           const latLong = `${pos.coords.latitude}, ${pos.coords.longitude}`;
-          
+
+          // RADIUS CHECK (STRICT)
+          if (officeConfig) {
+            const getDist = (lat1, lon1, lat2, lon2) => {
+              const R = 6371e3; // meters
+              const φ1 = lat1 * Math.PI / 180;
+              const φ2 = lat2 * Math.PI / 180;
+              const Δφ = (lat2 - lat1) * Math.PI / 180;
+              const Δλ = (lon2 - lon1) * Math.PI / 180;
+              const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+                Math.cos(φ1) * Math.cos(φ2) *
+                Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+              const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+              return R * c;
+            };
+
+            const dist = getDist(pos.coords.latitude, pos.coords.longitude, officeConfig.lat, officeConfig.lng);
+            if (dist > officeConfig.radius) {
+              overlay.style.display = 'none';
+              Swal.fire('Di Luar Jangkauan', `Anda berada ${Math.round(dist)} meter dari lokasi. Maksimum radius adalah ${officeConfig.radius} meter.`, 'error');
+              return;
+            }
+          }
+
           // Konversi Foto ke Base64 (Resize demi speed)
           const canvas = document.createElement('canvas');
           const maxDim = 600;
           let w = img.width; let h = img.height;
-          if (w > h) { if(w > maxDim){ h *= maxDim/w; w = maxDim; } }
-          else { if(h > maxDim){ w *= maxDim/h; h = maxDim; } }
+          if (w > h) { if (w > maxDim) { h *= maxDim / w; w = maxDim; } }
+          else { if (h > maxDim) { w *= maxDim / h; h = maxDim; } }
           canvas.width = w; canvas.height = h;
           canvas.getContext('2d').drawImage(img, 0, 0, w, h);
           const base64Photo = canvas.toDataURL('image/jpeg', 0.7).split(',')[1];
 
           statusText.innerText = "Mengirim Absen...";
           google.script.run
-        .withSuccessHandler(function(response) {
-          overlay.style.display = 'none';
-          if (response.code === 200) {
-            Swal.fire('Berhasil!', response.message, 'success').then(() => {
-              loadDashboardData();
-            });
-          } else {
-            Swal.fire('Gagal', response.message, 'error');
-          }
-        })
-        .submitAbsenWeb({
-          api_token: 'SUPER_SECRET_UMKM001_8xZ2',
-          client_id: currentUser.clientId,
+            .withSuccessHandler(function (response) {
+              overlay.style.display = 'none';
+              if (response.code === 200) {
+                Swal.fire('Berhasil!', response.message, 'success').then(() => {
+                  loadDashboardData();
+                });
+              } else {
+                Swal.fire('Gagal', response.message, 'error');
+              }
+            })
+            .submitAbsenWeb({
+              api_token: 'SUPER_SECRET_UMKM001_8xZ2',
+              client_id: currentUser.clientId,
               action: 'absen',
               id_karyawan: currentUser.id,
               nama: currentUser.nama,
@@ -471,9 +582,9 @@
         if (confirm("Wajah Anda belum terdaftar di Web. Gunakan foto ini untuk pendaftaran?")) {
           statusText.innerText = "Mendaftarkan Wajah...";
           const descriptor = JSON.stringify(Array.from(detection.descriptor));
-          
+
           google.script.run
-            .withSuccessHandler(function(res) {
+            .withSuccessHandler(function (res) {
               overlay.style.display = 'none';
               if (res.success) {
                 currentUser.faceWeb = descriptor;
@@ -491,7 +602,7 @@
       overlay.style.display = 'none';
       alert(err.message);
     }
-    
+
     // Reset input supaya bisa milih file yang sama lagi jika gagal
     e.target.value = "";
   });
@@ -503,39 +614,39 @@
   let masterKaryawan = [];
 
   function switchShiftTab(tab) {
-      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-      event.target.classList.add('active');
-      document.getElementById('shift-tab-calendar').style.display = (tab === 'calendar' ? 'block' : 'none');
-      document.getElementById('shift-tab-list').style.display = (tab === 'list' ? 'block' : 'none');
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    event.target.classList.add('active');
+    document.getElementById('shift-tab-calendar').style.display = (tab === 'calendar' ? 'block' : 'none');
+    document.getElementById('shift-tab-list').style.display = (tab === 'list' ? 'block' : 'none');
   }
 
   function loadShiftData() {
-      const monthInput = document.getElementById('shift-month-picker').value;
-      if (!monthInput) return;
-      const [year, month] = monthInput.split('-');
+    const monthInput = document.getElementById('shift-month-picker').value;
+    if (!monthInput) return;
+    const [year, month] = monthInput.split('-');
 
-      // Load Karyawan first, then Shifts
-      google.script.run
-        .withSuccessHandler(function(karyawan) {
-            masterKaryawan = karyawan;
-            google.script.run
-                .withSuccessHandler(function(res) {
-                    if (res.success) {
-                        cachedShifts = res.shifts;
-                        renderShiftList(res.shifts);
-                        renderShiftCalendar(year, month, res.plotting);
-                    }
-                })
-                .getShiftSettings(currentUser.clientId, year, month);
-        })
-        .handleGetAllAnggota({ client_id: currentUser.clientId });
+    // Load Karyawan first, then Shifts
+    google.script.run
+      .withSuccessHandler(function (karyawan) {
+        masterKaryawan = karyawan;
+        google.script.run
+          .withSuccessHandler(function (res) {
+            if (res.success) {
+              cachedShifts = res.shifts;
+              renderShiftList(res.shifts);
+              renderShiftCalendar(year, month, res.plotting);
+            }
+          })
+          .getShiftSettings(currentUser.clientId, year, month);
+      })
+      .handleGetAllAnggota({ client_id: currentUser.clientId });
   }
 
   function renderShiftList(shifts) {
-      const body = document.getElementById('shift-list-body');
-      body.innerHTML = '';
-      shifts.forEach((s, idx) => {
-          body.innerHTML += `
+    const body = document.getElementById('shift-list-body');
+    body.innerHTML = '';
+    shifts.forEach((s, idx) => {
+      body.innerHTML += `
             <tr>
               <td><input type="text" class="glass" value="${s.id}" style="width: 80px;" id="s-id-${idx}"></td>
               <td><input type="text" class="glass" value="${s.nama}" id="s-nama-${idx}"></td>
@@ -544,15 +655,15 @@
               <td><button class="btn" style="color:#ef4444" onclick="removeShiftRow(this)">Hapus</button></td>
             </tr>
           `;
-      });
+    });
   }
 
   function addNewShiftRow() {
-      const body = document.getElementById('shift-list-body');
-      const idx = body.children.length;
-      body.innerHTML += `
+    const body = document.getElementById('shift-list-body');
+    const idx = body.children.length;
+    body.innerHTML += `
             <tr>
-              <td><input type="text" class="glass" value="S${idx+1}" style="width: 80px;" id="s-id-${idx}"></td>
+              <td><input type="text" class="glass" value="S${idx + 1}" style="width: 80px;" id="s-id-${idx}"></td>
               <td><input type="text" class="glass" value="Shift Baru" id="s-nama-${idx}"></td>
               <td><input type="time" class="glass" value="08:00" id="s-masuk-${idx}"></td>
               <td><input type="time" class="glass" value="16:00" id="s-pulang-${idx}"></td>
@@ -562,94 +673,371 @@
   }
 
   function removeShiftRow(btn) {
-      if (confirm("Hapus baris shift ini?")) {
-          btn.closest('tr').remove();
-      }
+    if (confirm("Hapus baris shift ini?")) {
+      btn.closest('tr').remove();
+    }
   }
 
   function saveShiftDefinitions() {
-      const body = document.getElementById('shift-list-body');
-      const data = [];
-      for (let i=0; i < body.children.length; i++) {
-          data.push({
-              id: document.getElementById(`s-id-${i}`).value,
-              nama: document.getElementById(`s-nama-${i}`).value,
-              masuk: document.getElementById(`s-masuk-${i}`).value,
-              pulang: document.getElementById(`s-pulang-${i}`).value
-          });
-      }
-      google.script.run
-        .withSuccessHandler(() => { alert("Master Shift Disimpan!"); loadShiftData(); })
-        .saveShiftDefinitions(currentUser.clientId, data);
+    const body = document.getElementById('shift-list-body');
+    const data = [];
+    for (let i = 0; i < body.children.length; i++) {
+      data.push({
+        id: document.getElementById(`s-id-${i}`).value,
+        nama: document.getElementById(`s-nama-${i}`).value,
+        masuk: document.getElementById(`s-masuk-${i}`).value,
+        pulang: document.getElementById(`s-pulang-${i}`).value
+      });
+    }
+    google.script.run
+      .withSuccessHandler(() => { alert("Master Shift Disimpan!"); loadShiftData(); })
+      .saveShiftDefinitions(currentUser.clientId, data);
   }
 
   function renderShiftCalendar(year, month, plotting) {
-      const daysInMonth = new Date(year, month, 0).getDate();
-      const head = document.getElementById('shift-calendar-head');
-      const body = document.getElementById('shift-calendar-body');
-      
-      let headerHtml = '<tr><th style="min-width: 180px;">Nama Karyawan</th>';
-      for (let d = 1; d <= daysInMonth; d++) {
-          headerHtml += `<th>${d}</th>`;
-      }
-      headerHtml += '</tr>';
-      head.innerHTML = headerHtml;
+    const daysInMonth = new Date(year, month, 0).getDate();
+    const head = document.getElementById('shift-calendar-head');
+    const body = document.getElementById('shift-calendar-body');
 
-      let bodyHtml = '';
-      masterKaryawan.forEach(k => {
-          bodyHtml += `<tr><td style="text-align: left;"><b>${k.nama}</b><br><small>${k.bagian}</small></td>`;
-          for (let d = 1; d <= daysInMonth; d++) {
-              const dateKey = `${year}-${String(month).padLeft(2, '0')}-${String(d).padLeft(2, '0')}`;
-              const key = `${dateKey}_${k.id}`;
-              const activeShift = plotting[key] || "";
-              
-              bodyHtml += `<td>
+    let headerHtml = '<tr><th style="min-width: 180px;">Nama Karyawan</th>';
+    for (let d = 1; d <= daysInMonth; d++) {
+      headerHtml += `<th>${d}</th>`;
+    }
+    headerHtml += '</tr>';
+    head.innerHTML = headerHtml;
+
+    let bodyHtml = '';
+    masterKaryawan.forEach(k => {
+      bodyHtml += `<tr><td style="text-align: left;"><b>${k.nama}</b><br><small>${k.bagian}</small></td>`;
+      for (let d = 1; d <= daysInMonth; d++) {
+        const dateKey = `${year}-${String(month).padLeft(2, '0')}-${String(d).padLeft(2, '0')}`;
+        const key = `${dateKey}_${k.id}`;
+        const activeShift = plotting[key] || "";
+
+        bodyHtml += `<td>
                 <select class="plotting-select" data-id="${k.id}" data-date="${dateKey}">
                     <option value="">-</option>
                     ${cachedShifts.map(s => `<option value="${s.id}" ${s.id === activeShift ? 'selected' : ''}>${s.nama}</option>`).join('')}
                     <option value="LIBUR" ${activeShift === 'LIBUR' ? 'selected' : ''}>LIBUR</option>
                 </select>
               </td>`;
-          }
-          bodyHtml += '</tr>';
-      });
-      bodyHtml += `<tr><td colspan="${daysInMonth+1}" style="background:var(--bg-light); padding:20px; text-align:center;"><button class="btn" onclick="autoFillDefaultShifts()">Auto-Fill Pakai Shift Default</button></td></tr>`;
-      body.innerHTML = bodyHtml;
+      }
+      bodyHtml += '</tr>';
+    });
+    bodyHtml += `<tr><td colspan="${daysInMonth + 1}" style="background:var(--bg-light); padding:20px; text-align:center;"><button class="btn" onclick="autoFillDefaultShifts()">Auto-Fill Pakai Shift Default</button></td></tr>`;
+    body.innerHTML = bodyHtml;
   }
 
   function autoFillDefaultShifts() {
-      if (!confirm("Isi semua kotak yang kosong dengan Shift Default tiap karyawan?")) return;
-      document.querySelectorAll('.plotting-select').forEach(sel => {
-          if (sel.value === "") {
-              const id = sel.getAttribute('data-id');
-              const found = masterKaryawan.find(m => m.id === id);
-              if (found) sel.value = found.id_shift_default || "S1";
-          }
-      });
+    if (!confirm("Isi semua kotak yang kosong dengan Shift Default tiap karyawan?")) return;
+    document.querySelectorAll('.plotting-select').forEach(sel => {
+      if (sel.value === "") {
+        const id = sel.getAttribute('data-id');
+        const found = masterKaryawan.find(m => m.id === id);
+        if (found) sel.value = found.id_shift_default || "S1";
+      }
+    });
   }
 
   function saveActivePlotting() {
-      const assigns = [];
-      document.querySelectorAll('.plotting-select').forEach(sel => {
-          assigns.push({
-              key_id: sel.getAttribute('data-date') + "_" + sel.getAttribute('data-id'),
-              tanggal: sel.getAttribute('data-date'),
-              id_karyawan: sel.getAttribute('data-id'),
-              id_shift: sel.value
-          });
+    const assigns = [];
+    document.querySelectorAll('.plotting-select').forEach(sel => {
+      assigns.push({
+        key_id: sel.getAttribute('data-date') + "_" + sel.getAttribute('data-id'),
+        tanggal: sel.getAttribute('data-date'),
+        id_karyawan: sel.getAttribute('data-id'),
+        id_shift: sel.value
       });
-      
-      const btn = event.currentTarget;
-      btn.disabled = true;
-      btn.innerHTML = '<span class="loading"></span> Saving...';
+    });
 
+    const btn = event.currentTarget;
+    btn.disabled = true;
+    btn.innerHTML = '<span class="loading"></span> Saving...';
+
+    google.script.run
+      .withSuccessHandler(() => {
+        btn.disabled = false;
+        btn.innerHTML = '<i data-lucide="save"></i> Simpan Plotting';
+        alert("Plotting Berhasil Disimpan!");
+        lucide.createIcons();
+      })
+      .savePlottingAssignments(currentUser.clientId, assigns);
+  }
+
+  // --- LEAVE MANAGEMENT ---
+  function openLeaveModal() {
+    document.getElementById('leave-modal').style.display = 'flex';
+  }
+
+  function closeLeaveModal() {
+    document.getElementById('leave-modal').style.display = 'none';
+  }
+
+  function previewLeaveFile(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function (event) {
+      const preview = document.getElementById('leave-preview');
+      preview.src = event.target.result;
+      preview.style.display = 'block';
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function submitLeaveRequest() {
+    const type = document.getElementById('leave-type').value;
+    const range = document.getElementById('leave-range').value;
+    const reason = document.getElementById('leave-reason').value;
+    const fileInput = document.getElementById('leave-file');
+    const btn = document.getElementById('btn-submit-leave');
+
+    if (!range || !reason) {
+      alert("Harap isi rentang tanggal dan alasan.");
+      return;
+    }
+
+    btn.disabled = true;
+    btn.innerHTML = '<span class="loading"></span> Mengirim...';
+
+    const process = (base64) => {
       google.script.run
-        .withSuccessHandler(() => {
-            btn.disabled = false;
-            btn.innerHTML = '<i data-lucide="save"></i> Simpan Plotting';
-            alert("Plotting Berhasil Disimpan!");
-            lucide.createIcons();
+        .withSuccessHandler(function (res) {
+          btn.disabled = false;
+          btn.innerText = 'Kirim Pengajuan';
+          if (res.code === 200) {
+            Swal.fire('Berhasil', 'Pengajuan Anda telah dikirim dan menunggu approval.', 'success');
+            closeLeaveModal();
+            loadHistoryData(); // Refresh history to show pending leave
+          } else {
+            alert("Gagal: " + res.message);
+          }
         })
-        .savePlottingAssignments(currentUser.clientId, assigns);
+        .handleAjukanIzin({
+          client_id: currentUser.clientId,
+          id_karyawan: currentUser.id,
+          tipe_izin: type,
+          rentang_tanggal: range,
+          alasan: reason,
+          foto_base64: base64,
+          is_admin: false
+        });
+    };
+
+    if (fileInput.files.length > 0) {
+      const reader = new FileReader();
+      reader.onload = function (e) { process(e.target.result.split(',')[1]); };
+      reader.readAsDataURL(fileInput.files[0]);
+    } else {
+      process("");
+    }
+  }
+
+  function startReRegisterFace() {
+    Swal.fire({
+      title: 'Reset Wajah Web?',
+      text: "Anda harus mendaftarkan wajah kembali pada absen berikutnya.",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Ya, Reset',
+      cancelButtonText: 'Batal'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        currentUser.faceWeb = "";
+        localStorage.setItem('hadirin_user', JSON.stringify(currentUser));
+        Swal.fire('Berhasil', 'Silakan klik Absen Masuk untuk mendaftarkan wajah baru.', 'success');
+      }
+    });
+  }
+
+  // --- ADMIN: SETTINGS ---
+  function loadOfficeSettings() {
+    if (!officeConfig) {
+      google.script.run.withSuccessHandler(res => {
+        officeConfig = res.office;
+        currentSchedule = res.schedule;
+        populateSettingsFields();
+      }).getDashboardDataWeb(currentUser.clientId, currentUser.id);
+    } else {
+      populateSettingsFields();
+    }
+  }
+
+  function populateSettingsFields() {
+    document.getElementById('set-lat').value = officeConfig.lat || "";
+    document.getElementById('set-lng').value = officeConfig.lng || "";
+    document.getElementById('set-radius').value = officeConfig.radius || 100;
+
+    document.getElementById('set-jam-masuk').value = currentSchedule.masuk || "04:00";
+    document.getElementById('set-batas-masuk').value = officeConfig.batas_jam_masuk || "07:00";
+    document.getElementById('set-jam-pulang').value = currentSchedule.pulang || "13:00";
+    document.getElementById('set-interval').value = officeConfig.tl_interval || 30;
+    document.getElementById('set-max-tier').value = officeConfig.max_tier || 0;
+  }
+
+  function saveOfficeLocation() {
+    const lat = document.getElementById('set-lat').value;
+    const lng = document.getElementById('set-lng').value;
+    const rad = document.getElementById('set-radius').value;
+
+    google.script.run
+      .withSuccessHandler(() => {
+        Swal.fire('Berhasil', 'Lokasi kantor diperbarui.', 'success');
+        officeConfig.lat = lat; officeConfig.lng = lng; officeConfig.radius = rad;
+      })
+      .handleUpdateLokasi({ client_id: currentUser.clientId, lat: lat, lng: lng, radius: rad });
+  }
+
+  function saveWorkHours() {
+    const payload = {
+      client_id: currentUser.clientId,
+      jam_masuk_mulai: document.getElementById('set-jam-masuk').value,
+      batas_jam_masuk: document.getElementById('set-batas-masuk').value,
+      jam_pulang_mulai: document.getElementById('set-jam-pulang').value,
+      tl_interval: document.getElementById('set-interval').value,
+      max_tier: document.getElementById('set-max-tier').value
+    };
+
+    google.script.run
+      .withSuccessHandler(() => {
+        Swal.fire('Berhasil', 'Aturan jam kerja diperbarui.', 'success');
+        currentSchedule.masuk = payload.jam_masuk_mulai;
+        currentSchedule.pulang = payload.jam_pulang_mulai;
+      })
+      .handleUpdateJamKerja(payload);
+  }
+
+  // --- ADMIN: REPORTS ---
+  function initReportView() {
+    const now = new Date();
+    const monthVal = now.getFullYear() + "-" + String(now.getMonth() + 1).padStart(2, '0');
+    document.getElementById('report-month-picker').value = monthVal;
+    loadReportData();
+    document.getElementById('report-month-picker').addEventListener('change', loadReportData);
+  }
+
+  function loadReportData() {
+    const monthVal = document.getElementById('report-month-picker').value;
+    const [year, month] = monthVal.split('-');
+    const formattedDate = month + "-" + year; // MM-YYYY
+
+    const tbody = document.getElementById('report-body');
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 40px;">Mengolah laporan...</td></tr>';
+
+    google.script.run
+      .withSuccessHandler(function (res) {
+        tbody.innerHTML = '';
+        const logs = res.message || res;
+        if (!logs || logs.length === 0 || logs.error) {
+          tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 40px;">Tidak ada data untuk bulan ini.</td></tr>';
+          return;
+        }
+        logs.forEach(log => {
+          const row = document.createElement('tr');
+          row.innerHTML = `
+            <td>${log.waktu}</td>
+            <td>${log.id_karyawan}</td>
+            <td><b>${log.nama}</b></td>
+            <td>${log.tipe}</td>
+            <td><span class="badge-tipe">${log.status}</span></td>
+          `;
+          tbody.appendChild(row);
+        });
+      })
+      .handleGetMonthlyReport({ client_id: currentUser.clientId, bulan_tahun: formattedDate, id_karyawan_target: "SEMUA" });
+  }
+
+  function downloadReport() {
+    const table = document.getElementById('report-table');
+    const workbook = XLSX.utils.table_to_book(table, { sheet: "Laporan Absensi" });
+
+    // Style adjustments (basic)
+    const ws = workbook.Sheets["Laporan Absensi"];
+    ws['!cols'] = [{ wch: 25 }, { wch: 15 }, { wch: 30 }, { wch: 15 }, { wch: 20 }];
+
+    const monthLabel = document.getElementById('report-month-picker').value;
+    XLSX.writeFile(workbook, `Laporan_Hadirin_${monthLabel}.xlsx`);
+  }
+
+  function handleDeleteMember(targetId) {
+    Swal.fire({
+      title: 'Hapus Anggota?',
+      text: `Seluruh data anggota ${targetId} akan dihapus secara permanen.`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#EF4444',
+      confirmButtonText: 'Ya, Hapus!',
+      cancelButtonText: 'Batal'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        google.script.run
+          .withSuccessHandler(function (res) {
+            if (res.success) {
+              Swal.fire('Terhapus', res.message, 'success');
+              loadMembersData();
+            } else {
+              Swal.fire('Gagal', res.message, 'error');
+            }
+          })
+          .handleDeleteKaryawan({ client_id: currentUser.clientId, target_id: targetId });
+      }
+    });
+  }
+
+  // --- ADMIN: ADD MEMBER ---
+  function openAddMemberModal() {
+    const modal = document.getElementById('add-member-modal');
+    if (modal) {
+      modal.classList.add('modal-active');
+      modal.style.display = 'flex';
+    } else {
+      console.error("Modal add-member-modal not found!");
+    }
+  }
+
+  function closeAddMemberModal() {
+    const modal = document.getElementById('add-member-modal');
+    if (modal) {
+      modal.classList.remove('modal-active');
+      modal.style.display = 'none';
+    }
+  }
+
+  function submitAddMember() {
+    const id = document.getElementById('add-m-id').value;
+    const nama = document.getElementById('add-m-nama').value;
+    const div = document.getElementById('add-m-divisi').value;
+    const hp = document.getElementById('add-m-hp').value;
+    const shift = document.getElementById('add-m-shift').value;
+    const btn = document.getElementById('btn-submit-add-m');
+
+    if (!id || !nama) {
+      alert("ID dan Nama wajib diisi.");
+      return;
+    }
+
+    btn.disabled = true;
+    btn.innerHTML = '<span class="loading"></span> Menyimpan...';
+
+    google.script.run
+      .withSuccessHandler((res) => {
+        btn.disabled = false;
+        btn.innerText = 'Simpan Anggota';
+        if (res.code === 200) {
+          Swal.fire('Berhasil', 'Anggota baru telah ditambahkan.', 'success');
+          closeAddMemberModal();
+          loadMembersData();
+        } else {
+          alert("Gagal: " + res.message);
+        }
+      })
+      .handleAddAnggota({
+        client_id: currentUser.clientId,
+        id_karyawan_baru: id,
+        nama_karyawan_baru: nama,
+        divisi_baru: div,
+        no_hp: hp,
+        default_shift: shift
+      });
   }
 </script>
