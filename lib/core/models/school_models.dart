@@ -2,11 +2,13 @@ class BannerModel {
   final String idBanner;
   final String judul;
   final String urlGambar;
+  final String status;
 
   BannerModel({
     required this.idBanner,
     required this.judul,
     required this.urlGambar,
+    this.status = "Aktif",
   });
 
   factory BannerModel.fromJson(Map<String, dynamic> json) {
@@ -14,6 +16,7 @@ class BannerModel {
       idBanner: json['id_banner'].toString(),
       judul: json['judul'].toString(),
       urlGambar: json['url_gambar'].toString(),
+      status: json['status']?.toString() ?? "Aktif",
     );
   }
 }
@@ -61,11 +64,11 @@ class LaporanNgajiModel {
 
   factory LaporanNgajiModel.fromJson(Map<String, dynamic> json) {
     return LaporanNgajiModel(
-      idGuru: json['id_guru'].toString(),
-      namaKelompok: json['nama_kelompok'].toString(),
-      lokasi: json['lokasi'].toString(),
-      materiKeterangan: json['materi_keterangan'].toString(),
-      tanggal: json['tanggal']?.toString(),
+      idGuru: (json['id_guru'] ?? json['ID_Guru'] ?? '').toString(),
+      namaKelompok: (json['kelompok'] ?? json['nama_kelompok'] ?? json['Nama_Kelompok'] ?? '').toString(),
+      lokasi: (json['lokasi'] ?? json['Lokasi'] ?? '').toString(),
+      materiKeterangan: (json['materi'] ?? json['materi_keterangan'] ?? json['Materi_Keterangan'] ?? '').toString(),
+      tanggal: (json['waktu'] ?? json['tanggal'] ?? json['Timestamp'])?.toString(),
     );
   }
 }

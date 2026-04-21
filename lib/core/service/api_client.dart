@@ -6,7 +6,7 @@ import 'package:hadirin/core/config/app_config.dart';
 /// Kelas dasar yang menyimpan logika HTTP bersama.
 /// Semua service mewarisi kelas ini — tidak perlu duplikasi kode.
 abstract class ApiClient {
-  static const _timeout = Duration(seconds: 20);
+  static const _timeout = Duration(seconds: 45);
 
   // =================================================================
   // HTTP POST + handle redirect 302/303 khas Google Apps Script
@@ -34,32 +34,37 @@ abstract class ApiClient {
       'Payload: ${jsonEncode(logPayload)}',
     );
 
-    var response = await http
-        .post(
-          Uri.parse(AppConfig.gasEndpoint),
-          headers: {'Content-Type': 'application/json'},
-          body: jsonEncode(payload),
-        )
-        .timeout(effectiveTimeout);
+    try {
+      var response = await http
+          .post(
+            Uri.parse(AppConfig.gasEndpoint),
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode(payload),
+          )
+          .timeout(effectiveTimeout);
 
-    // Google Apps Script sering redirect sebelum balas JSON
-    if (response.statusCode == 302 || response.statusCode == 303) {
-      final redirectUrl = _extractRedirectUrl(response);
-      if (redirectUrl != null) {
-        d.log('==== [REDIRECT: $actionName] ==== Mengikuti URL baru...');
-        response = await http
-            .get(Uri.parse(redirectUrl))
-            .timeout(effectiveTimeout);
+      // Google Apps Script sering redirect sebelum balas JSON
+      if (response.statusCode == 302 || response.statusCode == 303) {
+        final redirectUrl = _extractRedirectUrl(response);
+        if (redirectUrl != null) {
+          d.log('==== [REDIRECT: $actionName] ==== Mengikuti URL baru...');
+          response = await http
+              .get(Uri.parse(redirectUrl))
+              .timeout(effectiveTimeout);
+        }
       }
+
+      d.log(
+        '==== [RESPONSE: $actionName] ====\n'
+        'Status: ${response.statusCode}\n'
+        'Body: ${response.body}',
+      );
+
+      return response;
+    } catch (e) {
+      d.log('==== [HTTP ERROR: $actionName] ==== $e');
+      rethrow;
     }
-
-    d.log(
-      '==== [RESPONSE: $actionName] ====\n'
-      'Status: ${response.statusCode}\n'
-      'Body: ${response.body}',
-    );
-
-    return response;
   }
 
   // =================================================================
@@ -84,12 +89,15 @@ abstract class ApiClient {
           "Kode Instansi tidak ditemukan atau belum terdaftar di sistem.",
         );
       }
-      if (body.contains('Absen berhasil dicatat')) {
-        return {'success': true, 'message': 'Absen berhasil dicatat.'};
+      if (body.contains('Absen berhasil dicatat') || 
+          body.toLowerCase().contains('berhasil') || 
+          body.toLowerCase().contains('success') ||
+          body.contains('Data berhasil ditambahkan')) {
+        return {'success': true, 'message': 'Data berhasil disimpan.'};
       }
       d.log("==== FORMAT ERROR: SERVER CRASH? ====\n$body");
       throw Exception(
-        "Server sedang mengalami kendala teknis. Harap hubungi Admin.",
+        body.length < 50 ? body : "Server sedang mengalami kendala teknis. Harap hubungi Admin.",
       );
     }
   }

@@ -31,6 +31,69 @@ class SchoolService extends ApiClient {
     }
   }
 
+  Future<Map<String, dynamic>> addBanner({
+    required String clientId,
+    required String judul,
+    required String fotoBase64,
+  }) async {
+    try {
+      final payload = {
+        'api_token': AppConfig.apiToken,
+        'client_id': clientId,
+        'action': 'add_banner',
+        'judul': judul,
+        'foto_base64': fotoBase64,
+      };
+
+      final response = await sendRequest('add_banner', payload);
+      return parseResponse(response.body);
+    } catch (e) {
+      return {'success': false, 'message': e.toString()};
+    }
+  }
+
+  Future<Map<String, dynamic>> deleteBanner({
+    required String clientId,
+    required String idBanner,
+  }) async {
+    try {
+      final payload = {
+        'api_token': AppConfig.apiToken,
+        'client_id': clientId,
+        'action': 'delete_banner',
+        'id_banner': idBanner,
+      };
+
+      final response = await sendRequest('delete_banner', payload);
+      return parseResponse(response.body);
+    } catch (e) {
+      return {'success': false, 'message': e.toString()};
+    }
+  }
+
+  Future<Map<String, dynamic>> editBanner({
+    required String clientId,
+    required String idBanner,
+    String? judulBaru,
+    String? statusBaru,
+  }) async {
+    try {
+      final payload = {
+        'api_token': AppConfig.apiToken,
+        'client_id': clientId,
+        'action': 'edit_banner',
+        'id_banner': idBanner,
+        if (judulBaru != null) 'judul_baru': judulBaru,
+        if (statusBaru != null) 'status_baru': statusBaru,
+      };
+
+      final response = await sendRequest('edit_banner', payload);
+      return parseResponse(response.body);
+    } catch (e) {
+      return {'success': false, 'message': e.toString()};
+    }
+  }
+
   // =================================================================
   // 2. JADWAL & ABSEN KEGIATAN
   // =================================================================
@@ -77,7 +140,7 @@ class SchoolService extends ApiClient {
         'id_admin': idAdmin,
       };
 
-      final response = await sendRequest('add_karyawan', payload); // Note: actions might vary in backend logic, but following the prompt
+      final response = await sendRequest('add_jadwal_kegiatan', payload);
       return parseResponse(response.body);
     } catch (e) {
       return {'success': false, 'message': e.toString()};
@@ -128,10 +191,16 @@ class SchoolService extends ApiClient {
         'materi_keterangan': materiKeterangan,
       };
 
-      final response = await sendRequest('submit_laporan_ngaji', payload);
+      final response = await sendRequest(
+        'submit_laporan_ngaji',
+        payload,
+        timeout: const Duration(seconds: 45),
+      );
+      d.log('==== [RESPONSE BODY submit_laporan_ngaji] ==== ${response.statusCode}: ${response.body}');
       return parseResponse(response.body);
     } catch (e) {
-      return {'success': false, 'message': e.toString()};
+      d.log('==== ERROR submitLaporanNgaji ==== $e');
+      return {'success': false, 'message': e.toString().replaceAll('Exception: ', '')};
     }
   }
 
@@ -149,11 +218,17 @@ class SchoolService extends ApiClient {
         final data = jsonDecode(response.body);
         if (data['code'] == 200) {
           final List list = data['message'];
+          // DEBUG: cetak key dari item pertama
+          if (list.isNotEmpty) {
+            d.log('==== LAPORAN NGAJI KEYS ==== ${(list.first as Map).keys.toList()}');
+            d.log('==== LAPORAN NGAJI FIRST ==== ${list.first}');
+          }
           return list.map((e) => LaporanNgajiModel.fromJson(e)).toList();
         }
       }
       return [];
     } catch (e) {
+      d.log('==== ERROR GET LAPORAN NGAJI ==== $e');
       return [];
     }
   }

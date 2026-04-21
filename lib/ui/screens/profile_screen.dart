@@ -6,6 +6,7 @@ import 'package:hadirin/core/service/export_service.dart';
 import 'package:hadirin/core/service/face_service.dart';
 import 'package:hadirin/ui/screens/add_anggota_screen.dart';
 import 'package:hadirin/ui/screens/approval_screen.dart';
+import 'package:hadirin/ui/screens/leave_history_screen.dart';
 import 'package:hadirin/ui/screens/login_screen.dart';
 import 'package:hadirin/ui/screens/set_location_screen.dart';
 import 'package:hadirin/ui/widgets/custom_date_range_picker.dart';
@@ -18,8 +19,10 @@ import 'package:hadirin/core/utils/url_helper.dart';
 import 'package:hadirin/ui/screens/leave_request_screen.dart';
 import 'package:hadirin/ui/screens/anggota_list_screen.dart';
 import 'package:hadirin/ui/widgets/attendance_history_list.dart';
-import 'package:hadirin/ui/screens/leave_history_screen.dart';
 import 'package:hadirin/ui/screens/set_worktime_screen.dart';
+import 'package:hadirin/ui/screens/banner_management_screen.dart';
+import 'package:hadirin/ui/screens/jadwal_kegiatan_screen.dart';
+import 'package:hadirin/ui/screens/laporan_ngaji_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -926,6 +929,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     accentColor: const Color(0xFF16A34A),
                   ),
                   _buildMenuCard(
+                    title: "Jadwal\nKegiatan",
+                    icon: Icons.event_note_rounded,
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const JadwalKegiatanScreen()),
+                    ),
+                    accentColor: const Color(0xFF0EA5E9),
+                  ),
+                  _buildMenuCard(
+                    title: "Pengajian\nGuru",
+                    icon: Icons.menu_book_rounded,
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const LaporanNgajiScreen()),
+                    ),
+                    accentColor: const Color(0xFF8B5CF6),
+                  ),
+                  _buildMenuCard(
                     title: "Riwayat\nIzin",
                     icon: Icons.history_edu_rounded,
                     onTap: () => Navigator.push(
@@ -1004,6 +1025,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ),
                       ),
                       accentColor: const Color(0xFFEA580C), // Orange-ish
+                    ),
+                    _buildMenuCard(
+                      title: "Manajemen\nBanner",
+                      icon: Icons.view_carousel_rounded,
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const BannerManagementScreen(),
+                        ),
+                      ),
+                      accentColor: Colors.purple.shade600,
                     ),
                     _buildMenuCard(
                       title: "Reset\nPerangkat",
