@@ -100,9 +100,9 @@ class _AttendanceScreenState extends State<AttendanceScreen>
       final config = await AdminService().getOfficeConfig(auth.clientId ?? "");
       if (config != null && mounted) {
         setState(() {
-          _jamMasukMulai = config['jam_masuk_mulai'].toString();
-          _batasJamMasuk = config['batas_jam_masuk'].toString();
-          _jamPulangMulai = config['jam_pulang_mulai'].toString();
+          _jamMasukMulai = config['jam_masuk_mulai']?.toString() == "null" ? "-" : (config['jam_masuk_mulai']?.toString() ?? "-");
+          _batasJamMasuk = config['batas_jam_masuk']?.toString() == "null" ? "-" : (config['batas_jam_masuk']?.toString() ?? "-");
+          _jamPulangMulai = config['jam_pulang_mulai']?.toString() == "null" ? "-" : (config['jam_pulang_mulai']?.toString() ?? "-");
           _isConfigLoaded = true;
         });
       }

@@ -31,9 +31,9 @@ class _SetWorktimeScreenState extends State<SetWorktimeScreen> {
     final config = await AdminService().getOfficeConfig(auth.clientId ?? "");
     if (config != null && mounted) {
       setState(() {
-        _jamMasukMulai = config['jam_masuk_mulai'].toString();
-        _batasJamMasuk = config['batas_jam_masuk'].toString();
-        _jamPulangMulai = config['jam_pulang_mulai'].toString();
+        _jamMasukMulai = config['jam_masuk_mulai']?.toString() == "null" ? "-" : (config['jam_masuk_mulai']?.toString() ?? "-");
+        _batasJamMasuk = config['batas_jam_masuk']?.toString() == "null" ? "-" : (config['batas_jam_masuk']?.toString() ?? "-");
+        _jamPulangMulai = config['jam_pulang_mulai']?.toString() == "null" ? "-" : (config['jam_pulang_mulai']?.toString() ?? "-");
         _isLoading = false;
       });
     } else {
@@ -42,6 +42,7 @@ class _SetWorktimeScreenState extends State<SetWorktimeScreen> {
   }
 
   int _timeToTotalMinutes(String time) {
+    if (time == "-") return 0;
     final parts = time.split(':');
     return (int.parse(parts[0]) * 60) + int.parse(parts[1]);
   }
@@ -89,7 +90,8 @@ class _SetWorktimeScreenState extends State<SetWorktimeScreen> {
   }
 
   void _showTimePicker(String current, Function(String) onPicked) {
-    final parts = current.split(':');
+    final validTime = (current == "-" || current.isEmpty) ? "00:00" : current;
+    final parts = validTime.split(':');
     DateTime initial = DateTime(2026, 1, 1, int.parse(parts[0]), int.parse(parts[1]));
     DateTime tempDateTime = initial;
 
