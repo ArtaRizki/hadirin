@@ -120,4 +120,16 @@ class FaceService extends ApiClient {
     }
     return sqrt(sum);
   }
+
+  // =================================================================
+  // SINKRONISASI STATUS WAJAH DARI SERVER KE LOKAL
+  // =================================================================
+  Future<bool> syncFaceRegistrationStatus(String idAnggota, String clientId) async {
+    try {
+      final master = await getWajahMasterDariServer(idAnggota, clientId);
+      return master.isNotEmpty;
+    } catch (e) {
+      return false;
+    }
+  }
 }

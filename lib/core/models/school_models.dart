@@ -130,7 +130,7 @@ class NilaiQuranModel {
       halamanAyat: json['halaman_ayat']?.toString() ?? '',
       nilai: json['nilai']?.toString() ?? '',
       keterangan: json['keterangan']?.toString() ?? '',
-      tanggal: json['tanggal']?.toString(),
+      tanggal: (json['waktu'] ?? json['tanggal'] ?? json['Timestamp'])?.toString(),
     );
   }
 }

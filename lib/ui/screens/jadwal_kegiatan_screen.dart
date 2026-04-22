@@ -22,7 +22,10 @@ class _AbsenCache {
   }
 
   static Future<void> saveStatus(
-      String idKegiatan, String idKaryawan, String status) async {
+    String idKegiatan,
+    String idKaryawan,
+    String status,
+  ) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_key(idKegiatan, idKaryawan), status);
   }
@@ -68,11 +71,19 @@ class _JadwalKegiatanScreenState extends State<JadwalKegiatanScreen> {
         showDialog(
           context: context,
           builder: (_) => AlertDialog(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-            icon: Icon(Icons.lock_rounded, color: Colors.indigo.shade400, size: 40),
-            title: const Text("Absensi Dikelola Admin",
-                textAlign: TextAlign.center,
-                style: TextStyle(fontWeight: FontWeight.w800)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
+            icon: Icon(
+              Icons.lock_rounded,
+              color: Colors.indigo.shade400,
+              size: 40,
+            ),
+            title: const Text(
+              "Absensi Dikelola Admin",
+              textAlign: TextAlign.center,
+              style: TextStyle(fontWeight: FontWeight.w800),
+            ),
             content: const Text(
               "Kehadiran untuk kegiatan Rapat diinput langsung oleh Admin. Silakan konfirmasi kehadiran Anda kepada Admin.",
               textAlign: TextAlign.center,
@@ -82,7 +93,7 @@ class _JadwalKegiatanScreenState extends State<JadwalKegiatanScreen> {
               TextButton(
                 onPressed: () => Navigator.pop(context),
                 child: const Text("Mengerti"),
-              )
+              ),
             ],
           ),
         );
@@ -138,13 +149,15 @@ class _JadwalKegiatanScreenState extends State<JadwalKegiatanScreen> {
                     height: 4,
                     margin: const EdgeInsets.only(bottom: 20),
                     decoration: BoxDecoration(
-                        color: Colors.grey.shade300,
-                        borderRadius: BorderRadius.circular(2)),
+                      color: Colors.grey.shade300,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
                   ),
                 ),
-                const Text("Tambah Kegiatan",
-                    style:
-                        TextStyle(fontSize: 20, fontWeight: FontWeight.w900)),
+                const Text(
+                  "Tambah Kegiatan",
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900),
+                ),
                 const SizedBox(height: 24),
                 _inputLabel("Nama Kegiatan"),
                 const SizedBox(height: 8),
@@ -155,15 +168,18 @@ class _JadwalKegiatanScreenState extends State<JadwalKegiatanScreen> {
                 DropdownButtonFormField<String>(
                   value: selectedTipe,
                   decoration: _inputDecoration(),
-                  items: [
-                    'Rapat',
-                    'Seminar',
-                    'Kegiatan Sekolah',
-                    'Olahraga',
-                    'Lainnya'
-                  ]
-                      .map((t) => DropdownMenuItem(value: t, child: Text(t)))
-                      .toList(),
+                  items:
+                      [
+                            'Rapat',
+                            'Seminar',
+                            'Kegiatan Sekolah',
+                            'Olahraga',
+                            'Lainnya',
+                          ]
+                          .map(
+                            (t) => DropdownMenuItem(value: t, child: Text(t)),
+                          )
+                          .toList(),
                   onChanged: (v) => setSheet(() => selectedTipe = v!),
                 ),
                 const SizedBox(height: 16),
@@ -178,8 +194,9 @@ class _JadwalKegiatanScreenState extends State<JadwalKegiatanScreen> {
                             context: ctx,
                             initialDate: selectedDate,
                             firstDate: DateTime.now(),
-                            lastDate: DateTime.now()
-                                .add(const Duration(days: 365)),
+                            lastDate: DateTime.now().add(
+                              const Duration(days: 365),
+                            ),
                           );
                           if (picked != null) {
                             setSheet(() => selectedDate = picked);
@@ -187,19 +204,26 @@ class _JadwalKegiatanScreenState extends State<JadwalKegiatanScreen> {
                         },
                         child: Container(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 14, vertical: 14),
+                            horizontal: 14,
+                            vertical: 14,
+                          ),
                           decoration: BoxDecoration(
-                              color: Colors.grey.shade100,
-                              borderRadius: BorderRadius.circular(14)),
+                            color: Colors.grey.shade100,
+                            borderRadius: BorderRadius.circular(14),
+                          ),
                           child: Row(
                             children: [
-                              Icon(Icons.calendar_today_rounded,
-                                  size: 16, color: context.primaryColor),
+                              Icon(
+                                Icons.calendar_today_rounded,
+                                size: 16,
+                                color: context.primaryColor,
+                              ),
                               const SizedBox(width: 8),
                               Text(
                                 DateFormat('dd MMM yyyy').format(selectedDate),
                                 style: const TextStyle(
-                                    fontWeight: FontWeight.w600),
+                                  fontWeight: FontWeight.w600,
+                                ),
                               ),
                             ],
                           ),
@@ -211,26 +235,35 @@ class _JadwalKegiatanScreenState extends State<JadwalKegiatanScreen> {
                       child: GestureDetector(
                         onTap: () async {
                           final picked = await showTimePicker(
-                              context: ctx, initialTime: selectedTime);
+                            context: ctx,
+                            initialTime: selectedTime,
+                          );
                           if (picked != null) {
                             setSheet(() => selectedTime = picked);
                           }
                         },
                         child: Container(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 14, vertical: 14),
+                            horizontal: 14,
+                            vertical: 14,
+                          ),
                           decoration: BoxDecoration(
-                              color: Colors.grey.shade100,
-                              borderRadius: BorderRadius.circular(14)),
+                            color: Colors.grey.shade100,
+                            borderRadius: BorderRadius.circular(14),
+                          ),
                           child: Row(
                             children: [
-                              Icon(Icons.access_time_rounded,
-                                  size: 16, color: context.primaryColor),
+                              Icon(
+                                Icons.access_time_rounded,
+                                size: 16,
+                                color: context.primaryColor,
+                              ),
                               const SizedBox(width: 8),
                               Text(
                                 selectedTime.format(ctx),
                                 style: const TextStyle(
-                                    fontWeight: FontWeight.w600),
+                                  fontWeight: FontWeight.w600,
+                                ),
                               ),
                             ],
                           ),
@@ -242,8 +275,11 @@ class _JadwalKegiatanScreenState extends State<JadwalKegiatanScreen> {
                 const SizedBox(height: 16),
                 _inputLabel("Deskripsi"),
                 const SizedBox(height: 8),
-                _textField(deskripsiCtrl, "Keterangan tambahan...",
-                    maxLines: 3),
+                _textField(
+                  deskripsiCtrl,
+                  "Keterangan tambahan...",
+                  maxLines: 3,
+                ),
                 const SizedBox(height: 28),
                 SizedBox(
                   width: double.infinity,
@@ -253,7 +289,8 @@ class _JadwalKegiatanScreenState extends State<JadwalKegiatanScreen> {
                       backgroundColor: context.primaryColor,
                       foregroundColor: Colors.white,
                       shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16)),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
                     ),
                     onPressed: isSaving
                         ? null
@@ -279,7 +316,8 @@ class _JadwalKegiatanScreenState extends State<JadwalKegiatanScreen> {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
                                   content: const Text(
-                                      "Kegiatan berhasil ditambahkan!"),
+                                    "Kegiatan berhasil ditambahkan!",
+                                  ),
                                   backgroundColor: Colors.green.shade600,
                                   behavior: SnackBarBehavior.floating,
                                 ),
@@ -287,9 +325,9 @@ class _JadwalKegiatanScreenState extends State<JadwalKegiatanScreen> {
                             } else {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
-                                    content:
-                                        Text(res['message'] ?? 'Gagal'),
-                                    backgroundColor: Colors.red),
+                                  content: Text(res['message'] ?? 'Gagal'),
+                                  backgroundColor: Colors.red,
+                                ),
                               );
                             }
                           },
@@ -298,11 +336,17 @@ class _JadwalKegiatanScreenState extends State<JadwalKegiatanScreen> {
                             width: 20,
                             height: 20,
                             child: CircularProgressIndicator(
-                                color: Colors.white, strokeWidth: 2),
+                              color: Colors.white,
+                              strokeWidth: 2,
+                            ),
                           )
-                        : const Text("Simpan Kegiatan",
+                        : const Text(
+                            "Simpan Kegiatan",
                             style: TextStyle(
-                                fontWeight: FontWeight.bold, fontSize: 16)),
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                          ),
                   ),
                 ),
               ],
@@ -313,28 +357,282 @@ class _JadwalKegiatanScreenState extends State<JadwalKegiatanScreen> {
     );
   }
 
-  Widget _inputLabel(String text) => Text(text,
-      style: const TextStyle(
-          fontWeight: FontWeight.w700,
-          fontSize: 13,
-          color: Color(0xFF1E293B)));
+  void _showEditSheet(JadwalKegiatanModel k) {
+    final namaCtrl = TextEditingController(text: k.namaKegiatan);
+    final deskripsiCtrl = TextEditingController(text: k.deskripsi);
+    String selectedTipe = k.tipe;
+    DateTime selectedDate = DateTime.now();
+    TimeOfDay selectedTime = TimeOfDay.now();
+    bool isSaving = false;
 
-  Widget _textField(TextEditingController ctrl, String hint,
-          {int maxLines = 1}) =>
-      TextField(
-          controller: ctrl,
-          maxLines: maxLines,
-          decoration: _inputDecoration().copyWith(hintText: hint));
+    try {
+      selectedDate = DateTime.parse(k.tanggalWaktu);
+      selectedTime = TimeOfDay.fromDateTime(selectedDate);
+    } catch (_) {}
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setSheet) => Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
+          ),
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(ctx).viewInsets.bottom + 32,
+            top: 24,
+            left: 24,
+            right: 24,
+          ),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    margin: const EdgeInsets.only(bottom: 20),
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade300,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                const Text(
+                  "Edit Kegiatan",
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900),
+                ),
+                const SizedBox(height: 24),
+                _inputLabel("Nama Kegiatan"),
+                const SizedBox(height: 8),
+                _textField(namaCtrl, "Contoh: Rapat Koordinasi Guru"),
+                const SizedBox(height: 16),
+                _inputLabel("Tipe Kegiatan"),
+                const SizedBox(height: 8),
+                DropdownButtonFormField<String>(
+                  value: selectedTipe,
+                  decoration: _inputDecoration(),
+                  items:
+                      [
+                            'Rapat',
+                            'Seminar',
+                            'Kegiatan Sekolah',
+                            'Olahraga',
+                            'Lainnya',
+                          ]
+                          .map(
+                            (t) => DropdownMenuItem(value: t, child: Text(t)),
+                          )
+                          .toList(),
+                  onChanged: (v) => setSheet(() => selectedTipe = v!),
+                ),
+                const SizedBox(height: 16),
+                _inputLabel("Tanggal & Waktu"),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: () async {
+                          final picked = await showDatePicker(
+                            context: ctx,
+                            initialDate: selectedDate,
+                            firstDate: DateTime(2024),
+                            lastDate: DateTime.now().add(
+                              const Duration(days: 365),
+                            ),
+                          );
+                          if (picked != null) {
+                            setSheet(() => selectedDate = picked);
+                          }
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 14,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.grey.shade100,
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.calendar_today_rounded,
+                                size: 16,
+                                color: context.primaryColor,
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                DateFormat('dd MMM yyyy').format(selectedDate),
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: () async {
+                          final picked = await showTimePicker(
+                            context: ctx,
+                            initialTime: selectedTime,
+                          );
+                          if (picked != null) {
+                            setSheet(() => selectedTime = picked);
+                          }
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 14,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.grey.shade100,
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.access_time_rounded,
+                                size: 16,
+                                color: context.primaryColor,
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                selectedTime.format(ctx),
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                _inputLabel("Deskripsi"),
+                const SizedBox(height: 8),
+                _textField(
+                  deskripsiCtrl,
+                  "Keterangan tambahan...",
+                  maxLines: 3,
+                ),
+                const SizedBox(height: 28),
+                SizedBox(
+                  width: double.infinity,
+                  height: 56,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: context.primaryColor,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ),
+                    onPressed: isSaving
+                        ? null
+                        : () async {
+                            if (namaCtrl.text.trim().isEmpty) return;
+                            setSheet(() => isSaving = true);
+                            final auth = context.read<AuthProvider>();
+                            final tanggalWaktu =
+                                '${DateFormat('yyyy-MM-dd').format(selectedDate)} ${selectedTime.hour.toString().padLeft(2, '0')}:${selectedTime.minute.toString().padLeft(2, '0')}';
+                            final res = await _service.editJadwalKegiatan(
+                              clientId: auth.clientId ?? '',
+                              idKegiatan: k.idKegiatan,
+                              namaKegiatan: namaCtrl.text.trim(),
+                              tipe: selectedTipe,
+                              tanggalWaktu: tanggalWaktu,
+                              deskripsi: deskripsiCtrl.text.trim(),
+                            );
+                            if (!mounted) return;
+                            setSheet(() => isSaving = false);
+                            if (res['success'] == true) {
+                              Navigator.pop(ctx);
+                              _fetch();
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: const Text(
+                                    "Kegiatan berhasil diperbarui!",
+                                  ),
+                                  backgroundColor: Colors.green.shade600,
+                                  behavior: SnackBarBehavior.floating,
+                                ),
+                              );
+                            } else {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(res['message'] ?? 'Gagal'),
+                                  backgroundColor: Colors.red,
+                                ),
+                              );
+                            }
+                          },
+                    child: isSaving
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2,
+                            ),
+                          )
+                        : const Text(
+                            "Update Kegiatan",
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                          ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _inputLabel(String text) => Text(
+    text,
+    style: const TextStyle(
+      fontWeight: FontWeight.w700,
+      fontSize: 13,
+      color: Color(0xFF1E293B),
+    ),
+  );
+
+  Widget _textField(
+    TextEditingController ctrl,
+    String hint, {
+    int maxLines = 1,
+  }) => TextField(
+    controller: ctrl,
+    maxLines: maxLines,
+    decoration: _inputDecoration().copyWith(hintText: hint),
+  );
 
   InputDecoration _inputDecoration() => InputDecoration(
-        filled: true,
-        fillColor: Colors.grey.shade100,
-        border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(14),
-            borderSide: BorderSide.none),
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      );
+    filled: true,
+    fillColor: Colors.grey.shade100,
+    border: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(14),
+      borderSide: BorderSide.none,
+    ),
+    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+  );
 
   Color _tipeColor(String tipe) {
     switch (tipe) {
@@ -364,18 +662,24 @@ class _JadwalKegiatanScreenState extends State<JadwalKegiatanScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isAdmin = context.read<AuthProvider>().isAdmin;
+    final isAdmin = context.watch<AuthProvider>().isAdmin;
     return Scaffold(
       backgroundColor: const Color(0xFFF4F6FF),
       appBar: AppBar(
-        title: const Text("Jadwal Kegiatan",
-            style: TextStyle(
-                fontWeight: FontWeight.w900, color: Color(0xFF0F172A))),
+        title: const Text(
+          "Jadwal Kegiatan",
+          style: TextStyle(
+            fontWeight: FontWeight.w900,
+            color: Color(0xFF0F172A),
+          ),
+        ),
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded,
-              color: Color(0xFF0F172A)),
+          icon: const Icon(
+            Icons.arrow_back_ios_new_rounded,
+            color: Color(0xFF0F172A),
+          ),
           onPressed: () => Navigator.pop(context),
         ),
       ),
@@ -397,36 +701,43 @@ class _JadwalKegiatanScreenState extends State<JadwalKegiatanScreen> {
               onPressed: _showTambahSheet,
               backgroundColor: context.primaryColor,
               icon: const Icon(Icons.add, color: Colors.white),
-              label: const Text("Tambah Kegiatan",
-                  style: TextStyle(
-                      color: Colors.white, fontWeight: FontWeight.bold)),
+              label: const Text(
+                "Tambah Kegiatan",
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             )
           : null,
     );
   }
 
   Widget _buildEmpty() => Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.event_busy_rounded,
-                size: 72, color: Colors.grey.shade300),
-            const SizedBox(height: 16),
-            Text("Belum ada kegiatan",
-                style: TextStyle(
-                    color: Colors.grey.shade500,
-                    fontWeight: FontWeight.w600)),
-            const SizedBox(height: 8),
-            Text("Tekan tombol '+' untuk menambah kegiatan baru.",
-                style:
-                    TextStyle(color: Colors.grey.shade400, fontSize: 12)),
-          ],
+    child: Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Icon(Icons.event_busy_rounded, size: 72, color: Colors.grey.shade300),
+        const SizedBox(height: 16),
+        Text(
+          "Belum ada kegiatan",
+          style: TextStyle(
+            color: Colors.grey.shade500,
+            fontWeight: FontWeight.w600,
+          ),
         ),
-      );
+        const SizedBox(height: 8),
+        Text(
+          "Tekan tombol '+' untuk menambah kegiatan baru.",
+          style: TextStyle(color: Colors.grey.shade400, fontSize: 12),
+        ),
+      ],
+    ),
+  );
 
   Widget _buildKegiatanCard(JadwalKegiatanModel k) {
     final color = _tipeColor(k.tipe);
-    final isAdmin = context.read<AuthProvider>().isAdmin;
+    final isAdmin = context.watch<AuthProvider>().isAdmin;
     final isRapat = k.tipe == 'Rapat';
     DateTime? dt;
     try {
@@ -440,9 +751,10 @@ class _JadwalKegiatanScreenState extends State<JadwalKegiatanScreen> {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-              color: Colors.black.withOpacity(0.04),
-              blurRadius: 12,
-              offset: const Offset(0, 4))
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
         ],
       ),
       child: InkWell(
@@ -456,8 +768,9 @@ class _JadwalKegiatanScreenState extends State<JadwalKegiatanScreen> {
                 width: 52,
                 height: 52,
                 decoration: BoxDecoration(
-                    color: color.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(14)),
+                  color: color.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(14),
+                ),
                 child: Icon(_tipeIcon(k.tipe), color: color, size: 26),
               ),
               const SizedBox(width: 16),
@@ -468,7 +781,9 @@ class _JadwalKegiatanScreenState extends State<JadwalKegiatanScreen> {
                     Text(
                       k.namaKegiatan,
                       style: const TextStyle(
-                          fontWeight: FontWeight.w800, fontSize: 15),
+                        fontWeight: FontWeight.w800,
+                        fontSize: 15,
+                      ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -476,15 +791,22 @@ class _JadwalKegiatanScreenState extends State<JadwalKegiatanScreen> {
                     if (dt != null)
                       Row(
                         children: [
-                          Icon(Icons.schedule_rounded,
-                              size: 13, color: Colors.grey.shade500),
+                          Icon(
+                            Icons.schedule_rounded,
+                            size: 13,
+                            color: Colors.grey.shade500,
+                          ),
                           const SizedBox(width: 4),
                           Flexible(
                             child: Text(
-                              DateFormat('EEE, d MMM yyyy – HH:mm', 'id_ID')
-                                  .format(dt),
+                              DateFormat(
+                                'EEE, d MMM yyyy – HH:mm',
+                                'id_ID',
+                              ).format(dt),
                               style: TextStyle(
-                                  fontSize: 12, color: Colors.grey.shade500),
+                                fontSize: 12,
+                                color: Colors.grey.shade500,
+                              ),
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
@@ -495,7 +817,9 @@ class _JadwalKegiatanScreenState extends State<JadwalKegiatanScreen> {
                       Text(
                         k.deskripsi,
                         style: TextStyle(
-                            fontSize: 12, color: Colors.grey.shade400),
+                          fontSize: 12,
+                          color: Colors.grey.shade400,
+                        ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -505,22 +829,26 @@ class _JadwalKegiatanScreenState extends State<JadwalKegiatanScreen> {
                       const SizedBox(height: 6),
                       Row(
                         children: [
-                          Icon(Icons.lock_outline_rounded,
-                              size: 11, color: Colors.indigo.shade300),
+                          Icon(
+                            Icons.lock_outline_rounded,
+                            size: 11,
+                            color: Colors.indigo.shade300,
+                          ),
                           const SizedBox(width: 4),
                           Flexible(
                             child: Text(
                               "Absensi dikelola Admin",
                               style: TextStyle(
-                                  fontSize: 10,
-                                  color: Colors.indigo.shade300,
-                                  fontStyle: FontStyle.italic),
+                                fontSize: 10,
+                                color: Colors.indigo.shade300,
+                                fontStyle: FontStyle.italic,
+                              ),
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
                         ],
                       ),
-                    ]
+                    ],
                   ],
                 ),
               ),
@@ -530,26 +858,50 @@ class _JadwalKegiatanScreenState extends State<JadwalKegiatanScreen> {
                 children: [
                   Container(
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 8, vertical: 4),
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
-                        color: color.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(8)),
-                    child: Text(k.tipe,
-                        style: TextStyle(
-                            color: color,
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold)),
+                      color: color.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      k.tipe,
+                      style: TextStyle(
+                        color: color,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ),
                   const SizedBox(height: 8),
-                  Icon(
-                    isRapat && !isAdmin
-                        ? Icons.lock_rounded
-                        : Icons.chevron_right_rounded,
-                    color: isRapat && !isAdmin
-                        ? Colors.indigo.shade200
-                        : Colors.grey.shade400,
-                    size: isRapat && !isAdmin ? 18 : 24,
-                  ),
+                  if (isAdmin)
+                    InkWell(
+                      onTap: () => _showEditSheet(k),
+                      borderRadius: BorderRadius.circular(12),
+                      child: Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: context.primaryColor.withOpacity(0.08),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Icon(
+                          Icons.edit_rounded,
+                          color: context.primaryColor,
+                          size: 22,
+                        ),
+                      ),
+                    )
+                  else
+                    Icon(
+                      isRapat
+                          ? Icons.lock_rounded
+                          : Icons.chevron_right_rounded,
+                      color: isRapat
+                          ? Colors.indigo.shade200
+                          : Colors.grey.shade400,
+                      size: isRapat ? 18 : 24,
+                    ),
                 ],
               ),
             ],
@@ -621,13 +973,17 @@ class _AdminAbsenRapatScreenState extends State<AdminAbsenRapatScreen> {
     for (final a in anggotaList) {
       final id = a['id']?.toString() ?? '';
       if (id.isEmpty) continue;
-      final cached = await _AbsenCache.getStatus(widget.kegiatan.idKegiatan, id);
+      final cached = await _AbsenCache.getStatus(
+        widget.kegiatan.idKegiatan,
+        id,
+      );
       statusMap[id] = cached ?? 'Hadir'; // default Hadir
     }
 
     setState(() {
       _karyawanList = List<Map<String, dynamic>>.from(
-          anggotaList.map((e) => Map<String, dynamic>.from(e)));
+        anggotaList.map((e) => Map<String, dynamic>.from(e)),
+      );
       _statusMap = statusMap;
       _isLoading = false;
     });
@@ -662,8 +1018,12 @@ class _AdminAbsenRapatScreenState extends State<AdminAbsenRapatScreen> {
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text("Absensi tersimpan: $berhasil/${_karyawanList.length} karyawan"),
-        backgroundColor: berhasil == _karyawanList.length ? Colors.green.shade600 : Colors.orange,
+        content: Text(
+          "Absensi tersimpan: $berhasil/${_karyawanList.length} karyawan",
+        ),
+        backgroundColor: berhasil == _karyawanList.length
+            ? Colors.green.shade600
+            : Colors.orange,
         behavior: SnackBarBehavior.floating,
       ),
     );
@@ -678,15 +1038,19 @@ class _AdminAbsenRapatScreenState extends State<AdminAbsenRapatScreen> {
         title: Text(
           widget.kegiatan.namaKegiatan,
           style: const TextStyle(
-              fontWeight: FontWeight.w900, color: Color(0xFF0F172A)),
+            fontWeight: FontWeight.w900,
+            color: Color(0xFF0F172A),
+          ),
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
         ),
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded,
-              color: Color(0xFF0F172A)),
+          icon: const Icon(
+            Icons.arrow_back_ios_new_rounded,
+            color: Color(0xFF0F172A),
+          ),
           onPressed: () => Navigator.pop(context),
         ),
       ),
@@ -698,27 +1062,34 @@ class _AdminAbsenRapatScreenState extends State<AdminAbsenRapatScreen> {
                 Container(
                   margin: const EdgeInsets.fromLTRB(16, 4, 16, 0),
                   padding: const EdgeInsets.symmetric(
-                      horizontal: 16, vertical: 12),
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
                   decoration: BoxDecoration(
                     color: const Color(0xFF6366F1).withOpacity(0.08),
                     borderRadius: BorderRadius.circular(14),
                     border: Border.all(
-                        color:
-                            const Color(0xFF6366F1).withOpacity(0.2)),
+                      color: const Color(0xFF6366F1).withOpacity(0.2),
+                    ),
                   ),
                   child: Row(
                     children: [
-                      const Icon(Icons.admin_panel_settings_rounded,
-                          color: Color(0xFF6366F1), size: 18),
+                      const Icon(
+                        Icons.admin_panel_settings_rounded,
+                        color: Color(0xFF6366F1),
+                        size: 18,
+                      ),
                       const SizedBox(width: 10),
                       Expanded(
-                          child: Text(
-                        "Pilih status kehadiran untuk setiap karyawan, lalu tekan 'Simpan Semua'.",
-                        style: TextStyle(
+                        child: Text(
+                          "Pilih status kehadiran untuk setiap karyawan, lalu tekan 'Simpan Semua'.",
+                          style: TextStyle(
                             fontSize: 12,
                             color: Colors.indigo.shade600,
-                            fontWeight: FontWeight.w600),
-                      )),
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -744,13 +1115,17 @@ class _AdminAbsenRapatScreenState extends State<AdminAbsenRapatScreen> {
                       decoration: InputDecoration(
                         hintText: "Cari nama atau ID karyawan...",
                         hintStyle: TextStyle(
-                            color: Colors.grey.shade400, fontSize: 13),
-                        prefixIcon: Icon(Icons.search_rounded,
-                            color: context.primaryColor, size: 20),
+                          color: Colors.grey.shade400,
+                          fontSize: 13,
+                        ),
+                        prefixIcon: Icon(
+                          Icons.search_rounded,
+                          color: context.primaryColor,
+                          size: 20,
+                        ),
                         suffixIcon: _searchQuery.isNotEmpty
                             ? IconButton(
-                                icon: const Icon(Icons.close_rounded,
-                                    size: 18),
+                                icon: const Icon(Icons.close_rounded, size: 18),
                                 onPressed: () => setState(() {
                                   _searchCtrl.clear();
                                   _searchQuery = '';
@@ -758,8 +1133,9 @@ class _AdminAbsenRapatScreenState extends State<AdminAbsenRapatScreen> {
                               )
                             : null,
                         border: InputBorder.none,
-                        contentPadding:
-                            const EdgeInsets.symmetric(vertical: 14),
+                        contentPadding: const EdgeInsets.symmetric(
+                          vertical: 14,
+                        ),
                       ),
                     ),
                   ),
@@ -773,9 +1149,10 @@ class _AdminAbsenRapatScreenState extends State<AdminAbsenRapatScreen> {
                         ? "${_karyawanList.length} karyawan"
                         : "${_filtered.length} dari ${_karyawanList.length} karyawan",
                     style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey.shade500,
-                        fontWeight: FontWeight.w600),
+                      fontSize: 12,
+                      color: Colors.grey.shade500,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -786,113 +1163,129 @@ class _AdminAbsenRapatScreenState extends State<AdminAbsenRapatScreen> {
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(Icons.person_search_rounded,
-                                  size: 56, color: Colors.grey.shade300),
+                              Icon(
+                                Icons.person_search_rounded,
+                                size: 56,
+                                color: Colors.grey.shade300,
+                              ),
                               const SizedBox(height: 12),
-                              Text("Tidak ditemukan",
-                                  style: TextStyle(
-                                      color: Colors.grey.shade500,
-                                      fontWeight: FontWeight.w700)),
+                              Text(
+                                "Tidak ditemukan",
+                                style: TextStyle(
+                                  color: Colors.grey.shade500,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
                             ],
                           ),
                         )
                       : ListView.builder(
-                    padding: const EdgeInsets.fromLTRB(16, 4, 16, 100),
+                          padding: const EdgeInsets.fromLTRB(16, 4, 16, 100),
                           itemCount: _filtered.length,
                           itemBuilder: (ctx, i) {
                             final k = _filtered[i];
-                      final id = k['id']?.toString() ?? '';
-                      final nama = k['nama']?.toString() ?? 'Karyawan $i';
-                      final currentStatus = _statusMap[id] ?? 'Hadir';
+                            final id = k['id']?.toString() ?? '';
+                            final nama = k['nama']?.toString() ?? 'Karyawan $i';
+                            final currentStatus = _statusMap[id] ?? 'Hadir';
 
-                      return Container(
-                        margin: const EdgeInsets.only(bottom: 10),
-                        padding: const EdgeInsets.all(14),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(16),
-                          boxShadow: [
-                            BoxShadow(
-                                color: Colors.black.withOpacity(0.04),
-                                blurRadius: 8,
-                                offset: const Offset(0, 3))
-                          ],
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                CircleAvatar(
-                                  backgroundColor: context.primaryColor
-                                      .withOpacity(0.1),
-                                  radius: 18,
-                                  child: Text(
-                                    nama.isNotEmpty
-                                        ? nama[0].toUpperCase()
-                                        : '?',
-                                    style: TextStyle(
-                                        color: context.primaryColor,
-                                        fontWeight: FontWeight.bold),
+                            return Container(
+                              margin: const EdgeInsets.only(bottom: 10),
+                              padding: const EdgeInsets.all(14),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(16),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.04),
+                                    blurRadius: 8,
+                                    offset: const Offset(0, 3),
                                   ),
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Text(nama,
-                                      style: const TextStyle(
-                                          fontWeight: FontWeight.w700,
-                                          fontSize: 14)),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 12),
-                            // Status chips
-                            Wrap(
-                              spacing: 8,
-                              children: _statusOptions.map((opt) {
-                                final label = opt['label'] as String;
-                                final color = opt['color'] as Color;
-                                final isSelected = currentStatus == label;
-                                return GestureDetector(
-                                  onTap: () => setState(
-                                      () => _statusMap[id] = label),
-                                  child: AnimatedContainer(
-                                    duration:
-                                        const Duration(milliseconds: 150),
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 14, vertical: 8),
-                                    decoration: BoxDecoration(
-                                      color: isSelected
-                                          ? color.withOpacity(0.12)
-                                          : Colors.grey.shade100,
-                                      borderRadius:
-                                          BorderRadius.circular(20),
-                                      border: Border.all(
-                                        color: isSelected
-                                            ? color
-                                            : Colors.transparent,
-                                        width: 1.5,
+                                ],
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      CircleAvatar(
+                                        backgroundColor: context.primaryColor
+                                            .withOpacity(0.1),
+                                        radius: 18,
+                                        child: Text(
+                                          nama.isNotEmpty
+                                              ? nama[0].toUpperCase()
+                                              : '?',
+                                          style: TextStyle(
+                                            color: context.primaryColor,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
                                       ),
-                                    ),
-                                    child: Text(
-                                      label,
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w700,
-                                        color: isSelected
-                                            ? color
-                                            : Colors.grey.shade500,
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: Text(
+                                          nama,
+                                          style: const TextStyle(
+                                            fontWeight: FontWeight.w700,
+                                            fontSize: 14,
+                                          ),
+                                        ),
                                       ),
-                                    ),
+                                    ],
                                   ),
-                                );
-                              }).toList(),
-                            ),
-                          ],
+                                  const SizedBox(height: 12),
+                                  // Status chips
+                                  Wrap(
+                                    spacing: 8,
+                                    children: _statusOptions.map((opt) {
+                                      final label = opt['label'] as String;
+                                      final color = opt['color'] as Color;
+                                      final isSelected = currentStatus == label;
+                                      return GestureDetector(
+                                        onTap: () => setState(
+                                          () => _statusMap[id] = label,
+                                        ),
+                                        child: AnimatedContainer(
+                                          duration: const Duration(
+                                            milliseconds: 150,
+                                          ),
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 14,
+                                            vertical: 8,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: isSelected
+                                                ? color.withOpacity(0.12)
+                                                : Colors.grey.shade100,
+                                            borderRadius: BorderRadius.circular(
+                                              20,
+                                            ),
+                                            border: Border.all(
+                                              color: isSelected
+                                                  ? color
+                                                  : Colors.transparent,
+                                              width: 1.5,
+                                            ),
+                                          ),
+                                          child: Text(
+                                            label,
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.w700,
+                                              color: isSelected
+                                                  ? color
+                                                  : Colors.grey.shade500,
+                                            ),
+                                          ),
+                                        ),
+                                      );
+                                    }).toList(),
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
                         ),
-                      );
-                    },
-                  ),
                 ),
               ],
             ),
@@ -900,8 +1293,10 @@ class _AdminAbsenRapatScreenState extends State<AdminAbsenRapatScreen> {
           ? null
           : SafeArea(
               child: Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
                 child: SizedBox(
                   height: 56,
                   child: ElevatedButton.icon(
@@ -910,14 +1305,18 @@ class _AdminAbsenRapatScreenState extends State<AdminAbsenRapatScreen> {
                       backgroundColor: context.primaryColor,
                       foregroundColor: Colors.white,
                       shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16)),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
                     ),
                     icon: _isSaving
                         ? const SizedBox(
                             width: 18,
                             height: 18,
                             child: CircularProgressIndicator(
-                                color: Colors.white, strokeWidth: 2))
+                              color: Colors.white,
+                              strokeWidth: 2,
+                            ),
+                          )
                         : const Icon(Icons.save_rounded),
                     label: Text(
                       _isSaving
@@ -954,9 +1353,17 @@ class _AbsenKegiatanScreenState extends State<AbsenKegiatanScreen> {
   String? _sudahAbsen;
 
   final List<Map<String, dynamic>> _statusOptions = [
-    {'label': 'Hadir', 'icon': Icons.check_circle_rounded, 'color': Colors.green},
+    {
+      'label': 'Hadir',
+      'icon': Icons.check_circle_rounded,
+      'color': Colors.green,
+    },
     {'label': 'Izin', 'icon': Icons.info_rounded, 'color': Colors.orange},
-    {'label': 'Sakit', 'icon': Icons.local_hospital_rounded, 'color': Colors.red},
+    {
+      'label': 'Sakit',
+      'icon': Icons.local_hospital_rounded,
+      'color': Colors.red,
+    },
   ];
 
   @override
@@ -968,7 +1375,9 @@ class _AbsenKegiatanScreenState extends State<AbsenKegiatanScreen> {
   Future<void> _checkCache() async {
     final auth = context.read<AuthProvider>();
     final saved = await _AbsenCache.getStatus(
-        widget.kegiatan.idKegiatan, auth.idAnggota ?? '');
+      widget.kegiatan.idKegiatan,
+      auth.idAnggota ?? '',
+    );
     setState(() {
       _sudahAbsen = saved;
       _isLoading = false;
@@ -992,7 +1401,10 @@ class _AbsenKegiatanScreenState extends State<AbsenKegiatanScreen> {
     if (res['success'] == true) {
       // Simpan ke cache → UI akan terkunci
       await _AbsenCache.saveStatus(
-          widget.kegiatan.idKegiatan, auth.idAnggota ?? '', _selectedStatus);
+        widget.kegiatan.idKegiatan,
+        auth.idAnggota ?? '',
+        _selectedStatus,
+      );
       setState(() => _sudahAbsen = _selectedStatus);
 
       ScaffoldMessenger.of(context).showSnackBar(
@@ -1005,8 +1417,9 @@ class _AbsenKegiatanScreenState extends State<AbsenKegiatanScreen> {
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-            content: Text(res['message'] ?? 'Gagal'),
-            backgroundColor: Colors.red),
+          content: Text(res['message'] ?? 'Gagal'),
+          backgroundColor: Colors.red,
+        ),
       );
     }
   }
@@ -1021,14 +1434,20 @@ class _AbsenKegiatanScreenState extends State<AbsenKegiatanScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF4F6FF),
       appBar: AppBar(
-        title: const Text("Absen Kegiatan",
-            style: TextStyle(
-                fontWeight: FontWeight.w900, color: Color(0xFF0F172A))),
+        title: const Text(
+          "Absen Kegiatan",
+          style: TextStyle(
+            fontWeight: FontWeight.w900,
+            color: Color(0xFF0F172A),
+          ),
+        ),
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded,
-              color: Color(0xFF0F172A)),
+          icon: const Icon(
+            Icons.arrow_back_ios_new_rounded,
+            color: Color(0xFF0F172A),
+          ),
           onPressed: () => Navigator.pop(context),
         ),
       ),
@@ -1045,19 +1464,17 @@ class _AbsenKegiatanScreenState extends State<AbsenKegiatanScreen> {
                     padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
-                        colors: [
-                          context.primaryColor,
-                          const Color(0xFF7C3AED)
-                        ],
+                        colors: [context.primaryColor, const Color(0xFF7C3AED)],
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                       ),
                       borderRadius: BorderRadius.circular(20),
                       boxShadow: [
                         BoxShadow(
-                            color: context.primaryColor.withOpacity(0.3),
-                            blurRadius: 20,
-                            offset: const Offset(0, 8))
+                          color: context.primaryColor.withOpacity(0.3),
+                          blurRadius: 20,
+                          offset: const Offset(0, 8),
+                        ),
                       ],
                     ),
                     child: Column(
@@ -1065,45 +1482,63 @@ class _AbsenKegiatanScreenState extends State<AbsenKegiatanScreen> {
                       children: [
                         Container(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 10, vertical: 4),
+                            horizontal: 10,
+                            vertical: 4,
+                          ),
                           decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.2),
-                              borderRadius: BorderRadius.circular(8)),
-                          child: Text(widget.kegiatan.tipe,
-                              style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.bold)),
+                            color: Colors.white.withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            widget.kegiatan.tipe,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                         ),
                         const SizedBox(height: 12),
-                        Text(widget.kegiatan.namaKegiatan,
-                            style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 20,
-                                fontWeight: FontWeight.w900)),
+                        Text(
+                          widget.kegiatan.namaKegiatan,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 20,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
                         if (dt != null) ...[
                           const SizedBox(height: 8),
                           Row(
                             children: [
-                              const Icon(Icons.schedule_rounded,
-                                  color: Colors.white70, size: 14),
+                              const Icon(
+                                Icons.schedule_rounded,
+                                color: Colors.white70,
+                                size: 14,
+                              ),
                               const SizedBox(width: 6),
                               Text(
                                 DateFormat(
-                                        'EEEE, d MMMM yyyy – HH:mm',
-                                        'id_ID')
-                                    .format(dt),
+                                  'EEEE, d MMMM yyyy – HH:mm',
+                                  'id_ID',
+                                ).format(dt),
                                 style: const TextStyle(
-                                    color: Colors.white70, fontSize: 13),
+                                  color: Colors.white70,
+                                  fontSize: 13,
+                                ),
                               ),
                             ],
                           ),
                         ],
                         if (widget.kegiatan.deskripsi.isNotEmpty) ...[
                           const SizedBox(height: 8),
-                          Text(widget.kegiatan.deskripsi,
-                              style: const TextStyle(
-                                  color: Colors.white60, fontSize: 12)),
+                          Text(
+                            widget.kegiatan.deskripsi,
+                            style: const TextStyle(
+                              color: Colors.white60,
+                              fontSize: 12,
+                            ),
+                          ),
                         ],
                       ],
                     ),
@@ -1115,17 +1550,22 @@ class _AbsenKegiatanScreenState extends State<AbsenKegiatanScreen> {
                     _buildSudahAbsenInfo(_sudahAbsen!),
                   ] else ...[
                     // ── Form Absen ──
-                    const Text("Pilih Status Kehadiran Anda",
-                        style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w900,
-                            color: Color(0xFF0F172A))),
+                    const Text(
+                      "Pilih Status Kehadiran Anda",
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w900,
+                        color: Color(0xFF0F172A),
+                      ),
+                    ),
                     const SizedBox(height: 8),
                     Text(
-                        "Pastikan pilihan sesuai dengan kondisi Anda saat ini.",
-                        style: TextStyle(
-                            fontSize: 13,
-                            color: Colors.grey.shade500)),
+                      "Pastikan pilihan sesuai dengan kondisi Anda saat ini.",
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Colors.grey.shade500,
+                      ),
+                    ),
                     const SizedBox(height: 20),
                     ..._statusOptions.map((opt) {
                       final isSelected = _selectedStatus == opt['label'];
@@ -1143,17 +1583,16 @@ class _AbsenKegiatanScreenState extends State<AbsenKegiatanScreen> {
                                 : Colors.white,
                             borderRadius: BorderRadius.circular(16),
                             border: Border.all(
-                              color: isSelected
-                                  ? color
-                                  : Colors.grey.shade200,
+                              color: isSelected ? color : Colors.grey.shade200,
                               width: isSelected ? 2 : 1,
                             ),
                             boxShadow: isSelected
                                 ? [
                                     BoxShadow(
-                                        color: color.withOpacity(0.15),
-                                        blurRadius: 12,
-                                        offset: const Offset(0, 4))
+                                      color: color.withOpacity(0.15),
+                                      blurRadius: 12,
+                                      offset: const Offset(0, 4),
+                                    ),
                                   ]
                                 : [],
                           ),
@@ -1162,23 +1601,32 @@ class _AbsenKegiatanScreenState extends State<AbsenKegiatanScreen> {
                               Container(
                                 padding: const EdgeInsets.all(10),
                                 decoration: BoxDecoration(
-                                    color: color.withOpacity(0.1),
-                                    borderRadius:
-                                        BorderRadius.circular(12)),
-                                child: Icon(opt['icon'] as IconData,
-                                    color: color, size: 24),
+                                  color: color.withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Icon(
+                                  opt['icon'] as IconData,
+                                  color: color,
+                                  size: 24,
+                                ),
                               ),
                               const SizedBox(width: 16),
                               Expanded(
-                                child: Text(opt['label'],
-                                    style: TextStyle(
-                                        fontWeight: FontWeight.w700,
-                                        fontSize: 16,
-                                        color: color)),
+                                child: Text(
+                                  opt['label'],
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 16,
+                                    color: color,
+                                  ),
+                                ),
                               ),
                               if (isSelected)
-                                Icon(Icons.check_circle,
-                                    color: color, size: 22),
+                                Icon(
+                                  Icons.check_circle,
+                                  color: color,
+                                  size: 22,
+                                ),
                             ],
                           ),
                         ),
@@ -1194,16 +1642,21 @@ class _AbsenKegiatanScreenState extends State<AbsenKegiatanScreen> {
                           backgroundColor: context.primaryColor,
                           foregroundColor: Colors.white,
                           shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(18)),
+                            borderRadius: BorderRadius.circular(18),
+                          ),
                           elevation: 2,
                         ),
                         child: _isSaving
                             ? const CircularProgressIndicator(
-                                color: Colors.white)
-                            : const Text("Konfirmasi Absen",
+                                color: Colors.white,
+                              )
+                            : const Text(
+                                "Konfirmasi Absen",
                                 style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold)),
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
                       ),
                     ),
                   ],
@@ -1244,15 +1697,19 @@ class _AbsenKegiatanScreenState extends State<AbsenKegiatanScreen> {
             children: [
               Icon(icon, color: color, size: 52),
               const SizedBox(height: 12),
-              Text("Status Anda: $status",
-                  style: TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.w900,
-                      color: color)),
+              Text(
+                "Status Anda: $status",
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w900,
+                  color: color,
+                ),
+              ),
               const SizedBox(height: 8),
-              Text("Absensi Anda sudah tercatat.",
-                  style: TextStyle(
-                      color: Colors.grey.shade600, fontSize: 14)),
+              Text(
+                "Absensi Anda sudah tercatat.",
+                style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
+              ),
             ],
           ),
         ),
@@ -1266,16 +1723,16 @@ class _AbsenKegiatanScreenState extends State<AbsenKegiatanScreen> {
           ),
           child: Row(
             children: [
-              Icon(Icons.lock_rounded,
-                  color: Colors.amber.shade700, size: 18),
+              Icon(Icons.lock_rounded, color: Colors.amber.shade700, size: 18),
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
                   "Jika perlu koreksi, hubungi Admin Anda untuk mengubah status kehadiran ini.",
                   style: TextStyle(
-                      color: Colors.amber.shade800,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600),
+                    color: Colors.amber.shade800,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
             ],

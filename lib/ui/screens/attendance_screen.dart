@@ -61,7 +61,29 @@ class _AttendanceScreenState extends State<AttendanceScreen>
     // Mulai pantau lokasi & fetch config jam
     _fetchOfficeConfig();
     _fetchBanners();
+    _syncFaceStatus(); // Tambahkan sinkronisasi wajah
     _startProximityListener();
+  }
+
+  // Fungsi sinkronisasi status wajah dari server
+  Future<void> _syncFaceStatus() async {
+    try {
+      final auth = context.read<AuthProvider>();
+      if (!auth.isLoggedIn || !auth.isAnggota) return;
+
+      final isRegisteredOnServer = await _attendanceService.faceService
+          .syncFaceRegistrationStatus(
+            auth.idAnggota ?? "",
+            auth.clientId ?? "",
+          );
+
+      if (isRegisteredOnServer != auth.isFaceRegistered) {
+        await auth.setFaceRegistered(isRegisteredOnServer);
+        debugPrint("==== FACE STATUS SYNCED: $isRegisteredOnServer ====");
+      }
+    } catch (e) {
+      debugPrint("Gagal sinkronisasi wajah: $e");
+    }
   }
 
   void _startCarousel() {
@@ -100,9 +122,15 @@ class _AttendanceScreenState extends State<AttendanceScreen>
       final config = await AdminService().getOfficeConfig(auth.clientId ?? "");
       if (config != null && mounted) {
         setState(() {
-          _jamMasukMulai = config['jam_masuk_mulai']?.toString() == "null" ? "-" : (config['jam_masuk_mulai']?.toString() ?? "-");
-          _batasJamMasuk = config['batas_jam_masuk']?.toString() == "null" ? "-" : (config['batas_jam_masuk']?.toString() ?? "-");
-          _jamPulangMulai = config['jam_pulang_mulai']?.toString() == "null" ? "-" : (config['jam_pulang_mulai']?.toString() ?? "-");
+          _jamMasukMulai = config['jam_masuk_mulai']?.toString() == "null"
+              ? "-"
+              : (config['jam_masuk_mulai']?.toString() ?? "-");
+          _batasJamMasuk = config['batas_jam_masuk']?.toString() == "null"
+              ? "-"
+              : (config['batas_jam_masuk']?.toString() ?? "-");
+          _jamPulangMulai = config['jam_pulang_mulai']?.toString() == "null"
+              ? "-"
+              : (config['jam_pulang_mulai']?.toString() ?? "-");
           _isConfigLoaded = true;
         });
       }
@@ -681,13 +709,26 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                                   color: Colors.white.withOpacity(0.15),
                                   borderRadius: BorderRadius.circular(12),
                                 ),
-                                child: Text(
-                                  "Masuk: $_jamMasukMulai | Batas: $_batasJamMasuk | Pulang: $_jamPulangMulai",
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.bold,
-                                  ),
+                                child: Column(
+                                  children: [
+                                    const Text(
+                                      "Jam Kerja",
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w900,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      "Masuk: $_jamMasukMulai | Batas: $_batasJamMasuk | Pulang: $_jamPulangMulai",
+                                      style: TextStyle(
+                                        color: Colors.white.withOpacity(0.9),
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
                             ],
@@ -799,8 +840,9 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                     : const SizedBox(
                         height: 200,
                         child: Center(
-                            child: CircularProgressIndicator(
-                                color: Colors.white))),
+                          child: CircularProgressIndicator(color: Colors.white),
+                        ),
+                      ),
               ),
             ),
             // Judul di bawah
@@ -812,7 +854,8 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   borderRadius: const BorderRadius.vertical(
-                      bottom: Radius.circular(20)),
+                    bottom: Radius.circular(20),
+                  ),
                   gradient: LinearGradient(
                     begin: Alignment.bottomCenter,
                     end: Alignment.topCenter,
@@ -844,8 +887,11 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                     color: Colors.black.withValues(alpha: 0.5),
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(Icons.close_rounded,
-                      color: Colors.white, size: 20),
+                  child: const Icon(
+                    Icons.close_rounded,
+                    color: Colors.white,
+                    size: 20,
+                  ),
                 ),
               ),
             ),
@@ -864,9 +910,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
             color: Colors.white,
             borderRadius: BorderRadius.circular(20),
           ),
-          child: const Center(
-            child: CircularProgressIndicator(strokeWidth: 2),
-          ),
+          child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
         ),
       );
     }
@@ -919,8 +963,11 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                           fit: BoxFit.cover,
                           errorBuilder: (_, __, ___) => Container(
                             color: Colors.grey.shade200,
-                            child: Icon(Icons.broken_image_rounded,
-                                color: Colors.grey.shade400, size: 40),
+                            child: Icon(
+                              Icons.broken_image_rounded,
+                              color: Colors.grey.shade400,
+                              size: 40,
+                            ),
                           ),
                         ),
                         // Gradient overlay
@@ -948,9 +995,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                               fontSize: 14,
                               fontWeight: FontWeight.bold,
                               shadows: [
-                                Shadow(
-                                    blurRadius: 4,
-                                    color: Colors.black45)
+                                Shadow(blurRadius: 4, color: Colors.black45),
                               ],
                             ),
                             maxLines: 2,

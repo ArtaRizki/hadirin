@@ -31,9 +31,15 @@ class _SetWorktimeScreenState extends State<SetWorktimeScreen> {
     final config = await AdminService().getOfficeConfig(auth.clientId ?? "");
     if (config != null && mounted) {
       setState(() {
-        _jamMasukMulai = config['jam_masuk_mulai']?.toString() == "null" ? "-" : (config['jam_masuk_mulai']?.toString() ?? "-");
-        _batasJamMasuk = config['batas_jam_masuk']?.toString() == "null" ? "-" : (config['batas_jam_masuk']?.toString() ?? "-");
-        _jamPulangMulai = config['jam_pulang_mulai']?.toString() == "null" ? "-" : (config['jam_pulang_mulai']?.toString() ?? "-");
+        _jamMasukMulai = config['jam_masuk_mulai']?.toString() == "null"
+            ? "-"
+            : (config['jam_masuk_mulai']?.toString() ?? "-");
+        _batasJamMasuk = config['batas_jam_masuk']?.toString() == "null"
+            ? "-"
+            : (config['batas_jam_masuk']?.toString() ?? "-");
+        _jamPulangMulai = config['jam_pulang_mulai']?.toString() == "null"
+            ? "-"
+            : (config['jam_pulang_mulai']?.toString() ?? "-");
         _isLoading = false;
       });
     } else {
@@ -54,7 +60,9 @@ class _SetWorktimeScreenState extends State<SetWorktimeScreen> {
 
     // Validasi logis
     if (minMasuk >= minBatas) {
-      _showErrorSnackBar("Jam Masuk Mulai harus lebih awal dari Batas Terlambat.");
+      _showErrorSnackBar(
+        "Jam Masuk Mulai harus lebih awal dari Batas Terlambat.",
+      );
       return;
     }
     if (minBatas >= minPulang) {
@@ -92,7 +100,13 @@ class _SetWorktimeScreenState extends State<SetWorktimeScreen> {
   void _showTimePicker(String current, Function(String) onPicked) {
     final validTime = (current == "-" || current.isEmpty) ? "00:00" : current;
     final parts = validTime.split(':');
-    DateTime initial = DateTime(2026, 1, 1, int.parse(parts[0]), int.parse(parts[1]));
+    DateTime initial = DateTime(
+      2026,
+      1,
+      1,
+      int.parse(parts[0]),
+      int.parse(parts[1]),
+    );
     DateTime tempDateTime = initial;
 
     showCupertinoModalPopup(
@@ -124,7 +138,10 @@ class _SetWorktimeScreenState extends State<SetWorktimeScreen> {
 
               // Header
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 12,
+                ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -136,7 +153,10 @@ class _SetWorktimeScreenState extends State<SetWorktimeScreen> {
                       ),
                       child: const Text(
                         "Batal",
-                        style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 15,
+                        ),
                       ),
                     ),
                     const Text(
@@ -159,7 +179,10 @@ class _SetWorktimeScreenState extends State<SetWorktimeScreen> {
                         backgroundColor: context.primaryColor,
                         foregroundColor: Colors.white,
                         elevation: 0,
-                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 20,
+                          vertical: 8,
+                        ),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
@@ -281,7 +304,10 @@ class _SetWorktimeScreenState extends State<SetWorktimeScreen> {
               title: "Jam Masuk Mulai",
               description: "Karyawan bisa mulai absen masuk pada jam ini.",
               value: _jamMasukMulai,
-              onTap: () => _showTimePicker(_jamMasukMulai, (val) => setState(() => _jamMasukMulai = val)),
+              onTap: () => _showTimePicker(
+                _jamMasukMulai,
+                (val) => setState(() => _jamMasukMulai = val),
+              ),
               icon: Icons.login_rounded,
               accentColor: context.primaryColor,
             ),
@@ -290,9 +316,13 @@ class _SetWorktimeScreenState extends State<SetWorktimeScreen> {
 
             _buildSettingCard(
               title: "Batas Jam Masuk",
-              description: "Setelah jam ini, karyawan akan dicatat sebagai 'Terlambat'.",
+              description:
+                  "Setelah jam ini, karyawan akan dicatat sebagai 'Terlambat'.",
               value: _batasJamMasuk,
-              onTap: () => _showTimePicker(_batasJamMasuk, (val) => setState(() => _batasJamMasuk = val)),
+              onTap: () => _showTimePicker(
+                _batasJamMasuk,
+                (val) => setState(() => _batasJamMasuk = val),
+              ),
               icon: Icons.timer_outlined,
               accentColor: Colors.orange.shade700,
             ),
@@ -301,9 +331,13 @@ class _SetWorktimeScreenState extends State<SetWorktimeScreen> {
 
             _buildSettingCard(
               title: "Jam Pulang Mulai",
-              description: "Karyawan bisa melakukan absen pulang mulai jam ini.",
+              description:
+                  "Karyawan bisa melakukan absen pulang mulai jam ini.",
               value: _jamPulangMulai,
-              onTap: () => _showTimePicker(_jamPulangMulai, (val) => setState(() => _jamPulangMulai = val)),
+              onTap: () => _showTimePicker(
+                _jamPulangMulai,
+                (val) => setState(() => _jamPulangMulai = val),
+              ),
               icon: Icons.logout_rounded,
               accentColor: const Color(0xFF7C3AED),
             ),
@@ -412,7 +446,10 @@ class _SetWorktimeScreenState extends State<SetWorktimeScreen> {
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
                   decoration: BoxDecoration(
                     color: const Color(0xFFF8FAFC),
                     borderRadius: BorderRadius.circular(10),
@@ -427,7 +464,11 @@ class _SetWorktimeScreenState extends State<SetWorktimeScreen> {
                   ),
                 ),
                 const SizedBox(width: 4),
-                Icon(Icons.unfold_more_rounded, size: 20, color: Colors.grey.shade400),
+                Icon(
+                  Icons.unfold_more_rounded,
+                  size: 20,
+                  color: Colors.grey.shade400,
+                ),
               ],
             ),
           ],

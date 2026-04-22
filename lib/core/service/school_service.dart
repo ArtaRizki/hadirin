@@ -147,6 +147,33 @@ class SchoolService extends ApiClient {
     }
   }
 
+  Future<Map<String, dynamic>> editJadwalKegiatan({
+    required String clientId,
+    required String idKegiatan,
+    String? namaKegiatan,
+    String? tipe,
+    String? tanggalWaktu,
+    String? deskripsi,
+  }) async {
+    try {
+      final payload = {
+        'api_token': AppConfig.apiToken,
+        'client_id': clientId,
+        'action': 'edit_jadwal_kegiatan',
+        'id_kegiatan': idKegiatan,
+        if (namaKegiatan != null) 'nama_kegiatan': namaKegiatan,
+        if (tipe != null) 'tipe': tipe,
+        if (tanggalWaktu != null) 'tanggal_waktu': tanggalWaktu,
+        if (deskripsi != null) 'deskripsi': deskripsi,
+      };
+
+      final response = await sendRequest('edit_jadwal_kegiatan', payload);
+      return parseResponse(response.body);
+    } catch (e) {
+      return {'success': false, 'message': e.toString()};
+    }
+  }
+
   Future<Map<String, dynamic>> absenKegiatan({
     required String clientId,
     required String idKegiatan,
@@ -173,6 +200,47 @@ class SchoolService extends ApiClient {
   // =================================================================
   // 3. PENGAJIAN GURU
   // =================================================================
+  Future<List<String>> getKelompokNgaji(String clientId) async {
+    try {
+      final payload = {
+        'api_token': AppConfig.apiToken,
+        'client_id': clientId,
+        'action': 'get_kelompok_ngaji',
+      };
+
+      final response = await sendRequest('get_kelompok_ngaji', payload);
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['code'] == 200) {
+          return (data['message'] as List).map((e) => e.toString()).toList();
+        }
+      }
+      return [];
+    } catch (e) {
+      d.log('==== ERROR GET KELOMPOK ==== $e');
+      return [];
+    }
+  }
+
+  Future<Map<String, dynamic>> addKelompokNgaji({
+    required String clientId,
+    required String namaKelompok,
+  }) async {
+    try {
+      final payload = {
+        'api_token': AppConfig.apiToken,
+        'client_id': clientId,
+        'action': 'add_kelompok_ngaji',
+        'nama_kelompok': namaKelompok,
+      };
+
+      final response = await sendRequest('add_kelompok_ngaji', payload);
+      return parseResponse(response.body);
+    } catch (e) {
+      return {'success': false, 'message': e.toString()};
+    }
+  }
+
   Future<Map<String, dynamic>> submitLaporanNgaji({
     required String clientId,
     required String idGuru,
@@ -196,15 +264,23 @@ class SchoolService extends ApiClient {
         payload,
         timeout: const Duration(seconds: 45),
       );
-      d.log('==== [RESPONSE BODY submit_laporan_ngaji] ==== ${response.statusCode}: ${response.body}');
+      d.log(
+        '==== [RESPONSE BODY submit_laporan_ngaji] ==== ${response.statusCode}: ${response.body}',
+      );
       return parseResponse(response.body);
     } catch (e) {
       d.log('==== ERROR submitLaporanNgaji ==== $e');
-      return {'success': false, 'message': e.toString().replaceAll('Exception: ', '')};
+      return {
+        'success': false,
+        'message': e.toString().replaceAll('Exception: ', ''),
+      };
     }
   }
 
-  Future<List<LaporanNgajiModel>> getLaporanNgaji(String clientId, String idGuru) async {
+  Future<List<LaporanNgajiModel>> getLaporanNgaji(
+    String clientId,
+    String idGuru,
+  ) async {
     try {
       final payload = {
         'api_token': AppConfig.apiToken,
@@ -220,7 +296,9 @@ class SchoolService extends ApiClient {
           final List list = data['message'];
           // DEBUG: cetak key dari item pertama
           if (list.isNotEmpty) {
-            d.log('==== LAPORAN NGAJI KEYS ==== ${(list.first as Map).keys.toList()}');
+            d.log(
+              '==== LAPORAN NGAJI KEYS ==== ${(list.first as Map).keys.toList()}',
+            );
             d.log('==== LAPORAN NGAJI FIRST ==== ${list.first}');
           }
           return list.map((e) => LaporanNgajiModel.fromJson(e)).toList();
@@ -250,8 +328,12 @@ class SchoolService extends ApiClient {
         if (data['code'] == 200) {
           final Map<String, dynamic> msg = data['message'];
           return {
-            'siswa': (msg['siswa'] as List).map((e) => SiswaModel.fromJson(e)).toList(),
-            'materi': (msg['materi'] as List).map((e) => MateriModel.fromJson(e)).toList(),
+            'siswa': (msg['siswa'] as List)
+                .map((e) => SiswaModel.fromJson(e))
+                .toList(),
+            'materi': (msg['materi'] as List)
+                .map((e) => MateriModel.fromJson(e))
+                .toList(),
           };
         }
       }
@@ -290,7 +372,10 @@ class SchoolService extends ApiClient {
     }
   }
 
-  Future<List<NilaiQuranModel>> getNilaiSiswa(String clientId, String nis) async {
+  Future<List<NilaiQuranModel>> getNilaiSiswa(
+    String clientId,
+    String nis,
+  ) async {
     try {
       final payload = {
         'api_token': AppConfig.apiToken,

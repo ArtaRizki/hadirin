@@ -98,7 +98,8 @@ class AuthProvider extends ChangeNotifier {
     _role = role;
     _userPhone = userPhone;
     _adminPhone = adminPhone;
-    _isFaceRegistered = prefs.getBool('is_face_registered_${id.trim()}') ?? false;
+    _isFaceRegistered =
+        prefs.getBool('is_face_registered_${id.trim()}') ?? false;
     notifyListeners();
   }
 

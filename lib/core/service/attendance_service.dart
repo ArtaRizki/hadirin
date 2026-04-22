@@ -22,6 +22,8 @@ class AttendanceService extends ApiClient {
   final _deviceInfo = DeviceInfoPlugin();
   final _faceService = FaceService();
 
+  FaceService get faceService => _faceService;
+
   // =================================================================
   // KEAMANAN PERANGKAT (Root & Fake GPS)
   // =================================================================
