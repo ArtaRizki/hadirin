@@ -30,7 +30,13 @@ class _TodayAttendanceScreenState extends State<TodayAttendanceScreen>
   int _belumAbsenCount = 0;
   int _izinCount = 0;
 
-  final List<String> _filters = ["Semua", "Hadir", "Terlambat", "Belum Absen", "Izin/Sakit"];
+  final List<String> _filters = [
+    "Semua",
+    "Hadir",
+    "Terlambat",
+    "Belum Absen",
+    "Izin/Sakit",
+  ];
 
   @override
   void initState() {
@@ -80,10 +86,14 @@ class _TodayAttendanceScreenState extends State<TodayAttendanceScreen>
     _izinCount = 0;
     for (var item in data) {
       final status = item['status_absen'] ?? 'Belum Absen';
-      if (status == 'Hadir') _hadirCount++;
-      else if (status == 'Terlambat') _terlambatCount++;
-      else if (status == 'Belum Absen') _belumAbsenCount++;
-      else _izinCount++;
+      if (status == 'Hadir')
+        _hadirCount++;
+      else if (status == 'Terlambat')
+        _terlambatCount++;
+      else if (status == 'Belum Absen')
+        _belumAbsenCount++;
+      else
+        _izinCount++;
     }
   }
 
@@ -91,14 +101,18 @@ class _TodayAttendanceScreenState extends State<TodayAttendanceScreen>
     final query = _searchController.text.toLowerCase();
     setState(() {
       _filteredData = _allData.where((item) {
-        final matchFilter = _activeFilter == "Semua" ||
+        final matchFilter =
+            _activeFilter == "Semua" ||
             (_activeFilter == "Hadir" && item['status_absen'] == 'Hadir') ||
-            (_activeFilter == "Terlambat" && item['status_absen'] == 'Terlambat') ||
-            (_activeFilter == "Belum Absen" && item['status_absen'] == 'Belum Absen') ||
+            (_activeFilter == "Terlambat" &&
+                item['status_absen'] == 'Terlambat') ||
+            (_activeFilter == "Belum Absen" &&
+                item['status_absen'] == 'Belum Absen') ||
             (_activeFilter == "Izin/Sakit" &&
                 ['Izin', 'Sakit', 'Cuti'].contains(item['status_absen']));
 
-        final matchSearch = query.isEmpty ||
+        final matchSearch =
+            query.isEmpty ||
             (item['nama'] ?? '').toString().toLowerCase().contains(query) ||
             (item['id'] ?? '').toString().toLowerCase().contains(query);
 
@@ -143,7 +157,10 @@ class _TodayAttendanceScreenState extends State<TodayAttendanceScreen>
 
   @override
   Widget build(BuildContext context) {
-    final today = DateFormat('EEEE, d MMMM yyyy', 'id_ID').format(DateTime.now());
+    final today = DateFormat(
+      'EEEE, d MMMM yyyy',
+      'id_ID',
+    ).format(DateTime.now());
 
     return Scaffold(
       backgroundColor: const Color(0xFFF4F6FF),
@@ -213,17 +230,33 @@ class _TodayAttendanceScreenState extends State<TodayAttendanceScreen>
               padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
               child: Row(
                 children: [
-                  _buildSummaryCard("Hadir", _hadirCount, const Color(0xFF16A34A),
-                      Icons.check_circle_rounded),
+                  _buildSummaryCard(
+                    "Hadir",
+                    _hadirCount,
+                    const Color(0xFF16A34A),
+                    Icons.check_circle_rounded,
+                  ),
                   const SizedBox(width: 8),
-                  _buildSummaryCard("Terlambat", _terlambatCount, const Color(0xFFD97706),
-                      Icons.schedule_rounded),
+                  _buildSummaryCard(
+                    "Terlambat",
+                    _terlambatCount,
+                    const Color(0xFFD97706),
+                    Icons.schedule_rounded,
+                  ),
                   const SizedBox(width: 8),
-                  _buildSummaryCard("Belum", _belumAbsenCount, const Color(0xFFDC2626),
-                      Icons.radio_button_unchecked_rounded),
+                  _buildSummaryCard(
+                    "Belum",
+                    _belumAbsenCount,
+                    const Color(0xFFDC2626),
+                    Icons.radio_button_unchecked_rounded,
+                  ),
                   const SizedBox(width: 8),
-                  _buildSummaryCard("Izin", _izinCount, const Color(0xFF2563EB),
-                      Icons.sick_rounded),
+                  _buildSummaryCard(
+                    "Izin",
+                    _izinCount,
+                    const Color(0xFF2563EB),
+                    Icons.sick_rounded,
+                  ),
                 ],
               ),
             ),
@@ -247,8 +280,15 @@ class _TodayAttendanceScreenState extends State<TodayAttendanceScreen>
                 controller: _searchController,
                 decoration: InputDecoration(
                   hintText: "Cari nama atau ID anggota...",
-                  hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 13),
-                  prefixIcon: Icon(Icons.search_rounded, color: context.primaryColor, size: 20),
+                  hintStyle: TextStyle(
+                    color: Colors.grey.shade400,
+                    fontSize: 13,
+                  ),
+                  prefixIcon: Icon(
+                    Icons.search_rounded,
+                    color: context.primaryColor,
+                    size: 20,
+                  ),
                   suffixIcon: _searchController.text.isNotEmpty
                       ? IconButton(
                           icon: const Icon(Icons.clear_rounded, size: 18),
@@ -287,8 +327,14 @@ class _TodayAttendanceScreenState extends State<TodayAttendanceScreen>
                 unselectedLabelColor: Colors.grey.shade500,
                 indicatorColor: context.primaryColor,
                 indicatorSize: TabBarIndicatorSize.label,
-                labelStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
-                unselectedLabelStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+                labelStyle: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                ),
+                unselectedLabelStyle: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                ),
                 padding: const EdgeInsets.symmetric(horizontal: 4),
                 tabs: _filters.map((f) => Tab(text: f)).toList(),
               ),
@@ -309,19 +355,19 @@ class _TodayAttendanceScreenState extends State<TodayAttendanceScreen>
                     ),
                   )
                 : _errorMsg.isNotEmpty
-                    ? _buildErrorState()
-                    : _filteredData.isEmpty
-                        ? _buildEmptyState()
-                        : RefreshIndicator(
-                            color: context.primaryColor,
-                            onRefresh: _fetchData,
-                            child: ListView.builder(
-                              padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
-                              itemCount: _filteredData.length,
-                              itemBuilder: (context, index) =>
-                                  _buildEmployeeCard(_filteredData[index]),
-                            ),
-                          ),
+                ? _buildErrorState()
+                : _filteredData.isEmpty
+                ? _buildEmptyState()
+                : RefreshIndicator(
+                    color: context.primaryColor,
+                    onRefresh: _fetchData,
+                    child: ListView.builder(
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
+                      itemCount: _filteredData.length,
+                      itemBuilder: (context, index) =>
+                          _buildEmployeeCard(_filteredData[index]),
+                    ),
+                  ),
           ),
         ],
       ),
@@ -332,7 +378,12 @@ class _TodayAttendanceScreenState extends State<TodayAttendanceScreen>
   // WIDGETS
   // ──────────────────────────────────────────────────────────────────
 
-  Widget _buildSummaryCard(String label, int count, Color color, IconData icon) {
+  Widget _buildSummaryCard(
+    String label,
+    int count,
+    Color color,
+    IconData icon,
+  ) {
     return Expanded(
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
@@ -442,8 +493,8 @@ class _TodayAttendanceScreenState extends State<TodayAttendanceScreen>
                         label: masuk ?? "-",
                         color: masuk != null
                             ? (statusMasuk?.startsWith('TL') == true
-                                ? const Color(0xFFD97706)
-                                : const Color(0xFF16A34A))
+                                  ? const Color(0xFFD97706)
+                                  : const Color(0xFF16A34A))
                             : Colors.grey.shade400,
                       ),
                       const SizedBox(width: 8),

@@ -1008,7 +1008,7 @@ class _AdminShiftScreenState extends State<AdminShiftScreen>
         final key = dateStr + "_" + employeeId;
         setState(() {
           _plotting[key] = val;
-          _dirtyIds.add(employeeId);
+          _dirtyIds.add(key);
         });
       },
       child: AnimatedContainer(
@@ -1201,7 +1201,7 @@ class _AdminShiftScreenState extends State<AdminShiftScreen>
         for (var eid in targetEmpIds) {
           final key = dateStr + "_" + eid;
           updatedPlotting[key] = selectedShift;
-          _dirtyIds.add(eid);
+          _dirtyIds.add(key);
         }
         current = current.add(const Duration(days: 1));
       }
@@ -1242,7 +1242,7 @@ class _AdminShiftScreenState extends State<AdminShiftScreen>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  "Anda akan menyimpan ${_dirtyIds.length} perubahan jadwal pada tanggal $dateStr.",
+                  "Anda akan menyimpan ${_dirtyIds.length} perubahan jadwal shift.",
                   style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
                 ),
                 const SizedBox(height: 16),
@@ -1251,12 +1251,14 @@ class _AdminShiftScreenState extends State<AdminShiftScreen>
                     shrinkWrap: true,
                     itemCount: _dirtyIds.length,
                     itemBuilder: (context, index) {
-                      final eid = _dirtyIds.elementAt(index);
+                      final key = _dirtyIds.elementAt(index);
+                      final parts = key.split('_');
+                      final tgl = parts[0];
+                      final eid = parts[1];
                       final emp = _employees.firstWhere(
                         (e) => e['id'].toString() == eid,
                         orElse: () => {'nama': 'Karyawan $eid'},
                       );
-                      final key = dateStr + "_" + eid;
                       final sid = _plotting[key] ?? "";
                       final color = _getShiftColor(sid);
 
@@ -1278,13 +1280,23 @@ class _AdminShiftScreenState extends State<AdminShiftScreen>
                             fontWeight: FontWeight.bold,
                           ),
                         ),
-                        trailing: Text(
-                          sid == "" ? "LIBUR" : "Shift $sid",
-                          style: TextStyle(
-                            color: color,
-                            fontWeight: FontWeight.w900,
-                            fontSize: 10,
-                          ),
+                        trailing: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Text(
+                              sid == "" ? "LIBUR" : "Shift $sid",
+                              style: TextStyle(
+                                color: color,
+                                fontWeight: FontWeight.w900,
+                                fontSize: 10,
+                              ),
+                            ),
+                            Text(
+                              tgl,
+                              style: TextStyle(color: Colors.grey.shade500, fontSize: 9),
+                            ),
+                          ],
                         ),
                       );
                     },
@@ -1323,11 +1335,13 @@ class _AdminShiftScreenState extends State<AdminShiftScreen>
     final auth = context.read<AuthProvider>();
 
     List<Map<String, dynamic>> batch = [];
-    for (String eid in _dirtyIds) {
-      final key = dateStr + "_" + eid;
+    for (String key in _dirtyIds) {
+      final parts = key.split('_');
+      final tgl = parts[0];
+      final eid = parts[1];
       batch.add({
         'key_id': key,
-        'tanggal': dateStr,
+        'tanggal': tgl,
         'id_karyawan': eid,
         'id_shift': _plotting[key] ?? "",
       });
@@ -1381,6 +1395,7 @@ class _AdminShiftScreenState extends State<AdminShiftScreen>
     final namaCtrl = TextEditingController(text: shift?['nama'] ?? "");
     String masukStr = _formatTime(shift?['masuk'] ?? "08:00");
     String pulangStr = _formatTime(shift?['pulang'] ?? "16:00");
+    bool _isSavingShift = false;
 
     showDialog(
       context: context,
@@ -1575,40 +1590,64 @@ class _AdminShiftScreenState extends State<AdminShiftScreen>
                 ),
               ),
               ElevatedButton(
-                onPressed: () async {
-                  final newShifts = List.from(_shifts);
-                  final newS = {
-                    'id': idCtrl.text,
-                    'nama': namaCtrl.text,
-                    'masuk': masukStr,
-                    'pulang': pulangStr,
-                  };
-                  if (shift == null) {
-                    newShifts.add(newS);
-                  } else {
-                    final idx = newShifts.indexWhere(
-                      (x) => x['id'] == shift['id'],
-                    );
-                    if (idx != -1) newShifts[idx] = newS;
-                  }
+                onPressed: _isSavingShift
+                    ? null
+                    : () async {
+                        setDialogState(() => _isSavingShift = true);
+                        final newShifts = List.from(_shifts);
+                        final newS = {
+                          'id': idCtrl.text,
+                          'nama': namaCtrl.text,
+                          'masuk': masukStr,
+                          'pulang': pulangStr,
+                        };
+                        if (shift == null) {
+                          newShifts.add(newS);
+                        } else {
+                          final idx = newShifts.indexWhere(
+                            (x) => x['id'] == shift['id'],
+                          );
+                          if (idx != -1) newShifts[idx] = newS;
+                        }
 
-                  final res = await _adminService.saveShifts(
-                    context.read<AuthProvider>().clientId!,
-                    newShifts,
-                  );
-                  if (res['success']) {
-                    Navigator.pop(context);
-                    _loadAllData();
-                  }
-                },
+                        final res = await _adminService.saveShifts(
+                          context.read<AuthProvider>().clientId!,
+                          newShifts,
+                        );
+
+                        if (context.mounted) {
+                          setDialogState(() => _isSavingShift = false);
+                        }
+
+                        if (res['success']) {
+                          if (context.mounted) Navigator.pop(context);
+                          _loadAllData();
+                        } else {
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text(res['message'] ?? 'Gagal menyimpan shift')),
+                            );
+                          }
+                        }
+                      },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: context.primaryColor,
                   foregroundColor: Colors.white,
+                  disabledBackgroundColor: context.primaryColor.withOpacity(0.6),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
-                child: const Text("Simpan"),
+                child: _isSavingShift
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 2,
+                        ),
+                      )
+                    : const Text("Simpan"),
               ),
             ],
           );

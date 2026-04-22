@@ -882,9 +882,9 @@ function handleUpdateJamKerja(payload) {
     .getRange("E2:I2")
     .setValues([
       [
-        payload.jam_masuk_mulai,
-        payload.batas_jam_masuk,
-        payload.jam_pulang_mulai,
+        "'" + payload.jam_masuk_mulai,
+        "'" + payload.batas_jam_masuk,
+        "'" + payload.jam_pulang_mulai,
         payload.tl_interval || 30,
         payload.max_tier || 0
       ],
@@ -1052,7 +1052,7 @@ function handleGetOfficeConfig(payload) {
   var ss = SpreadsheetApp.openById(config.spreadsheetId);
   var rawData = ss.getSheetByName("Config_Kantor").getRange("A2:I2").getValues()[0];
 
-  return responseJSON(200, "success", {
+  var resp = {
     nama: rawData[0],
     lat: rawData[1],
     lng: rawData[2],
@@ -1062,7 +1062,28 @@ function handleGetOfficeConfig(payload) {
     jam_pulang_mulai: formatTime(rawData[6], "13:00"),
     tl_interval: parseInt(rawData[7]) || 30,
     max_tier: parseInt(rawData[8]) || 0,
-  });
+    shift_name: "Normal",
+    is_off: false
+  };
+
+  if (payload.id_karyawan && payload.id_karyawan !== "") {
+    var schedule = getEffectiveSchedule(ss, config, payload.id_karyawan);
+    resp.is_off = schedule.is_off;
+    
+    if (schedule.is_khusus || schedule.shifting) {
+      resp.shift_name = schedule.shift_name || (schedule.is_khusus ? "Jadwal Khusus" : "Shift");
+      resp.batas_jam_masuk = schedule.masuk;
+      resp.jam_pulang_mulai = schedule.pulang;
+      
+      var masukH = parseInt(schedule.masuk.split(":")[0]);
+      var masukM = schedule.masuk.split(":")[1];
+      var openGateH = masukH - 4; // 4 hours before masuk for UI open gate
+      if (openGateH < 0) openGateH = 0;
+      resp.jam_masuk_mulai = (openGateH < 10 ? "0" + openGateH : openGateH) + ":" + masukM;
+    }
+  }
+
+  return responseJSON(200, "success", resp);
 }
 
 function handleGetLeaveHistory(payload) {
@@ -1261,7 +1282,10 @@ function getShiftSettings(clientId, year, month) {
     var monthPrefix = year + "-" + String(month).padLeft(2, "0");
 
     for (var j = 1; j < plotData.length; j++) {
-      if (String(plotData[j][1]).startsWith(monthPrefix)) {
+      var tglObj = plotData[j][1];
+      var tglStr = (tglObj instanceof Date) ? Utilities.formatDate(tglObj, "GMT+7", "yyyy-MM-dd") : String(tglObj).replace(/^'/, "");
+      
+      if (tglStr.startsWith(monthPrefix)) {
         plotting[String(plotData[j][0])] = plotData[j][3];
       }
     }
@@ -1285,7 +1309,7 @@ function saveShiftDefinitions(clientId, shiftDataList) {
     sheet.getRange("A1:D1").setFontWeight("bold").setBackground("#f3f3f3");
 
     shiftDataList.forEach(function (s) {
-      sheet.appendRow([s.id, s.nama, s.masuk, s.pulang]);
+      sheet.appendRow([s.id, s.nama, "'" + s.masuk, "'" + s.pulang]);
     });
     return { success: true };
   } catch (e) {
@@ -1318,7 +1342,7 @@ function savePlottingAssignments(clientId, plottingList) {
           sheet.getRange(row, 4).setValue(p.id_shift);
         }
       } else if (p.id_shift !== "") {
-        sheet.appendRow([p.key_id, p.tanggal, p.id_karyawan, p.id_shift]);
+        sheet.appendRow([p.key_id, "'" + p.tanggal, p.id_karyawan, p.id_shift]);
       }
     });
     return { success: true };

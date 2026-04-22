@@ -372,13 +372,21 @@ class _AttendanceScreenState extends State<AttendanceScreen>
               ),
             ),
 
-            SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 24.0,
-                  vertical: 20.0,
-                ),
-                child: Column(
+            RefreshIndicator(
+              onRefresh: _fetchOfficeConfig,
+              color: context.primaryColor,
+              child: CustomScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                slivers: [
+                  SliverFillRemaining(
+                    hasScrollBody: false,
+                    child: SafeArea(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 24.0,
+                          vertical: 20.0,
+                        ),
+                        child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // HEADER PROFILE
@@ -849,6 +857,10 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                     const SizedBox(height: 24),
                   ],
                 ),
+              ),
+            ),
+                  ),
+                ],
               ),
             ),
           ],

@@ -117,7 +117,7 @@ function handleUpdateJamKerja(payload) {
     var config = getSemuaConfig()[payload.client_id];
     if (!config) return responseJSON(404, "error", "Instansi tidak ditemukan.");
     SpreadsheetApp.openById(config.spreadsheetId).getSheetByName("Config_Kantor").getRange("E2:G2").setValues([
-        [payload.jam_masuk_mulai, payload.batas_jam_masuk, payload.jam_pulang_mulai]
+        ["'" + payload.jam_masuk_mulai, "'" + payload.batas_jam_masuk, "'" + payload.jam_pulang_mulai]
     ]);
     return responseJSON(200, "success", "Jam kerja diperbarui.");
 }
