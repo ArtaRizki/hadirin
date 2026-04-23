@@ -747,7 +747,7 @@ class _AdminShiftScreenState extends State<AdminShiftScreen>
                       _buildEmptyShiftHint()
                     else
                       ListView.builder(
-                        padding: const EdgeInsets.symmetric(horizontal: 24),
+                        padding: const EdgeInsets.fromLTRB(24, 0, 24, 72),
                         itemCount: _getFilteredEmployees().length,
                         itemBuilder: (context, index) {
                           final emp = _getFilteredEmployees()[index];
@@ -1294,7 +1294,10 @@ class _AdminShiftScreenState extends State<AdminShiftScreen>
                             ),
                             Text(
                               tgl,
-                              style: TextStyle(color: Colors.grey.shade500, fontSize: 9),
+                              style: TextStyle(
+                                color: Colors.grey.shade500,
+                                fontSize: 9,
+                              ),
                             ),
                           ],
                         ),
@@ -1625,7 +1628,11 @@ class _AdminShiftScreenState extends State<AdminShiftScreen>
                         } else {
                           if (context.mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text(res['message'] ?? 'Gagal menyimpan shift')),
+                              SnackBar(
+                                content: Text(
+                                  res['message'] ?? 'Gagal menyimpan shift',
+                                ),
+                              ),
                             );
                           }
                         }
@@ -1633,7 +1640,9 @@ class _AdminShiftScreenState extends State<AdminShiftScreen>
                 style: ElevatedButton.styleFrom(
                   backgroundColor: context.primaryColor,
                   foregroundColor: Colors.white,
-                  disabledBackgroundColor: context.primaryColor.withOpacity(0.6),
+                  disabledBackgroundColor: context.primaryColor.withOpacity(
+                    0.6,
+                  ),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
