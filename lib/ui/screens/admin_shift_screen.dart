@@ -397,13 +397,27 @@ class _AdminShiftScreenState extends State<AdminShiftScreen>
                       fontSize: 14,
                     ),
                   ),
-                  subtitle: Text(
-                    "${_formatTime(s['masuk'])} - ${_formatTime(s['pulang'])}",
-                    style: TextStyle(
-                      color: Colors.grey.shade600,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 11,
-                    ),
+                  subtitle: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        "${_formatTime(s['jam_masuk'])} - ${_formatTime(s['pulang'])}",
+                        style: TextStyle(
+                          color: Colors.grey.shade800,
+                          fontWeight: FontWeight.w800,
+                          fontSize: 12,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        "Buka Absen: ${_formatTime(s['jam_buka'])}",
+                        style: TextStyle(
+                          color: context.primaryColor,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 10,
+                        ),
+                      ),
+                    ],
                   ),
                   trailing: IconButton(
                     icon: const Icon(
@@ -463,7 +477,7 @@ class _AdminShiftScreenState extends State<AdminShiftScreen>
                   padding: const EdgeInsets.only(right: 20),
                   itemCount: 90, // 3 Months range
                   itemBuilder: (context, index) {
-                    final date = DateTime.now().add(Duration(days: index - 14));
+                    final date = DateTime.now().add(Duration(days: index));
                     final isSelected =
                         DateFormat('yyyy-MM-dd').format(date) ==
                         DateFormat('yyyy-MM-dd').format(_selectedDate);
@@ -747,7 +761,7 @@ class _AdminShiftScreenState extends State<AdminShiftScreen>
                       _buildEmptyShiftHint()
                     else
                       ListView.builder(
-                        padding: const EdgeInsets.fromLTRB(24, 0, 24, 72),
+                        padding: const EdgeInsets.fromLTRB(24, 0, 24, 136),
                         itemCount: _getFilteredEmployees().length,
                         itemBuilder: (context, index) {
                           final emp = _getFilteredEmployees()[index];
@@ -1396,16 +1410,25 @@ class _AdminShiftScreenState extends State<AdminShiftScreen>
       text: shift?['id'] ?? "S${_shifts.length + 1}",
     );
     final namaCtrl = TextEditingController(text: shift?['nama'] ?? "");
-    String masukStr = _formatTime(shift?['masuk'] ?? "08:00");
-    String pulangStr = _formatTime(shift?['pulang'] ?? "16:00");
+    String jamBuka = _formatTime(shift?['jam_buka'] ?? "04:00");
+    String jamMasuk = _formatTime(shift?['jam_masuk'] ?? "08:00");
+    String jamBatas = _formatTime(shift?['jam_batas'] ?? "08:00");
+    String jamPulang = _formatTime(shift?['pulang'] ?? "16:00");
     bool _isSavingShift = false;
 
     showDialog(
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) {
-          Future<void> pickTime(bool isMasuk) async {
-            final initialParts = (isMasuk ? masukStr : pulangStr).split(':');
+          Future<void> pickTime(int mode) async {
+            String currentTime = mode == 0
+                ? jamBuka
+                : mode == 1
+                    ? jamMasuk
+                    : mode == 2
+                        ? jamBatas
+                        : jamPulang;
+            final initialParts = currentTime.split(':');
             DateTime tempDate = DateTime(
               2024,
               1,
@@ -1459,8 +1482,14 @@ class _AdminShiftScreenState extends State<AdminShiftScreen>
                                   ),
                                 ),
                               ),
-                              Text(
-                                isMasuk ? "Jam Masuk" : "Jam Pulang",
+                                Text(
+                                  mode == 0
+                                      ? "Buka Absen"
+                                      : mode == 1
+                                          ? "Jam Masuk"
+                                          : mode == 2
+                                              ? "Batas Masuk"
+                                              : "Jam Pulang",
                                 style: const TextStyle(
                                   fontWeight: FontWeight.w900,
                                   fontSize: 18,
@@ -1473,10 +1502,14 @@ class _AdminShiftScreenState extends State<AdminShiftScreen>
                                   setDialogState(() {
                                     final formatted =
                                         "${tempDate.hour.toString().padLeft(2, '0')}:${tempDate.minute.toString().padLeft(2, '0')}";
-                                    if (isMasuk)
-                                      masukStr = formatted;
+                                    if (mode == 0)
+                                      jamBuka = formatted;
+                                    else if (mode == 1)
+                                      jamMasuk = formatted;
+                                    else if (mode == 2)
+                                      jamBatas = formatted;
                                     else
-                                      pulangStr = formatted;
+                                      jamPulang = formatted;
                                   });
                                   Navigator.pop(val);
                                 },
@@ -1534,16 +1567,15 @@ class _AdminShiftScreenState extends State<AdminShiftScreen>
                     controller: namaCtrl,
                     decoration: const InputDecoration(labelText: "Nama Shift"),
                   ),
-                  if (_officeConfig != null)
                     Padding(
                       padding: const EdgeInsets.only(top: 16),
                       child: OutlinedButton.icon(
                         onPressed: () {
                           setDialogState(() {
-                            masukStr =
-                                _officeConfig!['jam_masuk_mulai'] ?? "08:00";
-                            pulangStr =
-                                _officeConfig!['jam_pulang_mulai'] ?? "16:00";
+                            jamBuka = "04:00";
+                            jamMasuk = "08:00";
+                            jamBatas = "08:00";
+                            jamPulang = "16:00";
                             if (namaCtrl.text.isEmpty) {
                               namaCtrl.text = "Jam Kantor";
                             }
@@ -1565,18 +1597,40 @@ class _AdminShiftScreenState extends State<AdminShiftScreen>
                       Expanded(
                         child: _buildTimePickerTile(
                           context,
-                          "Masuk",
-                          masukStr,
-                          () => pickTime(true),
+                          "Buka Absen",
+                          jamBuka,
+                          () => pickTime(0),
                         ),
                       ),
-                      const SizedBox(width: 16),
+                      const SizedBox(width: 12),
                       Expanded(
                         child: _buildTimePickerTile(
                           context,
-                          "Pulang",
-                          pulangStr,
-                          () => pickTime(false),
+                          "Jam Masuk",
+                          jamMasuk,
+                          () => pickTime(1),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _buildTimePickerTile(
+                          context,
+                          "Batas Masuk",
+                          jamBatas,
+                          () => pickTime(2),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: _buildTimePickerTile(
+                          context,
+                          "Jam Pulang",
+                          jamPulang,
+                          () => pickTime(3),
                         ),
                       ),
                     ],
@@ -1601,8 +1655,10 @@ class _AdminShiftScreenState extends State<AdminShiftScreen>
                         final newS = {
                           'id': idCtrl.text,
                           'nama': namaCtrl.text,
-                          'masuk': masukStr,
-                          'pulang': pulangStr,
+                          'jam_buka': jamBuka,
+                          'jam_masuk': jamMasuk,
+                          'jam_batas': jamBatas,
+                          'pulang': jamPulang,
                         };
                         if (shift == null) {
                           newShifts.add(newS);

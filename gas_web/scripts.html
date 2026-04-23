@@ -6,6 +6,7 @@
   let currentSchedule = null;
   let officeConfig = null;
   let rawTodayData = [];
+  let allShifts = [];
 
   // POLYFILLS
   if (!String.prototype.padLeft) {
@@ -40,7 +41,7 @@
       const oc = item.getAttribute('onclick') || "";
       if (oc.indexOf(`'${viewId}'`) !== -1) {
         item.classList.add('active');
-        item.style.display = 'flex'; 
+        item.style.display = 'flex';
       } else {
         item.classList.remove('active');
       }
@@ -379,37 +380,69 @@
   // ADMIN: DATA ANGGOTA
   function loadMembersData() {
     const tbody = document.getElementById('members-body');
-    tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 40px;">Mengambil data anggota...</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 40px;">Mengambil data anggota...</td></tr>';
 
+    // Fetch shifts first to populate dropdowns
     google.script.run
-      .withSuccessHandler(function (response) {
-        tbody.innerHTML = '';
-        const members = response.message || response;
-        members.forEach(m => {
-          const row = document.createElement('tr');
-          row.innerHTML = `
-            <td style="font-weight: 700;">${m.id}</td>
-            <td style="font-weight: 600;">${m.nama}</td>
-            <td><span class="badge-tipe">${m.bagian || m.divisi || '-'}</span></td>
-            <td>
-               <div style="display: flex; align-items: center; gap: 6px; font-size: 0.8rem; font-weight: 600; color: ${m.sudah_enroll ? '#10B981' : '#EF4444'}">
-                 <i data-lucide="${m.sudah_enroll ? 'smartphone' : 'alert-circle'}" style="width: 14px;"></i>
-                 ${m.sudah_enroll ? 'Terdaftar' : 'Belum Enroll'}
-               </div>
-            </td>
-            <td>
-              <div style="display: flex; gap: 8px;">
-                <button class="btn" onclick="window.open('https://wa.me/${m.no_hp || ''}', '_blank')"><i data-lucide="message-circle" style="width: 16px;"></i></button>
-                <button class="btn" onclick="handleResetDevice('${m.id}')"><i data-lucide="refresh-cw" style="width: 16px;"></i></button>
-                <button class="btn" onclick="handleDeleteMember('${m.id}')" style="color:#EF4444;"><i data-lucide="trash-2" style="width: 16px;"></i></button>
-              </div>
-            </td>
-          `;
-          tbody.appendChild(row);
-        });
-        lucide.createIcons();
+      .withSuccessHandler(function (shiftRes) {
+        allShifts = (shiftRes.message && shiftRes.message.shifts) ? shiftRes.message.shifts : (shiftRes.shifts || []);
+
+        google.script.run
+          .withSuccessHandler(function (response) {
+            tbody.innerHTML = '';
+            const members = response.message || response;
+            members.forEach(m => {
+              const row = document.createElement('tr');
+              const shiftOptions = allShifts.map(s =>
+                `<option value="${s.id}" ${m.id_shift_default === s.id ? 'selected' : ''}>${s.nama} (${s.id})</option>`
+              ).join('');
+
+              row.innerHTML = `
+                <td style="font-weight: 700;">${m.id}</td>
+                <td style="font-weight: 600;">${m.nama}</td>
+                <td><span class="badge-tipe">${m.bagian || m.divisi || '-'}</span></td>
+                <td>
+                   <div style="display: flex; align-items: center; gap: 6px; font-size: 0.8rem; font-weight: 600; color: ${m.sudah_enroll ? '#10B981' : '#EF4444'}">
+                     <i data-lucide="${m.sudah_enroll ? 'smartphone' : 'alert-circle'}" style="width: 14px;"></i>
+                     ${m.sudah_enroll ? 'Terdaftar' : 'Belum Enroll'}
+                   </div>
+                </td>
+                <td>
+                  <select class="glass-input" style="padding: 4px 8px; font-size: 0.8rem;" onchange="updateMemberShift('${m.id}', this.value)">
+                    <option value="">Standar Kantor</option>
+                    ${shiftOptions}
+                  </select>
+                </td>
+                <td>
+                  <div style="display: flex; gap: 8px;">
+                    <button class="btn" onclick="window.open('https://wa.me/${m.no_hp || ''}', '_blank')"><i data-lucide="message-circle" style="width: 16px;"></i></button>
+                    <button class="btn" onclick="handleResetDevice('${m.id}')"><i data-lucide="refresh-cw" style="width: 16px;"></i></button>
+                    <button class="btn" onclick="handleDeleteMember('${m.id}')" style="color:#EF4444;"><i data-lucide="trash-2" style="width: 16px;"></i></button>
+                  </div>
+                </td>
+              `;
+              tbody.appendChild(row);
+            });
+            lucide.createIcons();
+          })
+          .handleGetAllAnggota({ client_id: currentUser.clientId });
       })
-      .handleGetAllAnggota({ client_id: currentUser.clientId });
+      .getShiftList(currentUser.clientId);
+  }
+
+  function updateMemberShift(targetId, shiftId) {
+    showOverlay('Memperbarui Shift Default...');
+    google.script.run
+      .withSuccessHandler(function (res) {
+        hideOverlay();
+        if (res.code === 200 || res.success) {
+          Swal.fire({ icon: 'success', title: 'Berhasil', text: 'Shift default diperbarui.', timer: 1500 });
+        } else {
+          Swal.fire('Gagal', res.message || 'Gagal memperbarui.', 'error');
+          loadMembersData();
+        }
+      })
+      .updateDefaultShift(currentUser.clientId, targetId, shiftId);
   }
 
   // ADMIN: APPROVALS
@@ -564,7 +597,7 @@
           const dateStr = `${year}-${month.toString().padLeft(2, '0')}-${d.toString().padLeft(2, '0')}`;
           const key = `${dateStr}_${m.id}`;
           const currentShift = activePlotting[key] || "";
-          
+
           rowHtml += `<td>
             <select class="shift-select" data-key="${key}" data-date="${dateStr}" data-emp="${m.id}">
               <option value="">-</option>
@@ -585,12 +618,14 @@
     shifts.forEach(s => {
       const row = document.createElement('tr');
       row.innerHTML = `
-        <td><input type="text" class="glass-input" value="${s.id}" readonly></td>
-        <td><input type="text" class="glass-input" value="${s.nama}"></td>
-        <td><input type="time" class="glass-input" value="${s.masuk}"></td>
-        <td><input type="time" class="glass-input" value="${s.pulang}"></td>
-        <td><button class="btn" onclick="this.closest('tr').remove()" style="color:#ef4444;"><i data-lucide="trash-2" style="width:14px;"></i></button></td>
-      `;
+          <td><input type="text" class="glass-input" value="${s.id}" readonly></td>
+          <td><input type="text" class="glass-input" value="${s.nama}"></td>
+          <td><input type="time" class="glass-input" value="${s.jam_buka || '04:00'}"></td>
+          <td><input type="time" class="glass-input" value="${s.jam_masuk || '08:00'}"></td>
+          <td><input type="time" class="glass-input" value="${s.jam_batas || '08:00'}"></td>
+          <td><input type="time" class="glass-input" value="${s.pulang || '16:00'}"></td>
+          <td><button class="btn" onclick="this.closest('tr').remove()" style="color:#ef4444;"><i data-lucide="trash-2" style="width:14px;"></i></button></td>
+        `;
       body.appendChild(row);
     });
     lucide.createIcons();
@@ -603,6 +638,8 @@
     row.innerHTML = `
       <td><input type="text" class="glass-input" value="${newId}"></td>
       <td><input type="text" class="glass-input" value="Shift Baru"></td>
+      <td><input type="time" class="glass-input" value="04:00"></td>
+      <td><input type="time" class="glass-input" value="08:00"></td>
       <td><input type="time" class="glass-input" value="08:00"></td>
       <td><input type="time" class="glass-input" value="16:00"></td>
       <td><button class="btn" onclick="this.closest('tr').remove()" style="color:#ef4444;"><i data-lucide="trash-2" style="width:14px;"></i></button></td>
@@ -615,7 +652,14 @@
     const rows = document.querySelectorAll('#shift-list-body tr');
     const shiftList = Array.from(rows).map(row => {
       const inputs = row.querySelectorAll('input');
-      return { id: inputs[0].value, nama: inputs[1].value, masuk: inputs[2].value, pulang: inputs[3].value };
+      return {
+        id: inputs[0].value,
+        nama: inputs[1].value,
+        jam_buka: inputs[2].value,
+        jam_masuk: inputs[3].value,
+        jam_batas: inputs[4].value,
+        pulang: inputs[5].value
+      };
     });
 
     google.script.run
@@ -728,14 +772,14 @@
       const openGateM = currentSchedule.jam_masuk_mulai ? toM(currentSchedule.jam_masuk_mulai) : (masM - 120);
 
       if (currentMins < openGateM && !isOvernight) { // Basic check
-         Swal.fire('Terlalu Awal', `Absen Masuk baru bisa dilakukan pukul ${currentSchedule.jam_masuk_mulai || currentSchedule.masuk}`, 'warning'); 
-         return;
+        Swal.fire('Terlalu Awal', `Absen Masuk baru bisa dilakukan pukul ${currentSchedule.jam_masuk_mulai || currentSchedule.masuk}`, 'warning');
+        return;
       }
-      
+
       // Khusus Overnight: Jika jam 10 pagi mau absen shift jam 10 malam
       if (isOvernight && currentMins < openGateM && currentMins > pulM + 120) {
-         Swal.fire('Terlalu Awal', `Absen Masuk baru bisa dilakukan pukul ${currentSchedule.jam_masuk_mulai}`, 'warning');
-         return;
+        Swal.fire('Terlalu Awal', `Absen Masuk baru bisa dilakukan pukul ${currentSchedule.jam_masuk_mulai}`, 'warning');
+        return;
       }
 
       if (!isOvernight && currentMins >= pulM) { Swal.fire('Gagal', `Sudah masuk jam pulang. Silakan hubungi Admin.`, 'error'); return; }
@@ -755,9 +799,9 @@
           return;
         }
       } else {
-        if (currentMins < pulM) { 
-          Swal.fire('Belum Waktunya', `Absen Pulang baru dibuka pukul ${currentSchedule.pulang}`, 'warning'); 
-          return; 
+        if (currentMins < pulM) {
+          Swal.fire('Belum Waktunya', `Absen Pulang baru dibuka pukul ${currentSchedule.pulang}`, 'warning');
+          return;
         }
       }
     }
@@ -795,7 +839,7 @@
         statusText.innerText = "Mengambil Lokasi...";
         navigator.geolocation.getCurrentPosition(async (pos) => {
           const canvas = document.createElement('canvas');
-          canvas.width = 600; canvas.height = 800; 
+          canvas.width = 600; canvas.height = 800;
           canvas.getContext('2d').drawImage(img, 0, 0, 600, 800);
           const base64Photo = canvas.toDataURL('image/jpeg', 0.7).split(',')[1];
 

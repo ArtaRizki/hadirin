@@ -99,6 +99,7 @@ class _LoginScreenState extends State<LoginScreen> {
           clientIdDariServer,
           userPhone: (dataAnggota['no_hp'] ?? "").toString(),
           adminPhone: (dataAnggota['admin_phone'] ?? "").toString(),
+          isFaceRegistered: dataAnggota['wajah_terdaftar'] == true,
         );
 
         if (!mounted) return;

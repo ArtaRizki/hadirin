@@ -59,7 +59,11 @@ class AuthProvider extends ChangeNotifier {
       orElse: () => LoginRole.none,
     );
 
-    _isFaceRegistered = prefs.getBool('isFaceRegistered') ?? false;
+    if (_idUser != null) {
+      _isFaceRegistered = prefs.getBool('is_face_registered_$_idUser') ?? false;
+    } else {
+      _isFaceRegistered = prefs.getBool('isFaceRegistered') ?? false;
+    }
 
     // Load Theme Color
     final themeHex = prefs.getString('theme_color');
@@ -82,6 +86,7 @@ class AuthProvider extends ChangeNotifier {
     String clientId, {
     String? userPhone,
     String? adminPhone,
+    bool? isFaceRegistered,
   }) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('id_user', id.trim());
@@ -98,13 +103,25 @@ class AuthProvider extends ChangeNotifier {
     _role = role;
     _userPhone = userPhone;
     _adminPhone = adminPhone;
-    _isFaceRegistered = prefs.getBool('is_face_registered_${id.trim()}') ?? false;
+    
+    // Gunakan nilai dari server jika ada, jika tidak cek lokal
+    final key = 'is_face_registered_${id.trim()}';
+    if (isFaceRegistered != null) {
+      _isFaceRegistered = isFaceRegistered;
+      await prefs.setBool(key, isFaceRegistered);
+    } else {
+      _isFaceRegistered = prefs.getBool(key) ?? false;
+    }
     notifyListeners();
   }
 
   Future<void> setFaceRegistered(bool registered) async {
     _isFaceRegistered = registered;
     final prefs = await SharedPreferences.getInstance();
+    if (_idUser != null) {
+      await prefs.setBool('is_face_registered_$_idUser', registered);
+    }
+    // Tetap simpan ke key lama untuk fallback/kompatibilitas
     await prefs.setBool('isFaceRegistered', registered);
     notifyListeners();
   }

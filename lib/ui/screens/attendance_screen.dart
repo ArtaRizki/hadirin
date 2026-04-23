@@ -72,6 +72,10 @@ class _AttendanceScreenState extends State<AttendanceScreen>
           _shiftName = config['shift_name'] ?? "Normal";
           _isOff = config['is_off'] ?? false;
           _isConfigLoaded = true;
+          
+          if (config.containsKey('wajah_terdaftar')) {
+            auth.setFaceRegistered(config['wajah_terdaftar'] == true);
+          }
         });
       }
     } catch (e) {
@@ -182,12 +186,23 @@ class _AttendanceScreenState extends State<AttendanceScreen>
     final now = DateTime.now();
     final currentMinutes = (now.hour * 60) + now.minute;
 
+    final startMin = _timeToMinutes(_jamMasukMulai);
+    final endMin = _timeToMinutes(_jamPulangMulai);
+    final isOvernight = startMin > endMin;
+
     // --- VALIDASI JAM OPERASIONAL (TIME-FENCING DINAMIS) ---
     if (tipeAbsen == "Masuk") {
-      final startMin = _timeToMinutes(_jamMasukMulai);
-      final endMin = _timeToMinutes(_jamPulangMulai);
+      bool isValid = false;
+      if (isOvernight) {
+        // Shift Malam: Misal 17:00 - 05:00
+        // Valid jika jam >= 17:00 ATAU jam < 05:00
+        isValid = (currentMinutes >= startMin || currentMinutes < endMin);
+      } else {
+        // Shift Normal: Misal 08:00 - 16:00
+        isValid = (currentMinutes >= startMin && currentMinutes < endMin);
+      }
 
-      if (currentMinutes < startMin || currentMinutes >= endMin) {
+      if (!isValid) {
         _showSnackBar(
           "Gagal! Absen Masuk hanya tersedia pukul $_jamMasukMulai - $_jamPulangMulai.",
           isError: true,
@@ -195,8 +210,28 @@ class _AttendanceScreenState extends State<AttendanceScreen>
         return;
       }
     } else {
-      final pulangMin = _timeToMinutes(_jamPulangMulai);
-      if (currentMinutes < pulangMin) {
+      // LOGIKA PULANG
+      bool canPulang = false;
+      if (isOvernight) {
+        // Untuk shift malam, absen pulang biasanya setelah tengah malam
+        // Tapi kita beri toleransi jika ingin pulang lebih awal di malam yang sama
+        // atau memang sudah melewati tengah malam
+        // Sederhananya: Jika sudah lewat jam buka shift, dia boleh pulang 
+        // tapi sistem absen akan mencatat apakah ini terlalu awal atau tidak.
+        // Namun untuk Time-Fencing: kita batasi agar tidak bisa absen pulang 
+        // di luar jam shift.
+        canPulang = (currentMinutes >= startMin || currentMinutes < endMin);
+        
+        // Opsional: Jika ingin lebih ketat (pulang baru boleh setelah jam masuk kerja)
+        // final workMin = _timeToMinutes(_batasJamMasuk); // Jam masuk resmi
+        // canPulang = (currentMinutes >= workMin || currentMinutes < endMin);
+      } else {
+        canPulang = (currentMinutes >= startMin && currentMinutes < 23 * 60 + 59);
+      }
+
+      // Khusus Pulang: Biasanya hanya dicek apakah sudah melewati jam pulang mulai
+      // Di sini kita pakai logika sederhana agar user bisa klik tombolnya dulu.
+      if (currentMinutes < endMin && !isOvernight) {
         _showSnackBar(
           "Belum saatnya pulang! Absen Pulang dibuka mulai pukul $_jamPulangMulai.",
           isError: true,
