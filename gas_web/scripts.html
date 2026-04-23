@@ -7,6 +7,13 @@
   let officeConfig = null;
   let rawTodayData = [];
 
+  // POLYFILLS
+  if (!String.prototype.padLeft) {
+    String.prototype.padLeft = function (n, str) {
+      return Array(n - String(this).length + 1).join(str || '0') + this;
+    };
+  }
+
   // SECRET TRIGGER FOR ADMIN (Backdoor)
   document.addEventListener('DOMContentLoaded', function () {
     const loginIdInput = document.getElementById('login-id');
@@ -33,7 +40,7 @@
       const oc = item.getAttribute('onclick') || "";
       if (oc.indexOf(`'${viewId}'`) !== -1) {
         item.classList.add('active');
-        item.style.display = 'flex'; // Ensure visible 
+        item.style.display = 'flex'; 
       } else {
         item.classList.remove('active');
       }
@@ -103,7 +110,6 @@
   }
 
   function setupUIForUser() {
-    // Simpan ke local storage agar tidak hilang saat redirect
     localStorage.setItem('hadirin_user', JSON.stringify(currentUser));
 
     document.getElementById('login-screen').style.display = 'none';
@@ -112,7 +118,6 @@
     document.getElementById('user-name').innerText = currentUser.nama;
     document.getElementById('user-id-display').innerHTML = "ID: " + currentUser.id + " <br><small style='color:var(--primary); font-weight:700;'>v3.5 Diagnostic Mode</small>";
 
-    // Show Admin Section if role is Admin/SuperAdmin
     const role = (currentUser && currentUser.role) ? currentUser.role.toLowerCase() : "";
     const isAdmin = role === 'admin' || role === 'superadmin' || role === 'super admin';
 
@@ -128,7 +133,6 @@
       document.getElementById('btn-re-register-face').style.display = 'flex';
     }
 
-    // Set Month Picker default to current month
     const now = new Date();
     const monthVal = now.getFullYear() + "-" + String(now.getMonth() + 1).padLeft(2, '0');
     const mPicker = document.getElementById('shift-month-picker');
@@ -139,14 +143,9 @@
 
     switchView('dashboard');
 
-    // Diagnostic log
-    console.log("UI Adjusted for Role:", role, "isAdmin:", isAdmin);
-
-    // Cek jika ada pesan sukses dari redirect kamera
     const urlMsg = "<?!= msg ?>";
     if (urlMsg && urlMsg !== "null") {
       alert(urlMsg);
-      // Bersihkan URL agar tidak muncul lagi saat refresh
       window.history.replaceState({}, document.title, window.location.href.split('&')[0].split('?')[0]);
     }
   }
@@ -162,7 +161,6 @@
     document.getElementById('admin-password-group').style.display = 'none';
   }
 
-  // AUTO LOGIN IF SESSION EXISTS
   document.addEventListener('DOMContentLoaded', function () {
     const saved = localStorage.getItem('hadirin_user');
     if (saved) {
@@ -193,7 +191,6 @@
         document.getElementById('stat-late').innerText = data.late || 0;
         renderTrendChart(data.trendLabels, data.trendValues);
 
-        // Update Schedule Card
         currentSchedule = response.schedule;
         officeConfig = response.office;
 
@@ -201,6 +198,8 @@
           document.getElementById('today-schedule-card').style.display = 'flex';
           document.getElementById('display-shift-name').innerText = currentSchedule.shift_name;
           document.getElementById('display-shift-time').innerText = `${currentSchedule.masuk} - ${currentSchedule.pulang}`;
+          const openEl = document.getElementById('display-shift-open');
+          if (openEl) openEl.innerText = `Absen dibuka pukul: ${currentSchedule.jam_masuk_mulai || '--:--'}`;
 
           const statusEl = document.getElementById('display-shift-status');
           if (currentSchedule.is_off) {
@@ -344,18 +343,13 @@
       })
       .withSuccessHandler(function (history) {
         tbody.innerHTML = '';
-        console.log("History received:", history);
-
         if (!history || history.length === 0) {
           tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 40px;">Belum ada riwayat.</td></tr>';
           return;
         }
 
-        // Check for Diagnostic Errors from Server
         if (history[0] && history[0].error) {
-          tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; padding: 20px;">
-            <div style="color: #ef4444; font-weight: 700; margin-bottom: 8px;">Gagal Memuat: ${history[0].error}</div>
-          </td></tr>`;
+          tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; padding: 20px;"><div style="color: #ef4444; font-weight: 700;">${history[0].error}</div></td></tr>`;
           return;
         }
 
@@ -369,16 +363,12 @@
 
           row.innerHTML = `
             <td>
-              <div style="font-weight: 700; color: var(--text-main);">${formatDate(log.waktu)}</div>
+              <div style="font-weight: 700;">${formatDate(log.waktu)}</div>
               <div style="font-size: 0.8rem; color: var(--text-muted);">${formatTime(log.waktu)}</div>
             </td>
             <td><span class="badge-tipe">${log.tipe || "-"}</span></td>
-            <td>
-              <span class="${statusClass}" style="font-weight: 800; font-size: 0.85rem;">
-                ${logStatus.toUpperCase()}
-              </span>
-            </td>
-            <td title="${log.keterangan || ''}"><button class="btn" style="padding: 8px 16px; font-size: 0.75rem; border: 1px solid #E2E8F0; width: auto;" onclick="alert('Detail: ${log.keterangan || '-'}')">Detail</button></td>
+            <td><span class="${statusClass}" style="font-weight: 800; font-size: 0.85rem;">${logStatus.toUpperCase()}</span></td>
+            <td><button class="btn" style="padding: 8px 16px; font-size: 0.75rem; border: 1px solid #E2E8F0; width: auto;" onclick="alert('Detail: ${log.keterangan || '-'}')">Detail</button></td>
           `;
           tbody.appendChild(row);
         });
@@ -394,8 +384,7 @@
     google.script.run
       .withSuccessHandler(function (response) {
         tbody.innerHTML = '';
-        const members = response.message || response; // Handle different return shapes
-
+        const members = response.message || response;
         members.forEach(m => {
           const row = document.createElement('tr');
           row.innerHTML = `
@@ -410,15 +399,9 @@
             </td>
             <td>
               <div style="display: flex; gap: 8px;">
-                <button class="btn" style="padding: 8px; background: rgba(0, 81, 71, 0.05); color: var(--primary);" onclick="window.open('https://wa.me/${m.no_hp || ''}', '_blank')" title="WhatsApp">
-                  <i data-lucide="message-circle" style="width: 16px;"></i>
-                </button>
-                <button class="btn" style="padding: 8px; background: rgba(245, 158, 11, 0.05); color: #F59E0B;" onclick="handleResetDevice('${m.id}')" title="Reset Device ID">
-                  <i data-lucide="refresh-cw" style="width: 16px;"></i>
-                </button>
-                <button class="btn" style="padding: 8px; background: rgba(239, 68, 68, 0.05); color: #EF4444;" onclick="handleDeleteMember('${m.id}')" title="Hapus Anggota">
-                  <i data-lucide="trash-2" style="width: 16px;"></i>
-                </button>
+                <button class="btn" onclick="window.open('https://wa.me/${m.no_hp || ''}', '_blank')"><i data-lucide="message-circle" style="width: 16px;"></i></button>
+                <button class="btn" onclick="handleResetDevice('${m.id}')"><i data-lucide="refresh-cw" style="width: 16px;"></i></button>
+                <button class="btn" onclick="handleDeleteMember('${m.id}')" style="color:#EF4444;"><i data-lucide="trash-2" style="width: 16px;"></i></button>
               </div>
             </td>
           `;
@@ -438,30 +421,26 @@
       .withSuccessHandler(function (response) {
         container.innerHTML = '';
         const approvals = response.message || response;
-
         if (approvals.length === 0) {
-          container.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 60px; color: var(--text-muted); font-weight:600;">Tidak ada pengajuan izin yang tertunda. 🎈</div>';
+          container.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 60px; color: var(--text-muted);">Tidak ada pengajuan. 🎈</div>';
           return;
         }
 
         approvals.forEach(app => {
           const card = document.createElement('div');
           card.className = 'card glass';
-          card.style.animation = 'fadeIn 0.4s ease-out forwards';
           card.innerHTML = `
             <div style="display: flex; justify-content: space-between; margin-bottom: 20px;">
-              <span class="badge-tipe" style="background: rgba(124, 58, 237, 0.1); color: var(--primary);">${app.tipe}</span>
+              <span class="badge-tipe">${app.tipe}</span>
               <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600;">${formatDate(app.waktu_pengajuan)}</span>
             </div>
             <div style="font-weight: 800; font-size: 1.1rem; margin-bottom: 4px;">${app.nama}</div>
-            <div style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 20px; font-weight: 500;">ID: ${app.id_karyawan} | ${app.rentang}</div>
-            
+            <div style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 20px;">ID: ${app.id_karyawan} | ${app.rentang}</div>
             <div style="background: #F8FAFC; padding: 16px; border-radius: 12px; font-size: 0.9rem; margin-bottom: 24px; border: 1px dashed #E2E8F0;">
               <strong>Alasan:</strong><br>${app.alasan || 'Tidak ada keterangan.'}
             </div>
-
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-              <button class="btn" style="background: transparent; border: 1.5px solid #E2E8F0; color: #EF4444;" onclick="updateStatus('${app.row_index}', 'Ditolak')">Tolak</button>
+              <button class="btn" style="color: #EF4444;" onclick="updateStatus('${app.row_index}', 'Ditolak')">Tolak</button>
               <button class="btn btn-primary" onclick="updateStatus('${app.row_index}', 'Disetujui')">Setujui</button>
             </div>
           `;
@@ -478,10 +457,231 @@
       .handleResetDevice({ client_id: currentUser.clientId, target_id_karyawan: targetId });
   }
 
+  function handleDeleteMember(targetId) {
+    if (!confirm(`Yakin ingin menghapus ${targetId}?`)) return;
+    google.script.run
+      .withSuccessHandler(() => { alert('Anggota berhasil dihapus.'); loadMembersData(); })
+      .handleDeleteKaryawan({ client_id: currentUser.clientId, target_id: targetId });
+  }
+
   function updateStatus(rowIndex, newStatus) {
     google.script.run
       .withSuccessHandler(() => { loadApprovalsData(); })
       .handleUpdateLeaveStatus({ client_id: currentUser.clientId, row_index: rowIndex, new_status: newStatus });
+  }
+
+  // ADMIN: SETTINGS
+  function loadOfficeSettings() {
+    google.script.run
+      .withSuccessHandler(function (response) {
+        if (response.status === "success") {
+          const config = response.message;
+          document.getElementById('set-lat').value = config.lat;
+          document.getElementById('set-lng').value = config.lng;
+          document.getElementById('set-radius').value = config.radius;
+          document.getElementById('set-jam-masuk').value = config.jam_masuk_mulai;
+          document.getElementById('set-batas-masuk').value = config.batas_jam_masuk;
+          document.getElementById('set-jam-pulang').value = config.jam_pulang_mulai;
+          document.getElementById('set-interval').value = config.tl_interval || 30;
+          document.getElementById('set-max-tier').value = config.max_tier || 0;
+        }
+      })
+      .handleGetOfficeConfig({ client_id: currentUser.clientId });
+  }
+
+  function saveOfficeLocation() {
+    const lat = document.getElementById('set-lat').value;
+    const lng = document.getElementById('set-lng').value;
+    const radius = document.getElementById('set-radius').value;
+
+    google.script.run
+      .withSuccessHandler(() => Swal.fire('Berhasil', 'Lokasi kantor diperbarui.', 'success'))
+      .handleUpdateLokasi({ client_id: currentUser.clientId, lat: lat, lng: lng, radius: parseInt(radius) });
+  }
+
+  function saveWorkHours() {
+    const masuk = document.getElementById('set-jam-masuk').value;
+    const batas = document.getElementById('set-batas-masuk').value;
+    const pulang = document.getElementById('set-jam-pulang').value;
+    const interval = document.getElementById('set-interval').value;
+    const maxTier = document.getElementById('set-max-tier').value;
+
+    google.script.run
+      .withSuccessHandler(() => Swal.fire('Berhasil', 'Jam kerja dan aturan poin diperbarui.', 'success'))
+      .handleUpdateJamKerja({
+        client_id: currentUser.clientId,
+        jam_masuk_mulai: masuk,
+        batas_jam_masuk: batas,
+        jam_pulang_mulai: pulang,
+        tl_interval: parseInt(interval),
+        max_tier: parseInt(maxTier)
+      });
+  }
+
+  // ADMIN: SHIFT & PLOTTING
+  let activeShifts = [];
+  let activePlotting = {};
+
+  function switchShiftTab(tab) {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    if (event) event.currentTarget.classList.add('active');
+    document.getElementById('shift-tab-calendar').style.display = tab === 'calendar' ? 'block' : 'none';
+    document.getElementById('shift-tab-list').style.display = tab === 'list' ? 'block' : 'none';
+  }
+
+  function loadShiftData() {
+    const monthPicker = document.getElementById('shift-month-picker');
+    if (!monthPicker.value) return;
+    const [year, month] = monthPicker.value.split('-');
+
+    google.script.run
+      .withSuccessHandler(function (response) {
+        if (response.success) {
+          activeShifts = response.shifts;
+          activePlotting = response.plotting;
+          renderPlottingCalendar(year, month);
+          renderShiftList(activeShifts);
+        }
+      })
+      .getShiftSettings(currentUser.clientId, year, month);
+  }
+
+  function renderPlottingCalendar(year, month) {
+    const head = document.getElementById('shift-calendar-head');
+    const body = document.getElementById('shift-calendar-body');
+    const daysInMonth = new Date(year, month, 0).getDate();
+
+    let headHtml = '<tr><th class="sticky-col">Anggota</th>';
+    for (let d = 1; d <= daysInMonth; d++) headHtml += `<th>${d}</th>`;
+    headHtml += '</tr>';
+    head.innerHTML = headHtml;
+
+    google.script.run.withSuccessHandler(members => {
+      body.innerHTML = '';
+      members.forEach(m => {
+        let rowHtml = `<tr data-id="${m.id}"><td class="sticky-col"><strong>${m.nama}</strong><br><small>${m.id}</small></td>`;
+        for (let d = 1; d <= daysInMonth; d++) {
+          const dateStr = `${year}-${month.toString().padLeft(2, '0')}-${d.toString().padLeft(2, '0')}`;
+          const key = `${dateStr}_${m.id}`;
+          const currentShift = activePlotting[key] || "";
+          
+          rowHtml += `<td>
+            <select class="shift-select" data-key="${key}" data-date="${dateStr}" data-emp="${m.id}">
+              <option value="">-</option>
+              <option value="LIBUR" ${currentShift === 'LIBUR' ? 'selected' : ''}>OFF</option>
+              ${activeShifts.map(s => `<option value="${s.id}" ${currentShift === s.id ? 'selected' : ''}>${s.id}</option>`).join('')}
+            </select>
+          </td>`;
+        }
+        rowHtml += '</tr>';
+        body.insertAdjacentHTML('beforeend', rowHtml);
+      });
+    }).handleGetAllAnggota({ client_id: currentUser.clientId });
+  }
+
+  function renderShiftList(shifts) {
+    const body = document.getElementById('shift-list-body');
+    body.innerHTML = '';
+    shifts.forEach(s => {
+      const row = document.createElement('tr');
+      row.innerHTML = `
+        <td><input type="text" class="glass-input" value="${s.id}" readonly></td>
+        <td><input type="text" class="glass-input" value="${s.nama}"></td>
+        <td><input type="time" class="glass-input" value="${s.masuk}"></td>
+        <td><input type="time" class="glass-input" value="${s.pulang}"></td>
+        <td><button class="btn" onclick="this.closest('tr').remove()" style="color:#ef4444;"><i data-lucide="trash-2" style="width:14px;"></i></button></td>
+      `;
+      body.appendChild(row);
+    });
+    lucide.createIcons();
+  }
+
+  function addNewShiftRow() {
+    const body = document.getElementById('shift-list-body');
+    const newId = "S" + (body.children.length + 1);
+    const row = document.createElement('tr');
+    row.innerHTML = `
+      <td><input type="text" class="glass-input" value="${newId}"></td>
+      <td><input type="text" class="glass-input" value="Shift Baru"></td>
+      <td><input type="time" class="glass-input" value="08:00"></td>
+      <td><input type="time" class="glass-input" value="16:00"></td>
+      <td><button class="btn" onclick="this.closest('tr').remove()" style="color:#ef4444;"><i data-lucide="trash-2" style="width:14px;"></i></button></td>
+    `;
+    body.appendChild(row);
+    lucide.createIcons();
+  }
+
+  function saveShiftDefinitions() {
+    const rows = document.querySelectorAll('#shift-list-body tr');
+    const shiftList = Array.from(rows).map(row => {
+      const inputs = row.querySelectorAll('input');
+      return { id: inputs[0].value, nama: inputs[1].value, masuk: inputs[2].value, pulang: inputs[3].value };
+    });
+
+    google.script.run
+      .withSuccessHandler(() => { Swal.fire('Berhasil', 'Definisi shift diperbarui.', 'success'); loadShiftData(); })
+      .saveShiftDefinitions(currentUser.clientId, shiftList);
+  }
+
+  function saveActivePlotting() {
+    const selects = document.querySelectorAll('.shift-select');
+    const plottingList = Array.from(selects).map(s => ({
+      key_id: s.dataset.key,
+      tanggal: s.dataset.date,
+      id_karyawan: s.dataset.emp,
+      id_shift: s.value
+    }));
+
+    google.script.run
+      .withSuccessHandler(() => Swal.fire('Berhasil', 'Plotting jadwal disimpan.', 'success'))
+      .savePlottingAssignments(currentUser.clientId, plottingList);
+  }
+
+  // ADMIN: REPORTS
+  function initReportView() {
+    const now = new Date();
+    document.getElementById('report-month-picker').value = now.getFullYear() + "-" + String(now.getMonth() + 1).padLeft(2, '0');
+    loadReportData();
+  }
+
+  function loadReportData() {
+    const picker = document.getElementById('report-month-picker');
+    const body = document.getElementById('report-body');
+    body.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 20px;">Memuat data...</td></tr>';
+
+    google.script.run
+      .withSuccessHandler(function (res) {
+        body.innerHTML = '';
+        if (res.status === "success") {
+          res.message.forEach(row => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `<td>${row.waktu}</td><td>${row.id_karyawan}</td><td>${row.nama}</td><td>${row.tipe}</td><td>${row.status}</td>`;
+            body.appendChild(tr);
+          });
+        }
+      })
+      .handleGetMonthlyReport({ client_id: currentUser.clientId, bulan_tahun: picker.value.split('-').reverse().join('-') });
+  }
+
+  function downloadReport() {
+    const picker = document.getElementById('report-month-picker');
+    google.script.run
+      .withSuccessHandler(function (res) {
+        if (res.status === "success") {
+          const data = res.message.map(r => ({
+            Waktu: r.waktu,
+            ID: r.id_karyawan,
+            Nama: r.nama,
+            Tipe: r.tipe,
+            Status: r.status
+          }));
+          const ws = XLSX.utils.json_to_sheet(data);
+          const wb = XLSX.utils.book_new();
+          XLSX.utils.book_append_sheet(wb, ws, "Laporan");
+          XLSX.writeFile(wb, `Laporan_Hadirin_${picker.value}.xlsx`);
+        }
+      })
+      .handleGetMonthlyReport({ client_id: currentUser.clientId, bulan_tahun: picker.value.split('-').reverse().join('-'), id_karyawan_target: "SEMUA" });
   }
 
   // HELPERS
@@ -524,11 +724,42 @@
     if (tipe === "Masuk") {
       const masM = toM(currentSchedule.masuk);
       const pulM = toM(currentSchedule.pulang);
-      if (currentMins < masM - 120) { Swal.fire('Terlalu Awal', `Absen Masuk baru bisa dilakukan pukul ${currentSchedule.masuk}`, 'warning'); return; }
-      if (currentMins >= pulM) { Swal.fire('Gagal', `Sudah masuk jam pulang. Silakan hubungi Admin.`, 'error'); return; }
+      const isOvernight = masM > pulM;
+      const openGateM = currentSchedule.jam_masuk_mulai ? toM(currentSchedule.jam_masuk_mulai) : (masM - 120);
+
+      if (currentMins < openGateM && !isOvernight) { // Basic check
+         Swal.fire('Terlalu Awal', `Absen Masuk baru bisa dilakukan pukul ${currentSchedule.jam_masuk_mulai || currentSchedule.masuk}`, 'warning'); 
+         return;
+      }
+      
+      // Khusus Overnight: Jika jam 10 pagi mau absen shift jam 10 malam
+      if (isOvernight && currentMins < openGateM && currentMins > pulM + 120) {
+         Swal.fire('Terlalu Awal', `Absen Masuk baru bisa dilakukan pukul ${currentSchedule.jam_masuk_mulai}`, 'warning');
+         return;
+      }
+
+      if (!isOvernight && currentMins >= pulM) { Swal.fire('Gagal', `Sudah masuk jam pulang. Silakan hubungi Admin.`, 'error'); return; }
     } else {
+      const masM = toM(currentSchedule.masuk);
       const pulM = toM(currentSchedule.pulang);
-      if (currentMins < pulM) { Swal.fire('Belum Waktunya', `Absen Pulang baru dibuka pukul ${currentSchedule.pulang}`, 'warning'); return; }
+      const isOvernight = masM > pulM;
+
+      if (isOvernight) {
+        // Jika Shift 22:00 - 06:00. Boleh pulang jika jam 06:00 - 12:00
+        if (currentMins < pulM) {
+          Swal.fire('Belum Waktunya', `Absen Pulang baru dibuka pukul ${currentSchedule.pulang}`, 'warning');
+          return;
+        }
+        if (currentMins > masM) { // Masih di hari pertama
+          Swal.fire('Belum Waktunya', `Anda baru saja masuk. Absen pulang dilakukan besok pagi.`, 'warning');
+          return;
+        }
+      } else {
+        if (currentMins < pulM) { 
+          Swal.fire('Belum Waktunya', `Absen Pulang baru dibuka pukul ${currentSchedule.pulang}`, 'warning'); 
+          return; 
+        }
+      }
     }
 
     currentTipeAbsen = tipe;
@@ -564,7 +795,7 @@
         statusText.innerText = "Mengambil Lokasi...";
         navigator.geolocation.getCurrentPosition(async (pos) => {
           const canvas = document.createElement('canvas');
-          canvas.width = 600; canvas.height = 800; // Resize
+          canvas.width = 600; canvas.height = 800; 
           canvas.getContext('2d').drawImage(img, 0, 0, 600, 800);
           const base64Photo = canvas.toDataURL('image/jpeg', 0.7).split(',')[1];
 
@@ -594,6 +825,4 @@
       }
     } catch (err) { overlay.style.display = 'none'; alert(err.message); }
   });
-
-  // MULTI-SHIFT & PLOTTING logic remains consistent with previous diagnostic implementations.
 </script>
