@@ -73,9 +73,9 @@ class _LoginScreenState extends State<LoginScreen> {
 
       if (result['success']) {
         final dataAnggota = result['message'];
-        final clientIdDariServer = dataAnggota['client_id'];
+        final clientIdDariServer = (dataAnggota['client_id'] ?? "").toString();
         final divisi = (dataAnggota['divisi'] ?? "").toString().toUpperCase();
-        final nama = (dataAnggota['nama_karyawan'] ?? "").toString().toUpperCase();
+        final nama = (dataAnggota['nama_karyawan'] ?? "ANGGOTA").toString();
 
         // Logika penentuan role: 
         // Admin jika ID diawali INST-/ADM-/ADMIN- ATAU Divisi/Nama mengandung kata ADMIN/PEMILIK
@@ -85,8 +85,8 @@ class _LoginScreenState extends State<LoginScreen> {
         
         bool isRoleAdmin = divisi.contains("ADMIN") || 
                           divisi.contains("PEMILIK") ||
-                          nama.contains("ADMIN") ||
-                          nama.contains("PEMILIK");
+                          nama.toUpperCase().contains("ADMIN") ||
+                          nama.toUpperCase().contains("PEMILIK");
 
         LoginRole assignedRole = (isIdAdmin || isRoleAdmin)
             ? LoginRole.admin
@@ -94,7 +94,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
         await context.read<AuthProvider>().login(
           inputId,
-          dataAnggota['nama_karyawan'],
+          nama,
           assignedRole,
           clientIdDariServer,
           userPhone: (dataAnggota['no_hp'] ?? "").toString(),
