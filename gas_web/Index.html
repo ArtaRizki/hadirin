@@ -1,270 +1,430 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <base target="_top">
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hadir.in Dashboard</title>
-    <!-- PWA & Mobile Meta -->
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="Hadir.in">
-    <meta name="theme-color" content="#005147">
-    <link rel="apple-touch-icon" href="https://via.placeholder.com/180/005147/ffffff?text=H">
-    <!-- Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-    <!-- Lucide Icons (CDN) -->
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <!-- Chart.js (CDN) -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- Face API (CDN) -->
-    <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
-    
-    <?!= include('styles'); ?>
-  </head>
-  <body>
-    <!-- LOGIN SCREEN -->
-    <div id="login-screen">
-      <div class="card glass login-card">
-        <div class="logo">Hadir.in</div>
-        <p style="color: var(--text-muted); margin-bottom: 30px; font-weight: 500;">Silakan masukkan detail akun untuk mengakses dashboard.</p>
-        
-        <div class="input-group">
-          <label>Kode Instansi (Client ID)</label>
-          <input type="text" id="login-client-id" placeholder="CONTOH: INST-123456">
-        </div>
-        
-        <div class="input-group">
-          <label>ID Anggota</label>
-          <input type="text" id="login-id" placeholder="Masukkan ID">
-        </div>
 
-        <div id="admin-password-group" class="input-group" style="display: none;">
-          <label>Password Super Admin</label>
-          <input type="password" id="login-password" placeholder="••••••••">
+<head>
+  <base target="_top">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hadir.in Dashboard v3.7</title>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+    rel="stylesheet">
+  <!-- Icons & Library -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+  <?!= include('styles'); ?>
+</head>
+
+<body>
+  <!-- LOGIN SCREEN -->
+  <div id="login-screen">
+    <div class="login-card glass">
+      <div style="text-align: center; margin-bottom: 30px;">
+        <div
+          style="background: var(--primary); width: 60px; height: 60px; border-radius: 18px; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center; box-shadow: 0 10px 25px rgba(16, 185, 129, 0.3);">
+          <i data-lucide="shield-check" style="color: white; width: 32px; height: 32px;"></i>
         </div>
-        
-        <button class="btn btn-primary" style="width: 100%; margin-top: 10px;" onclick="handleLogin()">
-          Masuk Dashboard
-        </button>
-        
-        <div id="login-error" style="color: #ef4444; font-size: 0.85rem; margin-top: 15px; display: none; font-weight: 600;">
-          Data tidak ditemukan. Silakan periksa kembali.
-        </div>
+        <h1 style="font-weight: 800; font-size: 1.75rem; color: var(--text-main); letter-spacing: -0.5px;">Hadir.in Dashboard</h1>
+        <p style="color: var(--text-muted); font-size: 0.9rem; font-weight: 500; margin-top: 5px;">Silakan masuk ke akun Anda</p>
+      </div>
+
+      <div class="input-group">
+        <label style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; display: block;">Kode Instansi</label>
+        <input type="text" id="login-client-id" placeholder="CONTOH: INST-123456">
+      </div>
+      <div class="input-group">
+        <label style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; display: block;">ID Anggota / Admin</label>
+        <input type="text" id="login-id" placeholder="Masukkan ID">
+      </div>
+      <div id="admin-password-group" class="input-group" style="display: none;">
+        <label style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; display: block;">Password Admin</label>
+        <input type="password" id="login-password" placeholder="••••••••">
+      </div>
+
+      <div id="login-error"
+        style="color: #ef4444; font-size: 0.85rem; margin-top: 15px; display: none; font-weight: 600; text-align: center; background: #fee2e2; padding: 10px; border-radius: 8px;">
+        Error message here
+      </div>
+
+      <button class="btn btn-primary" onclick="attemptLogin()" style="width: 100%; margin-top: 25px; height: 50px; font-weight: 700; font-size: 1rem;">
+        Masuk Dashboard
+      </button>
+
+      <div style="margin-top: 25px; text-align: center; font-size: 0.8rem; color: var(--text-muted); font-weight: 500;">
+        Antigravity Backend v3.7 • Hadir.in © 2026
       </div>
     </div>
+  </div>
 
-    <!-- MAIN DASHBOARD -->
-    <div id="app-container" style="display: none;">
-      <!-- MOBILE HEADER -->
-      <header class="mobile-header">
-        <div class="logo" style="font-size: 1.2rem; margin-bottom: 0;">Hadir.in</div>
-      </header>
-      
-      <!-- SIDEBAR -->
-      <aside id="sidebar" class="glass">
-        <div class="logo" style="font-size: 1.5rem; margin-bottom: 40px; text-align: left;">Hadir.in</div>
-        
-        <nav style="flex: 1;">
-          <a class="nav-item active" onclick="switchView('dashboard')">
-            <i data-lucide="layout-dashboard"></i>
-            <span>Dashboard</span>
-          </a>
-          <a class="nav-item" onclick="switchView('history')">
-            <i data-lucide="calendar"></i>
-            <span>Riwayat Absen</span>
-          </a>
-          
-          <div id="admin-section" style="display: none;">
-            <div style="font-size: 0.7rem; font-weight: 800; color: var(--text-muted); margin: 24px 0 12px 12px; text-transform: uppercase; letter-spacing: 1px;">Admin Area</div>
-            <a class="nav-item" onclick="switchView('members')">
-              <i data-lucide="users"></i>
-              <span>Data Anggota</span>
-            </a>
-            <a class="nav-item" onclick="switchView('approvals')">
-              <i data-lucide="check-square"></i>
-              <span>Persetujuan Izin</span>
-            </a>
-            <a class="nav-item" onclick="switchView('settings')">
-              <i data-lucide="settings"></i>
-              <span>Setelan Kantor</span>
-            </a>
-          </div>
-        </nav>
-        
-        <div class="user-info" style="margin-top: auto; padding: 20px 0; border-top: 1px solid var(--glass-border);">
-          <div style="display: flex; align-items: center; gap: 12px;">
-            <div style="width: 44px; height: 44px; border-radius: 14px; background: var(--primary-gradient); display: flex; align-items: center; justify-content: center; color: white;">
-              <i data-lucide="user"></i>
-            </div>
-            <div style="overflow: hidden;">
-              <div id="user-name" style="font-weight: 800; font-size: 0.95rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text-main);">User Name</div>
-              <div id="user-id-display" style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600;">ID: 12345</div>
-            </div>
-          </div>
-          <button class="btn" style="width: 100%; margin-top: 20px; color: #ef4444; background: rgba(239, 68, 68, 0.05); font-size: 0.85rem; padding: 12px;" onclick="handleLogout()">
-            <i data-lucide="log-out" style="width: 16px;"></i> Keluar
-          </button>
+  <!-- APP INTERFACE -->
+  <div id="app-container" style="display: none;">
+    <!-- SIDEBAR -->
+    <aside id="sidebar" class="glass">
+      <div class="sidebar-header">
+        <div
+          style="background: var(--primary); width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+          <i data-lucide="shield-check" style="color: white; width: 18px; height: 18px;"></i>
         </div>
-      </aside>
+        <span style="font-weight: 800; font-size: 1.25rem; letter-spacing: -0.5px;">Hadir.in</span>
+      </div>
 
-      <!-- MAIN CONTENT -->
-      <main id="main-content">
-        <!-- Dashboard View -->
-        <div id="view-dashboard" class="content-view">
-          <header style="margin-bottom: 40px;">
-            <h1 style="font-size: 2.2rem; font-weight: 900; letter-spacing: -1px;">Dashboard Kehadiran</h1>
-            <p style="color: var(--text-muted); font-weight: 500;">Pantau ringkasan aktivitas absensi hari ini.</p>
-          </header>
-
-          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 24px; margin-bottom: 40px;">
-            <div class="card stat-card">
-              <span class="stat-label">Hadir Hari Ini</span>
-              <div class="stat-value" id="stat-present" style="color: #10B981;">0</div>
-            </div>
-            <div class="card stat-card" style="border-left-color: #F59E0B;">
-              <span class="stat-label">Izin / Sakit</span>
-              <div class="stat-value" id="stat-leave" style="color: #F59E0B;">0</div>
-            </div>
-            <div class="card stat-card" style="border-left-color: #EF4444;">
-              <span class="stat-label">Terlambat</span>
-              <div class="stat-value" id="stat-late" style="color: #EF4444;">0</div>
-            </div>
-          </div>
-          <!-- MEMBER ACTION SECTION (Hidden for Admins) -->
-          <div id="member-action-section" style="display: none; margin-bottom: 40px;">
-            <div class="card glass">
-              <h2 style="font-size: 1.1rem; font-weight: 800; margin-bottom: 20px;">Menu Absensi Wajah</h2>
-              <div class="member-actions">
-                <button class="btn-absen" onclick="handleWebAbsen('Masuk')">
-                  <i data-lucide="camera"></i>
-                  <span>Absen Masuk</span>
-                </button>
-                <button class="btn-absen pulang" onclick="handleWebAbsen('Pulang')">
-                  <i data-lucide="log-out"></i>
-                  <span>Absen Pulang</span>
-                </button>
-              </div>
-            </div>
-          </div>
-          <div class="card glass" style="margin-bottom: 40px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
-              <h2 style="font-size: 1.25rem; font-weight: 800;">Tren 7 Hari Terakhir</h2>
-              <div class="glass" style="padding: 6px 14px; font-size: 0.75rem; border-radius: 10px; color: var(--primary); font-weight: 700; background: rgba(124, 58, 237, 0.05);">Live Data</div>
-            </div>
-            <div style="height: 350px;">
-              <canvas id="attendanceChart"></canvas>
-            </div>
-          </div>
-        </div>
-
-        <!-- History View -->
-        <div id="view-history" class="content-view" style="display: none;">
-          <header style="margin-bottom: 40px;">
-            <h1 style="font-size: 2.2rem; font-weight: 900; letter-spacing: -1px;">Riwayat Absensi</h1>
-            <p style="color: var(--text-muted); font-weight: 500;">Daftar aktivitas masuk dan pulang Anda.</p>
-          </header>
-          
-          <div class="card glass">
-            <div class="table-container">
-              <table id="history-table">
-                <thead>
-                  <tr>
-                    <th>Waktu</th>
-                    <th>Tipe</th>
-                    <th>Status</th>
-                    <th>Keterangan</th>
-                  </tr>
-                </thead>
-                <tbody id="history-body"></tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-
-        <!-- Admin: Data Anggota -->
-        <div id="view-members" class="content-view" style="display: none;">
-          <header style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px;">
-            <div>
-              <h1 style="font-size: 2.2rem; font-weight: 900; letter-spacing: -1px;">Data Anggota</h1>
-              <p style="color: var(--text-muted); font-weight: 500;">Kelola daftar anggota instansi Anda.</p>
-            </div>
-            <button class="btn btn-primary" onclick="alert('Buka modal tambah anggota')">
-              <i data-lucide="plus"></i> Tambah Anggota
-            </button>
-          </header>
-          
-          <div class="card glass">
-            <div class="table-container">
-              <table>
-                <thead>
-                  <tr>
-                    <th>ID</th>
-                    <th>Nama</th>
-                    <th>Bagian</th>
-                    <th>Enrollment</th>
-                    <th>Aksi</th>
-                  </tr>
-                </thead>
-                <tbody id="members-body"></tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-
-        <!-- Admin: Persetujuan -->
-        <div id="view-approvals" class="content-view" style="display: none;">
-          <header style="margin-bottom: 40px;">
-            <h1 style="font-size: 2.2rem; font-weight: 900; letter-spacing: -1px;">Persetujuan Izin</h1>
-            <p style="color: var(--text-muted); font-weight: 500;">Proses pengajuan izin, sakit, dan cuti.</p>
-          </header>
-          <div id="approvals-list" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 24px;"></div>
-        </div>
-
-      </main>
-
-      <!-- BOTTOM NAVIGATION (Mobile Only) -->
-      <nav class="bottom-nav">
-        <a class="bottom-nav-item active" id="m-nav-dashboard" onclick="switchView('dashboard')">
+      <nav class="sidebar-nav">
+        <a class="nav-item active" id="nav-dashboard" onclick="switchView('dashboard')">
           <i data-lucide="layout-dashboard"></i>
-          <span>Home</span>
+          <span>Dashboard</span>
         </a>
-        <a class="bottom-nav-item" id="m-nav-history" onclick="switchView('history')">
+        <a class="nav-item" id="nav-history" onclick="switchView('history')">
           <i data-lucide="calendar"></i>
-          <span>Riwayat</span>
+          <span>Riwayat Saya</span>
         </a>
-        <div id="admin-mobile-nav" style="display: contents;">
-          <a class="bottom-nav-item" id="m-nav-members" onclick="switchView('members')">
+
+        <div id="admin-section" style="display: none; flex-direction: column;">
+          <div
+            style="font-size: 0.7rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; padding: 25px 15px 10px;">
+            Administrasi
+          </div>
+          <a class="nav-item" id="nav-members" onclick="switchView('members')">
             <i data-lucide="users"></i>
-            <span>Anggota</span>
+            <span>Manajemen Anggota</span>
           </a>
-          <a class="bottom-nav-item" id="m-nav-approvals" onclick="switchView('approvals')">
+          <a class="nav-item" id="nav-approvals" onclick="switchView('approvals')">
             <i data-lucide="check-square"></i>
-            <span>Izin</span>
+            <span>Persetujuan Izin</span>
+          </a>
+          <a class="nav-item" id="nav-ngaji" onclick="switchView('ngaji')">
+            <i data-lucide="book-open"></i>
+            <span>Laporan Ngaji</span>
+          </a>
+          <a class="nav-item" id="nav-jadwal" onclick="switchView('jadwal')">
+            <i data-lucide="clock"></i>
+            <span>Jadwal Kegiatan</span>
+          </a>
+          <a class="nav-item" id="nav-reports" onclick="switchView('reports')">
+            <i data-lucide="file-text"></i>
+            <span>Laporan Bulanan</span>
+          </a>
+          <a class="nav-item" id="nav-config" onclick="switchView('config')">
+            <i data-lucide="settings"></i>
+            <span>Setelan Kantor</span>
           </a>
         </div>
       </nav>
-    </div>
 
-    <!-- HIDDEN CAMERA INPUT -->
-    <input type="file" id="camera-input" accept="image/*" capture="user" style="display: none;">
+      <div class="sidebar-footer">
+        <div class="user-profile">
+          <div
+            style="width: 40px; height: 40px; border-radius: 12px; background: #e2e8f0; display: flex; align-items: center; justify-content: center; font-weight: 800; color: var(--primary);">
+            <i data-lucide="user" style="width: 20px;"></i>
+          </div>
+          <div style="margin-left: 12px; overflow: hidden;">
+            <div id="user-name"
+              style="font-weight: 800; font-size: 0.95rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text-main);">
+              User Name</div>
+            <div id="user-id-display" style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600;">ID: 12345
+            </div>
+          </div>
+        </div>
+        <button class="btn" onclick="logout()"
+          style="width: 100%; margin-top: 15px; background: #fee2e2; color: #ef4444; border: none; font-weight: 700;">
+          Keluar
+        </button>
+      </div>
+    </aside>
 
-    <!-- LOADING OVERLAY -->
-    <div id="processing-overlay" class="modal" style="background: rgba(15, 23, 42, 0.8);">
-      <div class="modal-content" style="background: transparent; border: none; box-shadow: none;">
-        <div style="width: 80px; height: 80px; border: 4px solid rgba(255, 255, 255, 0.1); border-top-color: #10B981; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 20px;"></div>
-        <h2 id="processing-text" style="color: white; font-weight: 800;">Memproses Wajah...</h2>
-        <p style="color: rgba(255, 255, 255, 0.6); font-size: 0.9rem;">Mohon tunggu sebentar, AI sedang memverifikasi foto Anda.</p>
+    <!-- MAIN CONTENT -->
+    <main id="main-content">
+      <!-- DASHBOARD VIEW -->
+      <div id="view-dashboard" class="content-view">
+        <header style="margin-bottom: 40px;">
+          <h1 style="font-size: 2.2rem; font-weight: 900; letter-spacing: -1px;">Dashboard</h1>
+          <p id="welcome-text" style="color: var(--text-muted); font-weight: 500;">Selamat datang kembali di sistem Hadir.in.</p>
+        </header>
+
+        <div class="stats-grid">
+          <div class="stat-card glass">
+            <div class="stat-icon" style="background: #ecfdf5; color: #10B981;"><i data-lucide="user-check"></i></div>
+            <div class="stat-label">Hadir Hari Ini</div>
+            <div class="stat-value" id="stat-present" style="color: #10B981;">0</div>
+          </div>
+          <div class="stat-card glass">
+            <div class="stat-icon" style="background: #fffbeb; color: #F59E0B;"><i data-lucide="clock"></i></div>
+            <div class="stat-label">Izin / Sakit</div>
+            <div class="stat-value" id="stat-leave" style="color: #F59E0B;">0</div>
+          </div>
+          <div class="stat-card glass">
+            <div class="stat-icon" style="background: #fef2f2; color: #EF4444;"><i data-lucide="alert-circle"></i></div>
+            <div class="stat-label">Terlambat</div>
+            <div class="stat-value" id="stat-late" style="color: #EF4444;">0</div>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1.5fr 1fr; gap: 24px; margin-top: 24px;">
+          <div class="card glass">
+            <h3 style="font-weight: 800; margin-bottom: 20px;">Tren Kehadiran (7 Hari)</h3>
+            <canvas id="attendanceChart"></canvas>
+          </div>
+          <div class="card glass">
+            <h3 style="font-weight: 800; margin-bottom: 20px;">Aksi Cepat</h3>
+            <div id="member-action-section" style="display: none; margin-bottom: 20px;">
+              <button class="btn btn-primary" style="width: 100%; margin-bottom: 12px;" onclick="handleWebAbsen('Masuk')">
+                <i data-lucide="log-in" style="margin-right: 8px; width: 18px;"></i> Absen Masuk
+              </button>
+              <button class="btn" style="width: 100%; background: #F1F5F9; color: var(--text-main);" onclick="handleWebAbsen('Pulang')">
+                <i data-lucide="log-out" style="margin-right: 8px; width: 18px;"></i> Absen Pulang
+              </button>
+            </div>
+            <button class="btn" id="btn-re-register-face"
+              style="width: 100%; background: #f1f5f9; color: var(--text-muted); font-size: 0.85rem;"
+              onclick="reRegisterFace()">
+              <i data-lucide="refresh-cw" style="margin-right: 8px; width: 16px;"></i> Daftar Ulang Wajah
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- HISTORY VIEW -->
+      <div id="view-history" class="content-view" style="display: none;">
+        <header style="margin-bottom: 40px;">
+          <h1 style="font-size: 2.2rem; font-weight: 900; letter-spacing: -1px;">Riwayat Absensi</h1>
+          <p style="color: var(--text-muted); font-weight: 500;">Daftar kehadiran Anda dalam 50 record terakhir.</p>
+        </header>
+        <div class="card glass" style="padding: 0; overflow: hidden;">
+          <table id="history-table">
+            <thead>
+              <tr>
+                <th>Waktu</th>
+                <th>Tipe</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="history-body"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- MEMBERS VIEW -->
+      <div id="view-members" class="content-view" style="display: none;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px;">
+          <div>
+            <h1 style="font-size: 2.2rem; font-weight: 900; letter-spacing: -1px;">Manajemen Anggota</h1>
+            <p style="color: var(--text-muted); font-weight: 500;">Daftar seluruh anggota yang terdaftar di instansi.</p>
+          </div>
+          <button class="btn btn-primary" onclick="openAddMemberModal()">
+            <i data-lucide="plus" style="margin-right: 8px; width: 18px;"></i> Tambah Anggota
+          </button>
+        </div>
+        <div class="card glass" style="padding: 0; overflow: hidden;">
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Nama</th>
+                <th>Bagian</th>
+                <th>WhatsApp</th>
+                <th>Aksi</th>
+              </tr>
+            </thead>
+            <tbody id="member-body"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- APPROVALS VIEW -->
+      <div id="view-approvals" class="content-view" style="display: none;">
+        <header style="margin-bottom: 40px;">
+          <h1 style="font-size: 2.2rem; font-weight: 900; letter-spacing: -1px;">Persetujuan Izin</h1>
+          <p style="color: var(--text-muted); font-weight: 500;">Daftar pengajuan izin yang memerlukan tindakan admin.</p>
+        </header>
+        <div class="card glass" style="padding: 0; overflow: hidden;">
+          <table>
+            <thead>
+              <tr>
+                <th>Tanggal</th>
+                <th>Nama</th>
+                <th>Tipe</th>
+                <th>Alasan</th>
+                <th>Tindakan</th>
+              </tr>
+            </thead>
+            <tbody id="approval-body"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- NGAJI VIEW -->
+      <div id="view-ngaji" class="content-view" style="display: none;">
+        <header style="margin-bottom: 40px;">
+          <h1 style="font-size: 2.2rem; font-weight: 900; letter-spacing: -1px;">Laporan Ngaji</h1>
+          <p style="color: var(--text-muted); font-weight: 500;">Data laporan pengajian guru dan kelompok ngaji.</p>
+        </header>
+        <div class="card glass" style="padding: 0; overflow: hidden;">
+          <table>
+            <thead>
+              <tr>
+                <th>Waktu</th>
+                <th>Guru</th>
+                <th>Kelompok</th>
+                <th>Lokasi</th>
+                <th>Materi</th>
+              </tr>
+            </thead>
+            <tbody id="ngaji-body"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- JADWAL VIEW -->
+      <div id="view-jadwal" class="content-view" style="display: none;">
+        <header style="margin-bottom: 40px;">
+          <h1 style="font-size: 2.2rem; font-weight: 900; letter-spacing: -1px;">Jadwal Kegiatan</h1>
+          <p style="color: var(--text-muted); font-weight: 500;">Manajemen jadwal rapat, upacara, dan kegiatan lainnya.</p>
+        </header>
+        <div class="card glass" style="padding: 0; overflow: hidden;">
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Kegiatan</th>
+                <th>Tipe</th>
+                <th>Waktu</th>
+                <th>Aksi</th>
+              </tr>
+            </thead>
+            <tbody id="jadwal-body"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- REPORTS VIEW -->
+      <div id="view-reports" class="content-view" style="display: none;">
+        <header style="margin-bottom: 40px;">
+          <h1 style="font-size: 2.2rem; font-weight: 900; letter-spacing: -1px;">Laporan Bulanan</h1>
+          <p style="color: var(--text-muted); font-weight: 500;">Ekspor data kehadiran bulanan ke format Excel.</p>
+        </header>
+        <div class="card glass">
+          <div style="display: flex; gap: 15px; align-items: flex-end; margin-bottom: 30px;">
+            <div class="leave-form-group" style="margin:0; flex: 1;">
+              <label>Pilih Bulan</label>
+              <input type="month" id="report-month-picker">
+            </div>
+            <button class="btn btn-primary" onclick="loadReportData()" style="height: 48px;">
+              <i data-lucide="search" style="margin-right: 8px; width: 18px;"></i> Tampilkan
+            </button>
+            <button class="btn" onclick="downloadReport()"
+              style="height: 48px; background: #ecfdf5; color: #10B981; font-weight: 700;">
+              <i data-lucide="download" style="margin-right: 8px; width: 18px;"></i> Download Excel
+            </button>
+          </div>
+          <table id="report-table">
+            <thead>
+              <tr>
+                <th>Waktu</th>
+                <th>ID</th>
+                <th>Nama</th>
+                <th>Tipe</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="report-body"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- CONFIG VIEW -->
+      <div id="view-config" class="content-view" style="display: none;">
+        <header style="margin-bottom: 40px;">
+          <h1 style="font-size: 2.2rem; font-weight: 900; letter-spacing: -1px;">Setelan Kantor</h1>
+          <p style="color: var(--text-muted); font-weight: 500;">Konfigurasi lokasi dan aturan jam kerja.</p>
+        </header>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 24px;">
+          <div class="card glass">
+            <h3 style="font-weight: 800; margin-bottom: 24px;">Lokasi & Radius</h3>
+            <div class="leave-form-group">
+              <label>Latitude</label>
+              <input type="text" id="set-lat" placeholder="-6.12345">
+            </div>
+            <div class="leave-form-group">
+              <label>Longitude</label>
+              <input type="text" id="set-lng" placeholder="106.12345">
+            </div>
+            <div class="leave-form-group">
+              <label>Radius Absensi (Meter)</label>
+              <input type="number" id="set-radius" placeholder="100">
+            </div>
+            <button class="btn btn-primary" style="width: 100%;" onclick="saveOfficeLocation()">Simpan Lokasi</button>
+          </div>
+
+          <div class="card glass">
+            <h3 style="font-weight: 800; margin-bottom: 24px;">Aturan Jam Kerja</h3>
+            <div class="leave-form-group">
+              <label>Buka Absen Masuk</label>
+              <input type="time" id="set-jam-masuk">
+            </div>
+            <div class="leave-form-group">
+              <label>Batas Jam Masuk (TL)</label>
+              <input type="time" id="set-batas-masuk">
+            </div>
+            <div class="leave-form-group">
+              <label>Jam Pulang Mulai</label>
+              <input type="time" id="set-jam-pulang">
+            </div>
+            <button class="btn btn-primary" style="width: 100%; margin-top: 10px;" onclick="saveWorkHours()">Simpan Jam Kerja</button>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- MODALS -->
+  <div id="add-member-modal" class="modal">
+    <div class="modal-content">
+      <h2 style="font-weight: 900; margin-bottom: 10px;">Tambah Anggota Baru</h2>
+      <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 25px;">Masukkan detail anggota untuk didaftarkan.</p>
+
+      <div class="leave-form-group">
+        <label>ID Anggota (Manual)</label>
+        <input type="text" id="add-m-id" placeholder="CONTOH: 0804">
+      </div>
+      <div class="leave-form-group">
+        <label>Nama Lengkap</label>
+        <input type="text" id="add-m-nama" placeholder="Masukkan Nama">
+      </div>
+      <div class="leave-form-group">
+        <label>Bagian / Divisi</label>
+        <input type="text" id="add-m-divisi" placeholder="Contoh: Guru / Staff">
+      </div>
+      <div class="leave-form-group">
+        <label>No. WhatsApp</label>
+        <input type="text" id="add-m-hp" placeholder="6281xxxx">
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 30px;">
+        <button class="btn" style="background: #F1F5F9; color: var(--text-muted);" onclick="closeAddMemberModal()">Batal</button>
+        <button class="btn btn-primary" id="btn-submit-add-m" onclick="submitAddMember()">Simpan Anggota</button>
       </div>
     </div>
+  </div>
 
-    <!-- SCRIPTS -->
-    <script>lucide.createIcons();</script>
-    <?!= include('scripts'); ?>
-  </body>
-  <style>
-    @keyframes spin { to { transform: rotate(360deg); } }
-  </style>
+  <!-- LOADING OVERLAY -->
+  <div id="processing-overlay" class="modal" style="background: rgba(15, 23, 42, 0.8);">
+    <div class="modal-content" style="background: transparent; border: none; box-shadow: none;">
+      <div style="width: 80px; height: 80px; border: 4px solid rgba(255, 255, 255, 0.1); border-top-color: #10B981; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 20px;"></div>
+      <h2 id="processing-text" style="color: white; font-weight: 800;">Memproses...</h2>
+    </div>
+  </div>
+
+  <input type="file" id="camera-input" accept="image/*" capture="user" style="display: none;">
+
+  <script>lucide.createIcons();</script>
+  <?!= include('scripts'); ?>
+</body>
+<style>
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
 </html>
