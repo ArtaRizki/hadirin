@@ -30,22 +30,43 @@
                 "--dart-define=API_TOKEN=SUPER_SECRET_UMKM001_8xZ2"
             ]
         },
+        // {
+        //     "name": "Hadir.in - SMAPGRIMAJALENGKA",
+        //     "request": "launch",
+        //     "type": "dart",
+        //     "args": [
+        //         "--dart-define=GAS_ENDPOINT=https://script.google.com/macros/s/AKfycby7JOsxqE9BndQq5Vf45WrtEBnMyO1GYRQYgSSfdA4giOP117le8OWJAGPNkw8y_zl20w/exec",
+        //         "--dart-define=API_TOKEN=SUPER_SECRET_SMAPGRIMAJALENGKA_8xZ2"
+        //     ]
+        // },
         {
-            "name": "Hadir.in - SMAPGRIMAJALENGKA",
-            "request": "launch",
-            "type": "dart",
-            "args": [
-                "--dart-define=GAS_ENDPOINT=https://script.google.com/macros/s/AKfycby7JOsxqE9BndQq5Vf45WrtEBnMyO1GYRQYgSSfdA4giOP117le8OWJAGPNkw8y_zl20w/exec",
-                "--dart-define=API_TOKEN=SUPER_SECRET_SMAPGRIMAJALENGKA_8xZ2"
-            ]
-        },
-        {
-            "name": "Hadir.in - Habil",
+            "name": "Hadir.in - SDIT",
             "request": "launch",
             "type": "dart",
             "args": [
                 "--dart-define=GAS_ENDPOINT=https://script.google.com/macros/s/AKfycbzHDKXZzz0VOLgaxi9PBSEbfhKRO4Zbhrf08HIPIpcYagJkwZtdpyxQvHP87kGwOpN6/exec",
-                "--dart-define=API_TOKEN=kicau-mania"
+                "--dart-define=API_TOKEN=kicau-mania",
+                "--dart-define=APP_LOGO=assets/icons/sdit.png"
+            ]
+        },
+        {
+            "name": "Hadir.in - SMPIT",
+            "request": "launch",
+            "type": "dart",
+            "args": [
+                "--dart-define=GAS_ENDPOINT=https://script.google.com/macros/s/AKfycbzHDKXZzz0VOLgaxi9PBSEbfhKRO4Zbhrf08HIPIpcYagJkwZtdpyxQvHP87kGwOpN6/exec",
+                "--dart-define=API_TOKEN=kicau-mania",
+                "--dart-define=APP_LOGO=assets/icons/smpit.png"
+            ]
+        },
+        {
+            "name": "Hadir.in - SMAIT",
+            "request": "launch",
+            "type": "dart",
+            "args": [
+                "--dart-define=GAS_ENDPOINT=https://script.google.com/macros/s/AKfycbzHDKXZzz0VOLgaxi9PBSEbfhKRO4Zbhrf08HIPIpcYagJkwZtdpyxQvHP87kGwOpN6/exec",
+                "--dart-define=API_TOKEN=kicau-mania",
+                "--dart-define=APP_LOGO=assets/icons/smait.png"
             ]
         }
     ]

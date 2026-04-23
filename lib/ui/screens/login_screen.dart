@@ -3,6 +3,7 @@ import 'package:hadirin/core/providers/auth_provider.dart';
 import 'package:hadirin/core/service/admin_service.dart';
 import 'package:provider/provider.dart';
 import 'package:hadirin/core/theme/fluid_theme.dart';
+import 'package:hadirin/core/config/app_config.dart';
 import 'package:hadirin/ui/screens/admin_register_screen.dart';
 import 'package:hadirin/ui/screens/attendance_screen.dart';
 
@@ -75,18 +76,22 @@ class _LoginScreenState extends State<LoginScreen> {
         final dataAnggota = result['message'];
         final clientIdDariServer = dataAnggota['client_id'];
         final divisi = (dataAnggota['divisi'] ?? "").toString().toUpperCase();
-        final nama = (dataAnggota['nama_karyawan'] ?? "").toString().toUpperCase();
+        final nama = (dataAnggota['nama_karyawan'] ?? "")
+            .toString()
+            .toUpperCase();
 
-        // Logika penentuan role: 
+        // Logika penentuan role:
         // Admin jika ID diawali INST-/ADM-/ADMIN- ATAU Divisi/Nama mengandung kata ADMIN/PEMILIK
-        bool isIdAdmin = inputId.toUpperCase().startsWith("INST-") || 
-                         inputId.toUpperCase().startsWith("ADM-") ||
-                         inputId.toUpperCase().startsWith("ADMIN-");
-        
-        bool isRoleAdmin = divisi.contains("ADMIN") || 
-                          divisi.contains("PEMILIK") ||
-                          nama.contains("ADMIN") ||
-                          nama.contains("PEMILIK");
+        bool isIdAdmin =
+            inputId.toUpperCase().startsWith("INST-") ||
+            inputId.toUpperCase().startsWith("ADM-") ||
+            inputId.toUpperCase().startsWith("ADMIN-");
+
+        bool isRoleAdmin =
+            divisi.contains("ADMIN") ||
+            divisi.contains("PEMILIK") ||
+            nama.contains("ADMIN") ||
+            nama.contains("PEMILIK");
 
         LoginRole assignedRole = (isIdAdmin || isRoleAdmin)
             ? LoginRole.admin
@@ -109,15 +114,19 @@ class _LoginScreenState extends State<LoginScreen> {
         );
       } else {
         String serverMsg = result['message'].toString();
-        if (serverMsg.contains("Kode Instansi") && inputKodeInstansi.contains("MASTER")) {
-          serverMsg += "\n\nPetunjuk: Kosongkan kotak pertama untuk login Super Admin.";
+        if (serverMsg.contains("Kode Instansi") &&
+            inputKodeInstansi.contains("MASTER")) {
+          serverMsg +=
+              "\n\nPetunjuk: Kosongkan kotak pertama untuk login Super Admin.";
         }
         _showError(serverMsg);
       }
     } catch (e) {
       String errorMsg = e.toString().replaceAll('Exception: ', '');
-      if (errorMsg.contains("Kode Instansi") && inputKodeInstansi.contains("MASTER")) {
-        errorMsg += "\n\nPetunjuk: Kosongkan kotak pertama untuk login Super Admin.";
+      if (errorMsg.contains("Kode Instansi") &&
+          inputKodeInstansi.contains("MASTER")) {
+        errorMsg +=
+            "\n\nPetunjuk: Kosongkan kotak pertama untuk login Super Admin.";
       }
       _showError("Gagal terhubung ke server: $errorMsg");
     } finally {
@@ -192,15 +201,16 @@ class _LoginScreenState extends State<LoginScreen> {
                         // LOGO & HEADER
                         Center(
                           child: Container(
-                            padding: const EdgeInsets.all(16),
+                            padding: const EdgeInsets.all(8),
                             decoration: BoxDecoration(
                               color: context.primaryColor.withOpacity(0.1),
                               shape: BoxShape.circle,
                             ),
-                            child: Icon(
-                              Icons.fingerprint_rounded,
-                              size: 48,
-                              color: context.primaryColor,
+                            child: Image.asset(
+                              AppConfig.appLogo,
+                              width: 86,
+                              height: 86,
+                              fit: BoxFit.contain,
                             ),
                           ),
                         ),

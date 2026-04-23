@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:hadirin/core/providers/auth_provider.dart';
 import 'package:hadirin/core/theme/fluid_theme.dart';
+import 'package:hadirin/core/config/app_config.dart';
 import 'package:provider/provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 
@@ -140,10 +141,11 @@ class _SplashScreenState extends State<SplashScreen>
                           color: context.primaryColor.withOpacity(0.1),
                           shape: BoxShape.circle,
                         ),
-                        child: Icon(
-                          Icons.fingerprint_rounded,
-                          size: 72,
-                          color: context.primaryColor,
+                        child: Image.asset(
+                          AppConfig.appLogo,
+                          width: 80,
+                          height: 80,
+                          fit: BoxFit.contain,
                         ),
                       ),
                     ),
