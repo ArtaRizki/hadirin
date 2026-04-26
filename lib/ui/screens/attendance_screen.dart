@@ -53,15 +53,29 @@ class _AttendanceScreenState extends State<AttendanceScreen>
     _startProximityListener();
   }
 
+  String _safeTime(dynamic raw, String defaultVal) {
+    if (raw == null || raw.toString() == 'null' || raw.toString().isEmpty) {
+      return defaultVal;
+    }
+    final parts = raw.toString().split(':');
+    if (parts.length != 2) return defaultVal;
+    final h = int.tryParse(parts[0]);
+    final m = int.tryParse(parts[1]);
+    if (h == null || m == null || h < 0 || h > 23 || m < 0 || m > 59) {
+      return defaultVal;
+    }
+    return raw.toString();
+  }
+
   Future<void> _fetchOfficeConfig() async {
     try {
       final auth = context.read<AuthProvider>();
       final config = await AdminService().getOfficeConfig(auth.clientId ?? "");
       if (config != null && mounted) {
         setState(() {
-          _jamMasukMulai = config['jam_masuk_mulai'].toString();
-          _batasJamMasuk = config['batas_jam_masuk'].toString();
-          _jamPulangMulai = config['jam_pulang_mulai'].toString();
+          _jamMasukMulai = _safeTime(config['jam_masuk_mulai'], "04:00");
+          _batasJamMasuk = _safeTime(config['batas_jam_masuk'], "07:00");
+          _jamPulangMulai = _safeTime(config['jam_pulang_mulai'], "13:00");
           _isConfigLoaded = true;
         });
       }
