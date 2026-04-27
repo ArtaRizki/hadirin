@@ -12,6 +12,7 @@ import 'package:hadirin/ui/screens/set_location_screen.dart';
 import 'package:hadirin/ui/widgets/custom_date_range_picker.dart';
 import 'package:provider/provider.dart';
 import 'package:hadirin/core/theme/fluid_theme.dart';
+import 'package:hadirin/core/config/app_config.dart';
 import 'package:intl/intl.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:hadirin/ui/widgets/skeleton_loader.dart';
@@ -23,6 +24,7 @@ import 'package:hadirin/ui/screens/set_worktime_screen.dart';
 import 'package:hadirin/ui/screens/banner_management_screen.dart';
 import 'package:hadirin/ui/screens/jadwal_kegiatan_screen.dart';
 import 'package:hadirin/ui/screens/laporan_ngaji_screen.dart';
+import 'package:hadirin/core/service/school_service.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -44,16 +46,35 @@ class _ProfileScreenState extends State<ProfileScreen> {
   DateTimeRange? _selectedDateRange;
   List<dynamic> _listAnggotaStats = [];
   bool _isLoadingStats = false;
+  String? _nomorPengelola;
 
   @override
   void initState() {
     super.initState();
     initializeDateFormatting('id_ID', null).then((_) {
       _fetchHistory();
+      _fetchAppSettings();
       if (context.read<AuthProvider>().isAdmin) {
         _fetchStats();
       }
     });
+  }
+
+  Future<void> _fetchAppSettings({bool force = false}) async {
+    try {
+      final auth = context.read<AuthProvider>();
+      final settings = await SchoolService().getAppSettings(
+        auth.clientId ?? "",
+        forceRefresh: force,
+      );
+      if (settings != null && settings['nomor_pengelola'] != null) {
+        setState(() {
+          _nomorPengelola = settings['nomor_pengelola'].toString();
+        });
+      }
+    } catch (e) {
+      debugPrint("Gagal fetch app settings: $e");
+    }
   }
 
   Future<void> _fetchStats() async {
@@ -95,9 +116,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Future<void> _handleRefresh() async {
     final auth = context.read<AuthProvider>();
     if (auth.isAdmin) {
-      await Future.wait([_fetchHistory(), _fetchStats()]);
+      await Future.wait([
+        _fetchHistory(),
+        _fetchStats(),
+        _fetchAppSettings(force: true),
+      ]);
     } else {
-      await _fetchHistory();
+      await Future.wait([
+        _fetchHistory(),
+        _fetchAppSettings(force: true),
+      ]);
     }
   }
 
@@ -933,7 +961,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     icon: Icons.event_note_rounded,
                     onTap: () => Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (_) => const JadwalKegiatanScreen()),
+                      MaterialPageRoute(
+                        builder: (_) => const JadwalKegiatanScreen(),
+                      ),
                     ),
                     accentColor: const Color(0xFF0EA5E9),
                   ),
@@ -942,7 +972,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     icon: Icons.menu_book_rounded,
                     onTap: () => Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (_) => const LaporanNgajiScreen()),
+                      MaterialPageRoute(
+                        builder: (_) => const LaporanNgajiScreen(),
+                      ),
                     ),
                     accentColor: const Color(0xFF8B5CF6),
                   ),
@@ -963,11 +995,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     _buildMenuCard(
                       title: "Hubungi\nPengelola",
                       icon: Icons.support_agent_rounded,
-                      onTap: () => UrlHelper.launchWhatsApp(
-                        phone: auth.adminPhone!,
-                        message:
-                            "Halo Bapak/Ibu Admin Hadir.in, saya ${auth.namaUser} ingin menanyakan sesuatu.",
-                      ),
+                      onTap: () {
+                        // Gunakan nomor dari API, jika kosong pakai adminPhone, jika kosong lagi pakai fallback
+                        final targetPhone =
+                            _nomorPengelola ??
+                            (auth.adminPhone?.isNotEmpty == true
+                                ? auth.adminPhone
+                                : "6281234567890");
+
+                        UrlHelper.launchWhatsApp(
+                          phone: targetPhone!,
+                          message:
+                              "Halo Bapak/Ibu Admin ${AppConfig.appName}, saya ${auth.namaUser} ingin menanyakan sesuatu.",
+                        );
+                      },
                       accentColor: const Color(0xFFE11D48), // Rose
                     ),
                   if (auth.isAdmin) ...[

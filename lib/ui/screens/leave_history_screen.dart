@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hadirin/core/providers/auth_provider.dart';
 import 'package:hadirin/core/service/leave_service.dart';
+import 'package:hadirin/core/config/app_config.dart';
 import 'package:hadirin/core/theme/fluid_theme.dart';
 import 'package:hadirin/ui/widgets/skeleton_loader.dart';
 import 'package:hadirin/core/utils/url_helper.dart'; // NEW
@@ -416,7 +417,7 @@ class _LeaveHistoryScreenState extends State<LeaveHistoryScreen> {
                                 onPressed: () => UrlHelper.launchWhatsApp(
                                   phone: item['no_hp'].toString(),
                                   message:
-                                      "Halo ${item['nama']}, ini Admin Hadir.in. Saya ingin menanyakan terkait pengajuan ${item['tipe']} Anda pada tanggal ${item['rentang']}.",
+                                      "Halo ${item['nama']}, ini Admin ${AppConfig.appName}. Saya ingin menanyakan terkait pengajuan ${item['tipe']} Anda pada tanggal ${item['rentang']}.",
                                 ),
                                 icon: const Icon(
                                   Icons.phone,

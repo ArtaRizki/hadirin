@@ -34,7 +34,7 @@ class _LoginScreenState extends State<LoginScreen> {
       if (superResult['success']) {
         await context.read<AuthProvider>().login(
           "SUPER_ADMIN",
-          "Owner Hadir.in",
+          "Owner ${AppConfig.appName}",
           LoginRole.superAdmin,
           "MASTER",
         );
@@ -225,7 +225,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                         ),
                         const Text(
-                          "Hadir.in",
+                          AppConfig.appName,
                           style: TextStyle(
                             fontSize: 42,
                             fontWeight: FontWeight.w900,

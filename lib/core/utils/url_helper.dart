@@ -1,4 +1,5 @@
 import 'package:url_launcher/url_launcher.dart';
+import 'package:hadirin/core/config/app_config.dart';
 import 'dart:io';
 
 class UrlHelper {
@@ -6,7 +7,7 @@ class UrlHelper {
   /// Format nomor: "08123...", "628123...", atau "8123..."
   static Future<void> launchWhatsApp({
     required String phone,
-    String message = "Halo, saya menghubungi Anda dari aplikasi Hadir.in",
+    String message = "Halo, saya menghubungi Anda dari aplikasi ${AppConfig.appName}",
   }) async {
     if (phone.isEmpty) return;
 

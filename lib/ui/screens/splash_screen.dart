@@ -155,7 +155,7 @@ class _SplashScreenState extends State<SplashScreen>
 
                   // NAMA BRAND
                   const Text(
-                    "Hadir.in",
+                    AppConfig.appName,
                     style: TextStyle(
                       fontSize: 36,
                       fontWeight: FontWeight.w900,

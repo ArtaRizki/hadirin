@@ -46,7 +46,8 @@
             "args": [
                 "--dart-define=GAS_ENDPOINT=https://script.google.com/macros/s/AKfycbxGo_73e45A7mvtCcmzSvqOxI-DffrAvWIFhUmXczYbkBpgSjNUD8NvR65VSlePNMLlzg/exec",
                 "--dart-define=API_TOKEN=sdit-palu",
-                "--dart-define=APP_LOGO=assets/icons/sdit.png"
+                "--dart-define=APP_LOGO=assets/icons/sdit.png",
+                "--dart-define=APP_NAME=SDIT"
             ]
         },
         {
@@ -56,7 +57,8 @@
             "args": [
                 "--dart-define=GAS_ENDPOINT=https://script.google.com/macros/s/AKfycbwXV9KJJOXRXESvxT6Nkmcix0DMwOVVuy_AR_gfQW0Njc2QRKApQCQWvo_6xe6laklK/exec",
                 "--dart-define=API_TOKEN=smpit-palu",
-                "--dart-define=APP_LOGO=assets/icons/smpit.png"
+                "--dart-define=APP_LOGO=assets/icons/smpit.png",
+                "--dart-define=APP_NAME=SMPIT"
             ]
         },
         {
@@ -66,7 +68,8 @@
             "args": [
                 "--dart-define=GAS_ENDPOINT=https://script.google.com/macros/s/AKfycbx3ZbrSm3gFoCkCsD12clhcPSHi74i1Oz7SjcJMO4TZ7NPVM91Rpy1ZX-pNUhjEV-4ERw/exec",
                 "--dart-define=API_TOKEN=smait-palu",
-                "--dart-define=APP_LOGO=assets/icons/smait.png"
+                "--dart-define=APP_LOGO=assets/icons/smait.png",
+                "--dart-define=APP_NAME=SMAIT"
             ]
         }
     ]

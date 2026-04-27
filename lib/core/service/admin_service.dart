@@ -3,6 +3,7 @@ import 'dart:developer' as d;
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:hadirin/core/config/app_config.dart';
 import 'package:hadirin/core/service/api_client.dart';
+import 'package:hadirin/core/service/cache_service.dart';
 
 /// Tanggung jawab: Semua operasi yang hanya bisa dilakukan admin Instansi —
 /// kelola anggota, lokasi kantor, perangkat, laporan, dan registrasi klien.
@@ -73,8 +74,16 @@ class AdminService extends ApiClient {
   // =================================================================
   // AMBIL KONFIGURASI KANTOR (lat, lng, radius)
   // =================================================================
-  Future<Map<String, dynamic>?> getOfficeConfig(String clientId) async {
+  Future<Map<String, dynamic>?> getOfficeConfig(String clientId,
+      {bool forceRefresh = false}) async {
     if (clientId.isEmpty) return null;
+
+    // 1. Coba baca dari cache dulu jika tidak dipaksa refresh
+    if (!forceRefresh) {
+      final cached = await CacheService.getOfficeConfig();
+      if (cached != null) return cached;
+    }
+
     try {
       final payload = {
         'api_token': AppConfig.apiToken,
@@ -85,7 +94,12 @@ class AdminService extends ApiClient {
       final response = await sendRequest('get_office_config', payload);
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        if (data['code'] == 200) return data['message'];
+        if (data['code'] == 200) {
+          final config = data['message'] as Map<String, dynamic>;
+          // 2. Simpan ke cache
+          await CacheService.setOfficeConfig(config);
+          return config;
+        }
       }
       return null;
     } catch (e) {

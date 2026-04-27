@@ -3,12 +3,22 @@ import 'dart:developer' as d;
 import 'package:hadirin/core/config/app_config.dart';
 import 'package:hadirin/core/service/api_client.dart';
 import 'package:hadirin/core/models/school_models.dart';
+import 'package:hadirin/core/service/cache_service.dart';
 
 class SchoolService extends ApiClient {
   // =================================================================
   // 1. BANNER PENGUMUMAN
   // =================================================================
-  Future<List<BannerModel>> getBanners(String clientId) async {
+  Future<List<BannerModel>> getBanners(String clientId,
+      {bool forceRefresh = false}) async {
+    // 1. Coba baca dari cache
+    if (!forceRefresh) {
+      final cached = await CacheService.getBanners();
+      if (cached != null) {
+        return cached.map((e) => BannerModel.fromJson(e)).toList();
+      }
+    }
+
     try {
       final payload = {
         'api_token': AppConfig.apiToken,
@@ -21,6 +31,8 @@ class SchoolService extends ApiClient {
         final data = jsonDecode(response.body);
         if (data['code'] == 200) {
           final List list = data['message'];
+          // 2. Simpan ke cache
+          await CacheService.setBanners(list);
           return list.map((e) => BannerModel.fromJson(e)).toList();
         }
       }
@@ -314,7 +326,23 @@ class SchoolService extends ApiClient {
   // =================================================================
   // 4. PENILAIAN AL-QURAN
   // =================================================================
-  Future<Map<String, List<dynamic>>> getMasterQuran(String clientId) async {
+  Future<Map<String, List<dynamic>>> getMasterQuran(String clientId,
+      {bool forceRefresh = false}) async {
+    // 1. Coba baca dari cache
+    if (!forceRefresh) {
+      final cached = await CacheService.getMasterQuran();
+      if (cached != null) {
+        return {
+          'siswa': (cached['siswa'] as List)
+              .map((e) => SiswaModel.fromJson(e))
+              .toList(),
+          'materi': (cached['materi'] as List)
+              .map((e) => MateriModel.fromJson(e))
+              .toList(),
+        };
+      }
+    }
+
     try {
       final payload = {
         'api_token': AppConfig.apiToken,
@@ -327,6 +355,8 @@ class SchoolService extends ApiClient {
         final data = jsonDecode(response.body);
         if (data['code'] == 200) {
           final Map<String, dynamic> msg = data['message'];
+          // 2. Simpan ke cache
+          await CacheService.setMasterQuran(msg);
           return {
             'siswa': (msg['siswa'] as List)
                 .map((e) => SiswaModel.fromJson(e))
@@ -395,6 +425,41 @@ class SchoolService extends ApiClient {
       return [];
     } catch (e) {
       return [];
+    }
+  }
+
+  // =================================================================
+  // 5. APP SETTINGS
+  // =================================================================
+  Future<Map<String, dynamic>?> getAppSettings(String clientId,
+      {bool forceRefresh = false}) async {
+    // 1. Coba baca dari cache
+    if (!forceRefresh) {
+      final cached = await CacheService.getAppSettings();
+      if (cached != null) return cached;
+    }
+
+    try {
+      final payload = {
+        'api_token': AppConfig.apiToken,
+        'client_id': clientId,
+        'action': 'get_app_settings',
+      };
+
+      final response = await sendRequest('get_app_settings', payload);
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['code'] == 200) {
+          final settings = data['message'] as Map<String, dynamic>;
+          // 2. Simpan ke cache
+          await CacheService.setAppSettings(settings);
+          return settings;
+        }
+      }
+      return null;
+    } catch (e) {
+      d.log('==== ERROR GET APP SETTINGS ==== $e');
+      return null;
     }
   }
 }

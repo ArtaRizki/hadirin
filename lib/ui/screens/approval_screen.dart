@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hadirin/core/providers/auth_provider.dart';
 import 'package:hadirin/core/service/leave_service.dart';
+import 'package:hadirin/core/config/app_config.dart';
 import 'package:hadirin/core/theme/fluid_theme.dart';
 import 'package:hadirin/core/utils/url_helper.dart';
 import 'package:hadirin/ui/widgets/skeleton_loader.dart';
@@ -591,7 +592,7 @@ class _ApprovalScreenState extends State<ApprovalScreen> {
                                                     phone: item['no_hp']
                                                         .toString(),
                                                     message:
-                                                        "Halo ${item['nama']}, ini Admin Hadir.in mengenai pengajuan ${item['tipe']} Anda.",
+                                                        "Halo ${item['nama']}, ini Admin ${AppConfig.appName} mengenai pengajuan ${item['tipe']} Anda.",
                                                   ),
                                               icon: const Icon(
                                                 Icons.phone,

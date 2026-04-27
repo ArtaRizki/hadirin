@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:hadirin/core/config/app_config.dart';
 import 'package:hadirin/core/service/admin_service.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:hadirin/core/providers/auth_provider.dart';
@@ -258,7 +259,7 @@ class _AdminRegisterScreenState extends State<AdminRegisterScreen> {
         ),
         const SizedBox(height: 6),
         Text(
-          "Masukkan nama instansi / kantor yang akan didaftarkan ke dalam sistem Hadir.in.",
+          "Masukkan nama instansi / kantor yang akan didaftarkan ke dalam sistem ${AppConfig.appName}.",
           style: TextStyle(
             color: Colors.grey.shade600,
             fontSize: 13,

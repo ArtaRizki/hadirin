@@ -25,10 +25,11 @@ class _BannerManagementScreenState extends State<BannerManagementScreen> {
     _fetchBanners();
   }
 
-  Future<void> _fetchBanners() async {
+  Future<void> _fetchBanners({bool force = false}) async {
     setState(() => _isLoading = true);
     final auth = context.read<AuthProvider>();
-    final data = await _schoolService.getBanners(auth.clientId ?? "");
+    final data =
+        await _schoolService.getBanners(auth.clientId ?? "", forceRefresh: force);
     setState(() {
       _banners = data;
       _isLoading = false;
@@ -74,7 +75,7 @@ class _BannerManagementScreenState extends State<BannerManagementScreen> {
 
       if (!mounted) return;
       if (result['success'] == true) {
-        _fetchBanners();
+        _fetchBanners(force: true);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: const Text("Banner berhasil dihapus"),
@@ -207,7 +208,7 @@ class _BannerManagementScreenState extends State<BannerManagementScreen> {
                           setSheet(() => isSaving = false);
                           if (res['success'] == true) {
                             Navigator.pop(ctx);
-                            _fetchBanners();
+                            _fetchBanners(force: true);
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
                                 content:
@@ -316,7 +317,7 @@ class _BannerManagementScreenState extends State<BannerManagementScreen> {
           : _banners.isEmpty
               ? _buildEmpty()
               : RefreshIndicator(
-                  onRefresh: _fetchBanners,
+                  onRefresh: () => _fetchBanners(force: true),
                   child: ListView.builder(
                     padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
                     itemCount: _banners.length,
@@ -329,7 +330,7 @@ class _BannerManagementScreenState extends State<BannerManagementScreen> {
             context,
             MaterialPageRoute(builder: (_) => const AddBannerScreen()),
           );
-          if (refresh == true) _fetchBanners();
+          if (refresh == true) _fetchBanners(force: true);
         },
         backgroundColor: context.primaryColor,
         icon: const Icon(Icons.add, color: Colors.white),

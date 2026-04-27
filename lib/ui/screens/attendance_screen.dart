@@ -100,10 +100,11 @@ class _AttendanceScreenState extends State<AttendanceScreen>
     });
   }
 
-  Future<void> _fetchBanners() async {
+  Future<void> _fetchBanners({bool force = false}) async {
     try {
       final auth = context.read<AuthProvider>();
-      final banners = await _schoolService.getBanners(auth.clientId ?? "");
+      final banners =
+          await _schoolService.getBanners(auth.clientId ?? "", forceRefresh: force);
       if (mounted) {
         setState(() {
           _banners = banners;
@@ -116,10 +117,11 @@ class _AttendanceScreenState extends State<AttendanceScreen>
     }
   }
 
-  Future<void> _fetchOfficeConfig() async {
+  Future<void> _fetchOfficeConfig({bool force = false}) async {
     try {
       final auth = context.read<AuthProvider>();
-      final config = await AdminService().getOfficeConfig(auth.clientId ?? "");
+      final config =
+          await AdminService().getOfficeConfig(auth.clientId ?? "", forceRefresh: force);
       if (config != null && mounted) {
         setState(() {
           _jamMasukMulai = config['jam_masuk_mulai']?.toString() == "null"
@@ -433,7 +435,12 @@ class _AttendanceScreenState extends State<AttendanceScreen>
 
             SafeArea(
               child: RefreshIndicator(
-                onRefresh: () async => _fetchBanners(),
+                onRefresh: () async {
+                  await Future.wait([
+                    _fetchBanners(force: true),
+                    _fetchOfficeConfig(force: true),
+                  ]);
+                },
                 color: context.primaryColor,
                 child: SingleChildScrollView(
                   physics: const AlwaysScrollableScrollPhysics(),

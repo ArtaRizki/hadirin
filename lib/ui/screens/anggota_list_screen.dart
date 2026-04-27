@@ -5,6 +5,7 @@ import 'package:hadirin/core/theme/fluid_theme.dart';
 import 'package:hadirin/ui/widgets/skeleton_loader.dart';
 import 'package:provider/provider.dart';
 import 'package:hadirin/core/utils/url_helper.dart';
+import 'package:hadirin/core/config/app_config.dart';
 
 class AnggotaListScreen extends StatefulWidget {
   const AnggotaListScreen({super.key});
@@ -450,7 +451,7 @@ class _AnggotaListScreenState extends State<AnggotaListScreen> {
                                                     phone:
                                                         emp['no_hp'].toString(),
                                                     message:
-                                                        "Halo ${emp['nama']}, saya dari Admin Hadir.in ingin menghubungi Anda.",
+                                                        "Halo ${emp['nama']}, saya dari Admin ${AppConfig.appName} ingin menghubungi Anda.",
                                                   ),
                                                   icon: const Icon(
                                                     Icons.phone,
