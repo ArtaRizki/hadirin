@@ -450,7 +450,7 @@ class _AnggotaListScreenState extends State<AnggotaListScreen> {
                                                     phone:
                                                         emp['no_hp'].toString(),
                                                     message:
-                                                        "Halo ${emp['nama']}, saya dari Admin Hadir.in ingin menghubungi Anda.",
+                                                        "Halo ${emp['nama']}, saya dari Admin Siparjo ingin menghubungi Anda.",
                                                   ),
                                                   icon: const Icon(
                                                     Icons.phone,

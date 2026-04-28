@@ -416,7 +416,7 @@ class _LeaveHistoryScreenState extends State<LeaveHistoryScreen> {
                                 onPressed: () => UrlHelper.launchWhatsApp(
                                   phone: item['no_hp'].toString(),
                                   message:
-                                      "Halo ${item['nama']}, ini Admin Hadir.in. Saya ingin menanyakan terkait pengajuan ${item['tipe']} Anda pada tanggal ${item['rentang']}.",
+                                      "Halo ${item['nama']}, ini Admin Siparjo. Saya ingin menanyakan terkait pengajuan ${item['tipe']} Anda pada tanggal ${item['rentang']}.",
                                 ),
                                 icon: const Icon(
                                   Icons.phone,

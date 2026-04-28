@@ -945,7 +945,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       onTap: () => UrlHelper.launchWhatsApp(
                         phone: auth.adminPhone!,
                         message:
-                            "Halo Bapak/Ibu Admin Hadir.in, saya ${auth.namaUser} ingin menanyakan sesuatu.",
+                            "Halo Bapak/Ibu Admin Siparjo, saya ${auth.namaUser} ingin menanyakan sesuatu.",
                       ),
                       accentColor: const Color(0xFFE11D48), // Rose
                     ),

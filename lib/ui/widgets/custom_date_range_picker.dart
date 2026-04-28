@@ -3,7 +3,7 @@ import 'package:hadirin/core/theme/fluid_theme.dart';
 import 'package:intl/intl.dart';
 
 // =================================================================
-// CUSTOM DATE RANGE PICKER — Hadir.in Design System
+// CUSTOM DATE RANGE PICKER — Siparjo Design System
 // Usage: lihat di bawah file ini
 // =================================================================
 

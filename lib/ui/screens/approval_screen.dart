@@ -591,7 +591,7 @@ class _ApprovalScreenState extends State<ApprovalScreen> {
                                                     phone: item['no_hp']
                                                         .toString(),
                                                     message:
-                                                        "Halo ${item['nama']}, ini Admin Hadir.in mengenai pengajuan ${item['tipe']} Anda.",
+                                                        "Halo ${item['nama']}, ini Admin Siparjo mengenai pengajuan ${item['tipe']} Anda.",
                                                   ),
                                               icon: const Icon(
                                                 Icons.phone,

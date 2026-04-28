@@ -140,10 +140,10 @@ class _SplashScreenState extends State<SplashScreen>
                           color: context.primaryColor.withOpacity(0.1),
                           shape: BoxShape.circle,
                         ),
-                        child: Icon(
-                          Icons.fingerprint_rounded,
-                          size: 72,
-                          color: context.primaryColor,
+                        child: Image.asset(
+                          'assets/siparjo.png',
+                          width: 72,
+                          height: 72,
                         ),
                       ),
                     ),
@@ -153,7 +153,7 @@ class _SplashScreenState extends State<SplashScreen>
 
                   // NAMA BRAND
                   const Text(
-                    "Hadir.in",
+                    "Siparjo",
                     style: TextStyle(
                       fontSize: 36,
                       fontWeight: FontWeight.w900,

@@ -117,7 +117,7 @@ flutter_launcher_icons:
     image_path: "assets/siparjo.png" # Disamakan dengan yang atas
 
 flutter_native_splash:
-  color: "#F9F9F8" # Warna background khas Hadir.in
+  color: "#F9F9F8" # Warna background khas Siparjo
   image: "assets/siparjo.png"
   android: true
   ios: true

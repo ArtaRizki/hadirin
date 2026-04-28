@@ -57,7 +57,7 @@ class MyApp extends StatelessWidget {
     return Consumer<AuthProvider>(
       builder: (context, auth, _) {
         return MaterialApp(
-          title: 'Hadir.in',
+          title: 'Siparjo',
           debugShowCheckedModeBanner: false,
           theme: FluidTheme.getTheme(auth.themeColor),
           // 2. Jadikan AuthWrapper sebagai home (halaman pertama yang dimuat)
