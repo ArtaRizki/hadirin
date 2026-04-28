@@ -9,7 +9,7 @@ import 'package:hadirin/core/service/api_client.dart';
 /// Tanggung jawab: Pendaftaran wajah, pengambilan embedding,
 /// verifikasi kemiripan wajah via TFLite native & server.
 class FaceService extends ApiClient {
-  static const _platform = MethodChannel('com.mobile.hadirin/face_recognition');
+  static const _platform = MethodChannel('com.mobile.siparjo/face_recognition');
   final _picker = ImagePicker();
 
   // =================================================================

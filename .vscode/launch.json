@@ -49,7 +49,7 @@
             ]
         },
         {
-            "name": "Hadir.in - SIPARJO",
+            "name": "SIPARJO",
             "request": "launch",
             "type": "dart",
             "args": [
