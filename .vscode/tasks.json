@@ -1,0 +1,63 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Build APK - ANTARMOBIL.ID",
+            "type": "shell",
+            "command": "flutter",
+            "args": [
+                "build",
+                "apk",
+                "--release",
+                "--no-tree-shake-icons",
+                "--target-platform", "android-arm64",
+                "--obfuscate",
+                "--split-debug-info", "./debug-info",
+                "--dart-define=GAS_ENDPOINT=https://script.google.com/macros/s/AKfycbw1N7bFm754MWk0H5pD70umMNWTfVD1bh0ek3dD_311F4lnLGYV5Tvks_gAUnZrM9xx/exec",
+                "--dart-define=API_TOKEN=SUPER_SECRET_ANTARMOBIL.ID_8xZ2"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": false
+            },
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": true,
+                "panel": "shared",
+                "showReuseMessage": false,
+                "clear": true
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Build APK - SMAPGRIMAJALENGKA",
+            "type": "shell",
+            "command": "flutter",
+            "args": [
+                "build",
+                "apk",
+                "--release",
+                "--no-tree-shake-icons",
+                "--target-platform", "android-arm64",
+                "--obfuscate",
+                "--split-debug-info", "./debug-info",
+                "--dart-define=GAS_ENDPOINT=https://script.google.com/macros/s/AKfycby7JOsxqE9BndQq5Vf45WrtEBnMyO1GYRQYgSSfdA4giOP117le8OWJAGPNkw8y_zl20w/exec",
+                "--dart-define=API_TOKEN=SUPER_SECRET_SMAPGRIMAJALENGKA_8xZ2"
+            ],
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": true,
+                "panel": "shared",
+                "showReuseMessage": false,
+                "clear": true
+            },
+            "problemMatcher": []
+        }
+    ]
+}
