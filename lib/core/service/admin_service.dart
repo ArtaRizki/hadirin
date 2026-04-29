@@ -134,6 +134,78 @@ class AdminService extends ApiClient {
   }
 
   // =================================================================
+  // UPDATE DATA ANGGOTA
+  // =================================================================
+  Future<Map<String, dynamic>> updateAnggota({
+    required String clientId,
+    required String idAnggota,
+    required String nama,
+    required String divisi,
+    required String noHp,
+  }) async {
+    try {
+      final payload = {
+        'api_token': AppConfig.apiToken,
+        'action': 'update_karyawan',
+        'client_id': clientId,
+        'id_karyawan': idAnggota,
+        'nama': nama,
+        'divisi': divisi,
+        'no_hp': noHp,
+      };
+
+      final response = await sendRequest('update_karyawan', payload);
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['code'] == 200) {
+          return {'success': true, 'message': data['message']};
+        }
+        throw Exception(data['message']);
+      }
+      throw Exception('Gagal terhubung ke server.');
+    } catch (e) {
+      d.log('==== ERROR UPDATE ANGGOTA ==== $e');
+      return {
+        'success': false,
+        'message': e.toString().replaceAll('Exception: ', ''),
+      };
+    }
+  }
+
+  // =================================================================
+  // HAPUS ANGGOTA DARI DATABASE
+  // =================================================================
+  Future<Map<String, dynamic>> deleteAnggota({
+    required String clientId,
+    required String idAnggota,
+  }) async {
+    try {
+      final payload = {
+        'api_token': AppConfig.apiToken,
+        'action': 'delete_karyawan',
+        'client_id': clientId,
+        'id_karyawan': idAnggota,
+      };
+
+      final response = await sendRequest('delete_karyawan', payload);
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['code'] == 200) {
+          return {'success': true, 'message': data['message']};
+        }
+        throw Exception(data['message']);
+      }
+      throw Exception('Gagal terhubung ke server.');
+    } catch (e) {
+      d.log('==== ERROR DELETE ANGGOTA ==== $e');
+      return {
+        'success': false,
+        'message': e.toString().replaceAll('Exception: ', ''),
+      };
+    }
+  }
+
+  // =================================================================
   // AMBIL SEMUA DATA ANGGOTA SATU INSTANSI
   // =================================================================
   Future<List<dynamic>> getAllAnggota(String clientId) async {

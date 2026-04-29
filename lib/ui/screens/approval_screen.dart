@@ -276,6 +276,8 @@ class _ApprovalScreenState extends State<ApprovalScreen> {
                 ),
                 _buildDetailRow("Periode", item['rentang'] ?? "-"),
                 _buildDetailRow("Alasan", item['alasan'] ?? "-"),
+                if (item['tugas'] != null && item['tugas'].toString().isNotEmpty)
+                  _buildDetailRow("Detail Tugas", item['tugas'] ?? "-"),
                 _buildDetailRow(
                   "Waktu Pengajuan",
                   item['waktu_pengajuan'] ?? "-",
@@ -634,6 +636,14 @@ class _ApprovalScreenState extends State<ApprovalScreen> {
                                         Icons.notes_rounded,
                                         item['alasan'] ?? "-",
                                       ),
+                                      if (item['tugas'] != null &&
+                                          item['tugas'].toString().isNotEmpty) ...[
+                                        const SizedBox(height: 8),
+                                        _buildInfoRow(
+                                          Icons.assignment_rounded,
+                                          "Tugas: ${item['tugas']}",
+                                        ),
+                                      ],
 
                                       const SizedBox(height: 24),
                                       // ACTIONS

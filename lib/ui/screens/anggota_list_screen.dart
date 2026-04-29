@@ -72,6 +72,125 @@ class _AnggotaListScreenState extends State<AnggotaListScreen> {
     }
   }
 
+  void _showEditDialog(Map<String, dynamic> emp) {
+    final namaController = TextEditingController(text: emp['nama']);
+    final divisiController = TextEditingController(text: emp['bagian']);
+    final phoneController = TextEditingController(text: emp['no_hp']);
+    bool isSaving = false;
+
+    showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: const Text("Edit Anggota", style: TextStyle(fontWeight: FontWeight.bold)),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: namaController,
+                  decoration: const InputDecoration(labelText: "Nama Lengkap"),
+                ),
+                TextField(
+                  controller: divisiController,
+                  decoration: const InputDecoration(labelText: "Bagian / Divisi"),
+                ),
+                TextField(
+                  controller: phoneController,
+                  decoration: const InputDecoration(labelText: "No. WhatsApp"),
+                  keyboardType: TextInputType.phone,
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text("Batal"),
+            ),
+            ElevatedButton(
+              onPressed: isSaving
+                  ? null
+                  : () async {
+                      setDialogState(() => isSaving = true);
+                      final auth = context.read<AuthProvider>();
+                      final result = await _adminService.updateAnggota(
+                        clientId: auth.clientId ?? "",
+                        idAnggota: emp['id'],
+                        nama: namaController.text.trim(),
+                        divisi: divisiController.text.trim(),
+                        noHp: phoneController.text.trim(),
+                      );
+                      if (mounted) {
+                        setDialogState(() => isSaving = false);
+                        Navigator.pop(context);
+                        if (result['success']) {
+                          _fetchEmployees();
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text("Data berhasil diperbarui")),
+                          );
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text(result['message'])),
+                          );
+                        }
+                      }
+                    },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: context.primaryColor,
+                foregroundColor: Colors.white,
+              ),
+              child: isSaving
+                  ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                  : const Text("Simpan"),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _confirmDelete(Map<String, dynamic> emp) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text("Hapus Anggota?"),
+        content: Text("Apakah Anda yakin ingin menghapus ${emp['nama']}? Data absensi tetap ada namun akun ini tidak bisa login lagi."),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Batal"),
+          ),
+          TextButton(
+            onPressed: () async {
+              final auth = context.read<AuthProvider>();
+              final result = await _adminService.deleteAnggota(
+                clientId: auth.clientId ?? "",
+                idAnggota: emp['id'],
+              );
+              if (mounted) {
+                Navigator.pop(context);
+                if (result['success']) {
+                  _fetchEmployees();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text("Anggota berhasil dihapus")),
+                  );
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text(result['message'])),
+                  );
+                }
+              }
+            },
+            child: const Text("Hapus", style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildStatusBadge({
     required bool isRegistered,
     required String activeLabel,
@@ -435,41 +554,56 @@ class _AnggotaListScreenState extends State<AnggotaListScreen> {
                                                 ],
                                               ),
                                             ),
-                                            if (emp['no_hp'] != null &&
-                                                emp['no_hp']
-                                                    .toString()
-                                                    .isNotEmpty &&
-                                                emp['no_hp'].toString() !=
-                                                    "null")
-                                              Padding(
-                                                padding: const EdgeInsets.only(
-                                                    left: 8.0),
-                                                child: IconButton(
-                                                  onPressed: () =>
-                                                      UrlHelper.launchWhatsApp(
-                                                    phone:
-                                                        emp['no_hp'].toString(),
-                                                    message:
-                                                        "Halo ${emp['nama']}, saya dari Admin Siparjo ingin menghubungi Anda.",
-                                                  ),
-                                                  icon: const Icon(
-                                                    Icons.phone,
-                                                    color: Color(0xFF25D366),
-                                                    size: 28,
-                                                  ),
-                                                  style: IconButton.styleFrom(
-                                                    backgroundColor:
-                                                        const Color(0xFF25D366)
-                                                            .withOpacity(0.1),
-                                                    shape:
-                                                        RoundedRectangleBorder(
-                                                      borderRadius:
-                                                          BorderRadius.circular(
-                                                              12),
+                                            Padding(
+                                              padding: const EdgeInsets.only(
+                                                  left: 8.0),
+                                              child: Column(
+                                                children: [
+                                                  if (emp['no_hp'] != null &&
+                                                      emp['no_hp']
+                                                          .toString()
+                                                          .isNotEmpty &&
+                                                      emp['no_hp'].toString() !=
+                                                          "null")
+                                                    IconButton(
+                                                      onPressed: () =>
+                                                          UrlHelper.launchWhatsApp(
+                                                        phone:
+                                                            emp['no_hp'].toString(),
+                                                        message:
+                                                            "Halo ${emp['nama']}, saya dari Admin Siparjo ingin menghubungi Anda.",
+                                                      ),
+                                                      icon: const Icon(
+                                                        Icons.phone,
+                                                        color: Color(0xFF25D366),
+                                                        size: 24,
+                                                      ),
+                                                      constraints: const BoxConstraints(),
+                                                      padding: const EdgeInsets.all(8),
                                                     ),
+                                                  IconButton(
+                                                    onPressed: () => _showEditDialog(emp),
+                                                    icon: const Icon(
+                                                      Icons.edit_note_rounded,
+                                                      color: Colors.blue,
+                                                      size: 24,
+                                                    ),
+                                                    constraints: const BoxConstraints(),
+                                                    padding: const EdgeInsets.all(8),
                                                   ),
-                                                ),
+                                                  IconButton(
+                                                    onPressed: () => _confirmDelete(emp),
+                                                    icon: const Icon(
+                                                      Icons.delete_outline_rounded,
+                                                      color: Colors.red,
+                                                      size: 24,
+                                                    ),
+                                                    constraints: const BoxConstraints(),
+                                                    padding: const EdgeInsets.all(8),
+                                                  ),
+                                                ],
                                               ),
+                                            ),
                                           ],
                                         ),
                                       );

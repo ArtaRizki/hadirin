@@ -38,6 +38,8 @@ function doPost(e) {
             case "register_face": return handleRegisterFace(payload);
             case "get_face": return handleGetFace(payload);
             case "add_karyawan": return handleAddAnggota(payload);
+            case "update_karyawan": return handleUpdateAnggota(payload); // NEW
+            case "delete_karyawan": return handleDeleteAnggota(payload); // NEW
             case "ajukan_izin": return handleAjukanIzin(payload);
             case "get_all_approvals": return handleGetAllApprovals(payload);
             case "update_leave_status": return handleUpdateLeaveStatus(payload);
@@ -187,7 +189,8 @@ function handleAjukanIzin(payload) {
         payload.rentang_tanggal,
         fotoUrl,
         payload.alasan,
-        payload.is_admin ? "Disetujui" : "Menunggu Approval"
+        payload.is_admin ? "Disetujui" : "Menunggu Approval",
+        payload.tugas || ""
     ]);
     return responseJSON(200, "success", "Sent");
 }
@@ -211,6 +214,32 @@ function handleAddAnggota(payload) {
     var sheet = SpreadsheetApp.openById(config.spreadsheetId).getSheetByName("Master_Karyawan");
     sheet.appendRow([payload.id_karyawan_baru, payload.nama_karyawan_baru, payload.divisi_baru || "-", "", "", payload.no_hp || ""]);
     return responseJSON(200, "success", "Anggota Ditambahkan.");
+}
+function handleUpdateAnggota(payload) {
+    var config = getSemuaConfig()[payload.client_id];
+    var sheet = SpreadsheetApp.openById(config.spreadsheetId).getSheetByName("Master_Karyawan");
+    var data = sheet.getDataRange().getValues();
+    for (var i = 1; i < data.length; i++) {
+        if (String(data[i][0]) === String(payload.id_karyawan)) {
+            sheet.getRange(i + 1, 2).setValue(payload.nama);
+            sheet.getRange(i + 1, 3).setValue(payload.divisi);
+            sheet.getRange(i + 1, 6).setValue(payload.no_hp);
+            return responseJSON(200, "success", "Data Anggota Diperbarui.");
+        }
+    }
+    return responseJSON(404, "error", "Anggota tidak ditemukan.");
+}
+function handleDeleteAnggota(payload) {
+    var config = getSemuaConfig()[payload.client_id];
+    var sheet = SpreadsheetApp.openById(config.spreadsheetId).getSheetByName("Master_Karyawan");
+    var data = sheet.getDataRange().getValues();
+    for (var i = 1; i < data.length; i++) {
+        if (String(data[i][0]) === String(payload.id_karyawan)) {
+            sheet.deleteRow(i + 1);
+            return responseJSON(200, "success", "Anggota Dihapus.");
+        }
+    }
+    return responseJSON(404, "error", "Anggota tidak ditemukan.");
 }
 function handleEnrollDevice(payload) {
     var config = getSemuaConfig()[payload.client_id];
@@ -242,7 +271,7 @@ function handleGetAllApprovals(payload) {
     var hpMap = {}; var namaMap = {};
     for (var j = 1; j < employees.length; j++) { hpMap[String(employees[j][0])] = String(employees[j][5] || ""); namaMap[String(employees[j][0])] = String(employees[j][1]); }
     var results = [];
-    for (var i = logs.length - 1; i >= 1; i--) { if (logs[i][6] === "Menunggu Approval") { var idKry = String(logs[i][1]); results.push({ waktu_pengajuan: logs[i][0], id_karyawan: idKry, nama: namaMap[idKry] || "Unknown", no_hp: hpMap[idKry] || "", tipe: logs[i][2], rentang: logs[i][3], foto: logs[i][4], alasan: logs[i][5], row_index: i + 1 }); } }
+    for (var i = logs.length - 1; i >= 1; i--) { if (logs[i][6] === "Menunggu Approval") { var idKry = String(logs[i][1]); results.push({ waktu_pengajuan: logs[i][0], id_karyawan: idKry, nama: namaMap[idKry] || "Unknown", no_hp: hpMap[idKry] || "", tipe: logs[i][2], rentang: logs[i][3], foto: logs[i][4], alasan: logs[i][5], tugas: logs[i][7] || "", row_index: i + 1 }); } }
     return responseJSON(200, "success", results);
 }
 function handleGetHistory(payload) {
@@ -298,7 +327,7 @@ function handleGetLeaveHistory(payload) {
         var idLog = String(logs[i][1]); var tipeLog = String(logs[i][2]);
         if (payload.is_admin === true || idLog === String(payload.id_karyawan)) {
             var isLeave = leaveKeywords.some(function (kw) { return tipeLog.indexOf(kw) !== -1; });
-            if (isLeave) { results.push({ waktu_pengajuan: logs[i][0], id_karyawan: idLog, nama: namaMap[idLog] || "-", no_hp: hpMap[idLog] || "", tipe: logs[i][2], rentang: logs[i][3], foto: logs[i][4], alasan: logs[i][5], status: logs[i][6] }); }
+            if (isLeave) { results.push({ waktu_pengajuan: logs[i][0], id_karyawan: idLog, nama: namaMap[idLog] || "-", no_hp: hpMap[idLog] || "", tipe: logs[i][2], rentang: logs[i][3], foto: logs[i][4], alasan: logs[i][5], tugas: logs[i][7] || "", status: logs[i][6] }); }
         }
     }
     return responseJSON(200, "success", results.reverse());
@@ -324,7 +353,7 @@ function handleGetMonthlyReport(payload) {
             if (logBulan === targetBulan) {
                 var idKry = String(logs[i][1]);
                 if (payload.id_karyawan_target === "SEMUA" || idKry === payload.id_karyawan_target) {
-                    results.push({ waktu: Utilities.formatDate(dateObj, "GMT+7", "yyyy-MM-dd HH:mm:ss"), id_karyawan: idKry, nama: namaMap[idKry] || "Unknown", tipe: logs[i][2], status: logs[i][6] });
+                    results.push({ waktu: Utilities.formatDate(dateObj, "GMT+7", "yyyy-MM-dd HH:mm:ss"), id_karyawan: idKry, nama: namaMap[idKry] || "Unknown", tipe: logs[i][2], status: logs[i][6], tugas: logs[i][7] || "" });
                 }
             }
         } catch (e) { continue; }

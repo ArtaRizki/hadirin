@@ -94,9 +94,15 @@ function registerFaceWeb(clientId, id, descriptor) {
 
 function submitAbsenWeb(payload) {
   try {
-    var result = handleAbsensi(payload);
-    var jsonStr = result.getContent();
-    return JSON.parse(jsonStr);
+    return processAction(payload);
+  } catch (e) {
+    return { code: 500, status: "error", message: e.toString() };
+  }
+}
+
+function webApiCall(payload) {
+  try {
+    return processAction(payload);
   } catch (e) {
     return { code: 500, status: "error", message: e.toString() };
   }
@@ -174,7 +180,7 @@ function getAttendanceHistory(clientId, id) {
     for (var i = data.length - 1; i >= 1; i--) {
       var rowId = String(data[i][1] || "").trim().toLowerCase();
       if (rowId === searchId || searchId === "admin") {
-        history.push({ id: i, waktu: data[i][0], tipe: data[i][2] || "-", status: data[i][6] || "Tepat Waktu" });
+        history.push({ id: i, waktu: data[i][0], tipe: data[i][2] || "-", status: data[i][6] || "Tepat Waktu", tugas: data[i][7] || "" });
         if (history.length >= 50) break;
       }
     }
@@ -197,60 +203,69 @@ function doPost(e) {
     if (payload.api_token !== MASTER_API_TOKEN)
       return responseJSON(401, "error", "Unauthorized.");
 
-    const skipCheck = ["register_klien", "verify_super_admin"];
-    if (skipCheck.indexOf(payload.action) === -1) {
-      var config = getSemuaConfig()[payload.client_id];
-      if (!config || !config.spreadsheetId) {
-        return responseJSON(404, "error", "Kode Instansi tidak ditemukan.");
-      }
-    }
-
-    switch (payload.action) {
-      case "absen":
-        return handleAbsensi(payload);
-      case "register_klien":
-        return handleRegisterInstansi(payload);
-      case "get_history":
-        return handleGetHistory(payload);
-      case "get_office_config":
-        return handleGetOfficeConfig(payload);
-      case "update_lokasi":
-        return handleUpdateLokasi(payload);
-      case "enroll_device":
-        return handleEnrollDevice(payload);
-      case "register_face":
-        return handleRegisterFace(payload);
-      case "get_face":
-        return handleGetFace(payload);
-      case "add_karyawan":
-        return handleAddAnggota(payload);
-      case "ajukan_izin":
-        return handleAjukanIzin(payload);
-      case "get_all_approvals":
-        return handleGetAllApprovals(payload);
-      case "update_leave_status":
-        return handleUpdateLeaveStatus(payload);
-      case "reset_device":
-        return handleResetDevice(payload);
-      case "get_all_karyawan":
-        return handleGetAllAnggota(payload);
-      case "cek_status_hari_ini":
-        return handleCekStatusHariIni(payload);
-      case "verify_super_admin":
-        return handleVerifySuperAdmin(payload);
-      case "get_leave_history":
-        return handleGetLeaveHistory(payload);
-      case "get_monthly_report":
-        return handleGetMonthlyReport(payload);
-      case "update_jam_kerja":
-        return handleUpdateJamKerja(payload);
-      default:
-        return responseJSON(400, "error", "Action Unknown.");
-    }
+    var result = processAction(payload);
+    return responseJSON(result.code, result.status, result.message);
   } catch (err) {
     return responseJSON(500, "error", err.message);
   } finally {
     lock.releaseLock();
+  }
+}
+
+function processAction(payload) {
+  const skipCheck = ["register_klien", "verify_super_admin"];
+  if (skipCheck.indexOf(payload.action) === -1) {
+    var config = getSemuaConfig()[payload.client_id];
+    if (!config || !config.spreadsheetId) {
+      return { code: 404, status: "error", message: "Kode Instansi tidak ditemukan." };
+    }
+  }
+
+  switch (payload.action) {
+    case "absen":
+      return handleAbsensi(payload);
+    case "register_klien":
+      return handleRegisterInstansi(payload);
+    case "get_history":
+      return handleGetHistory(payload);
+    case "get_office_config":
+      return handleGetOfficeConfig(payload);
+    case "update_lokasi":
+      return handleUpdateLokasi(payload);
+    case "enroll_device":
+      return handleEnrollDevice(payload);
+    case "register_face":
+      return handleRegisterFace(payload);
+    case "get_face":
+      return handleGetFace(payload);
+    case "add_karyawan":
+      return handleAddAnggota(payload);
+    case "update_karyawan":
+      return handleUpdateAnggota(payload);
+    case "delete_karyawan":
+      return handleDeleteAnggota(payload);
+    case "ajukan_izin":
+      return handleAjukanIzin(payload);
+    case "get_all_approvals":
+      return handleGetAllApprovals(payload);
+    case "update_leave_status":
+      return handleUpdateLeaveStatus(payload);
+    case "reset_device":
+      return handleResetDevice(payload);
+    case "get_all_karyawan":
+      return handleGetAllAnggota(payload);
+    case "cek_status_hari_ini":
+      return handleCekStatusHariIni(payload);
+    case "verify_super_admin":
+      return handleVerifySuperAdmin(payload);
+    case "get_leave_history":
+      return handleGetLeaveHistory(payload);
+    case "get_monthly_report":
+      return handleGetMonthlyReport(payload);
+    case "update_jam_kerja":
+      return handleUpdateJamKerja(payload);
+    default:
+      return { code: 400, status: "error", message: "Action Unknown." };
   }
 }
 
@@ -295,7 +310,7 @@ function handleAbsensi(payload) {
     status,
   ]);
 
-  return responseJSON(200, "success", "Berhasil.");
+  return { code: 200, status: "success", message: "Berhasil." };
 }
 
 function handleAjukanIzin(payload) {
@@ -333,8 +348,9 @@ function handleAjukanIzin(payload) {
     fotoUrl,
     payload.alasan,
     payload.is_admin ? "Disetujui" : "Menunggu Approval",
+    payload.tugas || "",
   ]);
-  return responseJSON(200, "success", "Sent");
+  return { code: 200, status: "success", message: "Sent" };
 }
 
 function handleRegisterInstansi(payload) {
@@ -372,7 +388,7 @@ function handleRegisterInstansi(payload) {
     payload.radius || 100,
   ]);
 
-  return responseJSON(200, "success", { client_id: newInstansiId });
+  return { code: 200, status: "success", message: { client_id: newInstansiId } };
 }
 
 function handleUpdateLokasi(payload) {
@@ -390,7 +406,7 @@ function handleUpdateLokasi(payload) {
       break;
     }
   }
-  return responseJSON(200, "success", "Lokasi diperbarui.");
+  return { code: 200, status: "success", message: "Lokasi diperbarui." };
 }
 
 function handleGetOfficeConfig(payload) {
@@ -400,15 +416,19 @@ function handleGetOfficeConfig(payload) {
     .getSheetByName("Config_Kantor")
     .getRange("A2:G2")
     .getValues();
-  return responseJSON(200, "success", {
-    nama: data[0][0],
-    lat: data[0][1],
-    lng: data[0][2],
-    radius: data[0][3] || config.radius,
-    jam_masuk_mulai: data[0][4] || "04:00",
-    batas_jam_masuk: data[0][5] || "07:00",
-    jam_pulang_mulai: data[0][6] || "13:00",
-  });
+  return {
+    code: 200,
+    status: "success",
+    message: {
+      nama: data[0][0],
+      lat: data[0][1],
+      lng: data[0][2],
+      radius: data[0][3] || config.radius,
+      jam_masuk_mulai: data[0][4] || "04:00",
+      batas_jam_masuk: data[0][5] || "07:00",
+      jam_pulang_mulai: data[0][6] || "13:00",
+    },
+  };
 }
 
 function handleUpdateJamKerja(payload) {
@@ -422,7 +442,7 @@ function handleUpdateJamKerja(payload) {
       payload.batas_jam_masuk,
       payload.jam_pulang_mulai,
     ]]);
-  return responseJSON(200, "success", "Jam kerja diperbarui.");
+  return { code: 200, status: "success", message: "Jam kerja diperbarui." };
 }
 
 function getSemuaConfig() {
@@ -454,8 +474,8 @@ function responseJSON(code, status, message) {
 
 function handleVerifySuperAdmin(payload) {
   return payload.password === SUPER_ADMIN_PASSWORD
-    ? responseJSON(200, "success", "Verified")
-    : responseJSON(401, "error", "Invalid");
+    ? { code: 200, status: "success", message: "Verified" }
+    : { code: 401, status: "error", message: "Invalid" };
 }
 
 function handleAddAnggota(payload) {
@@ -469,7 +489,35 @@ function handleAddAnggota(payload) {
     "",
     payload.no_hp || "",
   ]);
-  return responseJSON(200, "success", "Anggota Ditambahkan.");
+  return { code: 200, status: "success", message: "Anggota Ditambahkan." };
+}
+
+function handleUpdateAnggota(payload) {
+  var config = getSemuaConfig()[payload.client_id];
+  var sheet = SpreadsheetApp.openById(config.spreadsheetId).getSheetByName("Master_Karyawan");
+  var data = sheet.getDataRange().getValues();
+  for (var i = 1; i < data.length; i++) {
+    if (String(data[i][0]) === String(payload.id_karyawan)) {
+      sheet.getRange(i + 1, 2).setValue(payload.nama);
+      sheet.getRange(i + 1, 3).setValue(payload.divisi);
+      sheet.getRange(i + 1, 6).setValue(payload.no_hp);
+      return { code: 200, status: "success", message: "Data Anggota Diperbarui." };
+    }
+  }
+  return { code: 404, status: "error", message: "Anggota tidak ditemukan." };
+}
+
+function handleDeleteAnggota(payload) {
+  var config = getSemuaConfig()[payload.client_id];
+  var sheet = SpreadsheetApp.openById(config.spreadsheetId).getSheetByName("Master_Karyawan");
+  var data = sheet.getDataRange().getValues();
+  for (var i = 1; i < data.length; i++) {
+    if (String(data[i][0]) === String(payload.id_karyawan)) {
+      sheet.deleteRow(i + 1);
+      return { code: 200, status: "success", message: "Anggota Dihapus." };
+    }
+  }
+  return { code: 404, status: "error", message: "Anggota tidak ditemukan." };
 }
 
 function handleEnrollDevice(payload) {
@@ -482,17 +530,21 @@ function handleEnrollDevice(payload) {
       if (data[i][3] === "" || data[i][3] === payload.device_id) {
         if (data[i][3] === "")
           ss.getSheetByName("Master_Karyawan").getRange(i + 1, 4).setValue(payload.device_id);
-        return responseJSON(200, "success", {
-          nama_karyawan: data[i][1],
-          client_id: payload.client_id,
-          divisi: data[i][2],
-          no_hp: data[i][5] || "",
-          admin_phone: adminPhone,
-        });
+        return {
+          code: 200,
+          status: "success",
+          message: {
+            nama_karyawan: data[i][1],
+            client_id: payload.client_id,
+            divisi: data[i][2],
+            no_hp: data[i][5] || "",
+            admin_phone: adminPhone,
+          },
+        };
       }
     }
   }
-  return responseJSON(404, "error", "User tidak ditemukan.");
+  return { code: 404, status: "error", message: "User tidak ditemukan." };
 }
 
 function handleGetAllAnggota(payload) {
@@ -513,7 +565,7 @@ function handleGetAllAnggota(payload) {
         no_hp: String(data[i][5] || ""),
       });
   }
-  return responseJSON(200, "success", results);
+  return { code: 200, status: "success", message: results };
 }
 
 function handleGetAllApprovals(payload) {
@@ -540,11 +592,12 @@ function handleGetAllApprovals(payload) {
         rentang: logs[i][3],
         foto: logs[i][4],
         alasan: logs[i][5],
+        tugas: logs[i][7] || "",
         row_index: i + 1,
       });
     }
   }
-  return responseJSON(200, "success", results);
+  return { code: 200, status: "success", message: results };
 }
 
 function handleGetHistory(payload) {
@@ -566,7 +619,7 @@ function handleGetHistory(payload) {
       });
     }
   }
-  return responseJSON(200, "success", results.reverse());
+  return { code: 200, status: "success", message: results.reverse() };
 }
 
 function handleGetFace(payload) {
@@ -577,9 +630,9 @@ function handleGetFace(payload) {
     .getValues();
   for (var i = 1; i < data.length; i++) {
     if (String(data[i][0]) === String(payload.id_karyawan))
-      return responseJSON(200, "success", data[i][4]);
+      return { code: 200, status: "success", message: data[i][4] };
   }
-  return responseJSON(404, "error", "None");
+  return { code: 404, status: "error", message: "None" };
 }
 
 function handleRegisterFace(payload) {
@@ -589,10 +642,10 @@ function handleRegisterFace(payload) {
   for (var i = 1; i < data.length; i++) {
     if (String(data[i][0]) === String(payload.id_karyawan)) {
       sheet.getRange(i + 1, 5).setValue(payload.face_embedding);
-      return responseJSON(200, "success", "Registered");
+      return { code: 200, status: "success", message: "Registered" };
     }
   }
-  return responseJSON(404, "error", "Fail");
+  return { code: 404, status: "error", message: "Fail" };
 }
 
 function handleUpdateLeaveStatus(payload) {
@@ -601,7 +654,7 @@ function handleUpdateLeaveStatus(payload) {
     .getSheetByName("Log_Absensi")
     .getRange(payload.row_index, 7)
     .setValue(payload.new_status);
-  return responseJSON(200, "success", "Updated");
+  return { code: 200, status: "success", message: "Status Updated" };
 }
 
 function handleResetDevice(payload) {
@@ -611,10 +664,10 @@ function handleResetDevice(payload) {
   for (var i = 1; i < data.length; i++) {
     if (String(data[i][0]) === String(payload.target_id_karyawan)) {
       sheet.getRange(i + 1, 4).setValue("");
-      return responseJSON(200, "success", "Reset OK");
+      return { code: 200, status: "success", message: "Device Reset" };
     }
   }
-  return responseJSON(404, "error", "Not Found");
+  return { code: 404, status: "error", message: "Not Found" };
 }
 
 function handleCekStatusHariIni(payload) {
@@ -623,18 +676,25 @@ function handleCekStatusHariIni(payload) {
     .getSheetByName("Log_Absensi")
     .getDataRange()
     .getValues();
-  var today = Utilities.formatDate(new Date(), "GMT+7", "yyyy-MM-dd");
+  var today = new Date();
+  today.setHours(0,0,0,0);
+  var res = { status: false };
   for (var i = logs.length - 1; i >= 1; i--) {
-    var rowDate = Utilities.formatDate(new Date(logs[i][0]), "GMT+7", "yyyy-MM-dd");
-    if (String(logs[i][1]) === String(payload.id_karyawan) && rowDate === today && logs[i][6] === "Disetujui")
-      return responseJSON(200, "success", true);
+    try {
+      var rowDate = new Date(logs[i][0]);
+      rowDate.setHours(0,0,0,0);
+      if (rowDate.getTime() === today.getTime() && String(logs[i][1]) === String(payload.id_karyawan)) {
+        res.status = logs[i][6];
+        break;
+      }
+    } catch (e) { continue; }
   }
-  return responseJSON(200, "success", false);
+  return { code: 200, status: "success", message: res };
 }
 
 function handleGetLeaveHistory(payload) {
   var config = getSemuaConfig()[payload.client_id];
-  if (!config) return responseJSON(404, "error", "Instansi tidak ditemukan.");
+  if (!config) return { code: 404, status: "error", message: "Instansi tidak ditemukan." };
   var ss = SpreadsheetApp.openById(config.spreadsheetId);
   var logs = ss.getSheetByName("Log_Absensi").getDataRange().getValues();
   var employees = ss.getSheetByName("Master_Karyawan").getDataRange().getValues();
@@ -661,17 +721,18 @@ function handleGetLeaveHistory(payload) {
           rentang: logs[i][3],
           foto: logs[i][4],
           alasan: logs[i][5],
+          tugas: logs[i][7] || "",
           status: logs[i][6],
         });
       }
     }
   }
-  return responseJSON(200, "success", results.reverse());
+  return { code: 200, status: "success", message: results.reverse() };
 }
 
 function handleGetMonthlyReport(payload) {
   var config = getSemuaConfig()[payload.client_id];
-  if (!config) return responseJSON(404, "error", "Instansi tidak ditemukan.");
+  if (!config) return { code: 404, status: "error", message: "Instansi tidak ditemukan." };
   var ss = SpreadsheetApp.openById(config.spreadsheetId);
   var logs = ss.getSheetByName("Log_Absensi").getDataRange().getValues();
   var employees = ss.getSheetByName("Master_Karyawan").getDataRange().getValues();
@@ -698,12 +759,13 @@ function handleGetMonthlyReport(payload) {
             nama: namaMap[idKry] || "Unknown",
             tipe: logs[i][2],
             status: logs[i][6],
+            tugas: logs[i][7] || "",
           });
         }
       }
     } catch (e) { continue; }
   }
-  return responseJSON(200, "success", results);
+  return { code: 200, status: "success", message: results };
 }
 
 // Helpers Kept from v3.5

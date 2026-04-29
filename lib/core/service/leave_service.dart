@@ -18,6 +18,7 @@ class LeaveService extends ApiClient {
     required String rentangTanggal,
     required String alasan,
     required bool isAdmin,
+    String? tugas,
     String? imagePath,
     String? namaAnggota, // Optional for tracking
   }) async {
@@ -53,6 +54,7 @@ class LeaveService extends ApiClient {
         'tipe_izin': tipeIzin,
         'rentang_tanggal': rentangTanggal,
         'alasan': alasan,
+        'tugas': tugas ?? '',
         'foto_base64': base64Image,
         'is_admin': isAdmin,
       };

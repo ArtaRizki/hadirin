@@ -17,6 +17,7 @@ class LeaveRequestScreen extends StatefulWidget {
 
 class _LeaveRequestScreenState extends State<LeaveRequestScreen> {
   final _alasanController = TextEditingController();
+  final _tugasController = TextEditingController();
   String _tipeIzin = "Sakit"; // Default
   DateTimeRange? _selectedDates;
   File? _suratDokter;
@@ -75,6 +76,7 @@ class _LeaveRequestScreenState extends State<LeaveRequestScreen> {
       tipeIzin: _tipeIzin,
       rentangTanggal: strTanggal,
       alasan: _alasanController.text.trim(),
+      tugas: _tugasController.text.trim(),
       imagePath: _suratDokter?.path,
       isAdmin: auth.isAdmin,
     );
@@ -251,7 +253,12 @@ class _LeaveRequestScreenState extends State<LeaveRequestScreen> {
                             borderSide: BorderSide.none,
                           ),
                         ),
-                        items: ["Sakit", "Izin Keperluan", "Cuti Tahunan"].map((
+                        items: [
+                          "Sakit",
+                          "Izin Keperluan",
+                          "Cuti Tahunan",
+                          "Dinas / Tugas"
+                        ].map((
                           String val,
                         ) {
                           return DropdownMenuItem(
@@ -376,6 +383,54 @@ class _LeaveRequestScreenState extends State<LeaveRequestScreen> {
                     ),
                   ),
                   const SizedBox(height: 24),
+
+                  // 3b. Detail Tugas (Optional / Conditional)
+                  if (_tipeIzin == "Dinas / Tugas") ...[
+                    const Text(
+                      "Detail Tugas / Lokasi Dinas",
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF0F172A),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.03),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: TextField(
+                        controller: _tugasController,
+                        decoration: InputDecoration(
+                          hintText: "Contoh: Monitoring ke SMA PGRI...",
+                          hintStyle: TextStyle(
+                            color: Colors.grey.shade400,
+                            fontSize: 14,
+                          ),
+                          contentPadding: const EdgeInsets.all(16),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(16),
+                            borderSide: BorderSide.none,
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(16),
+                            borderSide: BorderSide(
+                              color: context.primaryColor,
+                              width: 1.5,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                  ],
 
                   // 4. Upload Surat Dokter (Hanya jika Sakit)
                   if (_tipeIzin == "Sakit") ...[
