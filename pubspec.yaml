@@ -111,11 +111,13 @@ flutter_launcher_icons:
   android: true
   ios: true
   image_path: "assets/icons/sdit.png"
+  adaptive_icon_background: "#F9F9F8" # Bisa pakai kode hex warna atau gambar background
+  adaptive_icon_foreground: "assets/icons/sdit.png"
   min_sdk_size: 21
   web:
     generate: true
     image_path: "assets/icons/sdit.png" # Disamakan dengan yang atas
-
+    
 flutter_native_splash:
   color: "#F9F9F8" # Warna background khas Hadir.in
   image: "assets/icons/sdit.png"
