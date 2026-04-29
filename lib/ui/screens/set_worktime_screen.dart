@@ -4,6 +4,7 @@ import 'package:hadirin/core/providers/auth_provider.dart';
 import 'package:hadirin/core/service/admin_service.dart';
 import 'package:hadirin/core/theme/fluid_theme.dart';
 import 'package:provider/provider.dart';
+import 'package:hadirin/core/utils/time_formatter.dart';
 
 class SetWorktimeScreen extends StatefulWidget {
   const SetWorktimeScreen({super.key});
@@ -31,15 +32,9 @@ class _SetWorktimeScreenState extends State<SetWorktimeScreen> {
     final config = await AdminService().getOfficeConfig(auth.clientId ?? "");
     if (config != null && mounted) {
       setState(() {
-        _jamMasukMulai = config['jam_masuk_mulai']?.toString() == "null"
-            ? "-"
-            : (config['jam_masuk_mulai']?.toString() ?? "-");
-        _batasJamMasuk = config['batas_jam_masuk']?.toString() == "null"
-            ? "-"
-            : (config['batas_jam_masuk']?.toString() ?? "-");
-        _jamPulangMulai = config['jam_pulang_mulai']?.toString() == "null"
-            ? "-"
-            : (config['jam_pulang_mulai']?.toString() ?? "-");
+        _jamMasukMulai = TimeFormatter.format(config['jam_masuk_mulai']?.toString());
+        _batasJamMasuk = TimeFormatter.format(config['batas_jam_masuk']?.toString());
+        _jamPulangMulai = TimeFormatter.format(config['jam_pulang_mulai']?.toString());
         _isLoading = false;
       });
     } else {

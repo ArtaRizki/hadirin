@@ -12,6 +12,7 @@ import 'package:intl/intl.dart';
 import 'package:hadirin/core/service/school_service.dart';
 import 'package:hadirin/core/models/school_models.dart';
 import 'package:hadirin/core/utils/url_helper.dart';
+import 'package:hadirin/core/utils/time_formatter.dart';
 
 class AttendanceScreen extends StatefulWidget {
   const AttendanceScreen({super.key});
@@ -103,8 +104,10 @@ class _AttendanceScreenState extends State<AttendanceScreen>
   Future<void> _fetchBanners({bool force = false}) async {
     try {
       final auth = context.read<AuthProvider>();
-      final banners =
-          await _schoolService.getBanners(auth.clientId ?? "", forceRefresh: force);
+      final banners = await _schoolService.getBanners(
+        auth.clientId ?? "",
+        forceRefresh: force,
+      );
       if (mounted) {
         setState(() {
           _banners = banners;
@@ -120,19 +123,21 @@ class _AttendanceScreenState extends State<AttendanceScreen>
   Future<void> _fetchOfficeConfig({bool force = false}) async {
     try {
       final auth = context.read<AuthProvider>();
-      final config =
-          await AdminService().getOfficeConfig(auth.clientId ?? "", forceRefresh: force);
+      final config = await AdminService().getOfficeConfig(
+        auth.clientId ?? "",
+        forceRefresh: force,
+      );
       if (config != null && mounted) {
         setState(() {
-          _jamMasukMulai = config['jam_masuk_mulai']?.toString() == "null"
-              ? "-"
-              : (config['jam_masuk_mulai']?.toString() ?? "-");
-          _batasJamMasuk = config['batas_jam_masuk']?.toString() == "null"
-              ? "-"
-              : (config['batas_jam_masuk']?.toString() ?? "-");
-          _jamPulangMulai = config['jam_pulang_mulai']?.toString() == "null"
-              ? "-"
-              : (config['jam_pulang_mulai']?.toString() ?? "-");
+          _jamMasukMulai = TimeFormatter.format(
+            config['jam_masuk_mulai']?.toString(),
+          );
+          _batasJamMasuk = TimeFormatter.format(
+            config['batas_jam_masuk']?.toString(),
+          );
+          _jamPulangMulai = TimeFormatter.format(
+            config['jam_pulang_mulai']?.toString(),
+          );
           _isConfigLoaded = true;
         });
       }
@@ -667,11 +672,11 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                                     left: 6,
                                   ),
                                   child: Text(
-                                    DateFormat('ss').format(_currentTime),
+                                    "${DateFormat('ss').format(_currentTime)}",
                                     style: TextStyle(
-                                      fontSize: 26,
+                                      fontSize: 22,
                                       fontWeight: FontWeight.w700,
-                                      color: Colors.white.withOpacity(0.45),
+                                      color: Colors.white.withOpacity(0.65),
                                       fontFeatures: const [
                                         FontFeature.tabularFigures(),
                                       ],

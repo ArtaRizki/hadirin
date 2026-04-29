@@ -82,6 +82,11 @@ class _BriefingScreenState extends State<BriefingScreen>
       return;
     }
 
+    if (_catatanCtrl.text.trim().isEmpty) {
+      _showSnackBar("Catatan wajib diisi!", isError: true);
+      return;
+    }
+
     setState(() => _isSaving = true);
 
     try {
@@ -162,8 +167,9 @@ class _BriefingScreenState extends State<BriefingScreen>
             Expanded(child: Text(message)),
           ],
         ),
-        backgroundColor:
-            isError ? Colors.red.shade600 : const Color(0xFF16A34A),
+        backgroundColor: isError
+            ? Colors.red.shade600
+            : const Color(0xFF16A34A),
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         margin: const EdgeInsets.all(16),
@@ -223,10 +229,7 @@ class _BriefingScreenState extends State<BriefingScreen>
       ),
       body: TabBarView(
         controller: _tabCtrl,
-        children: [
-          _buildFormAbsen(),
-          _buildRiwayat(),
-        ],
+        children: [_buildFormAbsen(), _buildRiwayat()],
       ),
     );
   }
@@ -342,8 +345,10 @@ class _BriefingScreenState extends State<BriefingScreen>
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(16),
-                  borderSide:
-                      BorderSide(color: context.primaryColor, width: 1.5),
+                  borderSide: BorderSide(
+                    color: context.primaryColor,
+                    width: 1.5,
+                  ),
                 ),
                 contentPadding: const EdgeInsets.symmetric(
                   horizontal: 16,
@@ -351,20 +356,22 @@ class _BriefingScreenState extends State<BriefingScreen>
                 ),
               ),
               items: _statusOptions
-                  .map((s) => DropdownMenuItem(
-                        value: s,
-                        child: Row(
-                          children: [
-                            Icon(
-                              _statusIcon(s),
-                              size: 18,
-                              color: _statusColor(s),
-                            ),
-                            const SizedBox(width: 10),
-                            Text(s),
-                          ],
-                        ),
-                      ))
+                  .map(
+                    (s) => DropdownMenuItem(
+                      value: s,
+                      child: Row(
+                        children: [
+                          Icon(
+                            _statusIcon(s),
+                            size: 18,
+                            color: _statusColor(s),
+                          ),
+                          const SizedBox(width: 10),
+                          Text(s),
+                        ],
+                      ),
+                    ),
+                  )
                   .toList(),
               onChanged: (val) => setState(() => _selectedStatus = val),
             ),
@@ -374,9 +381,7 @@ class _BriefingScreenState extends State<BriefingScreen>
 
           // TOMBOL AMBIL FOTO
           _formLabel(
-            _selectedStatus == 'Hadir'
-                ? "Foto Selfie (Wajib)"
-                : "Foto Selfie (Opsional)",
+            _selectedStatus == 'Hadir' ? "Foto (Wajib)" : "Foto (Opsional)",
           ),
           const SizedBox(height: 8),
           GestureDetector(
@@ -407,10 +412,7 @@ class _BriefingScreenState extends State<BriefingScreen>
                       child: Stack(
                         fit: StackFit.expand,
                         children: [
-                          Image.file(
-                            File(_foto!.path),
-                            fit: BoxFit.cover,
-                          ),
+                          Image.file(File(_foto!.path), fit: BoxFit.cover),
                           // Overlay ganti foto
                           Positioned(
                             bottom: 0,
@@ -484,7 +486,7 @@ class _BriefingScreenState extends State<BriefingScreen>
           const SizedBox(height: 20),
 
           // CATATAN
-          _formLabel("Catatan (Opsional)"),
+          _formLabel("Catatan"),
           const SizedBox(height: 8),
           Container(
             decoration: BoxDecoration(
@@ -502,15 +504,12 @@ class _BriefingScreenState extends State<BriefingScreen>
               controller: _catatanCtrl,
               maxLines: 3,
               decoration: InputDecoration(
-                hintText: "Tulis catatan jika perlu...",
+                hintText: "Wajib tulis catatan",
                 filled: true,
                 fillColor: Colors.white,
                 prefixIcon: Padding(
                   padding: const EdgeInsets.only(bottom: 40),
-                  child: Icon(
-                    Icons.notes_rounded,
-                    color: context.primaryColor,
-                  ),
+                  child: Icon(Icons.notes_rounded, color: context.primaryColor),
                 ),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(16),
@@ -518,8 +517,10 @@ class _BriefingScreenState extends State<BriefingScreen>
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(16),
-                  borderSide:
-                      BorderSide(color: context.primaryColor, width: 1.5),
+                  borderSide: BorderSide(
+                    color: context.primaryColor,
+                    width: 1.5,
+                  ),
                 ),
               ),
             ),
@@ -582,11 +583,7 @@ class _BriefingScreenState extends State<BriefingScreen>
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.groups_outlined,
-              size: 72,
-              color: Colors.grey.shade200,
-            ),
+            Icon(Icons.groups_outlined, size: 72, color: Colors.grey.shade200),
             const SizedBox(height: 16),
             Text(
               "Belum ada riwayat briefing",
@@ -733,13 +730,13 @@ class _BriefingScreenState extends State<BriefingScreen>
   // HELPERS
   // ─────────────────────────────────────────────────────────────────
   Widget _formLabel(String text) => Text(
-        text,
-        style: const TextStyle(
-          fontWeight: FontWeight.w700,
-          fontSize: 13,
-          color: Color(0xFF1E293B),
-        ),
-      );
+    text,
+    style: const TextStyle(
+      fontWeight: FontWeight.w700,
+      fontSize: 13,
+      color: Color(0xFF1E293B),
+    ),
+  );
 
   IconData _statusIcon(String status) {
     switch (status) {
