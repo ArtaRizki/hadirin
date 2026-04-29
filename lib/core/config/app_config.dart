@@ -7,7 +7,7 @@ abstract class AppConfig {
   );
   static const appName = String.fromEnvironment(
     'APP_NAME',
-    defaultValue: 'SD IT AL FAHMI',
+    defaultValue: 'SD IT AL FAHMI PALU',
   );
 
   static void validate() {
