@@ -83,8 +83,10 @@ class _SetLocationScreenState extends State<SetLocationScreen> {
     if (remoteConfig != null && mounted) {
       setState(() {
         _pickedLocation = LatLng(
-          double.tryParse(remoteConfig['lat'].toString()) ?? _pickedLocation.latitude,
-          double.tryParse(remoteConfig['lng'].toString()) ?? _pickedLocation.longitude,
+          double.tryParse(remoteConfig['lat'].toString()) ??
+              _pickedLocation.latitude,
+          double.tryParse(remoteConfig['lng'].toString()) ??
+              _pickedLocation.longitude,
         );
         _radius = double.tryParse(remoteConfig['radius'].toString()) ?? _radius;
         _isMapReady = true;
@@ -139,7 +141,7 @@ class _SetLocationScreenState extends State<SetLocationScreen> {
       );
       final response = await http.get(
         url,
-        headers: {'User-Agent': 'com.mobile.hadirin'},
+        headers: {'User-Agent': 'com.alfahmi.absensi.sd'},
       );
       if (response.statusCode == 200 && mounted) {
         setState(() => _searchResults = json.decode(response.body) as List);
@@ -280,7 +282,7 @@ class _SetLocationScreenState extends State<SetLocationScreen> {
                       urlTemplate:
                           'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png',
                       subdomains: const ['a', 'b', 'c', 'd'],
-                      userAgentPackageName: 'com.mobile.hadirin',
+                      userAgentPackageName: 'com.alfahmi.absensi.sd',
                       maxZoom: 19,
                     ),
                     CircleLayer(

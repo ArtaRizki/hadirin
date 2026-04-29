@@ -6,7 +6,7 @@ import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 
 class MainActivity : FlutterFragmentActivity() {
-    private val CHANNEL = "com.mobile.hadirin/face_recognition"
+    private val CHANNEL = "com.alfahmi.absensi.sd/face_recognition"
     private lateinit var faceHelper: FaceRecognitionHelper
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {

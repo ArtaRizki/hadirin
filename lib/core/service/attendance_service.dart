@@ -15,7 +15,9 @@ import 'package:hadirin/core/service/face_service.dart';
 
 /// Tanggung jawab: Absen masuk/pulang & riwayat absensi karyawan.
 class AttendanceService extends ApiClient {
-  static const _platform = MethodChannel('com.mobile.hadirin/face_recognition');
+  static const _platform = MethodChannel(
+    'com.alfahmi.absensi.sd/face_recognition',
+  );
 
   final _auth = LocalAuthentication();
   final _picker = ImagePicker();
@@ -46,7 +48,7 @@ class AttendanceService extends ApiClient {
       // Optional: Check if real device (not emulator)
       bool isRealDevice = await SafeDevice.isRealDevice;
       if (!isRealDevice) {
-         throw Exception(
+        throw Exception(
           'Perangkat Tidak Valid: Anda menggunakan Emulator. Absensi harus dilakukan dari ponsel asli.',
         );
       }
@@ -59,8 +61,10 @@ class AttendanceService extends ApiClient {
         );
       }
     } catch (e) {
-      if (e.toString().contains("Keamanan Perangkat") || e.toString().contains("Aktivitas Mencurigakan") || e.toString().contains("Perangkat Tidak Valid")) {
-          rethrow;
+      if (e.toString().contains("Keamanan Perangkat") ||
+          e.toString().contains("Aktivitas Mencurigakan") ||
+          e.toString().contains("Perangkat Tidak Valid")) {
+        rethrow;
       }
       d.log("Gagal mengecek keamanan perangkat: $e");
     }
@@ -108,13 +112,17 @@ class AttendanceService extends ApiClient {
       if (permission == LocationPermission.denied) {
         permission = await Geolocator.requestPermission();
       }
-      
+
       if (permission == LocationPermission.denied) {
-        throw Exception('Izin lokasi ditolak. Aplikasi butuh akses GPS untuk validasi posisi.');
+        throw Exception(
+          'Izin lokasi ditolak. Aplikasi butuh akses GPS untuk validasi posisi.',
+        );
       }
-      
+
       if (permission == LocationPermission.deniedForever) {
-        throw Exception('Izin lokasi ditolak permanen. Harap aktifkan di pengaturan HP.');
+        throw Exception(
+          'Izin lokasi ditolak permanen. Harap aktifkan di pengaturan HP.',
+        );
       }
 
       final position = await Geolocator.getCurrentPosition(
@@ -125,7 +133,7 @@ class AttendanceService extends ApiClient {
 
       // Proteksi Tambahan Fake GPS bawaan Android (Geolocator)
       if (position.isMocked) {
-          throw Exception(
+        throw Exception(
           'Lokasi Palsu Terdeteksi: Anda terindikasi menggunakan Fake GPS. Absensi ditolak.',
         );
       }
@@ -277,6 +285,7 @@ class AttendanceService extends ApiClient {
       throw Exception('Gagal mengambil riwayat: $e');
     }
   }
+
   // =================================================================
   // CEK STATUS CUTI HARI INI
   // =================================================================
