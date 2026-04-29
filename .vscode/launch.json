@@ -47,7 +47,7 @@
                 "--dart-define=GAS_ENDPOINT=https://script.google.com/macros/s/AKfycbxGo_73e45A7mvtCcmzSvqOxI-DffrAvWIFhUmXczYbkBpgSjNUD8NvR65VSlePNMLlzg/exec",
                 "--dart-define=API_TOKEN=sdit-palu",
                 "--dart-define=APP_LOGO=assets/icons/sdit.png",
-                "--dart-define=APP_NAME=SDIT"
+                "--dart-define=APP_NAME=SD IT AL FAHMI"
             ]
         },
         {

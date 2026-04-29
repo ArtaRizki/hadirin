@@ -36,7 +36,7 @@ android {
 
         // Ambil APP_NAME dari --dart-define
         val dartDefinesString = project.properties["dart-defines"] as String?
-        var appName = "Hadir.in"
+        var appName = "SD IT AL FAHMI"
         if (dartDefinesString != null) {
             val defines = dartDefinesString.split(",")
             for (define in defines) {

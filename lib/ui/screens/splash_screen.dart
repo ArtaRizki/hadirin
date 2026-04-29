@@ -165,7 +165,7 @@ class _SplashScreenState extends State<SplashScreen>
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    "Sistem Absensi & HRIS Terintegrasi",
+                    "Sistem Informasi & Layanan Terpadu",
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w500,

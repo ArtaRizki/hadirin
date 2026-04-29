@@ -235,7 +235,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          "Sistem Absensi",
+                          "Sistem Informasi & Layanan Terpadu",
                           style: TextStyle(
                             fontSize: 14,
                             color: Colors.grey.shade600,
