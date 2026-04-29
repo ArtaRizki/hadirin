@@ -251,7 +251,7 @@ class _LeaveRequestScreenState extends State<LeaveRequestScreen> {
                             borderSide: BorderSide.none,
                           ),
                         ),
-                        items: ["Sakit", "Izin Keperluan", "Cuti Tahunan"].map((
+                        items: ["Sakit", "Izin Keperluan", "Cuti Biasa"].map((
                           String val,
                         ) {
                           return DropdownMenuItem(
