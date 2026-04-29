@@ -8,7 +8,7 @@
 PRODUCT_NAME = hadirin
 
 // The application's bundle identifier
-PRODUCT_BUNDLE_IDENTIFIER = com.mobile.hadirin
+PRODUCT_BUNDLE_IDENTIFIER = com.alfahmi.absensi.smp
 
 // The copyright displayed in application information
 PRODUCT_COPYRIGHT = Copyright © 2026 com.example. All rights reserved.
