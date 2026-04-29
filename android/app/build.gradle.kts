@@ -1,3 +1,5 @@
+import java.net.URLDecoder
+
 plugins {
     id("com.android.application")
     id("kotlin-android")
@@ -6,7 +8,7 @@ plugins {
 }
 
 android {
-    namespace = "com.mobile.hadirin"
+    namespace = "com.alfahmi.absensi.sd"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -26,11 +28,25 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.mobile.hadirin"
+        applicationId = "com.alfahmi.absensi.sd"
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+
+        // Ambil APP_NAME dari --dart-define
+        val dartDefinesString = project.properties["dart-defines"] as String?
+        var appName = "Hadir.in"
+        if (dartDefinesString != null) {
+            val defines = dartDefinesString.split(",")
+            for (define in defines) {
+                val pair = define.split("=")
+                if (pair.size == 2 && pair[0] == "APP_NAME") {
+                    appName = URLDecoder.decode(pair[1], "UTF-8")
+                }
+            }
+        }
+        manifestPlaceholders += mapOf("appName" to appName)
 
         // FIX 3: Use the = sign for multiDexEnabled
         multiDexEnabled = true
