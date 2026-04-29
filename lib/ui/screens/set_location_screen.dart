@@ -139,7 +139,7 @@ class _SetLocationScreenState extends State<SetLocationScreen> {
       );
       final response = await http.get(
         url,
-        headers: {'User-Agent': 'com.mobile.hadirin'},
+        headers: {'User-Agent': 'com.alfahmi.absensi.sma'},
       );
       if (response.statusCode == 200 && mounted) {
         setState(() => _searchResults = json.decode(response.body) as List);
@@ -280,7 +280,7 @@ class _SetLocationScreenState extends State<SetLocationScreen> {
                       urlTemplate:
                           'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png',
                       subdomains: const ['a', 'b', 'c', 'd'],
-                      userAgentPackageName: 'com.mobile.hadirin',
+                      userAgentPackageName: 'com.alfahmi.absensi.sma',
                       maxZoom: 19,
                     ),
                     CircleLayer(

@@ -1,8 +1,14 @@
 abstract class AppConfig {
   static const gasEndpoint = String.fromEnvironment('GAS_ENDPOINT');
   static const apiToken = String.fromEnvironment('API_TOKEN');
-  static const appLogo = String.fromEnvironment('APP_LOGO', defaultValue: 'assets/icons/hadirin.png');
-  static const appName = String.fromEnvironment('APP_NAME', defaultValue: 'Hadir.in');
+  static const appLogo = String.fromEnvironment(
+    'APP_LOGO',
+    defaultValue: 'assets/icons/smait.png',
+  );
+  static const appName = String.fromEnvironment(
+    'APP_NAME',
+    defaultValue: 'SMA IT AL FAHMI PALU',
+  );
 
   static void validate() {
     assert(gasEndpoint.isNotEmpty, 'GAS_ENDPOINT belum di-set');

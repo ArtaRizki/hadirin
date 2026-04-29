@@ -110,18 +110,19 @@ flutter:
 flutter_launcher_icons:
   android: true
   ios: true
-  image_path: "assets/icons/hadirin.png"
+  image_path: "assets/icons/smait.png"
+  adaptive_icon_background: "#F9F9F8"
+  adaptive_icon_foreground: "assets/icons/smait.png"
   min_sdk_size: 21
   web:
     generate: true
-    image_path: "assets/icons/hadirin.png" # Disamakan dengan yang atas
+    image_path: "assets/icons/smait.png"
 
 flutter_native_splash:
-  color: "#F9F9F8" # Warna background khas Hadir.in
-  image: "assets/icons/hadirin.png"
+  color: "#F9F9F8"
+  image: "assets/icons/smait.png"
   android: true
   ios: true
-  # Pengaturan khusus untuk HP Android keluaran terbaru (Android 12 ke atas)
   android_12:
-    image: "assets/icons/hadirin.png"
+    image: "assets/icons/smait.png"
     icon_background_color: "#F9F9F8"
