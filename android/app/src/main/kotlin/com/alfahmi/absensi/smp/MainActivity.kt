@@ -1,4 +1,4 @@
-package com.mobile.hadirin // Sesuaikan
+package com.alfahmi.absensi.smp // Sesuaikan
 
 import android.graphics.BitmapFactory
 import io.flutter.embedding.android.FlutterFragmentActivity
