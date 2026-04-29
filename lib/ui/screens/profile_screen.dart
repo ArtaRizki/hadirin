@@ -24,6 +24,8 @@ import 'package:hadirin/ui/screens/set_worktime_screen.dart';
 import 'package:hadirin/ui/screens/banner_management_screen.dart';
 import 'package:hadirin/ui/screens/jadwal_kegiatan_screen.dart';
 import 'package:hadirin/ui/screens/laporan_ngaji_screen.dart';
+import 'package:hadirin/ui/screens/jabatan_management_screen.dart';
+import 'package:hadirin/ui/screens/briefing_screen.dart';
 import 'package:hadirin/core/service/school_service.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -989,6 +991,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                     accentColor: Colors.blueGrey,
                   ),
+                  _buildMenuCard(
+                    title: "Absensi\nBriefing",
+                    icon: Icons.groups_rounded,
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const BriefingScreen(),
+                      ),
+                    ),
+                    accentColor: const Color(0xFF0D9488),
+                  ),
                   if (!auth.isAdmin &&
                       auth.adminPhone != null &&
                       auth.adminPhone!.isNotEmpty)
@@ -1083,6 +1096,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       icon: Icons.phonelink_erase,
                       onTap: () => _tampilkanDialogResetHP(context),
                       accentColor: Colors.red.shade600,
+                    ),
+                    _buildMenuCard(
+                      title: "Manajemen\nJabatan",
+                      icon: Icons.work_rounded,
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const JabatanManagementScreen(),
+                        ),
+                      ),
+                      accentColor: const Color(0xFF6366F1),
                     ),
                   ],
                 ],

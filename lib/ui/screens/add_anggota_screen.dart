@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:hadirin/core/models/school_models.dart';
 import 'package:hadirin/core/service/admin_service.dart';
+import 'package:hadirin/core/service/school_service.dart';
 import 'package:provider/provider.dart';
 import 'package:hadirin/core/providers/auth_provider.dart';
 import 'package:hadirin/core/theme/fluid_theme.dart';
@@ -14,9 +16,30 @@ class AddAnggotaScreen extends StatefulWidget {
 class _AddAnggotaScreenState extends State<AddAnggotaScreen> {
   final _idController = TextEditingController();
   final _namaController = TextEditingController();
-  final _bagianController = TextEditingController();
-  final _hpController = TextEditingController(); // NEW
+  final _hpController = TextEditingController();
   bool _isLoading = false;
+
+  // Jabatan dropdown state
+  List<JabatanModel> _jabatanList = [];
+  bool _isLoadingJabatan = true;
+  String? _selectedJabatan;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadJabatan();
+  }
+
+  Future<void> _loadJabatan() async {
+    final auth = context.read<AuthProvider>();
+    final data = await SchoolService().getJabatan(auth.clientId ?? '');
+    if (mounted) {
+      setState(() {
+        _jabatanList = data;
+        _isLoadingJabatan = false;
+      });
+    }
+  }
 
   void _simpanAnggota() async {
     if (_idController.text.isEmpty || _namaController.text.isEmpty) {
@@ -43,10 +66,8 @@ class _AddAnggotaScreenState extends State<AddAnggotaScreen> {
       clientId: clientId,
       idAnggotaBaru: _idController.text.trim(),
       namaAnggotaBaru: _namaController.text.trim(),
-      bagian: _bagianController.text.trim().isEmpty
-          ? "-"
-          : _bagianController.text.trim(),
-      noHp: phone, // UPDATED
+      bagian: _selectedJabatan ?? "-",
+      noHp: phone,
     );
 
     setState(() => _isLoading = false);
@@ -200,13 +221,10 @@ class _AddAnggotaScreenState extends State<AddAnggotaScreen> {
                   ),
                   const SizedBox(height: 20),
 
-                  _buildInputField(
-                    controller: _bagianController,
-                    label: "Bagian / Jabatan",
-                    hint: "Opsional (Contoh: Guru, Staf)",
-                    icon: Icons.work_outline_rounded,
-                  ),
+                  // DROPDOWN JABATAN (menggantikan TextField manual)
+                  _buildJabatanDropdown(),
                   const SizedBox(height: 20),
+
                   _buildInputField(
                     controller: _hpController,
                     label: "No. HP / WhatsApp",
@@ -256,6 +274,69 @@ class _AddAnggotaScreenState extends State<AddAnggotaScreen> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  // Dropdown widget untuk memilih jabatan dari API
+  Widget _buildJabatanDropdown() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: DropdownButtonFormField<String>(
+        value: _selectedJabatan,
+        isExpanded: true,
+        decoration: InputDecoration(
+          labelText: "Bagian / Jabatan",
+          hintText: _isLoadingJabatan ? "Memuat jabatan..." : "Pilih jabatan",
+          labelStyle: TextStyle(color: Colors.grey.shade500),
+          prefixIcon: Icon(
+            Icons.work_outline_rounded,
+            color: context.primaryColor,
+          ),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: BorderSide.none,
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: BorderSide(color: context.primaryColor, width: 1.5),
+          ),
+          filled: true,
+          fillColor: Colors.white,
+        ),
+        items: _isLoadingJabatan
+            ? [
+                const DropdownMenuItem(
+                  value: null,
+                  enabled: false,
+                  child: Text("Memuat..."),
+                ),
+              ]
+            : [
+                const DropdownMenuItem(
+                  value: "-",
+                  child: Text("— Tidak Ada —"),
+                ),
+                ..._jabatanList.map(
+                  (j) => DropdownMenuItem(
+                    value: j.namaJabatan,
+                    child: Text(j.namaJabatan),
+                  ),
+                ),
+              ],
+        onChanged: _isLoadingJabatan
+            ? null
+            : (val) => setState(() => _selectedJabatan = val),
       ),
     );
   }

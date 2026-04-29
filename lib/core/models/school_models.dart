@@ -134,3 +134,46 @@ class NilaiQuranModel {
     );
   }
 }
+
+class JabatanModel {
+  final String id;
+  final String namaJabatan;
+
+  JabatanModel({required this.id, required this.namaJabatan});
+
+  factory JabatanModel.fromJson(Map<String, dynamic> json) {
+    return JabatanModel(
+      id: (json['id'] ?? json['ID'] ?? '').toString(),
+      namaJabatan: (json['nama_jabatan'] ?? json['Nama_Jabatan'] ?? '').toString(),
+    );
+  }
+}
+
+class BriefingModel {
+  final String idKaryawan;
+  final String statusKehadiran;
+  final String? foto;
+  final String? catatan;
+  final String? tanggal;
+  final String? namaKaryawan;
+
+  BriefingModel({
+    required this.idKaryawan,
+    required this.statusKehadiran,
+    this.foto,
+    this.catatan,
+    this.tanggal,
+    this.namaKaryawan,
+  });
+
+  factory BriefingModel.fromJson(Map<String, dynamic> json) {
+    return BriefingModel(
+      idKaryawan: (json['id_karyawan'] ?? json['ID_Karyawan'] ?? '').toString(),
+      statusKehadiran: (json['status_kehadiran'] ?? json['Status_Kehadiran'] ?? '').toString(),
+      foto: (json['foto'] ?? json['Foto'])?.toString(),
+      catatan: (json['catatan'] ?? json['Catatan'])?.toString(),
+      tanggal: (json['waktu'] ?? json['tanggal'] ?? json['Timestamp'])?.toString(),
+      namaKaryawan: (json['nama'] ?? json['nama_karyawan'] ?? json['Nama'])?.toString(),
+    );
+  }
+}

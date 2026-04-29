@@ -462,4 +462,131 @@ class SchoolService extends ApiClient {
       return null;
     }
   }
+
+  // =================================================================
+  // 6. MASTER JABATAN
+  // =================================================================
+  Future<List<JabatanModel>> getJabatan(String clientId) async {
+    try {
+      final payload = {
+        'api_token': AppConfig.apiToken,
+        'client_id': clientId,
+        'action': 'get_jabatan',
+      };
+
+      final response = await sendRequest('get_jabatan', payload);
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['code'] == 200) {
+          final List list = data['message'];
+          return list.map((e) => JabatanModel.fromJson(e)).toList();
+        }
+      }
+      return [];
+    } catch (e) {
+      d.log('==== ERROR GET JABATAN ==== $e');
+      return [];
+    }
+  }
+
+  Future<Map<String, dynamic>> addJabatan({
+    required String clientId,
+    required String namaJabatan,
+  }) async {
+    try {
+      final payload = {
+        'api_token': AppConfig.apiToken,
+        'client_id': clientId,
+        'action': 'add_jabatan',
+        'nama_jabatan': namaJabatan,
+      };
+
+      final response = await sendRequest('add_jabatan', payload);
+      return parseResponse(response.body);
+    } catch (e) {
+      return {'success': false, 'message': e.toString()};
+    }
+  }
+
+  Future<Map<String, dynamic>> deleteJabatan({
+    required String clientId,
+    required String idJabatan,
+  }) async {
+    try {
+      final payload = {
+        'api_token': AppConfig.apiToken,
+        'client_id': clientId,
+        'action': 'delete_jabatan',
+        'id_jabatan': idJabatan,
+      };
+
+      final response = await sendRequest('delete_jabatan', payload);
+      return parseResponse(response.body);
+    } catch (e) {
+      return {'success': false, 'message': e.toString()};
+    }
+  }
+
+  // =================================================================
+  // 7. ABSENSI BRIEFING
+  // =================================================================
+  Future<Map<String, dynamic>> absenBriefing({
+    required String clientId,
+    required String idKaryawan,
+    required String statusKehadiran,
+    String fotoBase64 = '',
+    String catatan = '',
+  }) async {
+    try {
+      final payload = {
+        'api_token': AppConfig.apiToken,
+        'client_id': clientId,
+        'action': 'absen_briefing',
+        'id_karyawan': idKaryawan,
+        'status_kehadiran': statusKehadiran,
+        'foto_base64': fotoBase64,
+        'catatan': catatan,
+      };
+
+      final response = await sendRequest(
+        'absen_briefing',
+        payload,
+        timeout: const Duration(seconds: 60),
+      );
+      return parseResponse(response.body);
+    } catch (e) {
+      d.log('==== ERROR ABSEN BRIEFING ==== $e');
+      return {
+        'success': false,
+        'message': e.toString().replaceAll('Exception: ', ''),
+      };
+    }
+  }
+
+  Future<List<BriefingModel>> getBriefing(
+    String clientId,
+    String idKaryawan,
+  ) async {
+    try {
+      final payload = {
+        'api_token': AppConfig.apiToken,
+        'client_id': clientId,
+        'action': 'get_briefing',
+        'id_karyawan': idKaryawan,
+      };
+
+      final response = await sendRequest('get_briefing', payload);
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['code'] == 200) {
+          final List list = data['message'];
+          return list.map((e) => BriefingModel.fromJson(e)).toList();
+        }
+      }
+      return [];
+    } catch (e) {
+      d.log('==== ERROR GET BRIEFING ==== $e');
+      return [];
+    }
+  }
 }

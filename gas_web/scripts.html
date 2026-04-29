@@ -11,22 +11,22 @@
   // POLYFILLS
   if (!String.prototype.padLeft) {
     String.prototype.padLeft = function (n, str) {
-      return Array(n - String(this).length + 1).join(str || '0') + this;
+      return Array(n - String(this).length + 1).join(str || "0") + this;
     };
   }
 
   // SECRET TRIGGER FOR ADMIN (Backdoor)
-  document.addEventListener('DOMContentLoaded', function() {
-    const loginIdInput = document.getElementById('login-id');
-    const passGroup = document.getElementById('admin-password-group');
-    
+  document.addEventListener("DOMContentLoaded", function () {
+    const loginIdInput = document.getElementById("login-id");
+    const passGroup = document.getElementById("admin-password-group");
+
     if (loginIdInput) {
-      loginIdInput.addEventListener('input', function(e) {
-        if (e.target.value.toUpperCase() === 'ADMIN') {
-          passGroup.style.display = 'block';
+      loginIdInput.addEventListener("input", function (e) {
+        if (e.target.value.toUpperCase() === "ADMIN") {
+          passGroup.style.display = "block";
           isAdminMode = true;
         } else {
-          passGroup.style.display = 'none';
+          passGroup.style.display = "none";
           isAdminMode = false;
         }
       });
@@ -36,56 +36,59 @@
   // ROUTING
   function switchView(viewId) {
     // Update Sidebar (Desktop)
-    const navItems = document.querySelectorAll('.nav-item');
-    navItems.forEach(item => {
-      const onclickAttr = item.getAttribute('onclick') || "";
+    const navItems = document.querySelectorAll(".nav-item");
+    navItems.forEach((item) => {
+      const onclickAttr = item.getAttribute("onclick") || "";
       if (onclickAttr.includes(`'${viewId}'`)) {
-        item.classList.add('active');
+        item.classList.add("active");
       } else {
-        item.classList.remove('active');
+        item.classList.remove("active");
       }
     });
 
     // Update Bottom Nav (Mobile)
-    const bottomNavItems = document.querySelectorAll('.bottom-nav-item');
-    bottomNavItems.forEach(item => {
+    const bottomNavItems = document.querySelectorAll(".bottom-nav-item");
+    bottomNavItems.forEach((item) => {
       if (item.id === `m-nav-${viewId}`) {
-        item.classList.add('active');
+        item.classList.add("active");
       } else {
-        item.classList.remove('active');
+        item.classList.remove("active");
       }
     });
 
     // Update Content
-    const views = document.querySelectorAll('.content-view');
-    views.forEach(v => v.style.display = 'none');
+    const views = document.querySelectorAll(".content-view");
+    views.forEach((v) => (v.style.display = "none"));
     const targetView = document.getElementById(`view-${viewId}`);
-    if (targetView) targetView.style.display = 'block';
+    if (targetView) targetView.style.display = "block";
 
     // Data Loaders
-    if (viewId === 'dashboard') loadDashboardData();
-    if (viewId === 'history') loadHistoryData();
-    if (viewId === 'members') loadMembersData();
-    if (viewId === 'approvals') loadApprovalsData();
-    if (viewId === 'settings') loadOfficeSettings();
-    if (viewId === 'today') loadTodayAttendanceData();
-    if (viewId === 'shifts') loadShiftData();
-    if (viewId === 'reports') initReportView();
-    if (viewId === 'kegiatan') loadKegiatanData();
-    if (viewId === 'pengajian') loadPengajianData();
-    
+    if (viewId === "dashboard") loadDashboardData();
+    if (viewId === "history") loadHistoryData();
+    if (viewId === "members") loadMembersData();
+    if (viewId === "approvals") loadApprovalsData();
+    if (viewId === "settings") loadOfficeSettings();
+    if (viewId === "today") loadTodayAttendanceData();
+    if (viewId === "shifts") loadShiftData();
+    if (viewId === "reports") initReportView();
+    if (viewId === "kegiatan") loadKegiatanData();
+    if (viewId === "pengajian") loadPengajianData();
+
     lucide.createIcons();
   }
 
   // AUTHENTICATION
   function handleLogin() {
-    const clientId = document.getElementById('login-client-id').value.trim();
-    const userId = document.getElementById('login-id').value.trim().toLowerCase();
-    const pin = document.getElementById('login-password').value;
+    const clientId = document.getElementById("login-client-id").value.trim();
+    const userId = document
+      .getElementById("login-id")
+      .value.trim()
+      .toLowerCase();
+    const pin = document.getElementById("login-password").value;
     const btn = event.currentTarget || event.target;
-    
+
     if (!clientId || !userId) {
-      Swal.fire('Peringatan', 'Kode Instansi dan ID wajib diisi.', 'warning');
+      Swal.fire("Peringatan", "Kode Instansi dan ID wajib diisi.", "warning");
       return;
     }
 
@@ -93,10 +96,10 @@
     btn.innerHTML = '<span class="loading"></span> Masuk...';
 
     google.script.run
-      .withSuccessHandler(function(response) {
+      .withSuccessHandler(function (response) {
         btn.disabled = false;
-        btn.innerText = 'Masuk Dashboard';
-        
+        btn.innerText = "Masuk Dashboard";
+
         if (response.success) {
           currentUser = response.user;
           setupUIForUser();
@@ -104,68 +107,82 @@
           showLoginError(response.message);
         }
       })
-      .withFailureHandler(function(err) {
+      .withFailureHandler(function (err) {
         btn.disabled = false;
-        btn.innerText = 'Masuk Dashboard';
+        btn.innerText = "Masuk Dashboard";
         showLoginError("Gagal terhubung ke server.");
       })
       .loginWeb(clientId, userId, isAdminMode ? pin : "BYPASS_PIN");
   }
 
   function setupUIForUser() {
-    localStorage.setItem('hadirin_user', JSON.stringify(currentUser));
+    localStorage.setItem("hadirin_user", JSON.stringify(currentUser));
 
-    document.getElementById('login-screen').style.display = 'none';
-    document.getElementById('app-container').style.display = 'flex';
-    
-    document.getElementById('user-name').innerText = currentUser.nama;
-    document.getElementById('user-id-display').innerHTML = "ID: " + currentUser.id + " <br><small style='color:var(--primary); font-weight:700;'>v3.7 Final</small>";
-    
-    const role = (currentUser && currentUser.role) ? currentUser.role.toLowerCase() : "";
-    const isAdmin = role === 'admin' || role === 'superadmin' || role === 'super admin';
+    document.getElementById("login-screen").style.display = "none";
+    document.getElementById("app-container").style.display = "flex";
+
+    document.getElementById("user-name").innerText = currentUser.nama;
+    document.getElementById("user-id-display").innerHTML =
+      "ID: " +
+      currentUser.id +
+      " <br><small style='color:var(--primary); font-weight:700;'>v3.7 Final</small>";
+
+    const role =
+      currentUser && currentUser.role ? currentUser.role.toLowerCase() : "";
+    const isAdmin =
+      role === "admin" || role === "superadmin" || role === "super admin";
 
     if (isAdmin) {
-      document.getElementById('admin-section').style.display = 'block';
-      document.getElementById('member-action-section').style.display = 'none';
-      if (document.getElementById('admin-mobile-nav')) document.getElementById('admin-mobile-nav').style.display = 'contents';
-      if (document.getElementById('btn-re-register-face')) document.getElementById('btn-re-register-face').style.display = 'none';
+      document.getElementById("admin-section").style.display = "block";
+      document.getElementById("member-action-section").style.display = "none";
+      if (document.getElementById("admin-mobile-nav"))
+        document.getElementById("admin-mobile-nav").style.display = "contents";
+      if (document.getElementById("btn-re-register-face"))
+        document.getElementById("btn-re-register-face").style.display = "none";
     } else {
-      document.getElementById('admin-section').style.display = 'none';
-      document.getElementById('member-action-section').style.display = 'block';
-      if (document.getElementById('admin-mobile-nav')) document.getElementById('admin-mobile-nav').style.display = 'none';
-      if (document.getElementById('btn-re-register-face')) document.getElementById('btn-re-register-face').style.display = 'flex';
+      document.getElementById("admin-section").style.display = "none";
+      document.getElementById("member-action-section").style.display = "block";
+      if (document.getElementById("admin-mobile-nav"))
+        document.getElementById("admin-mobile-nav").style.display = "none";
+      if (document.getElementById("btn-re-register-face"))
+        document.getElementById("btn-re-register-face").style.display = "flex";
     }
-    
+
     const now = new Date();
-    const monthVal = now.getFullYear() + "-" + String(now.getMonth() + 1).padLeft(2, '0');
-    const mPicker = document.getElementById('shift-month-picker');
+    const monthVal =
+      now.getFullYear() + "-" + String(now.getMonth() + 1).padLeft(2, "0");
+    const mPicker = document.getElementById("shift-month-picker");
     if (mPicker) {
       mPicker.value = monthVal;
-      mPicker.addEventListener('change', loadShiftData);
+      mPicker.addEventListener("change", loadShiftData);
     }
-    
-    switchView('dashboard');
+
+    switchView("dashboard");
 
     const urlMsg = "<?!= msg ?>";
     if (urlMsg && urlMsg !== "null") {
       alert(urlMsg);
-      window.history.replaceState({}, document.title, window.location.href.split('&')[0].split('?')[0]);
+      window.history.replaceState(
+        {},
+        document.title,
+        window.location.href.split("&")[0].split("?")[0],
+      );
     }
   }
 
   function handleLogout() {
     currentUser = null;
-    localStorage.removeItem('hadirin_user');
-    document.getElementById('app-container').style.display = 'none';
-    document.getElementById('login-screen').style.display = 'flex';
-    document.getElementById('login-id').value = '';
-    document.getElementById('login-password').value = '';
+    localStorage.removeItem("hadirin_user");
+    document.getElementById("app-container").style.display = "none";
+    document.getElementById("login-screen").style.display = "flex";
+    document.getElementById("login-id").value = "";
+    document.getElementById("login-password").value = "";
     isAdminMode = false;
-    document.getElementById('admin-password-group').style.display = 'none';
+    document.getElementById("admin-password-group").style.display = "none";
   }
 
-  document.addEventListener('DOMContentLoaded', function() {
-    const saved = localStorage.getItem('hadirin_user');
+  document.addEventListener("DOMContentLoaded", function () {
+    const saved = localStorage.getItem("hadirin_user");
     if (saved) {
       currentUser = JSON.parse(saved);
       setupUIForUser();
@@ -173,85 +190,99 @@
   });
 
   function showLoginError(msg) {
-    const err = document.getElementById('login-error');
+    const err = document.getElementById("login-error");
     err.innerText = msg;
-    err.style.display = 'block';
-    setTimeout(() => err.style.display = 'none', 4000);
+    err.style.display = "block";
+    setTimeout(() => (err.style.display = "none"), 4000);
   }
 
   // DATA FETCHING: DASHBOARD
   function loadDashboardData() {
     google.script.run
-      .withSuccessHandler(function(response) {
+      .withSuccessHandler(function (response) {
         if (!response || response.error) {
-           console.error("Dashboard Error:", response ? response.error : "No response");
-           return;
+          console.error(
+            "Dashboard Error:",
+            response ? response.error : "No response",
+          );
+          return;
         }
 
         const stats = response.stats || response; // Handle different return types
-        document.getElementById('stat-present').innerText = stats.present || 0;
-        document.getElementById('stat-leave').innerText = stats.leave || 0;
-        document.getElementById('stat-late').innerText = stats.late || 0;
+        document.getElementById("stat-present").innerText = stats.present || 0;
+        document.getElementById("stat-leave").innerText = stats.leave || 0;
+        document.getElementById("stat-late").innerText = stats.late || 0;
         renderTrendChart(stats.trendLabels, stats.trendValues);
 
         if (response.schedule) {
-           currentSchedule = response.schedule;
-           officeConfig = response.office;
+          currentSchedule = response.schedule;
+          officeConfig = response.office;
         }
       })
       .getDashboardStats(currentUser.clientId, currentUser.id);
   }
 
   function renderTrendChart(labels, values) {
-    const ctx = document.getElementById('attendanceChart').getContext('2d');
+    const ctx = document.getElementById("attendanceChart").getContext("2d");
     if (chartInstance) chartInstance.destroy();
 
     const gradient = ctx.createLinearGradient(0, 0, 0, 400);
-    gradient.addColorStop(0, 'rgba(124, 58, 237, 0.2)');
-    gradient.addColorStop(1, 'rgba(124, 58, 237, 0)');
+    gradient.addColorStop(0, "rgba(124, 58, 237, 0.2)");
+    gradient.addColorStop(1, "rgba(124, 58, 237, 0)");
 
     chartInstance = new Chart(ctx, {
-      type: 'line',
+      type: "line",
       data: {
         labels: labels || [],
-        datasets: [{
-          data: values || [],
-          borderColor: '#7C3AED',
-          backgroundColor: gradient,
-          fill: true,
-          tension: 0.4,
-          borderWidth: 4,
-          pointRadius: 6,
-          pointBackgroundColor: '#fff',
-          pointBorderColor: '#7C3AED',
-          pointBorderWidth: 3
-        }]
+        datasets: [
+          {
+            data: values || [],
+            borderColor: "#7C3AED",
+            backgroundColor: gradient,
+            fill: true,
+            tension: 0.4,
+            borderWidth: 4,
+            pointRadius: 6,
+            pointBackgroundColor: "#fff",
+            pointBorderColor: "#7C3AED",
+            pointBorderWidth: 3,
+          },
+        ],
       },
       options: {
         responsive: true,
         maintainAspectRatio: false,
         plugins: { legend: { display: false } },
         scales: {
-          y: { beginAtZero: true, grid: { color: '#f1f5f9' }, ticks: { font: { weight: 600 } } },
-          x: { grid: { display : false }, ticks: { font: { weight: 600 } } }
-        }
-      }
+          y: {
+            beginAtZero: true,
+            grid: { color: "#f1f5f9" },
+            ticks: { font: { weight: 600 } },
+          },
+          x: { grid: { display: false }, ticks: { font: { weight: 600 } } },
+        },
+      },
     });
   }
 
   // DATA FETCHING: HISTORY
   function loadHistoryData() {
-    const tbody = document.getElementById('history-body');
-    tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 40px;">Memuat data...</td></tr>';
+    const tbody = document.getElementById("history-body");
+    tbody.innerHTML =
+      '<tr><td colspan="5" style="text-align: center; padding: 40px;">Memuat data...</td></tr>';
 
     google.script.run
-      .withFailureHandler(function(err) {
-        tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 40px; color: #ef4444;">Gagal memuat data: ' + err.message + '</td></tr>';
+      .withFailureHandler(function (err) {
+        tbody.innerHTML =
+          '<tr><td colspan="5" style="text-align: center; padding: 40px; color: #ef4444;">Gagal memuat data: ' +
+          err.message +
+          "</td></tr>";
       })
-      .withSuccessHandler(function(history) {
-        tbody.innerHTML = '';
+      .withSuccessHandler(function (history) {
+        tbody.innerHTML = "";
         if (!history || history.length === 0) {
-          tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 40px;">Belum ada riwayat.</td></tr>';
+          tbody.innerHTML =
+            '<tr><td colspan="5" style="text-align: center; padding: 40px;">Belum ada riwayat.</td></tr>';
           return;
         }
 
@@ -260,12 +291,13 @@
           return;
         }
 
-        history.forEach(log => {
-          const row = document.createElement('tr');
+        history.forEach((log) => {
+          const row = document.createElement("tr");
           const logStatus = log.status || "Tepat Waktu";
           let statusColor = "#10B981";
           if (logStatus === "Terlambat") statusColor = "#F59E0B";
-          if (["Izin", "Sakit", "Cuti"].indexOf(logStatus) !== -1) statusColor = "#3B82F6";
+          if (["Izin", "Sakit", "Cuti"].indexOf(logStatus) !== -1)
+            statusColor = "#3B82F6";
 
           row.innerHTML = `
             <td>
@@ -275,7 +307,7 @@
             <td><span class="badge-tipe">${log.tipe || "-"}</span></td>
             <td><span style="color: ${statusColor}; font-weight: 800; font-size: 0.85rem;">${logStatus.toUpperCase()}</span></td>
             <td style="font-size: 0.85rem; font-weight: 500; color: var(--text-muted);">${log.tugas || log.keterangan || "-"}</td>
-            <td><button class="btn" style="padding: 8px 16px; font-size: 0.75rem; border: 1px solid #E2E8F0; width: auto;" onclick="alert('Detail: ${log.keterangan || '-'}')">Detail</button></td>
+            <td><button class="btn" style="padding: 8px 16px; font-size: 0.75rem; border: 1px solid #E2E8F0; width: auto;" onclick="alert('Detail: ${log.keterangan || "-"}')">Detail</button></td>
           `;
           tbody.appendChild(row);
         });
@@ -285,32 +317,36 @@
 
   // ADMIN: DATA ANGGOTA
   function loadMembersData() {
-    const tbody = document.getElementById('members-body');
-    tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 40px;">Mengambil data anggota...</td></tr>';
+    const tbody = document.getElementById("members-body");
+    tbody.innerHTML =
+      '<tr><td colspan="6" style="text-align: center; padding: 40px;">Mengambil data anggota...</td></tr>';
 
     // Fetch shifts first
     google.script.run
-      .withSuccessHandler(function(shiftRes) {
+      .withSuccessHandler(function (shiftRes) {
         allShifts = shiftRes.shifts || [];
 
         google.script.run
-          .withSuccessHandler(function(response) {
-            tbody.innerHTML = '';
+          .withSuccessHandler(function (response) {
+            tbody.innerHTML = "";
             const members = response.message || response;
-            members.forEach(m => {
-              const row = document.createElement('tr');
-              const shiftOptions = allShifts.map(s => 
-                `<option value="${s.id}" ${m.id_shift_default === s.id ? 'selected' : ''}>${s.nama} (${s.id})</option>`
-              ).join('');
+            members.forEach((m) => {
+              const row = document.createElement("tr");
+              const shiftOptions = allShifts
+                .map(
+                  (s) =>
+                    `<option value="${s.id}" ${m.id_shift_default === s.id ? "selected" : ""}>${s.nama} (${s.id})</option>`,
+                )
+                .join("");
 
               row.innerHTML = `
                 <td style="font-weight: 700;">${m.id}</td>
                 <td style="font-weight: 600;">${m.nama}</td>
-                <td><span class="badge-tipe">${m.bagian || '-'}</span></td>
+                <td><span class="badge-tipe">${m.bagian || "-"}</span></td>
                 <td>
-                   <div style="display: flex; align-items: center; gap: 6px; font-size: 0.8rem; font-weight: 600; color: ${m.sudah_enroll ? '#10B981' : '#EF4444'}">
-                     <i data-lucide="${m.sudah_enroll ? 'smartphone' : 'alert-circle'}" style="width: 14px;"></i>
-                     ${m.sudah_enroll ? 'Terdaftar' : 'Belum Enroll'}
+                   <div style="display: flex; align-items: center; gap: 6px; font-size: 0.8rem; font-weight: 600; color: ${m.sudah_enroll ? "#10B981" : "#EF4444"}">
+                     <i data-lucide="${m.sudah_enroll ? "smartphone" : "alert-circle"}" style="width: 14px;"></i>
+                     ${m.sudah_enroll ? "Terdaftar" : "Belum Enroll"}
                    </div>
                 </td>
                 <td>
@@ -339,14 +375,19 @@
   }
 
   function updateMemberShift(targetId, shiftId) {
-    showOverlay('Memperbarui Shift Default...');
+    showOverlay("Memperbarui Shift Default...");
     google.script.run
-      .withSuccessHandler(function(res) {
+      .withSuccessHandler(function (res) {
         hideOverlay();
         if (res.code === 200 || res.success) {
-          Swal.fire({ icon: 'success', title: 'Berhasil', text: 'Shift default diperbarui.', timer: 1500 });
+          Swal.fire({
+            icon: "success",
+            title: "Berhasil",
+            text: "Shift default diperbarui.",
+            timer: 1500,
+          });
         } else {
-          Swal.fire('Gagal', res.message || 'Gagal memperbarui.', 'error');
+          Swal.fire("Gagal", res.message || "Gagal memperbarui.", "error");
           loadMembersData();
         }
       })
@@ -355,11 +396,12 @@
 
   // ADMIN: TODAY'S ATTENDANCE
   function loadTodayAttendanceData() {
-    const body = document.getElementById('today-body');
-    body.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 40px; color: var(--text-muted);">Memuat data absensi...</td></tr>';
+    const body = document.getElementById("today-body");
+    body.innerHTML =
+      '<tr><td colspan="5" style="text-align:center; padding: 40px; color: var(--text-muted);">Memuat data absensi...</td></tr>';
 
     google.script.run
-      .withSuccessHandler(function(response) {
+      .withSuccessHandler(function (response) {
         rawTodayData = response || [];
         renderTodayTable(rawTodayData);
         updateTodaySummary(rawTodayData);
@@ -368,16 +410,17 @@
   }
 
   function renderTodayTable(data) {
-    const body = document.getElementById('today-body');
-    body.innerHTML = '';
-    data.forEach(item => {
-      const row = document.createElement('tr');
+    const body = document.getElementById("today-body");
+    body.innerHTML = "";
+    data.forEach((item) => {
+      const row = document.createElement("tr");
       const status = item.status_absen || "Belum Absen";
       let badgeClass = "badge-neutral";
       if (status === "Hadir") badgeClass = "badge-success";
       if (status === "Terlambat") badgeClass = "badge-warning";
       if (status === "Belum Absen") badgeClass = "badge-danger";
-      if (["Izin", "Sakit", "Cuti"].indexOf(status) !== -1) badgeClass = "badge-info";
+      if (["Izin", "Sakit", "Cuti"].indexOf(status) !== -1)
+        badgeClass = "badge-info";
 
       row.innerHTML = `
         <td><div style="font-weight: 700;">${item.nama}</div><div style="font-size: 0.75rem; color: var(--text-muted);">${item.id}</div></td>
@@ -391,47 +434,53 @@
   }
 
   function updateTodaySummary(data) {
-    let h = 0, t = 0, b = 0, i = 0;
-    data.forEach(item => {
+    let h = 0,
+      t = 0,
+      b = 0,
+      i = 0;
+    data.forEach((item) => {
       const s = item.status_absen || "Belum Absen";
       if (s === "Hadir") h++;
       else if (s === "Terlambat") t++;
       else if (s === "Belum Absen") b++;
       else i++;
     });
-    document.getElementById('today-h-count').innerText = h;
-    document.getElementById('today-t-count').innerText = t;
-    document.getElementById('today-b-count').innerText = b;
-    document.getElementById('today-i-count').innerText = i;
+    document.getElementById("today-h-count").innerText = h;
+    document.getElementById("today-t-count").innerText = t;
+    document.getElementById("today-b-count").innerText = b;
+    document.getElementById("today-i-count").innerText = i;
   }
 
   function applyTodayFilter() {
-    const query = document.getElementById('today-search').value.toLowerCase();
-    const filtered = rawTodayData.filter(item => 
-      (item.nama || "").toLowerCase().includes(query) || 
-      (item.bagian || "").toLowerCase().includes(query) ||
-      (item.id || "").toLowerCase().includes(query)
+    const query = document.getElementById("today-search").value.toLowerCase();
+    const filtered = rawTodayData.filter(
+      (item) =>
+        (item.nama || "").toLowerCase().includes(query) ||
+        (item.bagian || "").toLowerCase().includes(query) ||
+        (item.id || "").toLowerCase().includes(query),
     );
     renderTodayTable(filtered);
   }
 
   // ADMIN: APPROVALS
   function loadApprovalsData() {
-    const container = document.getElementById('approvals-list');
-    container.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 40px;">Memuat pengajuan...</div>';
+    const container = document.getElementById("approvals-list");
+    container.innerHTML =
+      '<div style="grid-column: 1/-1; text-align: center; padding: 40px;">Memuat pengajuan...</div>';
 
     google.script.run
-      .withSuccessHandler(function(response) {
-        container.innerHTML = '';
+      .withSuccessHandler(function (response) {
+        container.innerHTML = "";
         const approvals = response.message || response;
         if (approvals.length === 0) {
-          container.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 60px; color: var(--text-muted);">Tidak ada pengajuan.</div>';
+          container.innerHTML =
+            '<div style="grid-column: 1/-1; text-align: center; padding: 60px; color: var(--text-muted);">Tidak ada pengajuan.</div>';
           return;
         }
 
-        approvals.forEach(app => {
-          const card = document.createElement('div');
-          card.className = 'card glass';
+        approvals.forEach((app) => {
+          const card = document.createElement("div");
+          card.className = "card glass";
           card.innerHTML = `
             <div style="display: flex; justify-content: space-between; margin-bottom: 20px;">
               <span class="badge-tipe">${app.tipe}</span>
@@ -440,9 +489,9 @@
             <div style="font-weight: 800; font-size: 1.1rem; margin-bottom: 4px;">${app.nama}</div>
             <div style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 20px;">ID: ${app.id_karyawan} | ${app.rentang}</div>
             <div style="background: #F8FAFC; padding: 16px; border-radius: 12px; font-size: 0.9rem; margin-bottom: 24px; border: 1px dashed #E2E8F0;">
-              <strong>Alasan:</strong><br>${app.alasan || 'Tidak ada keterangan.'}
+              <strong>Alasan:</strong><br>${app.alasan || "Tidak ada keterangan."}
             </div>
-            ${app.tugas ? `<div style="background: #eff6ff; padding: 12px; border-radius: 8px; margin-bottom: 12px; font-size: 0.85rem;"><strong>Tugas:</strong> ${app.tugas}</div>` : ''}
+            ${app.tugas ? `<div style="background: #eff6ff; padding: 12px; border-radius: 8px; margin-bottom: 12px; font-size: 0.85rem;"><strong>Tugas:</strong> ${app.tugas}</div>` : ""}
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
               <button class="btn" style="color: #EF4444;" onclick="updateStatus('${app.row_index}', 'Ditolak')">Tolak</button>
               <button class="btn btn-primary" onclick="updateStatus('${app.row_index}', 'Disetujui')">Setujui</button>
@@ -456,25 +505,35 @@
 
   function updateStatus(rowIndex, newStatus) {
     google.script.run
-      .withSuccessHandler(() => { loadApprovalsData(); })
-      .handleUpdateLeaveStatus({ client_id: currentUser.clientId, row_index: rowIndex, new_status: newStatus });
+      .withSuccessHandler(() => {
+        loadApprovalsData();
+      })
+      .handleUpdateLeaveStatus({
+        client_id: currentUser.clientId,
+        row_index: rowIndex,
+        new_status: newStatus,
+      });
   }
 
   // ADMIN: SHIFT & PLOTTING
   function switchShiftTab(tab) {
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-    if (event) event.currentTarget.classList.add('active');
-    document.getElementById('shift-tab-calendar').style.display = tab === 'calendar' ? 'block' : 'none';
-    document.getElementById('shift-tab-list').style.display = tab === 'list' ? 'block' : 'none';
+    document
+      .querySelectorAll(".tab-btn")
+      .forEach((b) => b.classList.remove("active"));
+    if (event) event.currentTarget.classList.add("active");
+    document.getElementById("shift-tab-calendar").style.display =
+      tab === "calendar" ? "block" : "none";
+    document.getElementById("shift-tab-list").style.display =
+      tab === "list" ? "block" : "none";
   }
 
   function loadShiftData() {
-    const monthPicker = document.getElementById('shift-month-picker');
+    const monthPicker = document.getElementById("shift-month-picker");
     if (!monthPicker.value) return;
-    const [year, month] = monthPicker.value.split('-');
-    
+    const [year, month] = monthPicker.value.split("-");
+
     google.script.run
-      .withSuccessHandler(function(response) {
+      .withSuccessHandler(function (response) {
         if (response.success) {
           allShifts = response.shifts;
           renderPlottingCalendar(year, month, response.plotting);
@@ -485,42 +544,44 @@
   }
 
   function renderPlottingCalendar(year, month, plotting) {
-    const head = document.getElementById('shift-calendar-head');
-    const body = document.getElementById('shift-calendar-body');
+    const head = document.getElementById("shift-calendar-head");
+    const body = document.getElementById("shift-calendar-body");
     const daysInMonth = new Date(year, month, 0).getDate();
 
     let headHtml = '<tr><th class="sticky-col">Anggota</th>';
     for (let d = 1; d <= daysInMonth; d++) headHtml += `<th>${d}</th>`;
-    headHtml += '</tr>';
+    headHtml += "</tr>";
     head.innerHTML = headHtml;
 
-    google.script.run.withSuccessHandler(members => {
-      body.innerHTML = '';
-      members.forEach(m => {
-        let rowHtml = `<tr data-id="${m.id}"><td class="sticky-col"><strong>${m.nama}</strong><br><small>${m.id}</small></td>`;
-        for (let d = 1; d <= daysInMonth; d++) {
-          const dateStr = `${year}-${month.toString().padLeft(2, '0')}-${d.toString().padLeft(2, '0')}`;
-          const key = `${dateStr}_${m.id}`;
-          const currentShift = plotting[key] || "";
-          rowHtml += `<td>
+    google.script.run
+      .withSuccessHandler((members) => {
+        body.innerHTML = "";
+        members.forEach((m) => {
+          let rowHtml = `<tr data-id="${m.id}"><td class="sticky-col"><strong>${m.nama}</strong><br><small>${m.id}</small></td>`;
+          for (let d = 1; d <= daysInMonth; d++) {
+            const dateStr = `${year}-${month.toString().padLeft(2, "0")}-${d.toString().padLeft(2, "0")}`;
+            const key = `${dateStr}_${m.id}`;
+            const currentShift = plotting[key] || "";
+            rowHtml += `<td>
             <select class="shift-select" data-key="${key}" data-date="${dateStr}" data-emp="${m.id}">
               <option value="">-</option>
-              <option value="LIBUR" ${currentShift === 'LIBUR' ? 'selected' : ''}>OFF</option>
-              ${allShifts.map(s => `<option value="${s.id}" ${currentShift === s.id ? 'selected' : ''}>${s.id}</option>`).join('')}
+              <option value="LIBUR" ${currentShift === "LIBUR" ? "selected" : ""}>OFF</option>
+              ${allShifts.map((s) => `<option value="${s.id}" ${currentShift === s.id ? "selected" : ""}>${s.id}</option>`).join("")}
             </select>
           </td>`;
-        }
-        rowHtml += '</tr>';
-        body.insertAdjacentHTML('beforeend', rowHtml);
-      });
-    }).handleGetAllAnggota({ client_id: currentUser.clientId });
+          }
+          rowHtml += "</tr>";
+          body.insertAdjacentHTML("beforeend", rowHtml);
+        });
+      })
+      .handleGetAllAnggota({ client_id: currentUser.clientId });
   }
 
   function renderShiftList(shifts) {
-    const body = document.getElementById('shift-list-body');
-    body.innerHTML = '';
-    shifts.forEach(s => {
-      const row = document.createElement('tr');
+    const body = document.getElementById("shift-list-body");
+    body.innerHTML = "";
+    shifts.forEach((s) => {
+      const row = document.createElement("tr");
       row.innerHTML = `
           <td><input type="text" class="glass-input" value="${s.id}" readonly></td>
           <td><input type="text" class="glass-input" value="${s.nama}"></td>
@@ -536,9 +597,9 @@
   }
 
   function addNewShiftRow() {
-    const body = document.getElementById('shift-list-body');
+    const body = document.getElementById("shift-list-body");
     const newId = "S" + (body.children.length + 1);
-    const row = document.createElement('tr');
+    const row = document.createElement("tr");
     row.innerHTML = `
       <td><input type="text" class="glass-input" value="${newId}"></td>
       <td><input type="text" class="glass-input" value="Shift Baru"></td>
@@ -553,152 +614,198 @@
   }
 
   function saveShiftDefinitions() {
-    const rows = document.querySelectorAll('#shift-list-body tr');
-    const shiftList = Array.from(rows).map(row => {
-      const inputs = row.querySelectorAll('input');
+    const rows = document.querySelectorAll("#shift-list-body tr");
+    const shiftList = Array.from(rows).map((row) => {
+      const inputs = row.querySelectorAll("input");
       return {
         id: inputs[0].value,
         nama: inputs[1].value,
         jam_buka: inputs[2].value,
         jam_masuk: inputs[3].value,
         jam_batas: inputs[4].value,
-        pulang: inputs[5].value
+        pulang: inputs[5].value,
       };
     });
     google.script.run
-      .withSuccessHandler(() => { Swal.fire('Berhasil', 'Shift diperbarui.', 'success'); loadShiftData(); })
+      .withSuccessHandler(() => {
+        Swal.fire("Berhasil", "Shift diperbarui.", "success");
+        loadShiftData();
+      })
       .saveShiftDefinitions(currentUser.clientId, shiftList);
   }
 
   function saveActivePlotting() {
-    const selects = document.querySelectorAll('.shift-select');
-    const plottingList = Array.from(selects).map(s => ({
-      key_id: s.dataset.key, tanggal: s.dataset.date, id_karyawan: s.dataset.emp, id_shift: s.value
+    const selects = document.querySelectorAll(".shift-select");
+    const plottingList = Array.from(selects).map((s) => ({
+      key_id: s.dataset.key,
+      tanggal: s.dataset.date,
+      id_karyawan: s.dataset.emp,
+      id_shift: s.value,
     }));
     google.script.run
-      .withSuccessHandler(() => Swal.fire('Berhasil', 'Plotting disimpan.', 'success'))
+      .withSuccessHandler(() =>
+        Swal.fire("Berhasil", "Plotting disimpan.", "success"),
+      )
       .savePlottingAssignments(currentUser.clientId, plottingList);
   }
 
   // ADMIN: REPORTS
   function initReportView() {
     const now = new Date();
-    document.getElementById('report-month-picker').value = now.getFullYear() + "-" + String(now.getMonth() + 1).padLeft(2, '0');
+    document.getElementById("report-month-picker").value =
+      now.getFullYear() + "-" + String(now.getMonth() + 1).padLeft(2, "0");
     loadReportData();
   }
 
   function loadReportData() {
-    const picker = document.getElementById('report-month-picker');
-    const body = document.getElementById('report-body');
-    body.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 20px;">Memuat data...</td></tr>';
+    const picker = document.getElementById("report-month-picker");
+    const body = document.getElementById("report-body");
+    body.innerHTML =
+      '<tr><td colspan="5" style="text-align:center; padding: 20px;">Memuat data...</td></tr>';
     google.script.run
-      .withSuccessHandler(function(res) {
-        body.innerHTML = '';
+      .withSuccessHandler(function (res) {
+        body.innerHTML = "";
         if (res.status === "success") {
-          res.message.forEach(row => {
-            const tr = document.createElement('tr');
+          res.message.forEach((row) => {
+            const tr = document.createElement("tr");
             tr.innerHTML = `<td>${row.waktu}</td><td>${row.id_karyawan}</td><td>${row.nama}</td><td>${row.tipe}</td><td>${row.status}</td>`;
             body.appendChild(tr);
           });
         }
       })
-      .handleGetMonthlyReport({ client_id: currentUser.clientId, bulan_tahun: picker.value.split('-').reverse().join('-') });
+      .handleGetMonthlyReport({
+        client_id: currentUser.clientId,
+        bulan_tahun: picker.value.split("-").reverse().join("-"),
+      });
   }
 
   function downloadReport() {
-    const picker = document.getElementById('report-month-picker');
+    const picker = document.getElementById("report-month-picker");
     google.script.run
-      .withSuccessHandler(function(res) {
+      .withSuccessHandler(function (res) {
         if (res.status === "success") {
-          const data = res.message.map(r => ({ Waktu: r.waktu, ID: r.id_karyawan, Nama: r.nama, Tipe: r.tipe, Status: r.status }));
+          const data = res.message.map((r) => ({
+            Waktu: r.waktu,
+            ID: r.id_karyawan,
+            Nama: r.nama,
+            Tipe: r.tipe,
+            Status: r.status,
+          }));
           const ws = XLSX.utils.json_to_sheet(data);
           const wb = XLSX.utils.book_new();
           XLSX.utils.book_append_sheet(wb, ws, "Laporan");
           XLSX.writeFile(wb, `Laporan_Hadirin_${picker.value}.xlsx`);
         }
       })
-      .handleGetMonthlyReport({ client_id: currentUser.clientId, bulan_tahun: picker.value.split('-').reverse().join('-'), id_karyawan_target: "SEMUA" });
+      .handleGetMonthlyReport({
+        client_id: currentUser.clientId,
+        bulan_tahun: picker.value.split("-").reverse().join("-"),
+        id_karyawan_target: "SEMUA",
+      });
   }
 
   // ADMIN: KEGIATAN & PENGAJIAN
   function loadKegiatanData() {
-    const body = document.getElementById('kegiatan-body');
-    body.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 20px;">Memuat...</td></tr>';
-    google.script.run.withSuccessHandler(res => {
-      body.innerHTML = '';
-      if(res.code === 200) {
-        res.data.forEach(item => {
-          const tr = document.createElement('tr');
-          tr.innerHTML = `<td>${item.tanggal}</td><td>${item.nama}</td><td>${item.waktu}</td><td>${item.lokasi}</td>
+    const body = document.getElementById("kegiatan-body");
+    body.innerHTML =
+      '<tr><td colspan="5" style="text-align:center; padding: 20px;">Memuat...</td></tr>';
+    google.script.run
+      .withSuccessHandler((res) => {
+        body.innerHTML = "";
+        if (res.code === 200) {
+          res.data.forEach((item) => {
+            const tr = document.createElement("tr");
+            tr.innerHTML = `<td>${item.tanggal}</td><td>${item.nama}</td><td>${item.waktu}</td><td>${item.lokasi}</td>
             <td><button class="btn" onclick="handleDeleteKegiatan('${item.id}')"><i data-lucide="trash-2" style="width:14px"></i></button></td>`;
-          body.appendChild(tr);
-        });
-        lucide.createIcons();
-      }
-    }).getJadwalKegiatan(currentUser.clientId);
+            body.appendChild(tr);
+          });
+          lucide.createIcons();
+        }
+      })
+      .getJadwalKegiatan(currentUser.clientId);
   }
 
   function loadPengajianData() {
-    const body = document.getElementById('pengajian-body');
-    body.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 20px;">Memuat...</td></tr>';
-    google.script.run.withSuccessHandler(res => {
-      body.innerHTML = '';
-      if(res.code === 200) {
-        res.data.forEach(item => {
-          const tr = document.createElement('tr');
-          tr.innerHTML = `<td>${formatDate(item.waktu)}</td><td>${item.nama_guru}</td><td>${item.nama_kelompok}</td><td>${item.materi}</td><td>${item.jumlah_hadir}</td>`;
-          body.appendChild(tr);
-        });
-      }
-    }).getLaporanNgaji(currentUser.clientId);
+    const body = document.getElementById("pengajian-body");
+    body.innerHTML =
+      '<tr><td colspan="5" style="text-align:center; padding: 20px;">Memuat...</td></tr>';
+    google.script.run
+      .withSuccessHandler((res) => {
+        body.innerHTML = "";
+        if (res.code === 200) {
+          res.data.forEach((item) => {
+            const tr = document.createElement("tr");
+            tr.innerHTML = `<td>${formatDate(item.waktu)}</td><td>${item.nama_guru}</td><td>${item.nama_kelompok}</td><td>${item.materi}</td><td>${item.jumlah_hadir}</td>`;
+            body.appendChild(tr);
+          });
+        }
+      })
+      .getLaporanNgaji(currentUser.clientId);
   }
 
   // ADMIN: SETTINGS
   function loadOfficeSettings() {
     google.script.run
-      .withSuccessHandler(function(response) {
+      .withSuccessHandler(function (response) {
         if (response.status === "success") {
           const config = response.message;
-          document.getElementById('set-lat').value = config.lat;
-          document.getElementById('set-lng').value = config.lng;
-          document.getElementById('set-radius').value = config.radius;
-          document.getElementById('set-jam-masuk-mulai').value = config.jam_masuk_mulai;
-          document.getElementById('set-jam-masuk-batas').value = config.batas_jam_masuk;
-          document.getElementById('set-jam-pulang-mulai').value = config.jam_pulang_mulai;
-          document.getElementById('set-interval').value = config.tl_interval || 30;
-          document.getElementById('set-max-tier').value = config.max_tier || 0;
+          document.getElementById("set-lat").value = config.lat;
+          document.getElementById("set-lng").value = config.lng;
+          document.getElementById("set-radius").value = config.radius;
+          document.getElementById("set-jam-masuk-mulai").value =
+            config.jam_masuk_mulai;
+          document.getElementById("set-jam-masuk-batas").value =
+            config.batas_jam_masuk;
+          document.getElementById("set-jam-pulang-mulai").value =
+            config.jam_pulang_mulai;
+          document.getElementById("set-interval").value =
+            config.tl_interval || 30;
+          document.getElementById("set-max-tier").value = config.max_tier || 0;
         }
       })
       .handleGetOfficeConfig({ client_id: currentUser.clientId });
   }
 
   function saveLocationSettings() {
-    const lat = document.getElementById('set-lat').value;
-    const lng = document.getElementById('set-lng').value;
-    const radius = document.getElementById('set-radius').value;
+    const lat = document.getElementById("set-lat").value;
+    const lng = document.getElementById("set-lng").value;
+    const radius = document.getElementById("set-radius").value;
     google.script.run
-      .withSuccessHandler(() => Swal.fire('Berhasil', 'Lokasi diperbarui.', 'success'))
-      .handleUpdateLokasi({ client_id: currentUser.clientId, lat, lng, radius: parseInt(radius) });
+      .withSuccessHandler(() =>
+        Swal.fire("Berhasil", "Lokasi diperbarui.", "success"),
+      )
+      .handleUpdateLokasi({
+        client_id: currentUser.clientId,
+        lat,
+        lng,
+        radius: parseInt(radius),
+      });
   }
 
   function saveTimeSettings() {
-    const masuk = document.getElementById('set-jam-masuk-mulai').value;
-    const batas = document.getElementById('set-jam-masuk-batas').value;
-    const pulang = document.getElementById('set-jam-pulang-mulai').value;
-    const interval = document.getElementById('set-interval').value;
-    const maxTier = document.getElementById('set-max-tier').value;
+    const masuk = document.getElementById("set-jam-masuk-mulai").value;
+    const batas = document.getElementById("set-jam-masuk-batas").value;
+    const pulang = document.getElementById("set-jam-pulang-mulai").value;
+    const interval = document.getElementById("set-interval").value;
+    const maxTier = document.getElementById("set-max-tier").value;
     google.script.run
-      .withSuccessHandler(() => Swal.fire('Berhasil', 'Jam kerja diperbarui.', 'success'))
+      .withSuccessHandler(() =>
+        Swal.fire("Berhasil", "Jam kerja diperbarui.", "success"),
+      )
       .handleUpdateJamKerja({
-        client_id: currentUser.clientId, jam_masuk_mulai: masuk, batas_jam_masuk: batas,
-        jam_pulang_mulai: pulang, tl_interval: parseInt(interval), max_tier: parseInt(maxTier)
+        client_id: currentUser.clientId,
+        jam_masuk_mulai: masuk,
+        batas_jam_masuk: batas,
+        jam_pulang_mulai: pulang,
+        tl_interval: parseInt(interval),
+        max_tier: parseInt(maxTier),
       });
   }
 
   // FACE RECOGNITION (WEB)
   let currentTipeAbsen = "Masuk";
   async function initFaceAI() {
-    const MODEL_URL = 'https://justadudewhohacks.github.io/face-api.js/models';
+    const MODEL_URL = "https://justadudewhohacks.github.io/face-api.js/models";
     await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
     await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
     await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL);
@@ -706,138 +813,230 @@
 
   function handleWebAbsen(tipe) {
     currentTipeAbsen = tipe;
-    document.getElementById('camera-input').click();
+    document.getElementById("camera-input").click();
   }
 
-  document.getElementById('camera-input').addEventListener('change', async function(e) {
-    const file = e.target.files[0];
-    if (!file) return;
-    const overlay = document.getElementById('processing-overlay');
-    overlay.style.display = 'flex';
-    try {
-      await initFaceAI();
-      const img = await faceapi.bufferToImage(file);
-      const detection = await faceapi.detectSingleFace(img, new faceapi.TinyFaceDetectorOptions({ inputSize: 224 }))
-                                    .withFaceLandmarks().withFaceDescriptor();
-      if (!detection) throw new Error("Wajah tidak terdeteksi.");
+  document
+    .getElementById("camera-input")
+    .addEventListener("change", async function (e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const overlay = document.getElementById("processing-overlay");
+      overlay.style.display = "flex";
+      try {
+        await initFaceAI();
+        const img = await faceapi.bufferToImage(file);
+        const detection = await faceapi
+          .detectSingleFace(
+            img,
+            new faceapi.TinyFaceDetectorOptions({ inputSize: 224 }),
+          )
+          .withFaceLandmarks()
+          .withFaceDescriptor();
+        if (!detection) throw new Error("Wajah tidak terdeteksi.");
 
-      if (currentUser.faceWeb) {
-        const savedDesc = new Float32Array(JSON.parse(currentUser.faceWeb));
-        const faceMatcher = new faceapi.FaceMatcher(new faceapi.LabeledFaceDescriptors(currentUser.id, [savedDesc]), 0.6);
-        const match = faceMatcher.findBestMatch(detection.descriptor);
-        if (match.label === 'unknown') throw new Error("Wajah Tidak Cocok!");
+        if (currentUser.faceWeb) {
+          const savedDesc = new Float32Array(JSON.parse(currentUser.faceWeb));
+          const faceMatcher = new faceapi.FaceMatcher(
+            new faceapi.LabeledFaceDescriptors(currentUser.id, [savedDesc]),
+            0.6,
+          );
+          const match = faceMatcher.findBestMatch(detection.descriptor);
+          if (match.label === "unknown") throw new Error("Wajah Tidak Cocok!");
 
-        navigator.geolocation.getCurrentPosition(pos => {
-          const canvas = document.createElement('canvas');
-          canvas.width = 600; canvas.height = 800;
-          canvas.getContext('2d').drawImage(img, 0, 0, 600, 800);
-          const base64Photo = canvas.toDataURL('image/jpeg', 0.7).split(',')[1];
-          const tugasVal = document.getElementById('absen-tugas').value;
-          google.script.run.withSuccessHandler(res => {
-            overlay.style.display = 'none';
-            if (res.code === 200) Swal.fire('Berhasil!', res.message, 'success').then(() => loadDashboardData());
-            else Swal.fire('Gagal', res.message, 'error');
-          }).submitAbsenWeb({
-            api_token: 'sdit-palu', client_id: currentUser.clientId, action: 'absen',
-            id_karyawan: currentUser.id, tipe_absen: currentTipeAbsen,
-            lat_long: `${pos.coords.latitude}, ${pos.coords.longitude}`, foto_base64: base64Photo, tugas: tugasVal
+          navigator.geolocation.getCurrentPosition((pos) => {
+            const canvas = document.createElement("canvas");
+            canvas.width = 600;
+            canvas.height = 800;
+            canvas.getContext("2d").drawImage(img, 0, 0, 600, 800);
+            const base64Photo = canvas
+              .toDataURL("image/jpeg", 0.7)
+              .split(",")[1];
+            const tugasVal = document.getElementById("absen-tugas").value;
+            google.script.run
+              .withSuccessHandler((res) => {
+                overlay.style.display = "none";
+                if (res.code === 200)
+                  Swal.fire("Berhasil!", res.message, "success").then(() =>
+                    loadDashboardData(),
+                  );
+                else Swal.fire("Gagal", res.message, "error");
+              })
+              .submitAbsenWeb({
+                api_token: "sdit-palu",
+                client_id: currentUser.clientId,
+                action: "absen",
+                id_karyawan: currentUser.id,
+                tipe_absen: currentTipeAbsen,
+                lat_long: `${pos.coords.latitude}, ${pos.coords.longitude}`,
+                foto_base64: base64Photo,
+                tugas: tugasVal,
+              });
           });
-        });
-      } else {
-        if(confirm("Daftarkan wajah ini?")) {
-           const descriptor = JSON.stringify(Array.from(detection.descriptor));
-           google.script.run.withSuccessHandler(res => {
-             overlay.style.display = 'none';
-             if (res.success) { currentUser.faceWeb = descriptor; localStorage.setItem('hadirin_user', JSON.stringify(currentUser)); alert("Berhasil! Silakan absen ulang."); }
-           }).registerFaceWeb(currentUser.clientId, currentUser.id, descriptor);
-        } else overlay.style.display = 'none';
+        } else {
+          if (confirm("Daftarkan wajah ini?")) {
+            const descriptor = JSON.stringify(Array.from(detection.descriptor));
+            google.script.run
+              .withSuccessHandler((res) => {
+                overlay.style.display = "none";
+                if (res.success) {
+                  currentUser.faceWeb = descriptor;
+                  localStorage.setItem(
+                    "hadirin_user",
+                    JSON.stringify(currentUser),
+                  );
+                  alert("Berhasil! Silakan absen ulang.");
+                }
+              })
+              .registerFaceWeb(
+                currentUser.clientId,
+                currentUser.id,
+                descriptor,
+              );
+          } else overlay.style.display = "none";
+        }
+      } catch (err) {
+        overlay.style.display = "none";
+        alert(err.message);
       }
-    } catch (err) { overlay.style.display = 'none'; alert(err.message); }
-  });
+    });
 
   // LEAVE SUBMISSION
   function handleLeaveSubmit(btn) {
-    const type = document.getElementById('leave-type').value;
-    const range = document.getElementById('leave-range').value;
-    const reason = document.getElementById('leave-reason').value;
-    const task = document.getElementById('leave-task').value;
-    const fileInput = document.getElementById('leave-file');
+    const type = document.getElementById("leave-type").value;
+    const range = document.getElementById("leave-range").value;
+    const reason = document.getElementById("leave-reason").value;
+    const task = document.getElementById("leave-task").value;
+    const fileInput = document.getElementById("leave-file");
     if (!range || !reason) return alert("Wajib diisi!");
-    btn.disabled = true; btn.innerText = "Mengirim...";
+    btn.disabled = true;
+    btn.innerText = "Mengirim...";
     const send = (base64) => {
-      google.script.run.withSuccessHandler(res => {
-        btn.disabled = false; btn.innerText = "Kirim Permohonan";
-        if (res.code === 200 || res.success) { alert("Berhasil!"); switchView('history'); }
-        else alert("Gagal: " + res.message);
-      }).handleAjukanIzin({
-        client_id: currentUser.clientId, api_token: 'sdit-palu', action: 'ajukan_izin',
-        id_karyawan: currentUser.id, tipe_izin: type, rentang_tanggal: range, alasan: reason, tugas: task, foto_base64: base64
-      });
+      google.script.run
+        .withSuccessHandler((res) => {
+          btn.disabled = false;
+          btn.innerText = "Kirim Permohonan";
+          if (res.code === 200 || res.success) {
+            alert("Berhasil!");
+            switchView("history");
+          } else alert("Gagal: " + res.message);
+        })
+        .handleAjukanIzin({
+          client_id: currentUser.clientId,
+          api_token: "sdit-palu",
+          action: "ajukan_izin",
+          id_karyawan: currentUser.id,
+          tipe_izin: type,
+          rentang_tanggal: range,
+          alasan: reason,
+          tugas: task,
+          foto_base64: base64,
+        });
     };
     if (fileInput.files.length > 0) {
-      const r = new FileReader(); r.onload = () => send(r.result.split(',')[1]); r.readAsDataURL(fileInput.files[0]);
+      const r = new FileReader();
+      r.onload = () => send(r.result.split(",")[1]);
+      r.readAsDataURL(fileInput.files[0]);
     } else send("");
   }
 
   // MEMBER MODAL
   function showMemberModal(member = null) {
-    const modal = document.getElementById('member-modal');
-    const shiftSelect = document.getElementById('member-shift');
-    shiftSelect.innerHTML = '<option value="">Standar Kantor</option>' + allShifts.map(s => `<option value="${s.id}">${s.nama} (${s.id})</option>`).join('');
-    
+    const modal = document.getElementById("member-modal");
+    const shiftSelect = document.getElementById("member-shift");
+    shiftSelect.innerHTML =
+      '<option value="">Standar Kantor</option>' +
+      allShifts
+        .map((s) => `<option value="${s.id}">${s.nama} (${s.id})</option>`)
+        .join("");
+
     if (member) {
-      document.getElementById('member-modal-title').innerText = "Edit Anggota";
-      document.getElementById('member-id').value = member.id;
-      document.getElementById('member-id').disabled = true;
-      document.getElementById('member-nama').value = member.nama;
-      document.getElementById('member-divisi').value = member.bagian || "";
-      document.getElementById('member-wa').value = member.no_hp || "";
-      document.getElementById('member-old-id').value = member.id;
-      document.getElementById('member-shift').value = member.id_shift_default || "";
+      document.getElementById("member-modal-title").innerText = "Edit Anggota";
+      document.getElementById("member-id").value = member.id;
+      document.getElementById("member-id").disabled = true;
+      document.getElementById("member-nama").value = member.nama;
+      document.getElementById("member-divisi").value = member.bagian || "";
+      document.getElementById("member-wa").value = member.no_hp || "";
+      document.getElementById("member-old-id").value = member.id;
+      document.getElementById("member-shift").value =
+        member.id_shift_default || "";
     } else {
-      document.getElementById('member-modal-title').innerText = "Tambah Anggota";
-      document.getElementById('member-id').value = "";
-      document.getElementById('member-id').disabled = false;
-      document.getElementById('member-nama').value = "";
-      document.getElementById('member-divisi').value = "";
-      document.getElementById('member-wa').value = "";
-      document.getElementById('member-old-id').value = "";
-      document.getElementById('member-shift').value = "";
+      document.getElementById("member-modal-title").innerText =
+        "Tambah Anggota";
+      document.getElementById("member-id").value = "";
+      document.getElementById("member-id").disabled = false;
+      document.getElementById("member-nama").value = "";
+      document.getElementById("member-divisi").value = "";
+      document.getElementById("member-wa").value = "";
+      document.getElementById("member-old-id").value = "";
+      document.getElementById("member-shift").value = "";
     }
-    modal.style.display = 'flex';
+    modal.style.display = "flex";
   }
-  function closeMemberModal() { document.getElementById('member-modal').style.display = 'none'; }
+  function closeMemberModal() {
+    document.getElementById("member-modal").style.display = "none";
+  }
   function saveMember() {
-    const oldId = document.getElementById('member-old-id').value;
+    const oldId = document.getElementById("member-old-id").value;
     const payload = {
-      client_id: currentUser.clientId, action: oldId ? 'update_karyawan' : 'add_karyawan',
-      id_karyawan: oldId || document.getElementById('member-id').value,
-      id_karyawan_baru: document.getElementById('member-id').value,
-      nama: document.getElementById('member-nama').value,
-      nama_karyawan_baru: document.getElementById('member-nama').value,
-      divisi: document.getElementById('member-divisi').value,
-      divisi_baru: document.getElementById('member-divisi').value,
-      no_hp: document.getElementById('member-wa').value,
-      id_shift: document.getElementById('member-shift').value
+      client_id: currentUser.clientId,
+      action: oldId ? "update_karyawan" : "add_karyawan",
+      id_karyawan: oldId || document.getElementById("member-id").value,
+      id_karyawan_baru: document.getElementById("member-id").value,
+      nama: document.getElementById("member-nama").value,
+      nama_karyawan_baru: document.getElementById("member-nama").value,
+      divisi: document.getElementById("member-divisi").value,
+      divisi_baru: document.getElementById("member-divisi").value,
+      no_hp: document.getElementById("member-wa").value,
+      id_shift: document.getElementById("member-shift").value,
     };
-    google.script.run.withSuccessHandler(res => {
-      if(res.code === 200) { closeMemberModal(); loadMembersData(); } else alert(res.message);
-    }).handleWebApiProxy(payload); // We will add this proxy in Code.gs
+    google.script.run
+      .withSuccessHandler((res) => {
+        if (res.code === 200) {
+          closeMemberModal();
+          loadMembersData();
+        } else alert(res.message);
+      })
+      .handleWebApiProxy(payload); // We will add this proxy in Code.gs
   }
 
   function handleDeleteMember(id) {
-    if(!confirm("Hapus?")) return;
-    google.script.run.withSuccessHandler(() => loadMembersData()).handleDeleteKaryawan({ client_id: currentUser.clientId, target_id: id });
+    if (!confirm("Hapus?")) return;
+    google.script.run
+      .withSuccessHandler(() => loadMembersData())
+      .handleDeleteKaryawan({ client_id: currentUser.clientId, target_id: id });
   }
   function handleResetDevice(id) {
-    if(!confirm("Reset?")) return;
-    google.script.run.withSuccessHandler(() => loadMembersData()).handleResetDevice({ client_id: currentUser.clientId, target_id_karyawan: id });
+    if (!confirm("Reset?")) return;
+    google.script.run
+      .withSuccessHandler(() => loadMembersData())
+      .handleResetDevice({
+        client_id: currentUser.clientId,
+        target_id_karyawan: id,
+      });
   }
 
   // HELPERS
-  function formatDate(val) { if (!val) return "-"; return new Date(val).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }); }
-  function formatTime(val) { if (!val) return "-"; return new Date(val).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }); }
-  function showOverlay(msg) { document.getElementById('processing-overlay').style.display = 'flex'; document.getElementById('processing-text').innerText = msg; }
-  function hideOverlay() { document.getElementById('processing-overlay').style.display = 'none'; }
-
+  function formatDate(val) {
+    if (!val) return "-";
+    return new Date(val).toLocaleDateString("id-ID", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
+  }
+  function formatTime(val) {
+    if (!val) return "-";
+    return new Date(val).toLocaleTimeString("id-ID", {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  }
+  function showOverlay(msg) {
+    document.getElementById("processing-overlay").style.display = "flex";
+    document.getElementById("processing-text").innerText = msg;
+  }
+  function hideOverlay() {
+    document.getElementById("processing-overlay").style.display = "none";
+  }
 </script>

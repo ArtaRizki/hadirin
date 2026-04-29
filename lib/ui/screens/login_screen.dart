@@ -80,8 +80,10 @@ class _LoginScreenState extends State<LoginScreen> {
             .toString()
             .toUpperCase();
 
+        final roleAkses = (dataAnggota['role_akses'] ?? "").toString().toUpperCase();
+
         // Logika penentuan role:
-        // Admin jika ID diawali INST-/ADM-/ADMIN- ATAU Divisi/Nama mengandung kata ADMIN/PEMILIK
+        // Admin jika ID diawali INST-/ADM-/ADMIN- ATAU Divisi/Nama/Role mengandung kata ADMIN/PEMILIK
         bool isIdAdmin =
             inputId.toUpperCase().startsWith("INST-") ||
             inputId.toUpperCase().startsWith("ADM-") ||
@@ -91,7 +93,8 @@ class _LoginScreenState extends State<LoginScreen> {
             divisi.contains("ADMIN") ||
             divisi.contains("PEMILIK") ||
             nama.contains("ADMIN") ||
-            nama.contains("PEMILIK");
+            nama.contains("PEMILIK") ||
+            roleAkses == "ADMIN";
 
         LoginRole assignedRole = (isIdAdmin || isRoleAdmin)
             ? LoginRole.admin
@@ -235,7 +238,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          "Sistem Informasi & Layanan Terpadu",
+                          "Sistem Absensi",
                           style: TextStyle(
                             fontSize: 14,
                             color: Colors.grey.shade600,

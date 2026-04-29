@@ -1,10 +1,10 @@
 // =============================================================================
 // BACKEND HADIRIN - v3.7 (Unified - Dynamic Groups & Time Fix)
 // =============================================================================
-const MASTER_API_TOKEN = "sdit-palu";
+const MASTER_API_TOKEN = "smpit-palu";
 const MASTER_REGISTRY_ID = "1hTh660vp0AbPn8D37Yg7XE-5HBRDXYA2xSJErORfZ3w";
-const ID_TEMPLATE_SS = "15TU2bn-UjN8K-C-GZYZcgoN9EY79YRUOb0jQB_BxpYA";
-const ID_MASTER_FOLDER = "1biUKVeG8zImbpp56m_UrOIyKoTwZaaOg";
+const ID_TEMPLATE_SS = "1JmD2p1p_gNXUXDiXPmj4REy9vafSsNmo4J1MoNwfaSA"; //done
+const ID_MASTER_FOLDER = "1k-MxGPlAUPCFra-2nC3i3g03JvZG5KNr"; //done
 const SUPER_ADMIN_PASSWORD = "HADIRIN_MASTER_2026_AHHH";
 
 // =============================================================================
@@ -1337,14 +1337,21 @@ function handleUpdateAnggota(payload) {
     );
     var data = sheet.getDataRange().getValues();
     for (var i = 1; i < data.length; i++) {
-      if (String(data[i][0]).trim().toLowerCase() === String(payload.id_karyawan).trim().toLowerCase()) {
+      if (
+        String(data[i][0]).trim().toLowerCase() ===
+        String(payload.id_karyawan).trim().toLowerCase()
+      ) {
         sheet.getRange(i + 1, 2).setValue(payload.nama);
         sheet.getRange(i + 1, 3).setValue(payload.divisi);
         sheet.getRange(i + 1, 6).setValue(payload.no_hp);
         if (payload.id_shift) {
-           sheet.getRange(i + 1, 7).setValue(payload.id_shift);
+          sheet.getRange(i + 1, 7).setValue(payload.id_shift);
         }
-        return { code: 200, status: "success", message: "Data Anggota Diperbarui." };
+        return {
+          code: 200,
+          status: "success",
+          message: "Data Anggota Diperbarui.",
+        };
       }
     }
     return { code: 404, status: "error", message: "Anggota tidak ditemukan." };
@@ -1359,13 +1366,16 @@ function handleUpdateAnggota(payload) {
 function handleWebApiProxy(payload) {
   // Simple check
   if (payload.api_token && payload.api_token !== MASTER_API_TOKEN) {
-     // We allow call from web if user is logged in
+    // We allow call from web if user is logged in
   }
-  
+
   // Reuse doPost logic but returns object
   switch (payload.action) {
-    case "update_karyawan": return handleUpdateAnggota(payload);
-    case "add_karyawan": return handleAddAnggota(payload);
-    default: return { code: 400, message: "Action not supported via proxy" };
+    case "update_karyawan":
+      return handleUpdateAnggota(payload);
+    case "add_karyawan":
+      return handleAddAnggota(payload);
+    default:
+      return { code: 400, message: "Action not supported via proxy" };
   }
 }

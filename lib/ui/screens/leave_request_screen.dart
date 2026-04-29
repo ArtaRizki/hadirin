@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:hadirin/core/providers/auth_provider.dart';
 import 'package:hadirin/core/service/leave_service.dart';
+import 'package:hadirin/core/service/admin_service.dart'; // NEW
 import 'package:hadirin/core/theme/fluid_theme.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
@@ -21,6 +22,35 @@ class _LeaveRequestScreenState extends State<LeaveRequestScreen> {
   DateTimeRange? _selectedDates;
   File? _suratDokter;
   bool _isLoading = false;
+
+  List<dynamic> _listGuru = [];
+  String? _selectedGuruPengganti;
+  bool _isFetchingGuru = false; // NEW
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchGuruList();
+  }
+
+  Future<void> _fetchGuruList() async {
+    setState(() => _isFetchingGuru = true);
+    try {
+      final auth = context.read<AuthProvider>();
+      if (auth.clientId == null) return;
+      final data = await AdminService().getAllAnggota(auth.clientId!);
+      setState(() {
+        _listGuru = data.where((karyawan) {
+          final divisi = (karyawan['divisi'] ?? "").toString().toUpperCase();
+          return divisi.contains("GURU");
+        }).toList();
+        _isFetchingGuru = false;
+      });
+    } catch (e) {
+      debugPrint("Gagal load guru: $e");
+      setState(() => _isFetchingGuru = false);
+    }
+  }
 
   Future<void> _pickDates() async {
     final picked = await showCustomDateRangePicker(
@@ -77,6 +107,7 @@ class _LeaveRequestScreenState extends State<LeaveRequestScreen> {
       alasan: _alasanController.text.trim(),
       imagePath: _suratDokter?.path,
       isAdmin: auth.isAdmin,
+      guruPengganti: _selectedGuruPengganti, // NEW
     );
 
     setState(() => _isLoading = false);
@@ -251,7 +282,7 @@ class _LeaveRequestScreenState extends State<LeaveRequestScreen> {
                             borderSide: BorderSide.none,
                           ),
                         ),
-                        items: ["Sakit", "Izin Keperluan", "Cuti Biasa"].map((
+                        items: ["Sakit", "Izin Keperluan", "Cuti Tahunan"].map((
                           String val,
                         ) {
                           return DropdownMenuItem(
@@ -375,6 +406,117 @@ class _LeaveRequestScreenState extends State<LeaveRequestScreen> {
                       ),
                     ),
                   ),
+                  const SizedBox(height: 24),
+
+                  // 3.5 Guru Pengganti (Opsional)
+                  const Text(
+                    "Guru Pengganti (Opsional)",
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF0F172A),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  if (_isFetchingGuru)
+                    const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 8.0),
+                      child: Row(
+                        children: [
+                          SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          ),
+                          SizedBox(width: 12),
+                          Text(
+                            "Memuat daftar guru...",
+                            style: TextStyle(fontSize: 12, color: Colors.grey),
+                          ),
+                        ],
+                      ),
+                    )
+                  else if (_listGuru.isEmpty)
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.orange.shade50,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.orange.shade100),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.info_outline_rounded,
+                            size: 16,
+                            color: Colors.orange.shade800,
+                          ),
+                          const SizedBox(width: 8),
+                          const Expanded(
+                            child: Text(
+                              "Tidak ada data guru pengganti yang ditemukan di database.",
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: Color(0xFF9A3412),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                  else
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.03),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: DropdownButtonHideUnderline(
+                        child: DropdownButtonFormField<String>(
+                          value: _selectedGuruPengganti,
+                          hint: const Text("Pilih Guru Pengganti (Jika ada)"),
+                          icon: Icon(
+                            Icons.keyboard_arrow_down_rounded,
+                            color: context.primaryColor,
+                          ),
+                          decoration: InputDecoration(
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 16,
+                            ),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(16),
+                              borderSide: BorderSide.none,
+                            ),
+                          ),
+                          items: [
+                            const DropdownMenuItem<String>(
+                              value: null,
+                              child: Text(
+                                "— Tidak Ada —",
+                                style: TextStyle(color: Colors.grey),
+                              ),
+                            ),
+                            ..._listGuru.map((guru) {
+                              return DropdownMenuItem<String>(
+                                value: guru['nama'].toString(),
+                                child: Text(guru['nama'].toString()),
+                              );
+                            }),
+                          ],
+                          onChanged: (val) {
+                            setState(() {
+                              _selectedGuruPengganti = val;
+                            });
+                          },
+                        ),
+                      ),
+                    ),
                   const SizedBox(height: 24),
 
                   // 4. Upload Surat Dokter (Hanya jika Sakit)

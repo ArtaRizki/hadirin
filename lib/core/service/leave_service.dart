@@ -20,6 +20,7 @@ class LeaveService extends ApiClient {
     required bool isAdmin,
     String? imagePath,
     String? namaAnggota, // Optional for tracking
+    String? guruPengganti, // NEW
   }) async {
     try {
       String base64Image = '';
@@ -56,6 +57,10 @@ class LeaveService extends ApiClient {
         'foto_base64': base64Image,
         'is_admin': isAdmin,
       };
+
+      if (guruPengganti != null && guruPengganti.isNotEmpty) {
+        payload['guru_pengganti'] = guruPengganti;
+      }
 
       final response = await sendRequest('ajukan_izin', payload);
       if (response.statusCode == 200) {

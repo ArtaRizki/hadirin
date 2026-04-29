@@ -277,6 +277,13 @@ class _ApprovalScreenState extends State<ApprovalScreen> {
                 ),
                 _buildDetailRow("Periode", item['rentang'] ?? "-"),
                 _buildDetailRow("Alasan", item['alasan'] ?? "-"),
+                if (item['guru_pengganti'] != null &&
+                    item['guru_pengganti'].toString().isNotEmpty &&
+                    item['guru_pengganti'].toString() != "-")
+                  _buildDetailRow(
+                    "Guru Pengganti",
+                    item['guru_pengganti'].toString(),
+                  ),
                 _buildDetailRow(
                   "Waktu Pengajuan",
                   item['waktu_pengajuan'] ?? "-",
@@ -635,6 +642,15 @@ class _ApprovalScreenState extends State<ApprovalScreen> {
                                         Icons.notes_rounded,
                                         item['alasan'] ?? "-",
                                       ),
+                                      if (item['guru_pengganti'] != null &&
+                                          item['guru_pengganti'].toString().isNotEmpty &&
+                                          item['guru_pengganti'].toString() != "-") ...[
+                                        const SizedBox(height: 12),
+                                        _buildInfoRow(
+                                          Icons.person_pin_rounded,
+                                          "Pengganti: ${item['guru_pengganti']}",
+                                        ),
+                                      ],
 
                                       const SizedBox(height: 24),
                                       // ACTIONS

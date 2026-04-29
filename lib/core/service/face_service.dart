@@ -9,18 +9,13 @@ import 'package:hadirin/core/service/api_client.dart';
 /// Tanggung jawab: Pendaftaran wajah, pengambilan embedding,
 /// verifikasi kemiripan wajah via TFLite native & server.
 class FaceService extends ApiClient {
-  static const _platform = MethodChannel(
-    'com.alfahmi.absensi.sd/face_recognition',
-  );
+  static const _platform = MethodChannel('com.mobile.hadirin/face_recognition');
   final _picker = ImagePicker();
 
   // =================================================================
   // DAFTARKAN WAJAH MASTER (ENROLLMENT — sekali saat pertama kali)
   // =================================================================
-  Future<Map<String, dynamic>> daftarWajahMaster(
-    String idAnggota,
-    String clientId,
-  ) async {
+  Future<Map<String, dynamic>> daftarWajahMaster(String idAnggota, String clientId) async {
     try {
       final image = await _picker.pickImage(
         source: ImageSource.camera,
@@ -65,10 +60,7 @@ class FaceService extends ApiClient {
   // =================================================================
   // AMBIL EMBEDDING WAJAH MASTER DARI SERVER
   // =================================================================
-  Future<List<double>> getWajahMasterDariServer(
-    String idAnggota,
-    String clientId,
-  ) async {
+  Future<List<double>> getWajahMasterDariServer(String idAnggota, String clientId) async {
     try {
       final payload = {
         'api_token': AppConfig.apiToken,
@@ -132,10 +124,7 @@ class FaceService extends ApiClient {
   // =================================================================
   // SINKRONISASI STATUS WAJAH DARI SERVER KE LOKAL
   // =================================================================
-  Future<bool> syncFaceRegistrationStatus(
-    String idAnggota,
-    String clientId,
-  ) async {
+  Future<bool> syncFaceRegistrationStatus(String idAnggota, String clientId) async {
     try {
       final master = await getWajahMasterDariServer(idAnggota, clientId);
       return master.isNotEmpty;

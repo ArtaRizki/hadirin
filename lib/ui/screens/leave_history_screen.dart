@@ -487,6 +487,28 @@ class _LeaveHistoryScreenState extends State<LeaveHistoryScreen> {
                                 height: 1.4,
                               ),
                             ),
+                            if (item['guru_pengganti'] != null &&
+                                item['guru_pengganti'].toString().isNotEmpty &&
+                                item['guru_pengganti'].toString() != "-") ...[
+                              const SizedBox(height: 12),
+                              Text(
+                                "Guru Pengganti:",
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  color: Colors.grey.shade500,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                item['guru_pengganti'].toString(),
+                                style: TextStyle(
+                                  color: context.primaryColor,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
                           ],
                         ),
                       ),
