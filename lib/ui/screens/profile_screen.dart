@@ -124,10 +124,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         _fetchAppSettings(force: true),
       ]);
     } else {
-      await Future.wait([
-        _fetchHistory(),
-        _fetchAppSettings(force: true),
-      ]);
+      await Future.wait([_fetchHistory(), _fetchAppSettings(force: true)]);
     }
   }
 
@@ -996,9 +993,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     icon: Icons.groups_rounded,
                     onTap: () => Navigator.push(
                       context,
-                      MaterialPageRoute(
-                        builder: (_) => const BriefingScreen(),
-                      ),
+                      MaterialPageRoute(builder: (_) => const BriefingScreen()),
                     ),
                     accentColor: const Color(0xFF0D9488),
                   ),
@@ -1296,7 +1291,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 child: Column(
                   children: [
                     Text(
-                      "Hadirin v1.0.0",
+                      "SD IT AL-FAHMI PALU v1.0.0",
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.bold,

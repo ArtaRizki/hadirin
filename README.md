@@ -22,4 +22,4 @@ yang sma pgri majalengka tolong samakan untuk jam masuk batas masuk dan pulang
 // PERTAMA
 flutter build apk --release --obfuscate --split-debug-info=build/app/outputs/symbols `--dart-define=GAS_ENDPOINT=https://script.google.com/macros/s/AKfycbxGo_73e45A7mvtCcmzSvqOxI-DffrAvWIFhUmXczYbkBpgSjNUD8NvR65VSlePNMLlzg/exec`
 --dart-define=API_TOKEN=sdit-palu `--dart-define=APP_LOGO=assets/icons/sdit.png`
---dart-define=APP_NAME="SD IT AL-FAHMI"
+--dart-define=APP_NAME="SD IT AL-FAHMI PALU"
