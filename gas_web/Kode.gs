@@ -1,10 +1,10 @@
 // =============================================================================
 // BACKEND HADIRIN - v3.7 (Unified - Dynamic Groups & Time Fix)
 // =============================================================================
-const MASTER_API_TOKEN = "sdit-palu";
+const MASTER_API_TOKEN = "smpit-palu";
 const MASTER_REGISTRY_ID = "1hTh660vp0AbPn8D37Yg7XE-5HBRDXYA2xSJErORfZ3w";
-const ID_TEMPLATE_SS = "15TU2bn-UjN8K-C-GZYZcgoN9EY79YRUOb0jQB_BxpYA";
-const ID_MASTER_FOLDER = "1biUKVeG8zImbpp56m_UrOIyKoTwZaaOg";
+const ID_TEMPLATE_SS = "1JmD2p1p_gNXUXDiXPmj4REy9vafSsNmo4J1MoNwfaSA"; //done
+const ID_MASTER_FOLDER = "1k-MxGPlAUPCFra-2nC3i3g03JvZG5KNr"; //done
 const SUPER_ADMIN_PASSWORD = "HADIRIN_MASTER_2026_AHHH";
 
 // =============================================================================
