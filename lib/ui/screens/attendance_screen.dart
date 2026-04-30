@@ -62,29 +62,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
     // Mulai pantau lokasi & fetch config jam
     _fetchOfficeConfig();
     _fetchBanners();
-    _syncFaceStatus(); // Tambahkan sinkronisasi wajah
     _startProximityListener();
-  }
-
-  // Fungsi sinkronisasi status wajah dari server
-  Future<void> _syncFaceStatus() async {
-    try {
-      final auth = context.read<AuthProvider>();
-      if (!auth.isLoggedIn || !auth.isAnggota) return;
-
-      final isRegisteredOnServer = await _attendanceService.faceService
-          .syncFaceRegistrationStatus(
-            auth.idAnggota ?? "",
-            auth.clientId ?? "",
-          );
-
-      if (isRegisteredOnServer != auth.isFaceRegistered) {
-        await auth.setFaceRegistered(isRegisteredOnServer);
-        debugPrint("==== FACE STATUS SYNCED: $isRegisteredOnServer ====");
-      }
-    } catch (e) {
-      debugPrint("Gagal sinkronisasi wajah: $e");
-    }
   }
 
   void _startCarousel() {
@@ -549,82 +527,6 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                           ),
                         ],
                       ),
-
-                      if (auth.isAnggota && !auth.isFaceRegistered)
-                        Padding(
-                          padding: const EdgeInsets.only(top: 20),
-                          child: GestureDetector(
-                            onTap: () => Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => const ProfileScreen(),
-                              ),
-                            ),
-                            child: Container(
-                              padding: const EdgeInsets.all(16),
-                              decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  colors: [
-                                    Colors.orange.shade400,
-                                    Colors.orange.shade600,
-                                  ],
-                                ),
-                                borderRadius: BorderRadius.circular(16),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.orange.withOpacity(0.3),
-                                    blurRadius: 12,
-                                    offset: const Offset(0, 4),
-                                  ),
-                                ],
-                              ),
-                              child: Row(
-                                children: [
-                                  Container(
-                                    padding: const EdgeInsets.all(8),
-                                    decoration: BoxDecoration(
-                                      color: Colors.white.withOpacity(0.2),
-                                      shape: BoxShape.circle,
-                                    ),
-                                    child: Icon(
-                                      Icons.face_retouching_natural_rounded,
-                                      color: Colors.white,
-                                      size: 20,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 12),
-                                  const Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          "Wajah Belum Terdaftar",
-                                          style: TextStyle(
-                                            color: Colors.white,
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 14,
-                                          ),
-                                        ),
-                                        Text(
-                                          "Klik untuk daftarkan wajah agar bisa absen.",
-                                          style: TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 12,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  Icon(
-                                    Icons.chevron_right_rounded,
-                                    color: Colors.white,
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
 
                       const SizedBox(height: 16),
 
