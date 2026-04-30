@@ -80,7 +80,9 @@ class _LoginScreenState extends State<LoginScreen> {
             .toString()
             .toUpperCase();
 
-        final roleAkses = (dataAnggota['role_akses'] ?? "").toString().toUpperCase();
+        final roleAkses = (dataAnggota['role_akses'] ?? "")
+            .toString()
+            .toUpperCase();
 
         // Logika penentuan role:
         // Admin jika ID diawali INST-/ADM-/ADMIN- ATAU Divisi/Nama/Role mengandung kata ADMIN/PEMILIK
@@ -238,7 +240,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          "Sistem Absensi",
+                          "Sistem Informasi & Layanan Terpadu",
                           style: TextStyle(
                             fontSize: 14,
                             color: Colors.grey.shade600,
