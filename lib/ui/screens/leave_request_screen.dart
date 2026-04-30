@@ -41,7 +41,7 @@ class _LeaveRequestScreenState extends State<LeaveRequestScreen> {
       final data = await AdminService().getAllAnggota(auth.clientId!);
       setState(() {
         _listGuru = data.where((karyawan) {
-          final divisi = (karyawan['divisi'] ?? "").toString().toUpperCase();
+          final divisi = (karyawan['bagian'] ?? karyawan['divisi'] ?? "").toString().toUpperCase();
           return divisi.contains("GURU");
         }).toList();
         _isFetchingGuru = false;
