@@ -4,7 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 // Tambahkan ini
 
 // Enum untuk membedakan level akses
-enum LoginRole { none, superAdmin, admin, anggota }
+enum LoginRole { none, superAdmin, admin, adminPendukung, anggota }
 
 class AuthProvider extends ChangeNotifier {
   String? _idUser; // Bisa berisi ID Anggota ATAU Client ID (INST-xxxx)
@@ -16,6 +16,7 @@ class AuthProvider extends ChangeNotifier {
   Color _themeColor = const Color(0xFF005147); // Default Emerald Green
   String? _userPhone; // Nomor WA karyawan
   String? _adminPhone; // Nomor WA Admin Utama
+  String? _profilePhotoUrl; // URL foto profil
 
   String? get idUser => _idUser;
   String? get namaUser => _namaUser;
@@ -26,12 +27,14 @@ class AuthProvider extends ChangeNotifier {
   Color get themeColor => _themeColor;
   String? get userPhone => _userPhone;
   String? get adminPhone => _adminPhone;
+  String? get profilePhotoUrl => _profilePhotoUrl;
 
   // Getter bantuan untuk kompatibilitas dengan UI yang sudah ada
   bool get isLoggedIn => _role != LoginRole.none;
   bool get isSuperAdmin => _role == LoginRole.superAdmin;
-  bool get isAdmin => _role == LoginRole.admin || _role == LoginRole.superAdmin;
+  bool get isAdmin => _role == LoginRole.admin || _role == LoginRole.superAdmin || _role == LoginRole.adminPendukung;
   bool get isAnggota => _role == LoginRole.anggota;
+  bool get isAdminPendukung => _role == LoginRole.adminPendukung;
 
   // Alias untuk kompatibilitas kode lama
   String? get idAnggota => _idUser;
@@ -69,6 +72,7 @@ class AuthProvider extends ChangeNotifier {
 
     _userPhone = prefs.getString('user_phone');
     _adminPhone = prefs.getString('admin_phone');
+    _profilePhotoUrl = prefs.getString('profile_photo_url');
 
     _isInitialized = true;
     notifyListeners();
@@ -82,6 +86,7 @@ class AuthProvider extends ChangeNotifier {
     String clientId, {
     String? userPhone,
     String? adminPhone,
+    String? profilePhotoUrl,
   }) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('id_user', id.trim());
@@ -91,6 +96,9 @@ class AuthProvider extends ChangeNotifier {
 
     if (userPhone != null) await prefs.setString('user_phone', userPhone);
     if (adminPhone != null) await prefs.setString('admin_phone', adminPhone);
+    if (profilePhotoUrl != null && profilePhotoUrl.isNotEmpty) {
+      await prefs.setString('profile_photo_url', profilePhotoUrl);
+    }
 
     _idUser = id.trim();
     _namaUser = nama.trim();
@@ -98,6 +106,7 @@ class AuthProvider extends ChangeNotifier {
     _role = role;
     _userPhone = userPhone;
     _adminPhone = adminPhone;
+    _profilePhotoUrl = profilePhotoUrl;
     _isFaceRegistered =
         prefs.getBool('is_face_registered_${id.trim()}') ?? false;
     notifyListeners();
@@ -121,6 +130,13 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
+  Future<void> setProfilePhoto(String url) async {
+    _profilePhotoUrl = url;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('profile_photo_url', url);
+    notifyListeners();
+  }
+
   Future<void> logout() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.clear();
@@ -129,6 +145,7 @@ class AuthProvider extends ChangeNotifier {
     _namaUser = null;
     _clientId = null;
     _role = LoginRole.none;
+    _profilePhotoUrl = null;
     notifyListeners();
   }
 }

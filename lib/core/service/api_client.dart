@@ -5,7 +5,7 @@ import 'package:hadirin/core/config/app_config.dart';
 
 /// Kelas dasar yang menyimpan logika HTTP bersama.
 /// Semua service mewarisi kelas ini — tidak perlu duplikasi kode.
-abstract class ApiClient {
+class ApiClient {
   static const _timeout = Duration(seconds: 45);
 
   // =================================================================

@@ -45,6 +45,18 @@ class _AttendanceScreenState extends State<AttendanceScreen>
   String _jamPulangMulai = "13:00";
   bool _isConfigLoaded = false;
 
+  // Ayat Pilihan
+  String _ayatPilihan = "";
+  String _sumberAyat = "";
+
+  // Employee Stats
+  int _statHadir = 0;
+  int _statTerlambat = 0;
+  int _statIzin = 0;
+  int _statPercentage = 0;
+  int _statStreak = 0;
+  bool _isStatsLoaded = false;
+
   @override
   void initState() {
     super.initState();
@@ -62,6 +74,8 @@ class _AttendanceScreenState extends State<AttendanceScreen>
     // Mulai pantau lokasi & fetch config jam
     _fetchOfficeConfig();
     _fetchBanners();
+    _fetchAyatPilihan();
+    _fetchEmployeeStats();
     _startProximityListener();
   }
 
@@ -95,6 +109,43 @@ class _AttendanceScreenState extends State<AttendanceScreen>
       }
     } catch (e) {
       if (mounted) setState(() => _isBannersLoading = false);
+    }
+  }
+
+  Future<void> _fetchAyatPilihan() async {
+    try {
+      final auth = context.read<AuthProvider>();
+      final data = await AdminService().getAyatPilihan(auth.clientId ?? "");
+      if (data != null && mounted) {
+        setState(() {
+          _ayatPilihan = data['ayat'] ?? "";
+          _sumberAyat = data['sumber'] ?? "";
+        });
+      }
+    } catch (e) {
+      debugPrint("Gagal fetch ayat: $e");
+    }
+  }
+
+  Future<void> _fetchEmployeeStats() async {
+    try {
+      final auth = context.read<AuthProvider>();
+      final data = await AdminService().getEmployeeStats(
+        auth.clientId ?? "",
+        auth.idUser ?? "",
+      );
+      if (data != null && mounted) {
+        setState(() {
+          _statHadir = data['hadir'] ?? 0;
+          _statTerlambat = data['terlambat'] ?? 0;
+          _statIzin = data['izin'] ?? 0;
+          _statPercentage = data['percentage'] ?? 0;
+          _statStreak = data['streak'] ?? 0;
+          _isStatsLoaded = true;
+        });
+      }
+    } catch (e) {
+      debugPrint("Gagal fetch stats: $e");
     }
   }
 
@@ -200,11 +251,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
   }
 
   String _getGreeting() {
-    var hour = _currentTime.hour;
-    if (hour < 11) return "Selamat Pagi";
-    if (hour < 15) return "Selamat Siang";
-    if (hour < 18) return "Selamat Sore";
-    return "Selamat Malam";
+    return "Assalamu'alaikum";
   }
 
   Future<bool> _cekStatusIzin(String idAnggota, String clientId) async {
@@ -348,10 +395,74 @@ class _AttendanceScreenState extends State<AttendanceScreen>
         title: "Absen $tipeAbsen Berhasil",
         body: "Terima kasih, absen $tipeAbsen Anda telah tercatat.",
       );
-      _showSnackBar(result['message'], isError: false);
+      _fetchEmployeeStats(); // Refresh stats after attendance
+      _showRewardingDialog(tipeAbsen);
     } else {
       _showSnackBar(result['message'], isError: true);
     }
+  }
+
+  void _showRewardingDialog(String tipeAbsen) {
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (ctx) {
+        Future.delayed(const Duration(seconds: 3), () {
+          if (ctx.mounted) Navigator.of(ctx, rootNavigator: true).pop();
+        });
+        return AlertDialog(
+          backgroundColor: Colors.white,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SizedBox(height: 8),
+              Text(
+                tipeAbsen == "Masuk" ? "✅" : "🏠",
+                style: const TextStyle(fontSize: 48),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                "Absen $tipeAbsen Berhasil!",
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
+              ),
+              const SizedBox(height: 8),
+              if (_statStreak > 1)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF59E0B).withOpacity(0.12),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    "🔥 Streak $_statStreak hari berturut-turut!",
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFFD97706),
+                    ),
+                  ),
+                ),
+              const SizedBox(height: 6),
+              Text(
+                "Kehadiran bulan ini: $_statPercentage%",
+                style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _miniStat(String label, String value, Color color) {
+    return Column(
+      children: [
+        Text(value, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: color)),
+        const SizedBox(height: 2),
+        Text(label, style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: Colors.grey.shade500)),
+      ],
+    );
   }
 
   void _showSnackBar(String msg, {required bool isError}) {
@@ -422,6 +533,8 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                   await Future.wait([
                     _fetchBanners(force: true),
                     _fetchOfficeConfig(force: true),
+                    _fetchAyatPilihan(),
+                    _fetchEmployeeStats(),
                   ]);
                 },
                 color: context.primaryColor,
@@ -516,11 +629,16 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                                 child: CircleAvatar(
                                   radius: 24,
                                   backgroundColor: Colors.white,
-                                  child: Icon(
-                                    Icons.person_rounded,
-                                    color: context.primaryColor,
-                                    size: 24,
-                                  ),
+                                  backgroundImage: (auth.profilePhotoUrl != null && auth.profilePhotoUrl!.isNotEmpty)
+                                      ? NetworkImage(auth.profilePhotoUrl!)
+                                      : null,
+                                  child: (auth.profilePhotoUrl == null || auth.profilePhotoUrl!.isEmpty)
+                                      ? Icon(
+                                          Icons.person_rounded,
+                                          color: context.primaryColor,
+                                          size: 24,
+                                        )
+                                      : null,
                                 ),
                               ),
                             ),
@@ -649,6 +767,171 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                           ],
                         ),
                       ),
+
+                      // =================================================================
+                      // 0. AYAT PILIHAN
+                      // =================================================================
+                      if (_ayatPilihan.isNotEmpty) ...[
+                        const SizedBox(height: 16),
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(20),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: const Color(0xFF10B981).withOpacity(0.15)),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.03),
+                                blurRadius: 10,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: Column(
+                            children: [
+                              Row(
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.all(6),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFF10B981).withOpacity(0.1),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: const Icon(Icons.auto_stories_rounded, color: Color(0xFF10B981), size: 16),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    "Ayat Pilihan",
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w800,
+                                      color: const Color(0xFF10B981),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 12),
+                              Text(
+                                _ayatPilihan,
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  fontStyle: FontStyle.italic,
+                                  fontWeight: FontWeight.w500,
+                                  color: Color(0xFF374151),
+                                  height: 1.7,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                              if (_sumberAyat.isNotEmpty) ...[
+                                const SizedBox(height: 8),
+                                Text(
+                                  "— $_sumberAyat",
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w700,
+                                    color: Colors.grey.shade500,
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
+                      ],
+
+                      // =================================================================
+                      // 0.5. STATISTIK PRIBADI (REWARDING)
+                      // =================================================================
+                      if (_isStatsLoaded) ...[
+                        const SizedBox(height: 16),
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(20),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(20),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.03),
+                                blurRadius: 10,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: Column(
+                            children: [
+                              Row(
+                                children: [
+                                  // Percentage Ring
+                                  SizedBox(
+                                    width: 60,
+                                    height: 60,
+                                    child: Stack(
+                                      alignment: Alignment.center,
+                                      children: [
+                                        CircularProgressIndicator(
+                                          value: _statPercentage / 100,
+                                          strokeWidth: 6,
+                                          backgroundColor: Colors.grey.shade200,
+                                          valueColor: AlwaysStoppedAnimation<Color>(
+                                            _statPercentage >= 80 ? const Color(0xFF16A34A) :
+                                            _statPercentage >= 50 ? const Color(0xFFF59E0B) :
+                                            const Color(0xFFEF4444),
+                                          ),
+                                        ),
+                                        Text(
+                                          "$_statPercentage%",
+                                          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w900),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  const SizedBox(width: 16),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Row(
+                                          children: [
+                                            const Text(
+                                              "Statistik Bulan Ini",
+                                              style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14),
+                                            ),
+                                            if (_statStreak > 0) ...[
+                                              const SizedBox(width: 6),
+                                              Container(
+                                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                                decoration: BoxDecoration(
+                                                  color: const Color(0xFFF59E0B).withOpacity(0.15),
+                                                  borderRadius: BorderRadius.circular(6),
+                                                ),
+                                                child: Text(
+                                                  "🔥 $_statStreak",
+                                                  style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800),
+                                                ),
+                                              ),
+                                            ],
+                                          ],
+                                        ),
+                                        const SizedBox(height: 8),
+                                        Row(
+                                          children: [
+                                            _miniStat("Hadir", _statHadir.toString(), const Color(0xFF16A34A)),
+                                            const SizedBox(width: 12),
+                                            _miniStat("Terlambat", _statTerlambat.toString(), const Color(0xFFF59E0B)),
+                                            const SizedBox(width: 12),
+                                            _miniStat("Izin", _statIzin.toString(), const Color(0xFF3B82F6)),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
 
                       // =================================================================
                       // 1. BANNER PENGUMUMAN (DASHBOARD)

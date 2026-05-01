@@ -98,9 +98,16 @@ class _LoginScreenState extends State<LoginScreen> {
             nama.contains("PEMILIK") ||
             roleAkses == "ADMIN";
 
-        LoginRole assignedRole = (isIdAdmin || isRoleAdmin)
-            ? LoginRole.admin
-            : LoginRole.anggota;
+        bool isRoleAdminPendukung = roleAkses == "ADMIN PENDUKUNG";
+
+        LoginRole assignedRole;
+        if (isIdAdmin || isRoleAdmin) {
+          assignedRole = LoginRole.admin;
+        } else if (isRoleAdminPendukung) {
+          assignedRole = LoginRole.adminPendukung;
+        } else {
+          assignedRole = LoginRole.anggota;
+        }
 
         await context.read<AuthProvider>().login(
           inputId,
@@ -109,6 +116,7 @@ class _LoginScreenState extends State<LoginScreen> {
           clientIdDariServer,
           userPhone: (dataAnggota['no_hp'] ?? "").toString(),
           adminPhone: (dataAnggota['admin_phone'] ?? "").toString(),
+          profilePhotoUrl: (dataAnggota['profile_photo'] ?? "").toString(),
         );
 
         if (!mounted) return;

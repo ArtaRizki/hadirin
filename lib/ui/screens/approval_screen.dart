@@ -6,7 +6,6 @@ import 'package:hadirin/core/theme/fluid_theme.dart';
 import 'package:hadirin/core/utils/url_helper.dart';
 import 'package:hadirin/ui/widgets/skeleton_loader.dart';
 import 'package:provider/provider.dart';
-import 'package:intl/intl.dart';
 
 class ApprovalScreen extends StatefulWidget {
   const ApprovalScreen({super.key});

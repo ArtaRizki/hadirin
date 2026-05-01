@@ -1039,4 +1039,127 @@
   function hideOverlay() {
     document.getElementById("processing-overlay").style.display = "none";
   }
+
+  // =================================================================
+  // ENHANCED STATS: PIE CHART PER JABATAN
+  // =================================================================
+  let pieChartInstance = null;
+
+  function loadEnhancedStats() {
+    google.script.run
+      .withSuccessHandler(function (response) {
+        if (!response || response.error) return;
+        const stats = response.stats || response;
+        if (stats.pie_jabatan) renderPieChart(stats.pie_jabatan);
+      })
+      .handleGetEnhancedStatsWeb(currentUser.clientId);
+  }
+
+  function renderPieChart(data) {
+    const canvas = document.getElementById("jabatanPieChart");
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (pieChartInstance) pieChartInstance.destroy();
+
+    const colors = ["#7C3AED", "#10B981", "#F59E0B", "#3B82F6", "#EF4444", "#EC4899", "#0EA5E9", "#6366F1"];
+    pieChartInstance = new Chart(ctx, {
+      type: "pie",
+      data: {
+        labels: data.map(d => d.jabatan),
+        datasets: [{
+          data: data.map(d => d.hadir_hari_ini),
+          backgroundColor: data.map((_, i) => colors[i % colors.length]),
+          borderWidth: 2,
+          borderColor: "#fff",
+        }],
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { position: "bottom", labels: { font: { weight: 600, size: 12 } } },
+          title: { display: true, text: "Kehadiran Hari Ini per Jabatan", font: { size: 14, weight: 800 } },
+        },
+      },
+    });
+  }
+
+  // =================================================================
+  // DOWNLOAD REPORTS: BRIEFING / PENGAJIAN / KEGIATAN
+  // =================================================================
+  function downloadBriefingReport() {
+    const picker = document.getElementById("report-month-picker");
+    google.script.run
+      .withSuccessHandler(function (res) {
+        if (res.status === "success") {
+          const data = res.message.map(r => ({ Waktu: r.waktu, ID: r.id_karyawan, Nama: r.nama, Status: r.status, Catatan: r.catatan }));
+          const ws = XLSX.utils.json_to_sheet(data);
+          const wb = XLSX.utils.book_new();
+          XLSX.utils.book_append_sheet(wb, ws, "Rekap Briefing");
+          XLSX.writeFile(wb, `Rekap_Briefing_${picker.value}.xlsx`);
+        }
+      })
+      .handleGetBriefingReport({ client_id: currentUser.clientId, bulan_tahun: picker.value.split("-").reverse().join("-") });
+  }
+
+  function downloadPengajianReport() {
+    const picker = document.getElementById("report-month-picker");
+    google.script.run
+      .withSuccessHandler(function (res) {
+        if (res.status === "success") {
+          const data = res.message.map(r => ({ Waktu: r.waktu, ID_Guru: r.id_guru, Nama_Guru: r.nama_guru, Kelompok: r.kelompok, Lokasi: r.lokasi, Materi: r.materi }));
+          const ws = XLSX.utils.json_to_sheet(data);
+          const wb = XLSX.utils.book_new();
+          XLSX.utils.book_append_sheet(wb, ws, "Rekap Pengajian");
+          XLSX.writeFile(wb, `Rekap_Pengajian_${picker.value}.xlsx`);
+        }
+      })
+      .handleGetPengajianReport({ client_id: currentUser.clientId, bulan_tahun: picker.value.split("-").reverse().join("-") });
+  }
+
+  function downloadKegiatanReport() {
+    const picker = document.getElementById("report-month-picker");
+    google.script.run
+      .withSuccessHandler(function (res) {
+        if (res.status === "success") {
+          const data = res.message.map(r => ({ Waktu: r.waktu, Kegiatan: r.nama_kegiatan, ID: r.id_karyawan, Nama: r.nama, Status: r.status }));
+          const ws = XLSX.utils.json_to_sheet(data);
+          const wb = XLSX.utils.book_new();
+          XLSX.utils.book_append_sheet(wb, ws, "Rekap Kegiatan");
+          XLSX.writeFile(wb, `Rekap_Kegiatan_${picker.value}.xlsx`);
+        }
+      })
+      .handleGetKegiatanReport({ client_id: currentUser.clientId, bulan_tahun: picker.value.split("-").reverse().join("-") });
+  }
+
+  // =================================================================
+  // FEEDBACK (ADMIN VIEW)
+  // =================================================================
+  function loadFeedbackData() {
+    const body = document.getElementById("feedback-body");
+    if (!body) return;
+    body.innerHTML = '<tr><td colspan="3" style="text-align:center; padding: 20px;">Memuat masukan...</td></tr>';
+    google.script.run
+      .withSuccessHandler(function (res) {
+        body.innerHTML = "";
+        if (res.status === "success" && res.message.length > 0) {
+          res.message.forEach(item => {
+            const tr = document.createElement("tr");
+            let badgeColor = "#0EA5E9";
+            if (item.tipe === "Kritik") badgeColor = "#F59E0B";
+            if (item.tipe === "Laporan") badgeColor = "#EF4444";
+            tr.innerHTML = `
+              <td style="font-size: 0.8rem; color: var(--text-muted);">${item.waktu}</td>
+              <td><span style="background: ${badgeColor}15; color: ${badgeColor}; padding: 4px 10px; border-radius: 8px; font-size: 0.75rem; font-weight: 800;">${item.tipe}</span></td>
+              <td style="font-size: 0.85rem;">${item.isi}</td>
+            `;
+            body.appendChild(tr);
+          });
+        } else {
+          body.innerHTML = '<tr><td colspan="3" style="text-align:center; padding: 40px; color: var(--text-muted);">Belum ada masukan.</td></tr>';
+        }
+      })
+      .handleGetFeedbackWeb(currentUser.clientId);
+  }
+
 </script>
+

@@ -11,7 +11,6 @@ class SyncService {
   factory SyncService() => _instance;
   SyncService._internal();
 
-  final AttendanceService _api = AttendanceService();
   final NotificationService _notify = NotificationService();
 
   /// Menjalankan sinkronisasi status izin dan setup pengingat
@@ -53,13 +52,6 @@ class SyncService {
     }
   }
 
-  String _getTodayString() {
-    final now = DateTime.now();
-    // Sesuaikan dengan format 'dd/MM/yyyy' atau 'yyyy-MM-dd' dari server.
-    // GAS biasanya mengembalikan string yang mengandung tanggal.
-    return "${now.day.toString().padLeft(2, '0')}/${now.month.toString().padLeft(2, '0')}/${now.year}";
-  }
-
   Future<void> _checkLeaveStatusChangesFromHistory(
     String idAnggota,
     List<dynamic> history,
@@ -76,7 +68,6 @@ class SyncService {
         cache = Map<String, String>.from(json.decode(rawCache));
       }
 
-      bool hasChanges = false;
       Map<String, String> newCache = {};
 
       for (var item in history) {
@@ -99,7 +90,6 @@ class SyncService {
                   ? "Kabar baik! Pengajuan $tipe Anda telah disetujui. ✅"
                   : "Pengajuan $tipe Anda telah diproses dengan status: $status.",
             );
-            hasChanges = true;
           }
         }
       }

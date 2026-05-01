@@ -1,13 +1,10 @@
 import 'dart:convert';
 import 'dart:developer' as d;
-import 'dart:io';
 import 'package:flutter/services.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:device_info_plus/device_info_plus.dart';
-import 'package:flutter_image_compress/flutter_image_compress.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:safe_device/safe_device.dart';
 import 'package:hadirin/core/config/app_config.dart';
 import 'package:hadirin/core/service/api_client.dart';
@@ -15,10 +12,7 @@ import 'package:hadirin/core/service/face_service.dart';
 
 /// Tanggung jawab: Absen masuk/pulang & riwayat absensi karyawan.
 class AttendanceService extends ApiClient {
-  static const _platform = MethodChannel('com.alfahmi.absensi.sd/face_recognition');
-
   final _auth = LocalAuthentication();
-  final _picker = ImagePicker();
   final _deviceInfo = DeviceInfoPlugin();
   final _faceService = FaceService();
 

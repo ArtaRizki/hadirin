@@ -356,4 +356,194 @@ class AdminService extends ApiClient {
       };
     }
   }
+
+  // =================================================================
+  // REKAP BRIEFING
+  // =================================================================
+  Future<List<dynamic>> getBriefingReport(String clientId, String bulanTahun) async {
+    if (clientId.isEmpty) throw Exception("Client ID kosong.");
+    try {
+      final payload = {
+        'api_token': AppConfig.apiToken,
+        'action': 'get_briefing_report',
+        'client_id': clientId,
+        'bulan_tahun': bulanTahun,
+      };
+      final response = await sendRequest('get_briefing_report', payload, timeout: const Duration(seconds: 60));
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['code'] == 200) return data['message'] as List<dynamic>;
+        throw Exception(data['message']);
+      }
+      throw Exception('Gagal terhubung ke server.');
+    } catch (e) {
+      d.log('==== ERROR GET BRIEFING REPORT ==== $e');
+      throw Exception('Gagal mengambil rekap briefing: $e');
+    }
+  }
+
+  // =================================================================
+  // REKAP PENGAJIAN
+  // =================================================================
+  Future<List<dynamic>> getPengajianReport(String clientId, String bulanTahun) async {
+    if (clientId.isEmpty) throw Exception("Client ID kosong.");
+    try {
+      final payload = {
+        'api_token': AppConfig.apiToken,
+        'action': 'get_pengajian_report',
+        'client_id': clientId,
+        'bulan_tahun': bulanTahun,
+      };
+      final response = await sendRequest('get_pengajian_report', payload, timeout: const Duration(seconds: 60));
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['code'] == 200) return data['message'] as List<dynamic>;
+        throw Exception(data['message']);
+      }
+      throw Exception('Gagal terhubung ke server.');
+    } catch (e) {
+      d.log('==== ERROR GET PENGAJIAN REPORT ==== $e');
+      throw Exception('Gagal mengambil rekap pengajian: $e');
+    }
+  }
+
+  // =================================================================
+  // REKAP KEGIATAN
+  // =================================================================
+  Future<List<dynamic>> getKegiatanReport(String clientId, String bulanTahun) async {
+    if (clientId.isEmpty) throw Exception("Client ID kosong.");
+    try {
+      final payload = {
+        'api_token': AppConfig.apiToken,
+        'action': 'get_kegiatan_report',
+        'client_id': clientId,
+        'bulan_tahun': bulanTahun,
+      };
+      final response = await sendRequest('get_kegiatan_report', payload, timeout: const Duration(seconds: 60));
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['code'] == 200) return data['message'] as List<dynamic>;
+        throw Exception(data['message']);
+      }
+      throw Exception('Gagal terhubung ke server.');
+    } catch (e) {
+      d.log('==== ERROR GET KEGIATAN REPORT ==== $e');
+      throw Exception('Gagal mengambil rekap kegiatan: $e');
+    }
+  }
+
+  // =================================================================
+  // ENHANCED STATS (PIE CHART + TREND)
+  // =================================================================
+  Future<Map<String, dynamic>?> getEnhancedStats(String clientId) async {
+    if (clientId.isEmpty) return null;
+    try {
+      final payload = {
+        'api_token': AppConfig.apiToken,
+        'action': 'get_enhanced_stats',
+        'client_id': clientId,
+      };
+      final response = await sendRequest('get_enhanced_stats', payload);
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['code'] == 200) return data['message'] as Map<String, dynamic>;
+      }
+      return null;
+    } catch (e) {
+      d.log('==== ERROR GET ENHANCED STATS ==== $e');
+      return null;
+    }
+  }
+
+  // =================================================================
+  // EMPLOYEE PERSONAL STATS
+  // =================================================================
+  Future<Map<String, dynamic>?> getEmployeeStats(String clientId, String idKaryawan) async {
+    if (clientId.isEmpty) return null;
+    try {
+      final payload = {
+        'api_token': AppConfig.apiToken,
+        'action': 'get_employee_stats',
+        'client_id': clientId,
+        'id_karyawan': idKaryawan,
+      };
+      final response = await sendRequest('get_employee_stats', payload);
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['code'] == 200) return data['message'] as Map<String, dynamic>;
+      }
+      return null;
+    } catch (e) {
+      d.log('==== ERROR GET EMPLOYEE STATS ==== $e');
+      return null;
+    }
+  }
+
+  // =================================================================
+  // AYAT PILIHAN
+  // =================================================================
+  Future<Map<String, dynamic>?> getAyatPilihan(String clientId) async {
+    if (clientId.isEmpty) return null;
+    try {
+      final payload = {
+        'api_token': AppConfig.apiToken,
+        'action': 'get_ayat_pilihan',
+        'client_id': clientId,
+      };
+      final response = await sendRequest('get_ayat_pilihan', payload);
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['code'] == 200) return data['message'] as Map<String, dynamic>;
+      }
+      return null;
+    } catch (e) {
+      d.log('==== ERROR GET AYAT ==== $e');
+      return null;
+    }
+  }
+
+  Future<bool> updateAyatPilihan(String clientId, String ayat, String sumber) async {
+    try {
+      final payload = {
+        'api_token': AppConfig.apiToken,
+        'action': 'update_ayat_pilihan',
+        'client_id': clientId,
+        'ayat': ayat,
+        'sumber': sumber,
+      };
+      final response = await sendRequest('update_ayat_pilihan', payload);
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body)['code'] == 200;
+      }
+      return false;
+    } catch (e) {
+      d.log('==== ERROR UPDATE AYAT ==== $e');
+      return false;
+    }
+  }
+
+  // =================================================================
+  // UPLOAD FOTO PROFIL
+  // =================================================================
+  Future<Map<String, dynamic>> uploadProfilePhoto(String clientId, String idKaryawan, String fotoBase64) async {
+    try {
+      final payload = {
+        'api_token': AppConfig.apiToken,
+        'action': 'upload_profile_photo',
+        'client_id': clientId,
+        'id_karyawan': idKaryawan,
+        'foto_base64': fotoBase64,
+      };
+      final response = await sendRequest('upload_profile_photo', payload, timeout: const Duration(seconds: 30));
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['code'] == 200) return {'success': true, 'url': data['message']['url']};
+        throw Exception(data['message']);
+      }
+      throw Exception('Gagal terhubung ke server.');
+    } catch (e) {
+      return {'success': false, 'message': e.toString().replaceAll('Exception: ', '')};
+    }
+  }
 }
+

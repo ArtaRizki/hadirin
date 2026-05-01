@@ -304,6 +304,36 @@ function doPost(e) {
       case "get_briefing":
         return handleGetBriefing(payload);
 
+      // --- FEEDBACK ANONIM ---
+      case "submit_feedback":
+        return handleSubmitFeedback(payload);
+      case "get_feedback":
+        return handleGetFeedback(payload);
+
+      // --- REKAP EXCEL (BRIEFING, PENGAJIAN, KEGIATAN) ---
+      case "get_briefing_report":
+        return handleGetBriefingReport(payload);
+      case "get_pengajian_report":
+        return handleGetPengajianReport(payload);
+      case "get_kegiatan_report":
+        return handleGetKegiatanReport(payload);
+
+      // --- AYAT PILIHAN ---
+      case "get_ayat_pilihan":
+        return handleGetAyatPilihan(payload);
+      case "update_ayat_pilihan":
+        return handleUpdateAyatPilihan(payload);
+
+      // --- STATISTIK ENHANCED ---
+      case "get_enhanced_stats":
+        return handleGetEnhancedStats(payload);
+      case "get_employee_stats":
+        return handleGetEmployeeStats(payload);
+
+      // --- FOTO PROFIL ---
+      case "upload_profile_photo":
+        return handleUploadProfilePhoto(payload);
+
       default:
         return responseJSON(400, "error", "Action Unknown.");
     }
@@ -635,6 +665,7 @@ function handleEnrollDevice(payload) {
         // MENGAMBIL ROLE AKSES DARI KOLOM G (Index 6)
         var roleAkses =
           data[i][6] && data[i][6] !== "" ? data[i][6] : "Anggota";
+        var profilePhoto = data[i][7] || "";
 
         return responseJSON(200, "success", {
           nama_karyawan: data[i][1],
@@ -643,6 +674,7 @@ function handleEnrollDevice(payload) {
           no_hp: data[i][5] || "",
           admin_phone: adminPhone,
           role_akses: roleAkses, // Dikirim ke Mobile
+          profile_photo: profilePhoto,
         });
       }
     }
@@ -1378,4 +1410,481 @@ function handleWebApiProxy(payload) {
     default:
       return { code: 400, message: "Action not supported via proxy" };
   }
+}
+
+// =============================================================================
+// WEB DASHBOARD HELPER FUNCTIONS (Called from scripts.html)
+// =============================================================================
+
+function handleGetEnhancedStatsWeb(clientId) {
+  var payload = {
+    api_token: MASTER_API_TOKEN,
+    action: "get_enhanced_stats",
+    client_id: clientId,
+  };
+  var result = handleGetEnhancedStats(payload);
+  return JSON.parse(result.getContent());
+}
+
+function handleGetBriefingReport(payload) {
+  payload.api_token = MASTER_API_TOKEN;
+  payload.action = "get_briefing_report";
+  var result = handleGetBriefingReport_internal(payload);
+  return result;
+}
+
+function handleGetBriefingReport_internal(payload) {
+  var config = getSemuaConfig()[payload.client_id];
+  var ss = SpreadsheetApp.openById(config.spreadsheetId);
+  var sheet = ss.getSheetByName("Log_Briefing");
+  if (!sheet) return { status: "success", message: [] };
+  var data = sheet.getDataRange().getDisplayValues();
+  var employees = ss.getSheetByName("Master_Karyawan").getDataRange().getValues();
+  var namaMap = {};
+  for (var j = 1; j < employees.length; j++) {
+    namaMap[String(employees[j][0])] = String(employees[j][1]);
+  }
+  var results = [];
+  for (var i = 1; i < data.length; i++) {
+    if (!data[i][0]) continue;
+    var d = new Date(data[i][0]);
+    var logBulan = (d.getMonth() + 1).toString().padStart(2, "0") + "-" + d.getFullYear();
+    if (logBulan === payload.bulan_tahun || !payload.bulan_tahun) {
+      results.push({
+        waktu: data[i][0], id_karyawan: data[i][1],
+        nama: namaMap[data[i][1]] || data[i][1],
+        status: data[i][2], catatan: data[i][4] || "-",
+      });
+    }
+  }
+  return { status: "success", message: results };
+}
+
+function handleGetPengajianReport(payload) {
+  var config = getSemuaConfig()[payload.client_id];
+  var ss = SpreadsheetApp.openById(config.spreadsheetId);
+  var sheet = ss.getSheetByName("Log_Ngaji_Guru");
+  if (!sheet) return { status: "success", message: [] };
+  var data = sheet.getDataRange().getDisplayValues();
+  var employees = ss.getSheetByName("Master_Karyawan").getDataRange().getValues();
+  var namaMap = {};
+  for (var j = 1; j < employees.length; j++) {
+    namaMap[String(employees[j][0])] = String(employees[j][1]);
+  }
+  var results = [];
+  for (var i = 1; i < data.length; i++) {
+    if (!data[i][0]) continue;
+    var d = new Date(data[i][0]);
+    var logBulan = (d.getMonth() + 1).toString().padStart(2, "0") + "-" + d.getFullYear();
+    if (logBulan === payload.bulan_tahun || !payload.bulan_tahun) {
+      results.push({
+        waktu: data[i][0], id_guru: data[i][1],
+        nama_guru: namaMap[data[i][1]] || data[i][1],
+        kelompok: data[i][2], lokasi: data[i][3], materi: data[i][4] || "-",
+      });
+    }
+  }
+  return { status: "success", message: results };
+}
+
+function handleGetKegiatanReport(payload) {
+  var config = getSemuaConfig()[payload.client_id];
+  var ss = SpreadsheetApp.openById(config.spreadsheetId);
+  var sheet = ss.getSheetByName("Absen_Kegiatan");
+  if (!sheet) return { status: "success", message: [] };
+  var data = sheet.getDataRange().getDisplayValues();
+  var employees = ss.getSheetByName("Master_Karyawan").getDataRange().getValues();
+  var namaMap = {};
+  for (var j = 1; j < employees.length; j++) {
+    namaMap[String(employees[j][0])] = String(employees[j][1]);
+  }
+  var results = [];
+  for (var i = 1; i < data.length; i++) {
+    if (!data[i][0]) continue;
+    var d = new Date(data[i][0]);
+    var logBulan = (d.getMonth() + 1).toString().padStart(2, "0") + "-" + d.getFullYear();
+    if (logBulan === payload.bulan_tahun || !payload.bulan_tahun) {
+      results.push({
+        waktu: data[i][0], id_kegiatan: data[i][1],
+        nama_kegiatan: data[i][1], id_karyawan: data[i][2],
+        nama: namaMap[data[i][2]] || data[i][2],
+        status: data[i][3] || "Hadir",
+      });
+    }
+  }
+  return { status: "success", message: results };
+}
+
+function handleGetFeedbackWeb(clientId) {
+  var config = getSemuaConfig()[clientId];
+  var ss = SpreadsheetApp.openById(config.spreadsheetId);
+  var sheet = ss.getSheetByName("Log_Feedback");
+  if (!sheet) return { status: "success", message: [] };
+  var data = sheet.getDataRange().getDisplayValues();
+  var results = [];
+  for (var i = 1; i < data.length; i++) {
+    results.push({ waktu: data[i][0], tipe: data[i][1], isi: data[i][2] });
+  }
+  return { status: "success", message: results.reverse() };
+}
+
+
+function handleSubmitFeedback(payload) {
+  var config = getSemuaConfig()[payload.client_id];
+  var ss = SpreadsheetApp.openById(config.spreadsheetId);
+  var sheet = ss.getSheetByName("Log_Feedback");
+  if (!sheet) {
+    sheet = ss.insertSheet("Log_Feedback");
+    sheet.appendRow(["Waktu", "Tipe", "Isi"]);
+  }
+  sheet.appendRow([
+    Utilities.formatDate(new Date(), "GMT+8", "yyyy-MM-dd HH:mm:ss"),
+    payload.tipe || "Saran",
+    payload.isi || "",
+  ]);
+  return responseJSON(200, "success", "Terima kasih atas masukan Anda.");
+}
+
+function handleGetFeedback(payload) {
+  var config = getSemuaConfig()[payload.client_id];
+  var ss = SpreadsheetApp.openById(config.spreadsheetId);
+  var sheet = ss.getSheetByName("Log_Feedback");
+  if (!sheet) return responseJSON(200, "success", []);
+  var data = sheet.getDataRange().getDisplayValues();
+  var results = [];
+  for (var i = 1; i < data.length; i++) {
+    results.push({ waktu: data[i][0], tipe: data[i][1], isi: data[i][2] });
+  }
+  return responseJSON(200, "success", results.reverse());
+}
+
+// =============================================================================
+// REKAP LAPORAN (BRIEFING, PENGAJIAN, KEGIATAN)
+// =============================================================================
+
+function handleGetBriefingReport(payload) {
+  var config = getSemuaConfig()[payload.client_id];
+  var ss = SpreadsheetApp.openById(config.spreadsheetId);
+  var sheet = ss.getSheetByName("Log_Briefing");
+  if (!sheet) return responseJSON(200, "success", []);
+  var data = sheet.getDataRange().getDisplayValues();
+  var employees = ss.getSheetByName("Master_Karyawan").getDataRange().getValues();
+  var namaMap = {};
+  for (var j = 1; j < employees.length; j++) {
+    namaMap[String(employees[j][0])] = String(employees[j][1]);
+  }
+  var results = [];
+  for (var i = 1; i < data.length; i++) {
+    if (!data[i][0]) continue;
+    var d = new Date(data[i][0]);
+    var logBulan = (d.getMonth() + 1).toString().padStart(2, "0") + "-" + d.getFullYear();
+    if (logBulan === payload.bulan_tahun || !payload.bulan_tahun) {
+      results.push({
+        waktu: data[i][0],
+        id_karyawan: data[i][1],
+        nama: namaMap[data[i][1]] || data[i][1],
+        status: data[i][2],
+        catatan: data[i][4] || "-",
+      });
+    }
+  }
+  return responseJSON(200, "success", results);
+}
+
+function handleGetPengajianReport(payload) {
+  var config = getSemuaConfig()[payload.client_id];
+  var ss = SpreadsheetApp.openById(config.spreadsheetId);
+  var sheet = ss.getSheetByName("Log_Ngaji_Guru");
+  if (!sheet) return responseJSON(200, "success", []);
+  var data = sheet.getDataRange().getDisplayValues();
+  var employees = ss.getSheetByName("Master_Karyawan").getDataRange().getValues();
+  var namaMap = {};
+  for (var j = 1; j < employees.length; j++) {
+    namaMap[String(employees[j][0])] = String(employees[j][1]);
+  }
+  var results = [];
+  for (var i = 1; i < data.length; i++) {
+    if (!data[i][0]) continue;
+    var d = new Date(data[i][0]);
+    var logBulan = (d.getMonth() + 1).toString().padStart(2, "0") + "-" + d.getFullYear();
+    if (logBulan === payload.bulan_tahun || !payload.bulan_tahun) {
+      results.push({
+        waktu: data[i][0],
+        id_guru: data[i][1],
+        nama_guru: namaMap[data[i][1]] || data[i][1],
+        kelompok: data[i][2],
+        lokasi: data[i][3],
+        materi: data[i][4] || "-",
+      });
+    }
+  }
+  return responseJSON(200, "success", results);
+}
+
+function handleGetKegiatanReport(payload) {
+  var config = getSemuaConfig()[payload.client_id];
+  var ss = SpreadsheetApp.openById(config.spreadsheetId);
+  var sheet = ss.getSheetByName("Absen_Kegiatan");
+  if (!sheet) return responseJSON(200, "success", []);
+  var data = sheet.getDataRange().getDisplayValues();
+  var employees = ss.getSheetByName("Master_Karyawan").getDataRange().getValues();
+  var namaMap = {};
+  for (var j = 1; j < employees.length; j++) {
+    namaMap[String(employees[j][0])] = String(employees[j][1]);
+  }
+  var kegSheet = ss.getSheetByName("Jadwal_Kegiatan");
+  var kegMap = {};
+  if (kegSheet) {
+    var kegData = kegSheet.getDataRange().getValues();
+    for (var k = 1; k < kegData.length; k++) {
+      kegMap[String(kegData[k][0])] = String(kegData[k][1]);
+    }
+  }
+  var results = [];
+  for (var i = 1; i < data.length; i++) {
+    if (!data[i][0]) continue;
+    var d = new Date(data[i][0]);
+    var logBulan = (d.getMonth() + 1).toString().padStart(2, "0") + "-" + d.getFullYear();
+    if (logBulan === payload.bulan_tahun || !payload.bulan_tahun) {
+      results.push({
+        waktu: data[i][0],
+        id_kegiatan: data[i][1],
+        nama_kegiatan: kegMap[data[i][1]] || data[i][1],
+        id_karyawan: data[i][2],
+        nama: namaMap[data[i][2]] || data[i][2],
+        status: data[i][3] || "Hadir",
+      });
+    }
+  }
+  return responseJSON(200, "success", results);
+}
+
+// =============================================================================
+// AYAT PILIHAN
+// =============================================================================
+
+function handleGetAyatPilihan(payload) {
+  var config = getSemuaConfig()[payload.client_id];
+  var ss = SpreadsheetApp.openById(config.spreadsheetId);
+  var sheet = ss.getSheetByName("App_Settings");
+  if (!sheet) return responseJSON(200, "success", { ayat: "", sumber: "" });
+  var data = sheet.getDataRange().getValues();
+  var ayat = "", sumber = "";
+  for (var i = 1; i < data.length; i++) {
+    if (data[i][0] === "ayat_pilihan") ayat = String(data[i][1]);
+    if (data[i][0] === "sumber_ayat") sumber = String(data[i][1]);
+  }
+  return responseJSON(200, "success", { ayat: ayat, sumber: sumber });
+}
+
+function handleUpdateAyatPilihan(payload) {
+  var config = getSemuaConfig()[payload.client_id];
+  var ss = SpreadsheetApp.openById(config.spreadsheetId);
+  var sheet = ss.getSheetByName("App_Settings");
+  if (!sheet) {
+    sheet = ss.insertSheet("App_Settings");
+    sheet.appendRow(["key", "value"]);
+  }
+  var data = sheet.getDataRange().getValues();
+  var foundAyat = false, foundSumber = false;
+  for (var i = 1; i < data.length; i++) {
+    if (data[i][0] === "ayat_pilihan") {
+      sheet.getRange(i + 1, 2).setValue(payload.ayat);
+      foundAyat = true;
+    }
+    if (data[i][0] === "sumber_ayat") {
+      sheet.getRange(i + 1, 2).setValue(payload.sumber);
+      foundSumber = true;
+    }
+  }
+  if (!foundAyat) sheet.appendRow(["ayat_pilihan", payload.ayat]);
+  if (!foundSumber) sheet.appendRow(["sumber_ayat", payload.sumber]);
+  return responseJSON(200, "success", "Ayat pilihan diperbarui.");
+}
+
+// =============================================================================
+// STATISTIK ENHANCED (PIE CHART PER JABATAN)
+// =============================================================================
+
+function handleGetEnhancedStats(payload) {
+  var config = getSemuaConfig()[payload.client_id];
+  var ss = SpreadsheetApp.openById(config.spreadsheetId);
+  var logs = ss.getSheetByName("Log_Absensi").getDataRange().getValues();
+  var employees = ss.getSheetByName("Master_Karyawan").getDataRange().getValues();
+
+  // Build jabatan map from Master_Karyawan col C (bagian)
+  var jabatanMap = {}; // id -> bagian
+  var totalByJabatan = {};
+  for (var j = 1; j < employees.length; j++) {
+    var empId = String(employees[j][0]);
+    var bagian = String(employees[j][2] || "Lainnya");
+    jabatanMap[empId] = bagian;
+    if (!totalByJabatan[bagian]) totalByJabatan[bagian] = 0;
+    totalByJabatan[bagian]++;
+  }
+
+  var today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  // Per-jabatan hadir hari ini
+  var hadirByJabatan = {};
+  var totalHadir = 0, totalTerlambat = 0, totalIzin = 0;
+
+  for (var i = 1; i < logs.length; i++) {
+    if (!logs[i][0]) continue;
+    var rDate = new Date(logs[i][0]);
+    rDate.setHours(0, 0, 0, 0);
+    if (rDate.getTime() === today.getTime()) {
+      var status = logs[i][6];
+      var idKry = String(logs[i][1]);
+      var jbt = jabatanMap[idKry] || "Lainnya";
+
+      if (status === "Tepat Waktu" || status === "Terlambat") {
+        totalHadir++;
+        if (!hadirByJabatan[jbt]) hadirByJabatan[jbt] = 0;
+        hadirByJabatan[jbt]++;
+      }
+      if (status === "Terlambat") totalTerlambat++;
+      if (["Izin", "Sakit", "Cuti"].indexOf(status) !== -1) totalIzin++;
+    }
+  }
+
+  // Pie chart data: per jabatan
+  var pieData = [];
+  for (var key in totalByJabatan) {
+    pieData.push({
+      jabatan: key,
+      total_anggota: totalByJabatan[key],
+      hadir_hari_ini: hadirByJabatan[key] || 0,
+    });
+  }
+
+  // Trend 7 hari
+  var trendLabels = [], trendValues = [];
+  for (var d = 6; d >= 0; d--) {
+    var date = new Date();
+    date.setDate(date.getDate() - d);
+    date.setHours(0, 0, 0, 0);
+    trendLabels.push(Utilities.formatDate(date, "GMT+8", "dd MMM"));
+    var count = 0;
+    for (var k = 1; k < logs.length; k++) {
+      if (!logs[k][0]) continue;
+      var rD = new Date(logs[k][0]);
+      rD.setHours(0, 0, 0, 0);
+      if (rD.getTime() === date.getTime() && (logs[k][6] === "Tepat Waktu" || logs[k][6] === "Terlambat")) count++;
+    }
+    trendValues.push(count);
+  }
+
+  return responseJSON(200, "success", {
+    present: totalHadir,
+    late: totalTerlambat,
+    leave: totalIzin,
+    total_anggota: employees.length - 1,
+    pie_jabatan: pieData,
+    trendLabels: trendLabels,
+    trendValues: trendValues,
+  });
+}
+
+function handleGetEmployeeStats(payload) {
+  var config = getSemuaConfig()[payload.client_id];
+  var logs = SpreadsheetApp.openById(config.spreadsheetId)
+    .getSheetByName("Log_Absensi").getDataRange().getValues();
+
+  var now = new Date();
+  var currentMonth = now.getMonth();
+  var currentYear = now.getFullYear();
+
+  var totalHadir = 0, totalTerlambat = 0, totalIzin = 0, totalMasuk = 0;
+  var streak = 0, tempStreak = 0;
+  var lastDate = null;
+
+  for (var i = 1; i < logs.length; i++) {
+    if (!logs[i][0]) continue;
+    if (String(logs[i][1]) !== String(payload.id_karyawan)) continue;
+    var d = new Date(logs[i][0]);
+    if (d.getMonth() !== currentMonth || d.getFullYear() !== currentYear) continue;
+    if (logs[i][2] !== "Masuk") continue;
+    totalMasuk++;
+    var status = logs[i][6];
+    if (status === "Tepat Waktu") { totalHadir++; }
+    if (status === "Terlambat") { totalTerlambat++; totalHadir++; }
+    if (["Izin", "Sakit", "Cuti"].indexOf(status) !== -1) totalIzin++;
+  }
+
+  // Count streak (berturut-turut hadir, dari log terakhir mundur)
+  var sortedLogs = [];
+  for (var s = 1; s < logs.length; s++) {
+    if (String(logs[s][1]) === String(payload.id_karyawan) && logs[s][2] === "Masuk") {
+      sortedLogs.push({ date: new Date(logs[s][0]), status: logs[s][6] });
+    }
+  }
+  sortedLogs.sort(function(a, b) { return b.date - a.date; });
+  for (var x = 0; x < sortedLogs.length; x++) {
+    if (sortedLogs[x].status === "Tepat Waktu" || sortedLogs[x].status === "Terlambat") {
+      streak++;
+    } else {
+      break;
+    }
+  }
+
+  // Working days in month (approx Mon-Fri)
+  var workingDays = 0;
+  var daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+  for (var dd = 1; dd <= Math.min(now.getDate(), daysInMonth); dd++) {
+    var dayOfWeek = new Date(currentYear, currentMonth, dd).getDay();
+    if (dayOfWeek !== 0 && dayOfWeek !== 6) workingDays++;
+  }
+
+  var percentage = workingDays > 0 ? Math.round((totalHadir / workingDays) * 100) : 0;
+
+  return responseJSON(200, "success", {
+    hadir: totalHadir,
+    terlambat: totalTerlambat,
+    izin: totalIzin,
+    percentage: percentage,
+    streak: streak,
+    working_days: workingDays,
+  });
+}
+
+// =============================================================================
+// UPLOAD FOTO PROFIL
+// =============================================================================
+
+function handleUploadProfilePhoto(payload) {
+  var config = getSemuaConfig()[payload.client_id];
+  var ss = SpreadsheetApp.openById(config.spreadsheetId);
+  var sheet = ss.getSheetByName("Master_Karyawan");
+  var data = sheet.getDataRange().getValues();
+
+  var fotoUrl = "";
+  if (payload.foto_base64 && payload.foto_base64.length > 0) {
+    try {
+      var folder = DriveApp.getFolderById(config.folderDriveId);
+      var fileName = "Profile_" + payload.id_karyawan + "_" + new Date().getTime() + ".jpg";
+      var blob = Utilities.newBlob(Utilities.base64Decode(payload.foto_base64), "image/jpeg", fileName);
+      var file = folder.createFile(blob);
+      fotoUrl = file.getUrl();
+    } catch (e) {
+      return responseJSON(500, "error", "Gagal upload foto: " + e.message);
+    }
+  }
+
+  for (var i = 1; i < data.length; i++) {
+    if (String(data[i][0]).trim().toLowerCase() === String(payload.id_karyawan).trim().toLowerCase()) {
+      // Hapus foto lama jika ada
+      var oldUrl = data[i][7];
+      if (oldUrl && oldUrl !== "") {
+        try {
+          var idMatch = oldUrl.match(/[-\w]{25,}/);
+          if (idMatch) DriveApp.getFileById(idMatch[0]).setTrashed(true);
+        } catch (e) { /* ignore */ }
+      }
+      sheet.getRange(i + 1, 8).setValue(fotoUrl); // Kolom H = foto profil
+      return responseJSON(200, "success", { url: fotoUrl });
+    }
+  }
+  return responseJSON(404, "error", "Anggota tidak ditemukan.");
 }

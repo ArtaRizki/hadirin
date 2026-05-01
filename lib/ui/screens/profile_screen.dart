@@ -3,6 +3,7 @@ import 'package:hadirin/core/providers/auth_provider.dart';
 import 'package:hadirin/core/service/admin_service.dart';
 import 'package:hadirin/core/service/attendance_service.dart';
 import 'package:hadirin/core/service/export_service.dart';
+import 'package:hadirin/core/service/api_client.dart';
 import 'package:hadirin/core/service/face_service.dart';
 import 'package:hadirin/ui/screens/add_anggota_screen.dart';
 import 'package:hadirin/ui/screens/approval_screen.dart';
@@ -26,7 +27,11 @@ import 'package:hadirin/ui/screens/jadwal_kegiatan_screen.dart';
 import 'package:hadirin/ui/screens/laporan_ngaji_screen.dart';
 import 'package:hadirin/ui/screens/jabatan_management_screen.dart';
 import 'package:hadirin/ui/screens/briefing_screen.dart';
+import 'package:hadirin/ui/screens/feedback_screen.dart';
 import 'package:hadirin/core/service/school_service.dart';
+import 'dart:convert';
+import 'dart:io';
+import 'package:image_picker/image_picker.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -163,11 +168,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
-  String _formatTanggalIndo(DateTime dt) =>
-      DateFormat('EEEE, d MMMM yyyy', 'id_ID').format(dt);
-
-  String _formatJam(DateTime dt) => DateFormat('HH:mm').format(dt);
-
   void _tampilkanFoto(
     BuildContext context,
     String url,
@@ -233,6 +233,272 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
       ),
     );
+  }
+  // =================================================================
+  // DOWNLOAD REPORTS (BRIEFING / PENGAJIAN / KEGIATAN)
+  // =================================================================
+  void _downloadReport(String type) async {
+    final auth = context.read<AuthProvider>();
+    final clientId = auth.clientId ?? "";
+
+    // Show month picker dialog
+    DateTime selectedDate = DateTime.now();
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: selectedDate,
+      firstDate: DateTime(2023),
+      lastDate: DateTime.now(),
+      initialDatePickerMode: DatePickerMode.year,
+    );
+    if (picked == null || !mounted) return;
+
+    final bulanTahun = "${picked.month.toString().padLeft(2, '0')}-${picked.year}";
+    setState(() => _isExporting = true);
+
+    try {
+      final admin = AdminService();
+      final export = ExportService();
+      List<dynamic> data;
+
+      switch (type) {
+        case "briefing":
+          data = await admin.getBriefingReport(clientId, bulanTahun);
+          await export.generateBriefingExcel(AppConfig.appName, bulanTahun, data);
+          break;
+        case "pengajian":
+          data = await admin.getPengajianReport(clientId, bulanTahun);
+          await export.generatePengajianExcel(AppConfig.appName, bulanTahun, data);
+          break;
+        case "kegiatan":
+          data = await admin.getKegiatanReport(clientId, bulanTahun);
+          await export.generateKegiatanExcel(AppConfig.appName, bulanTahun, data);
+          break;
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("Gagal download: $e"),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isExporting = false);
+    }
+  }
+
+  // =================================================================
+  // EDIT AYAT PILIHAN (ADMIN)
+  // =================================================================
+  void _showEditAyatDialog() async {
+    final auth = context.read<AuthProvider>();
+    final data = await AdminService().getAyatPilihan(auth.clientId ?? "");
+    if (!mounted) return;
+
+    final ayatCtrl = TextEditingController(text: data?['ayat'] ?? "");
+    final sumberCtrl = TextEditingController(text: data?['sumber'] ?? "");
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text("Kelola Ayat Pilihan", style: TextStyle(fontWeight: FontWeight.w900)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: ayatCtrl,
+              maxLines: 4,
+              decoration: InputDecoration(
+                labelText: "Isi Ayat",
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: sumberCtrl,
+              decoration: InputDecoration(
+                labelText: "Sumber (QS. Al-Baqarah: 185)",
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text("Batal"),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: context.primaryColor,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            onPressed: () async {
+              Navigator.pop(ctx);
+              final ok = await AdminService().updateAyatPilihan(
+                auth.clientId ?? "",
+                ayatCtrl.text.trim(),
+                sumberCtrl.text.trim(),
+              );
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(ok ? "Ayat berhasil diperbarui!" : "Gagal memperbarui ayat."),
+                    backgroundColor: ok ? const Color(0xFF16A34A) : Colors.red,
+                  ),
+                );
+              }
+            },
+            child: const Text("Simpan"),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // =================================================================
+  // LIHAT MASUKAN / FEEDBACK (ADMIN)
+  // =================================================================
+  void _showFeedbackList() async {
+    final auth = context.read<AuthProvider>();
+    
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => FutureBuilder<List<dynamic>?>(
+        future: () async {
+          final api = ApiClient();
+          final res = await api.sendRequest('get_feedback', {
+            'api_token': AppConfig.apiToken,
+            'action': 'get_feedback',
+            'client_id': auth.clientId ?? "",
+          });
+          if (res.statusCode == 200) {
+            final d = jsonDecode(res.body);
+            if (d['code'] == 200) return d['message'] as List<dynamic>;
+          }
+          return [];
+        }(),
+        builder: (context, snap) {
+          return AlertDialog(
+            backgroundColor: Colors.white,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            title: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text("Masukan Anonim", style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16)),
+                IconButton(
+                  onPressed: () => Navigator.pop(ctx),
+                  icon: const Icon(Icons.close_rounded),
+                ),
+              ],
+            ),
+            content: SizedBox(
+              width: double.maxFinite,
+              height: 400,
+              child: snap.connectionState != ConnectionState.done
+                  ? const Center(child: CircularProgressIndicator())
+                  : (snap.data == null || snap.data!.isEmpty)
+                      ? const Center(child: Text("Belum ada masukan."))
+                      : ListView.separated(
+                          itemCount: snap.data!.length,
+                          separatorBuilder: (_, __) => const Divider(height: 1),
+                          itemBuilder: (_, i) {
+                            final item = snap.data![i];
+                            Color tipeBgColor;
+                            switch (item['tipe']) {
+                              case 'Kritik':
+                                tipeBgColor = const Color(0xFFF59E0B);
+                                break;
+                              case 'Laporan':
+                                tipeBgColor = const Color(0xFFEF4444);
+                                break;
+                              default:
+                                tipeBgColor = const Color(0xFF0EA5E9);
+                            }
+                            return Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 10),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                        decoration: BoxDecoration(
+                                          color: tipeBgColor.withOpacity(0.15),
+                                          borderRadius: BorderRadius.circular(6),
+                                        ),
+                                        child: Text(
+                                          item['tipe'] ?? "Saran",
+                                          style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: tipeBgColor),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        item['waktu'] ?? "",
+                                        style: TextStyle(fontSize: 10, color: Colors.grey.shade500),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 6),
+                                  Text(
+                                    item['isi'] ?? "",
+                                    style: const TextStyle(fontSize: 13, height: 1.5),
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
+                        ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  // =================================================================
+  // UPLOAD FOTO PROFIL
+  // =================================================================
+  void _uploadProfilePhoto() async {
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(source: ImageSource.gallery, maxWidth: 400, imageQuality: 75);
+    if (pickedFile == null) return;
+
+    final auth = context.read<AuthProvider>();
+    final bytes = await File(pickedFile.path).readAsBytes();
+    final base64 = base64Encode(bytes);
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(child: CircularProgressIndicator(color: Colors.white)),
+    );
+
+    final result = await AdminService().uploadProfilePhoto(
+      auth.clientId ?? "",
+      auth.idUser ?? "",
+      base64,
+    );
+
+    if (!mounted) return;
+    Navigator.pop(context);
+
+    if (result['success'] == true) {
+      auth.setProfilePhoto(result['url']);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Foto profil diperbarui!"), backgroundColor: Color(0xFF16A34A)),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Gagal: ${result['message']}"), backgroundColor: Colors.red),
+      );
+    }
   }
 
   void _prosesDaftarWajah() async {
@@ -789,17 +1055,38 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
                 child: Row(
                   children: [
-                    Hero(
-                      tag: 'profile-avatar',
-                      child: CircleAvatar(
-                        radius: 30,
-                        backgroundColor: Colors.white.withOpacity(0.2),
-                        child: Icon(
-                          auth.isAdmin
-                              ? Icons.admin_panel_settings_rounded
-                              : Icons.person_rounded,
-                          color: Colors.white,
-                          size: 28,
+                    GestureDetector(
+                      onTap: _uploadProfilePhoto,
+                      child: Hero(
+                        tag: 'profile-avatar',
+                        child: Stack(
+                          children: [
+                            CircleAvatar(
+                              radius: 30,
+                              backgroundColor: Colors.white.withOpacity(0.2),
+                              backgroundImage: (auth.profilePhotoUrl != null && auth.profilePhotoUrl!.isNotEmpty)
+                                  ? NetworkImage(auth.profilePhotoUrl!)
+                                  : null,
+                              child: (auth.profilePhotoUrl == null || auth.profilePhotoUrl!.isEmpty)
+                                  ? const Icon(Icons.person_rounded, color: Colors.white, size: 28)
+                                  : null,
+                            ),
+                            Positioned(
+                              bottom: 0,
+                              right: 0,
+                              child: Container(
+                                padding: const EdgeInsets.all(4),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  shape: BoxShape.circle,
+                                  boxShadow: [
+                                    BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 4),
+                                  ],
+                                ),
+                                child: Icon(Icons.camera_alt_rounded, size: 12, color: context.primaryColor),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ),
@@ -997,6 +1284,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                     accentColor: const Color(0xFF0D9488),
                   ),
+                  _buildMenuCard(
+                    title: "Kritik &\nSaran",
+                    icon: Icons.chat_bubble_outline_rounded,
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const FeedbackScreen()),
+                    ),
+                    accentColor: const Color(0xFFEC4899),
+                  ),
                   if (!auth.isAdmin &&
                       auth.adminPhone != null &&
                       auth.adminPhone!.isNotEmpty)
@@ -1102,6 +1398,39 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ),
                       ),
                       accentColor: const Color(0xFF6366F1),
+                    ),
+                    _buildMenuCard(
+                      title: "Rekap\nBriefing",
+                      icon: Icons.groups_3_rounded,
+                      isLoading: _isExporting,
+                      onTap: _isExporting ? null : () => _downloadReport("briefing"),
+                      accentColor: const Color(0xFF0D9488),
+                    ),
+                    _buildMenuCard(
+                      title: "Rekap\nPengajian",
+                      icon: Icons.menu_book_rounded,
+                      isLoading: _isExporting,
+                      onTap: _isExporting ? null : () => _downloadReport("pengajian"),
+                      accentColor: const Color(0xFF8B5CF6),
+                    ),
+                    _buildMenuCard(
+                      title: "Rekap\nKegiatan",
+                      icon: Icons.event_note_rounded,
+                      isLoading: _isExporting,
+                      onTap: _isExporting ? null : () => _downloadReport("kegiatan"),
+                      accentColor: const Color(0xFF0EA5E9),
+                    ),
+                    _buildMenuCard(
+                      title: "Kelola\nAyat",
+                      icon: Icons.auto_stories_rounded,
+                      onTap: () => _showEditAyatDialog(),
+                      accentColor: const Color(0xFF10B981),
+                    ),
+                    _buildMenuCard(
+                      title: "Lihat\nMasukan",
+                      icon: Icons.inbox_rounded,
+                      onTap: () => _showFeedbackList(),
+                      accentColor: const Color(0xFFEC4899),
                     ),
                   ],
                 ],
@@ -1291,7 +1620,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 child: Column(
                   children: [
                     Text(
-                      "SD IT AL-FAHMI PALU v1.0.0",
+                      "SDIT AL-FAHMI PALU v1.0.0",
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.bold,
