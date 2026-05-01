@@ -78,7 +78,7 @@
         <button
           class="btn btn-primary"
           style="width: 100%; margin-top: 10px"
-          onclick="handleLogin()"
+          onclick="handleLogin(event)"
         >
           Masuk Dashboard
         </button>
@@ -811,10 +811,10 @@
           </header>
 
           <div style="display: flex; gap: 10px; margin-bottom: 24px">
-            <button class="tab-btn active" onclick="switchShiftTab('calendar')">
+            <button class="tab-btn active" onclick="switchShiftTab(event, 'calendar')">
               Kalender Plotting
             </button>
-            <button class="tab-btn" onclick="switchShiftTab('list')">
+            <button class="tab-btn" onclick="switchShiftTab(event, 'list')">
               Daftar Jenis Shift
             </button>
           </div>

@@ -78,7 +78,7 @@
   }
 
   // AUTHENTICATION
-  function handleLogin() {
+  function handleLogin(event) {
     const clientId = document.getElementById("login-client-id").value.trim();
     const userId = document
       .getElementById("login-id")
@@ -516,7 +516,7 @@
   }
 
   // ADMIN: SHIFT & PLOTTING
-  function switchShiftTab(tab) {
+  function switchShiftTab(event, tab) {
     document
       .querySelectorAll(".tab-btn")
       .forEach((b) => b.classList.remove("active"));
