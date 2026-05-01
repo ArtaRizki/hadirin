@@ -78,14 +78,19 @@
   }
 
   // AUTHENTICATION
-  function handleLogin(event) {
+  function handleLogin(btn) {
+    console.log("handleLogin started", btn);
     const clientId = document.getElementById("login-client-id").value.trim();
     const userId = document
       .getElementById("login-id")
       .value.trim()
       .toLowerCase();
     const pin = document.getElementById("login-password").value;
-    const btn = event.currentTarget || event.target;
+    // btn is passed directly from Index.html
+    if (!btn) {
+      console.warn("btn is null, trying to find by selector");
+      btn = document.querySelector(".login-card .btn-primary");
+    }
 
     if (!clientId || !userId) {
       Swal.fire("Peringatan", "Kode Instansi dan ID wajib diisi.", "warning");
