@@ -1,7 +1,7 @@
 // =============================================================================
 // BACKEND SDIT AL-FAHMI PALU - v3.7 (Unified - Dynamic Groups & Time Fix)
 // =============================================================================
-const MASTER_API_TOKEN = "smpit-palu";
+const MASTER_API_TOKEN = "sdit-palu";
 const MASTER_REGISTRY_ID = "1hTh660vp0AbPn8D37Yg7XE-5HBRDXYA2xSJErORfZ3w";
 const ID_TEMPLATE_SS = "1JmD2p1p_gNXUXDiXPmj4REy9vafSsNmo4J1MoNwfaSA"; //done
 const ID_MASTER_FOLDER = "1k-MxGPlAUPCFra-2nC3i3g03JvZG5KNr"; //done
@@ -13,6 +13,7 @@ const SUPER_ADMIN_PASSWORD = "HADIRIN_MASTER_2026_AHHH";
 
 function doGet(e) {
   var template = HtmlService.createTemplateFromFile("Index");
+  template.msg = (e && e.parameter && e.parameter.msg) ? e.parameter.msg : "";
   return template
     .evaluate()
     .setTitle("SDIT AL-FAHMI PALU Dashboard v3.7")
@@ -70,7 +71,7 @@ function loginWeb(clientId, id, pin) {
 
 function registerFaceWeb(clientId, id, descriptor) {
   try {
-    var config = getSemuaConfig()[clientId];
+    var config = getSemuaConfig()[clientId.toUpperCase()];
     var sheet = SpreadsheetApp.openById(config.spreadsheetId).getSheetByName(
       "Master_Karyawan",
     );
@@ -199,7 +200,7 @@ function doPost(e) {
 
     const skipCheck = ["register_klien", "verify_super_admin"];
     if (skipCheck.indexOf(payload.action) === -1) {
-      var config = getSemuaConfig()[payload.client_id];
+      var config = getSemuaConfig()[String(payload.client_id || "").toUpperCase()];
       if (!config || !config.spreadsheetId)
         return responseJSON(404, "error", "Kode Instansi tidak ditemukan.");
     }
@@ -349,7 +350,7 @@ function doPost(e) {
 // =============================================================================
 
 function handleGetKelompokNgaji(payload) {
-  var config = getSemuaConfig()[payload.client_id];
+  var config = getSemuaConfig()[String(payload.client_id || "").toUpperCase()];
   var ss = SpreadsheetApp.openById(config.spreadsheetId);
   var sheet = ss.getSheetByName("Master_Kelompok_Ngaji");
   if (!sheet) {
@@ -366,7 +367,7 @@ function handleGetKelompokNgaji(payload) {
 }
 
 function handleAddKelompokNgaji(payload) {
-  var config = getSemuaConfig()[payload.client_id];
+  var config = getSemuaConfig()[String(payload.client_id || "").toUpperCase()];
   var ss = SpreadsheetApp.openById(config.spreadsheetId);
   var sheet = ss.getSheetByName("Master_Kelompok_Ngaji");
   if (!sheet) {
@@ -378,7 +379,7 @@ function handleAddKelompokNgaji(payload) {
 }
 
 function handleSubmitLaporanNgaji(payload) {
-  var config = getSemuaConfig()[payload.client_id];
+  var config = getSemuaConfig()[String(payload.client_id || "").toUpperCase()];
   var sheet = SpreadsheetApp.openById(config.spreadsheetId).getSheetByName(
     "Log_Ngaji_Guru",
   );
@@ -393,7 +394,7 @@ function handleSubmitLaporanNgaji(payload) {
 }
 
 function handleGetLaporanNgaji(payload) {
-  var config = getSemuaConfig()[payload.client_id];
+  var config = getSemuaConfig()[String(payload.client_id || "").toUpperCase()];
   var data = SpreadsheetApp.openById(config.spreadsheetId)
     .getSheetByName("Log_Ngaji_Guru")
     .getDataRange()
@@ -421,7 +422,7 @@ function handleGetLaporanNgaji(payload) {
 // =============================================================================
 
 function handleGetJadwalKegiatan(payload) {
-  var config = getSemuaConfig()[payload.client_id];
+  var config = getSemuaConfig()[String(payload.client_id || "").toUpperCase()];
   var data = SpreadsheetApp.openById(config.spreadsheetId)
     .getSheetByName("Jadwal_Kegiatan")
     .getDataRange()
@@ -440,7 +441,7 @@ function handleGetJadwalKegiatan(payload) {
 }
 
 function handleAddJadwalKegiatan(payload) {
-  var config = getSemuaConfig()[payload.client_id];
+  var config = getSemuaConfig()[String(payload.client_id || "").toUpperCase()];
   var sheet = SpreadsheetApp.openById(config.spreadsheetId).getSheetByName(
     "Jadwal_Kegiatan",
   );
@@ -456,7 +457,7 @@ function handleAddJadwalKegiatan(payload) {
 }
 
 function handleEditJadwalKegiatan(payload) {
-  var config = getSemuaConfig()[payload.client_id];
+  var config = getSemuaConfig()[String(payload.client_id || "").toUpperCase()];
   var sheet = SpreadsheetApp.openById(config.spreadsheetId).getSheetByName(
     "Jadwal_Kegiatan",
   );
@@ -477,7 +478,7 @@ function handleEditJadwalKegiatan(payload) {
 }
 
 function handleAbsenKegiatan(payload) {
-  var config = getSemuaConfig()[payload.client_id];
+  var config = getSemuaConfig()[String(payload.client_id || "").toUpperCase()];
   var ss = SpreadsheetApp.openById(config.spreadsheetId);
 
   // Perbaikan nama sheet menjadi "Absen_Kegiatan"
@@ -507,7 +508,7 @@ function handleAbsenKegiatan(payload) {
 // =============================================================================
 
 function handleAbsensi(payload) {
-  var config = getSemuaConfig()[payload.client_id];
+  var config = getSemuaConfig()[String(payload.client_id || "").toUpperCase()];
   var ss = SpreadsheetApp.openById(config.spreadsheetId);
 
   // ============================================================
@@ -639,7 +640,7 @@ function hitungJarakMeter(lat1, lon1, lat2, lon2) {
 }
 
 function handleAjukanIzin(payload) {
-  var config = getSemuaConfig()[payload.client_id];
+  var config = getSemuaConfig()[String(payload.client_id || "").toUpperCase()];
   var sheet = SpreadsheetApp.openById(config.spreadsheetId).getSheetByName(
     "Log_Absensi",
   );
@@ -679,7 +680,7 @@ function handleAjukanIzin(payload) {
 }
 
 function handleGetOfficeConfig(payload) {
-  var config = getSemuaConfig()[payload.client_id];
+  var config = getSemuaConfig()[String(payload.client_id || "").toUpperCase()];
   var data = SpreadsheetApp.openById(config.spreadsheetId)
     .getSheetByName("Config_Kantor")
     .getRange("A2:G2")
@@ -712,7 +713,8 @@ function getSemuaConfig() {
       .getValues();
     var result = {};
     for (var i = 1; i < rows.length; i++) {
-      result[rows[i][0]] = {
+      var cId = String(rows[i][0]).trim().toUpperCase();
+      result[cId] = {
         spreadsheetId: rows[i][2],
         folderDriveId: rows[i][3],
         batasJam: rows[i][4],
@@ -740,7 +742,7 @@ function formatTime(val, def) {
 }
 
 function handleEnrollDevice(payload) {
-  var config = getSemuaConfig()[payload.client_id];
+  var config = getSemuaConfig()[String(payload.client_id || "").toUpperCase()];
   var ss = SpreadsheetApp.openById(config.spreadsheetId);
   var data = ss.getSheetByName("Master_Karyawan").getDataRange().getValues();
   var adminPhone = data[1][5] || "";
@@ -778,7 +780,7 @@ function handleEnrollDevice(payload) {
 }
 
 function handleGetBanners(payload) {
-  var config = getSemuaConfig()[payload.client_id];
+  var config = getSemuaConfig()[String(payload.client_id || "").toUpperCase()];
   var data = SpreadsheetApp.openById(config.spreadsheetId)
     .getSheetByName("Banner_Pengumuman")
     .getDataRange()
@@ -797,7 +799,7 @@ function handleGetBanners(payload) {
 }
 
 function handleGetMasterQuran(payload) {
-  var config = getSemuaConfig()[payload.client_id];
+  var config = getSemuaConfig()[String(payload.client_id || "").toUpperCase()];
   var ss = SpreadsheetApp.openById(config.spreadsheetId);
 
   var siswaData = ss.getSheetByName("Master_Siswa").getDataRange().getValues();
@@ -827,7 +829,7 @@ function handleGetMasterQuran(payload) {
 }
 
 function handleSubmitNilaiQuran(payload) {
-  var config = getSemuaConfig()[payload.client_id];
+  var config = getSemuaConfig()[String(payload.client_id || "").toUpperCase()];
   var sheet = SpreadsheetApp.openById(config.spreadsheetId).getSheetByName(
     "Log_Nilai_Quran",
   );
@@ -886,7 +888,7 @@ function handleVerifySuperAdmin(payload) {
 }
 
 function handleGetAllAnggota(payload) {
-  var config = getSemuaConfig()[payload.client_id];
+  var config = getSemuaConfig()[String(payload.client_id || "").toUpperCase()];
   var data = SpreadsheetApp.openById(config.spreadsheetId)
     .getSheetByName("Master_Karyawan")
     .getDataRange()
@@ -908,7 +910,7 @@ function handleGetAllAnggota(payload) {
 }
 
 function handleAddAnggota(payload) {
-  var config = getSemuaConfig()[payload.client_id];
+  var config = getSemuaConfig()[String(payload.client_id || "").toUpperCase()];
   var sheet = SpreadsheetApp.openById(config.spreadsheetId).getSheetByName(
     "Master_Karyawan",
   );
@@ -925,7 +927,7 @@ function handleAddAnggota(payload) {
 }
 
 function handleDeleteKaryawan(payload) {
-  var config = getSemuaConfig()[payload.client_id];
+  var config = getSemuaConfig()[String(payload.client_id || "").toUpperCase()];
   var sheet = SpreadsheetApp.openById(config.spreadsheetId).getSheetByName(
     "Master_Karyawan",
   );
@@ -940,7 +942,7 @@ function handleDeleteKaryawan(payload) {
 }
 
 function handleGetAllApprovals(payload) {
-  var config = getSemuaConfig()[payload.client_id];
+  var config = getSemuaConfig()[String(payload.client_id || "").toUpperCase()];
   var ss = SpreadsheetApp.openById(config.spreadsheetId);
   var logs = ss.getSheetByName("Log_Absensi").getDataRange().getValues();
   var employees = ss
@@ -976,7 +978,7 @@ function handleGetAllApprovals(payload) {
 }
 
 function handleUpdateLeaveStatus(payload) {
-  var config = getSemuaConfig()[payload.client_id];
+  var config = getSemuaConfig()[String(payload.client_id || "").toUpperCase()];
   SpreadsheetApp.openById(config.spreadsheetId)
     .getSheetByName("Log_Absensi")
     .getRange(payload.row_index, 7)
@@ -985,7 +987,7 @@ function handleUpdateLeaveStatus(payload) {
 }
 
 function handleResetDevice(payload) {
-  var config = getSemuaConfig()[payload.client_id];
+  var config = getSemuaConfig()[String(payload.client_id || "").toUpperCase()];
   var sheet = SpreadsheetApp.openById(config.spreadsheetId).getSheetByName(
     "Master_Karyawan",
   );
@@ -1000,7 +1002,7 @@ function handleResetDevice(payload) {
 }
 
 function handleUpdateJamKerja(payload) {
-  var config = getSemuaConfig()[payload.client_id];
+  var config = getSemuaConfig()[String(payload.client_id || "").toUpperCase()];
   SpreadsheetApp.openById(config.spreadsheetId)
     .getSheetByName("Config_Kantor")
     .getRange("E2:G2")
@@ -1015,7 +1017,7 @@ function handleUpdateJamKerja(payload) {
 }
 
 function handleUpdateLokasi(payload) {
-  var config = getSemuaConfig()[payload.client_id];
+  var config = getSemuaConfig()[String(payload.client_id || "").toUpperCase()];
   SpreadsheetApp.openById(config.spreadsheetId)
     .getSheetByName("Config_Kantor")
     .getRange("B2:D2")
@@ -1033,7 +1035,7 @@ function handleUpdateLokasi(payload) {
 }
 
 function handleRegisterFace(payload) {
-  var config = getSemuaConfig()[payload.client_id];
+  var config = getSemuaConfig()[String(payload.client_id || "").toUpperCase()];
   var sheet = SpreadsheetApp.openById(config.spreadsheetId).getSheetByName(
     "Master_Karyawan",
   );
@@ -1050,7 +1052,7 @@ function handleRegisterFace(payload) {
 }
 
 function handleGetFace(payload) {
-  var config = getSemuaConfig()[payload.client_id];
+  var config = getSemuaConfig()[String(payload.client_id || "").toUpperCase()];
   var data = SpreadsheetApp.openById(config.spreadsheetId)
     .getSheetByName("Master_Karyawan")
     .getDataRange()
@@ -1064,7 +1066,7 @@ function handleGetFace(payload) {
 }
 
 function handleCekStatusHariIni(payload) {
-  var config = getSemuaConfig()[payload.client_id];
+  var config = getSemuaConfig()[String(payload.client_id || "").toUpperCase()];
   var logs = SpreadsheetApp.openById(config.spreadsheetId)
     .getSheetByName("Log_Absensi")
     .getDataRange()
@@ -1087,7 +1089,7 @@ function handleCekStatusHariIni(payload) {
 }
 
 function handleGetHistory(payload) {
-  var config = getSemuaConfig()[payload.client_id];
+  var config = getSemuaConfig()[String(payload.client_id || "").toUpperCase()];
   var logs = SpreadsheetApp.openById(config.spreadsheetId)
     .getSheetByName("Log_Absensi")
     .getDataRange()
@@ -1109,7 +1111,7 @@ function handleGetHistory(payload) {
 }
 
 function handleGetLeaveHistory(payload) {
-  var config = getSemuaConfig()[payload.client_id];
+  var config = getSemuaConfig()[String(payload.client_id || "").toUpperCase()];
   var logs = SpreadsheetApp.openById(config.spreadsheetId)
     .getSheetByName("Log_Absensi")
     .getDataRange()
@@ -1154,7 +1156,7 @@ function handleGetLeaveHistory(payload) {
   return responseJSON(200, "success", results.reverse());
 }
 function handleGetMonthlyReport(payload) {
-  var config = getSemuaConfig()[payload.client_id];
+  var config = getSemuaConfig()[String(payload.client_id || "").toUpperCase()];
   var logs = SpreadsheetApp.openById(config.spreadsheetId)
     .getSheetByName("Log_Absensi")
     .getDataRange()
@@ -1196,7 +1198,7 @@ function handleGetMonthlyReport(payload) {
 // =============================================================================
 
 function handleAddBanner(payload) {
-  var config = getSemuaConfig()[payload.client_id];
+  var config = getSemuaConfig()[String(payload.client_id || "").toUpperCase()];
   var sheet = SpreadsheetApp.openById(config.spreadsheetId).getSheetByName(
     "Banner_Pengumuman",
   );
@@ -1232,7 +1234,7 @@ function handleAddBanner(payload) {
 }
 
 function handleDeleteBanner(payload) {
-  var config = getSemuaConfig()[payload.client_id];
+  var config = getSemuaConfig()[String(payload.client_id || "").toUpperCase()];
   var sheet = SpreadsheetApp.openById(config.spreadsheetId).getSheetByName(
     "Banner_Pengumuman",
   );
@@ -1266,7 +1268,7 @@ function handleDeleteBanner(payload) {
 }
 
 function handleEditBanner(payload) {
-  var config = getSemuaConfig()[payload.client_id];
+  var config = getSemuaConfig()[String(payload.client_id || "").toUpperCase()];
   var sheet = SpreadsheetApp.openById(config.spreadsheetId).getSheetByName(
     "Banner_Pengumuman",
   );
@@ -1291,7 +1293,7 @@ function handleEditBanner(payload) {
 // =============================================================================
 
 function handleGetNilaiSiswa(payload) {
-  var config = getSemuaConfig()[payload.client_id];
+  var config = getSemuaConfig()[String(payload.client_id || "").toUpperCase()];
   var ss = SpreadsheetApp.openById(config.spreadsheetId);
   var logData = ss
     .getSheetByName("Log_Nilai_Quran")
@@ -1328,7 +1330,7 @@ function handleGetNilaiSiswa(payload) {
 }
 
 function handleGetAppSettings(payload) {
-  var config = getSemuaConfig()[payload.client_id];
+  var config = getSemuaConfig()[String(payload.client_id || "").toUpperCase()];
   var sheet = SpreadsheetApp.openById(config.spreadsheetId).getSheetByName(
     "App_Settings",
   );
@@ -1354,7 +1356,7 @@ function handleGetAppSettings(payload) {
 // =============================================================================
 
 function handleGetJabatan(payload) {
-  var config = getSemuaConfig()[payload.client_id];
+  var config = getSemuaConfig()[String(payload.client_id || "").toUpperCase()];
   var sheet = SpreadsheetApp.openById(config.spreadsheetId).getSheetByName(
     "Master_Jabatan",
   );
@@ -1370,7 +1372,7 @@ function handleGetJabatan(payload) {
 }
 
 function handleAddJabatan(payload) {
-  var config = getSemuaConfig()[payload.client_id];
+  var config = getSemuaConfig()[String(payload.client_id || "").toUpperCase()];
   var sheet = SpreadsheetApp.openById(config.spreadsheetId).getSheetByName(
     "Master_Jabatan",
   );
@@ -1380,7 +1382,7 @@ function handleAddJabatan(payload) {
 }
 
 function handleDeleteJabatan(payload) {
-  var config = getSemuaConfig()[payload.client_id];
+  var config = getSemuaConfig()[String(payload.client_id || "").toUpperCase()];
   var sheet = SpreadsheetApp.openById(config.spreadsheetId).getSheetByName(
     "Master_Jabatan",
   );
@@ -1395,7 +1397,7 @@ function handleDeleteJabatan(payload) {
 }
 
 function handleAbsenBriefing(payload) {
-  var config = getSemuaConfig()[payload.client_id];
+  var config = getSemuaConfig()[String(payload.client_id || "").toUpperCase()];
   var sheet = SpreadsheetApp.openById(config.spreadsheetId).getSheetByName(
     "Log_Briefing",
   );
@@ -1428,7 +1430,7 @@ function handleAbsenBriefing(payload) {
 }
 
 function handleGetBriefing(payload) {
-  var config = getSemuaConfig()[payload.client_id];
+  var config = getSemuaConfig()[String(payload.client_id || "").toUpperCase()];
   var sheet = SpreadsheetApp.openById(config.spreadsheetId).getSheetByName(
     "Log_Briefing",
   );
@@ -1454,7 +1456,7 @@ function handleGetBriefing(payload) {
 }
 function handleUpdateAnggota(payload) {
   try {
-    var config = getSemuaConfig()[payload.client_id];
+    var config = getSemuaConfig()[String(payload.client_id || "").toUpperCase()];
     var sheet = SpreadsheetApp.openById(config.spreadsheetId).getSheetByName(
       "Master_Karyawan",
     );
@@ -1525,7 +1527,7 @@ function handleGetBriefingReport(payload) {
 }
 
 function handleGetBriefingReport_internal(payload) {
-  var config = getSemuaConfig()[payload.client_id];
+  var config = getSemuaConfig()[String(payload.client_id || "").toUpperCase()];
   var ss = SpreadsheetApp.openById(config.spreadsheetId);
   var sheet = ss.getSheetByName("Log_Briefing");
   if (!sheet) return { status: "success", message: [] };
@@ -1552,7 +1554,7 @@ function handleGetBriefingReport_internal(payload) {
 }
 
 function handleGetPengajianReport(payload) {
-  var config = getSemuaConfig()[payload.client_id];
+  var config = getSemuaConfig()[String(payload.client_id || "").toUpperCase()];
   var ss = SpreadsheetApp.openById(config.spreadsheetId);
   var sheet = ss.getSheetByName("Log_Ngaji_Guru");
   if (!sheet) return { status: "success", message: [] };
@@ -1579,7 +1581,7 @@ function handleGetPengajianReport(payload) {
 }
 
 function handleGetKegiatanReport(payload) {
-  var config = getSemuaConfig()[payload.client_id];
+  var config = getSemuaConfig()[String(payload.client_id || "").toUpperCase()];
   var ss = SpreadsheetApp.openById(config.spreadsheetId);
   var sheet = ss.getSheetByName("Absen_Kegiatan");
   if (!sheet) return { status: "success", message: [] };
@@ -1607,7 +1609,7 @@ function handleGetKegiatanReport(payload) {
 }
 
 function handleGetFeedbackWeb(clientId) {
-  var config = getSemuaConfig()[clientId];
+  var config = getSemuaConfig()[String(clientId || "").toUpperCase()];
   var ss = SpreadsheetApp.openById(config.spreadsheetId);
   var sheet = ss.getSheetByName("Log_Feedback");
   if (!sheet) return { status: "success", message: [] };
@@ -1621,7 +1623,7 @@ function handleGetFeedbackWeb(clientId) {
 
 
 function handleSubmitFeedback(payload) {
-  var config = getSemuaConfig()[payload.client_id];
+  var config = getSemuaConfig()[String(payload.client_id || "").toUpperCase()];
   var ss = SpreadsheetApp.openById(config.spreadsheetId);
   var sheet = ss.getSheetByName("Log_Feedback");
   if (!sheet) {
@@ -1637,7 +1639,7 @@ function handleSubmitFeedback(payload) {
 }
 
 function handleGetFeedback(payload) {
-  var config = getSemuaConfig()[payload.client_id];
+  var config = getSemuaConfig()[String(payload.client_id || "").toUpperCase()];
   var ss = SpreadsheetApp.openById(config.spreadsheetId);
   var sheet = ss.getSheetByName("Log_Feedback");
   if (!sheet) return responseJSON(200, "success", []);
@@ -1654,7 +1656,7 @@ function handleGetFeedback(payload) {
 // =============================================================================
 
 function handleGetBriefingReport(payload) {
-  var config = getSemuaConfig()[payload.client_id];
+  var config = getSemuaConfig()[String(payload.client_id || "").toUpperCase()];
   var ss = SpreadsheetApp.openById(config.spreadsheetId);
   var sheet = ss.getSheetByName("Log_Briefing");
   if (!sheet) return responseJSON(200, "success", []);
@@ -1683,7 +1685,7 @@ function handleGetBriefingReport(payload) {
 }
 
 function handleGetPengajianReport(payload) {
-  var config = getSemuaConfig()[payload.client_id];
+  var config = getSemuaConfig()[String(payload.client_id || "").toUpperCase()];
   var ss = SpreadsheetApp.openById(config.spreadsheetId);
   var sheet = ss.getSheetByName("Log_Ngaji_Guru");
   if (!sheet) return responseJSON(200, "success", []);
@@ -1713,7 +1715,7 @@ function handleGetPengajianReport(payload) {
 }
 
 function handleGetKegiatanReport(payload) {
-  var config = getSemuaConfig()[payload.client_id];
+  var config = getSemuaConfig()[String(payload.client_id || "").toUpperCase()];
   var ss = SpreadsheetApp.openById(config.spreadsheetId);
   var sheet = ss.getSheetByName("Absen_Kegiatan");
   if (!sheet) return responseJSON(200, "success", []);
@@ -1755,7 +1757,7 @@ function handleGetKegiatanReport(payload) {
 // =============================================================================
 
 function handleGetAyatPilihan(payload) {
-  var config = getSemuaConfig()[payload.client_id];
+  var config = getSemuaConfig()[String(payload.client_id || "").toUpperCase()];
   var ss = SpreadsheetApp.openById(config.spreadsheetId);
   var sheet = ss.getSheetByName("App_Settings");
   if (!sheet) return responseJSON(200, "success", { ayat: "", sumber: "" });
@@ -1769,7 +1771,7 @@ function handleGetAyatPilihan(payload) {
 }
 
 function handleUpdateAyatPilihan(payload) {
-  var config = getSemuaConfig()[payload.client_id];
+  var config = getSemuaConfig()[String(payload.client_id || "").toUpperCase()];
   var ss = SpreadsheetApp.openById(config.spreadsheetId);
   var sheet = ss.getSheetByName("App_Settings");
   if (!sheet) {
@@ -1798,7 +1800,7 @@ function handleUpdateAyatPilihan(payload) {
 // =============================================================================
 
 function handleGetEnhancedStats(payload) {
-  var config = getSemuaConfig()[payload.client_id];
+  var config = getSemuaConfig()[String(payload.client_id || "").toUpperCase()];
   var ss = SpreadsheetApp.openById(config.spreadsheetId);
   var logs = ss.getSheetByName("Log_Absensi").getDataRange().getValues();
   var employees = ss.getSheetByName("Master_Karyawan").getDataRange().getValues();
@@ -1879,7 +1881,7 @@ function handleGetEnhancedStats(payload) {
 }
 
 function handleGetEmployeeStats(payload) {
-  var config = getSemuaConfig()[payload.client_id];
+  var config = getSemuaConfig()[String(payload.client_id || "").toUpperCase()];
   var logs = SpreadsheetApp.openById(config.spreadsheetId)
     .getSheetByName("Log_Absensi").getDataRange().getValues();
 
@@ -1945,7 +1947,7 @@ function handleGetEmployeeStats(payload) {
 // =============================================================================
 
 function handleUploadProfilePhoto(payload) {
-  var config = getSemuaConfig()[payload.client_id];
+  var config = getSemuaConfig()[String(payload.client_id || "").toUpperCase()];
   var ss = SpreadsheetApp.openById(config.spreadsheetId);
   var sheet = ss.getSheetByName("Master_Karyawan");
   var data = sheet.getDataRange().getValues();
