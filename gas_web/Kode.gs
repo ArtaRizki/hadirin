@@ -1,5 +1,5 @@
 // =============================================================================
-// BACKEND HADIRIN - v3.7 (Unified - Dynamic Groups & Time Fix)
+// BACKEND SDIT AL-FAHMI PALU - v3.7 (Unified - Dynamic Groups & Time Fix)
 // =============================================================================
 const MASTER_API_TOKEN = "smpit-palu";
 const MASTER_REGISTRY_ID = "1hTh660vp0AbPn8D37Yg7XE-5HBRDXYA2xSJErORfZ3w";
@@ -15,7 +15,7 @@ function doGet(e) {
   var template = HtmlService.createTemplateFromFile("Index");
   return template
     .evaluate()
-    .setTitle("Hadir.in Dashboard v3.7")
+    .setTitle("SDIT AL-FAHMI PALU Dashboard v3.7")
     .addMetaTag("viewport", "width=device-width, initial-scale=1")
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
 }

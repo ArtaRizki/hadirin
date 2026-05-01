@@ -116,7 +116,7 @@
   }
 
   function setupUIForUser() {
-    localStorage.setItem("hadirin_user", JSON.stringify(currentUser));
+    localStorage.setItem("sdit_user", JSON.stringify(currentUser));
 
     document.getElementById("login-screen").style.display = "none";
     document.getElementById("app-container").style.display = "flex";
@@ -172,7 +172,7 @@
 
   function handleLogout() {
     currentUser = null;
-    localStorage.removeItem("hadirin_user");
+    localStorage.removeItem("sdit_user");
     document.getElementById("app-container").style.display = "none";
     document.getElementById("login-screen").style.display = "flex";
     document.getElementById("login-id").value = "";
@@ -182,7 +182,7 @@
   }
 
   document.addEventListener("DOMContentLoaded", function () {
-    const saved = localStorage.getItem("hadirin_user");
+    const saved = localStorage.getItem("sdit_user");
     if (saved) {
       currentUser = JSON.parse(saved);
       setupUIForUser();
@@ -694,7 +694,7 @@
           const ws = XLSX.utils.json_to_sheet(data);
           const wb = XLSX.utils.book_new();
           XLSX.utils.book_append_sheet(wb, ws, "Laporan");
-          XLSX.writeFile(wb, `Laporan_Hadirin_${picker.value}.xlsx`);
+          XLSX.writeFile(wb, `Laporan_SDIT_AL-FAHMI_PALU_${picker.value}.xlsx`);
         }
       })
       .handleGetMonthlyReport({
@@ -882,7 +882,7 @@
                 if (res.success) {
                   currentUser.faceWeb = descriptor;
                   localStorage.setItem(
-                    "hadirin_user",
+                    "sdit_user",
                     JSON.stringify(currentUser),
                   );
                   alert("Berhasil! Silakan absen ulang.");
