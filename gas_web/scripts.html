@@ -8,6 +8,50 @@
   let rawTodayData = [];
   let allShifts = [];
 
+  // AUTHENTICATION (Moved to top for reliability)
+  window.handleLogin = function (btn) {
+    console.log("handleLogin triggered", btn);
+    const clientId = document.getElementById("login-client-id").value.trim();
+    const userId = document
+      .getElementById("login-id")
+      .value.trim()
+      .toLowerCase();
+    const pin = document.getElementById("login-password").value;
+
+    if (!clientId || !userId) {
+      Swal.fire("Peringatan", "Kode Instansi dan ID wajib diisi.", "warning");
+      return;
+    }
+
+    if (btn) {
+      btn.disabled = true;
+      btn.innerHTML = '<span class="loading"></span> Masuk...';
+    }
+
+    google.script.run
+      .withSuccessHandler(function (response) {
+        if (btn) {
+          btn.disabled = false;
+          btn.innerText = "Masuk Dashboard";
+        }
+
+        if (response.success) {
+          currentUser = response.user;
+          setupUIForUser();
+        } else {
+          showLoginError(response.message);
+        }
+      })
+      .withFailureHandler(function (err) {
+        if (btn) {
+          btn.disabled = false;
+          btn.innerText = "Masuk Dashboard";
+        }
+        showLoginError("Gagal terhubung ke server.");
+      })
+      .loginWeb(clientId, userId, isAdminMode ? pin : "BYPASS_PIN");
+  };
+
   // POLYFILLS
   if (!String.prototype.padLeft) {
     String.prototype.padLeft = function (n, str) {
@@ -77,48 +121,7 @@
     lucide.createIcons();
   }
 
-  // AUTHENTICATION
-  function handleLogin(btn) {
-    console.log("handleLogin started", btn);
-    const clientId = document.getElementById("login-client-id").value.trim();
-    const userId = document
-      .getElementById("login-id")
-      .value.trim()
-      .toLowerCase();
-    const pin = document.getElementById("login-password").value;
-    // btn is passed directly from Index.html
-    if (!btn) {
-      console.warn("btn is null, trying to find by selector");
-      btn = document.querySelector(".login-card .btn-primary");
-    }
-
-    if (!clientId || !userId) {
-      Swal.fire("Peringatan", "Kode Instansi dan ID wajib diisi.", "warning");
-      return;
-    }
-
-    btn.disabled = true;
-    btn.innerHTML = '<span class="loading"></span> Masuk...';
-
-    google.script.run
-      .withSuccessHandler(function (response) {
-        btn.disabled = false;
-        btn.innerText = "Masuk Dashboard";
-
-        if (response.success) {
-          currentUser = response.user;
-          setupUIForUser();
-        } else {
-          showLoginError(response.message);
-        }
-      })
-      .withFailureHandler(function (err) {
-        btn.disabled = false;
-        btn.innerText = "Masuk Dashboard";
-        showLoginError("Gagal terhubung ke server.");
-      })
-      .loginWeb(clientId, userId, isAdminMode ? pin : "BYPASS_PIN");
-  }
+  // (Removed handleLogin from here)
 
   function setupUIForUser() {
     localStorage.setItem("sdit_user", JSON.stringify(currentUser));
