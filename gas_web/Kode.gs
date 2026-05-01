@@ -509,11 +509,84 @@ function handleAbsenKegiatan(payload) {
 function handleAbsensi(payload) {
   var config = getSemuaConfig()[payload.client_id];
   var ss = SpreadsheetApp.openById(config.spreadsheetId);
+
+  // ============================================================
+  // VALIDASI 1: GEOFENCING — Cek jarak dari lokasi kantor
+  // ============================================================
+  if (payload.lat_long) {
+    try {
+      var configSheet = ss.getSheetByName("Config_Kantor");
+      var kantorLat = 0, kantorLng = 0, radiusMeter = config.radius || 100;
+      
+      if (configSheet) {
+        var kantor = configSheet.getRange("A2:D2").getValues()[0];
+        kantorLat = parseFloat(kantor[1]);
+        kantorLng = parseFloat(kantor[2]);
+        if (!isNaN(parseFloat(kantor[3]))) radiusMeter = parseFloat(kantor[3]);
+      }
+
+      if (kantorLat !== 0 && kantorLng !== 0) {
+        var coords = payload.lat_long.split(",");
+        var userLat = parseFloat(coords[0].trim());
+        var userLng = parseFloat(coords[1].trim());
+
+        var jarak = hitungJarakMeter(kantorLat, kantorLng, userLat, userLng);
+        if (jarak > radiusMeter) {
+          return responseJSON(403, "error",
+            "Anda berada di luar area kantor (" + Math.round(jarak) + "m dari titik). Radius absen: " + Math.round(radiusMeter) + "m.");
+        }
+      }
+    } catch (e) {
+      console.error("Geofencing error: " + e.message);
+    }
+  }
+
+  // ============================================================
+  // VALIDASI 2: CEK DUPLIKAT — Tidak boleh absen 2x tipe sama
+  // ============================================================
+  var now = new Date();
+  var todayStr = Utilities.formatDate(now, "GMT+7", "yyyy-MM-dd");
+  var logSheet = ss.getSheetByName("Log_Absensi");
+  var logData = logSheet.getDataRange().getValues();
+  
+  for (var i = logData.length - 1; i >= 1; i--) {
+    var val = logData[i][0];
+    var tglLog = "";
+    if (val instanceof Date) {
+      tglLog = Utilities.formatDate(val, "GMT+7", "yyyy-MM-dd");
+    } else {
+      tglLog = String(val).split(" ")[0]; // Asumsi "yyyy-MM-dd HH:mm:ss"
+    }
+
+    if (tglLog === todayStr) {
+      if (String(logData[i][1]).trim().toLowerCase() === String(payload.id_karyawan).trim().toLowerCase()
+          && String(logData[i][2]).trim().toLowerCase() === String(payload.tipe_absen).trim().toLowerCase()) {
+        
+        var waktuLog = "";
+        if (val instanceof Date) {
+           waktuLog = Utilities.formatDate(val, "GMT+7", "HH:mm");
+        } else {
+           waktuLog = String(val).split(" ")[1] ? String(val).split(" ")[1].substring(0, 5) : "";
+        }
+        
+        return responseJSON(409, "error",
+          "Anda sudah melakukan absen " + payload.tipe_absen + " hari ini pada pukul " + waktuLog + " WITA.");
+      }
+    }
+  }
+
+  // ============================================================
+  // STATUS TERLAMBAT
+  // ============================================================
   var status =
-    parseInt(Utilities.formatDate(new Date(), "GMT+7", "HH")) >=
+    parseInt(Utilities.formatDate(now, "GMT+7", "HH")) >=
       config.batasJam && payload.tipe_absen === "Masuk"
       ? "Terlambat"
       : "Tepat Waktu";
+
+  // ============================================================
+  // UPLOAD FOTO KE DRIVE
+  // ============================================================
   var fotoUrl = "No Photo";
   if (payload.foto_base64 && payload.foto_base64.length > 0) {
     try {
@@ -522,7 +595,7 @@ function handleAbsensi(payload) {
         "Absen_" +
         payload.id_karyawan +
         "_" +
-        Utilities.formatDate(new Date(), "GMT+7", "yyyyMMdd_HHmmss") +
+        Utilities.formatDate(now, "GMT+7", "yyyyMMdd_HHmmss") +
         ".jpg";
       var blob = Utilities.newBlob(
         Utilities.base64Decode(payload.foto_base64),
@@ -535,8 +608,12 @@ function handleAbsensi(payload) {
       fotoUrl = "Error GDrive: " + e.message;
     }
   }
-  ss.getSheetByName("Log_Absensi").appendRow([
-    Utilities.formatDate(new Date(), "GMT+7", "yyyy-MM-dd HH:mm:ss"),
+
+  // ============================================================
+  // SIMPAN LOG ABSENSI
+  // ============================================================
+  logSheet.appendRow([
+    Utilities.formatDate(now, "GMT+7", "yyyy-MM-dd HH:mm:ss"),
     payload.id_karyawan,
     payload.tipe_absen,
     payload.lat_long,
@@ -544,7 +621,21 @@ function handleAbsensi(payload) {
     "Valid",
     status,
   ]);
-  return responseJSON(200, "success", "Berhasil.");
+  return responseJSON(200, "success", "Absen berhasil dicatat.");
+}
+
+// ============================================================
+// HAVERSINE: Hitung jarak dalam meter antara 2 koordinat GPS
+// ============================================================
+function hitungJarakMeter(lat1, lon1, lat2, lon2) {
+  var R = 6371000; // Radius bumi dalam meter
+  var dLat = (lat2 - lat1) * Math.PI / 180;
+  var dLon = (lon2 - lon1) * Math.PI / 180;
+  var a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+          Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+          Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
 }
 
 function handleAjukanIzin(payload) {
@@ -1860,13 +1951,17 @@ function handleUploadProfilePhoto(payload) {
   var data = sheet.getDataRange().getValues();
 
   var fotoUrl = "";
+  var fileId = "";
   if (payload.foto_base64 && payload.foto_base64.length > 0) {
     try {
       var folder = DriveApp.getFolderById(config.folderDriveId);
       var fileName = "Profile_" + payload.id_karyawan + "_" + new Date().getTime() + ".jpg";
       var blob = Utilities.newBlob(Utilities.base64Decode(payload.foto_base64), "image/jpeg", fileName);
       var file = folder.createFile(blob);
-      fotoUrl = file.getUrl();
+      // Set file agar bisa diakses siapa saja (untuk tampil di Image.network)
+      file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+      fileId = file.getId();
+      fotoUrl = "https://drive.google.com/uc?export=view&id=" + fileId;
     } catch (e) {
       return responseJSON(500, "error", "Gagal upload foto: " + e.message);
     }
@@ -1875,7 +1970,7 @@ function handleUploadProfilePhoto(payload) {
   for (var i = 1; i < data.length; i++) {
     if (String(data[i][0]).trim().toLowerCase() === String(payload.id_karyawan).trim().toLowerCase()) {
       // Hapus foto lama jika ada
-      var oldUrl = data[i][7];
+      var oldUrl = String(data[i][7] || "");
       if (oldUrl && oldUrl !== "") {
         try {
           var idMatch = oldUrl.match(/[-\w]{25,}/);

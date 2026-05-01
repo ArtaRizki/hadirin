@@ -534,7 +534,7 @@ class AdminService extends ApiClient {
         'id_karyawan': idKaryawan,
         'foto_base64': fotoBase64,
       };
-      final response = await sendRequest('upload_profile_photo', payload, timeout: const Duration(seconds: 30));
+      final response = await sendRequest('upload_profile_photo', payload, timeout: const Duration(seconds: 60));
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         if (data['code'] == 200) return {'success': true, 'url': data['message']['url']};

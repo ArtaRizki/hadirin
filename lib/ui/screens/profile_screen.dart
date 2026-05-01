@@ -293,69 +293,84 @@ class _ProfileScreenState extends State<ProfileScreen> {
   // =================================================================
   void _showEditAyatDialog() async {
     final auth = context.read<AuthProvider>();
+
+    // Tampilkan loading saat mengambil data
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(child: CircularProgressIndicator(color: Colors.white)),
+    );
+
     final data = await AdminService().getAyatPilihan(auth.clientId ?? "");
     if (!mounted) return;
+    Navigator.pop(context); // tutup loading
 
     final ayatCtrl = TextEditingController(text: data?['ayat'] ?? "");
     final sumberCtrl = TextEditingController(text: data?['sumber'] ?? "");
+    bool isSaving = false;
 
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text("Kelola Ayat Pilihan", style: TextStyle(fontWeight: FontWeight.w900)),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: ayatCtrl,
-              maxLines: 4,
-              decoration: InputDecoration(
-                labelText: "Isi Ayat",
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          backgroundColor: Colors.white,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: const Text("Kelola Ayat Pilihan", style: TextStyle(fontWeight: FontWeight.w900)),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: ayatCtrl,
+                maxLines: 4,
+                decoration: InputDecoration(
+                  labelText: "Isi Ayat",
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                ),
               ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: sumberCtrl,
+                decoration: InputDecoration(
+                  labelText: "Sumber (QS. Al-Baqarah: 185)",
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text("Batal"),
             ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: sumberCtrl,
-              decoration: InputDecoration(
-                labelText: "Sumber (QS. Al-Baqarah: 185)",
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: context.primaryColor,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
+              onPressed: isSaving ? null : () async {
+                setDialogState(() => isSaving = true);
+                final ok = await AdminService().updateAyatPilihan(
+                  auth.clientId ?? "",
+                  ayatCtrl.text.trim(),
+                  sumberCtrl.text.trim(),
+                );
+                if (ctx.mounted) Navigator.pop(ctx);
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(ok ? "Ayat berhasil diperbarui!" : "Gagal memperbarui ayat."),
+                      backgroundColor: ok ? const Color(0xFF16A34A) : Colors.red,
+                    ),
+                  );
+                }
+              },
+              child: isSaving
+                  ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                  : const Text("Simpan"),
             ),
           ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text("Batal"),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: context.primaryColor,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            ),
-            onPressed: () async {
-              Navigator.pop(ctx);
-              final ok = await AdminService().updateAyatPilihan(
-                auth.clientId ?? "",
-                ayatCtrl.text.trim(),
-                sumberCtrl.text.trim(),
-              );
-              if (mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(ok ? "Ayat berhasil diperbarui!" : "Gagal memperbarui ayat."),
-                    backgroundColor: ok ? const Color(0xFF16A34A) : Colors.red,
-                  ),
-                );
-              }
-            },
-            child: const Text("Simpan"),
-          ),
-        ],
       ),
     );
   }
