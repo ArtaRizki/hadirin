@@ -3,8 +3,12 @@
   <head>
     <base target="_top" />
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
+    />
     <title>SDIT AL-FAHMI PALU Dashboard</title>
+
     <!-- PWA & Mobile Meta -->
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta
@@ -13,10 +17,14 @@
     />
     <meta name="apple-mobile-web-app-title" content="SDIT AL-FAHMI PALU" />
     <meta name="theme-color" content="#005147" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="format-detection" content="telephone=no" />
+
     <link
       rel="apple-touch-icon"
       href="https://via.placeholder.com/180/005147/ffffff?text=S"
     />
+
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -24,19 +32,25 @@
       href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap"
       rel="stylesheet"
     />
+
     <!-- Lucide Icons (CDN) -->
     <script src="https://unpkg.com/lucide@latest"></script>
+
     <!-- Chart.js (CDN) -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
     <!-- Face API (CDN) -->
     <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+
     <!-- SweetAlert2 (CDN) -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
     <!-- SheetJS (Excel) -->
     <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
 
     <?!= include('styles'); ?>
   </head>
+
   <body>
     <!-- LOGIN SCREEN -->
     <div id="login-screen">
@@ -78,7 +92,10 @@
         <button
           class="btn btn-primary"
           style="width: 100%; margin-top: 10px"
-          onclick="console.log('Button clicked!'); handleLogin(this)"
+          onclick="
+            console.log('Button clicked!');
+            handleLogin(this);
+          "
         >
           Masuk Dashboard
         </button>
@@ -811,7 +828,10 @@
           </header>
 
           <div style="display: flex; gap: 10px; margin-bottom: 24px">
-            <button class="tab-btn active" onclick="switchShiftTab(event, 'calendar')">
+            <button
+              class="tab-btn active"
+              onclick="switchShiftTab(event, 'calendar')"
+            >
               Kalender Plotting
             </button>
             <button class="tab-btn" onclick="switchShiftTab(event, 'list')">

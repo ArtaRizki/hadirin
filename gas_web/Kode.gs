@@ -22,6 +22,7 @@ function doGet(e) {
 }
 
 function include(filename) {
+  console.log("Including file: " + filename);
   return HtmlService.createHtmlOutputFromFile(filename).getContent();
 }
 
@@ -42,6 +43,9 @@ function loginWeb(clientId, id, pin) {
     var lookupId = String(clientId || "")
       .trim()
       .toUpperCase();
+    
+    console.log("[LOGIN] Attempting login for Client: " + lookupId + ", User: " + id);
+    
     var config = allConfigs[lookupId];
     if (!config)
       return { success: false, message: "Kode Instansi tidak terdaftar." };
@@ -99,7 +103,8 @@ function submitAbsenWeb(payload) {
 
 function getDashboardStats(clientId, id) {
   try {
-    var config = getSemuaConfig()[clientId.toUpperCase()];
+    var lookupId = String(clientId || "").toUpperCase();
+    var config = getSemuaConfig()[lookupId];
     if (!config)
       return {
         present: 0,
@@ -1510,10 +1515,11 @@ function handleWebApiProxy(payload) {
 // =============================================================================
 
 function handleGetEnhancedStatsWeb(clientId) {
+  var lookupId = String(clientId || "").toUpperCase();
   var payload = {
     api_token: MASTER_API_TOKEN,
     action: "get_enhanced_stats",
-    client_id: clientId,
+    client_id: lookupId,
   };
   var result = handleGetEnhancedStats(payload);
   return JSON.parse(result.getContent());
@@ -1609,7 +1615,8 @@ function handleGetKegiatanReport(payload) {
 }
 
 function handleGetFeedbackWeb(clientId) {
-  var config = getSemuaConfig()[String(clientId || "").toUpperCase()];
+  var lookupId = String(clientId || "").toUpperCase();
+  var config = getSemuaConfig()[lookupId];
   var ss = SpreadsheetApp.openById(config.spreadsheetId);
   var sheet = ss.getSheetByName("Log_Feedback");
   if (!sheet) return { status: "success", message: [] };
