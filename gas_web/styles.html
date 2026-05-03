@@ -1,15 +1,16 @@
-<style>
+﻿<style>
   :root {
     --primary: #005147;
-    --primary-gradient: linear-gradient(135deg, #005147 0%, #007D6E 100%);
-    --bg-light: #F8FAFC;
+    --primary-gradient: linear-gradient(135deg, #005147 0%, #007d6e 100%);
+    --bg-light: #f8fafc;
     --card-bg: rgba(255, 255, 255, 0.85);
-    --text-main: #0F172A;
-    --text-muted: #64748B;
+    --text-main: #0f172a;
+    --text-muted: #64748b;
     --glass-border: rgba(255, 255, 255, 0.4);
     --radius-lg: 28px;
     --radius-md: 18px;
-    --shadow-soft: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+    --shadow-soft:
+      0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
     --shadow-color: rgba(0, 81, 71, 0.15);
   }
 
@@ -17,7 +18,7 @@
     margin: 0;
     padding: 0;
     box-sizing: border-box;
-    font-family: 'Inter', sans-serif;
+    font-family: "Inter", sans-serif;
     -webkit-font-smoothing: antialiased;
   }
 
@@ -49,15 +50,24 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background: radial-gradient(circle at top right, rgba(124, 58, 237, 0.08), transparent),
-                radial-gradient(circle at bottom left, rgba(79, 70, 229, 0.05), transparent);
+    background:
+      radial-gradient(
+        circle at top right,
+        rgba(124, 58, 237, 0.08),
+        transparent
+      ),
+      radial-gradient(
+        circle at bottom left,
+        rgba(79, 70, 229, 0.05),
+        transparent
+      );
   }
 
   .login-card {
     width: 100%;
     max-width: 420px;
     text-align: center;
-    border: 1px solid rgba(255,255,255,0.6);
+    border: 1px solid rgba(255, 255, 255, 0.6);
   }
 
   .logo {
@@ -86,13 +96,13 @@
     letter-spacing: 0.5px;
   }
 
-  .input-group input, 
-  .input-group select, 
+  .input-group input,
+  .input-group select,
   .input-group textarea {
     width: 100%;
     padding: 16px 20px;
     border-radius: var(--radius-md);
-    border: 1.5px solid #E2E8F0;
+    border: 1.5px solid #e2e8f0;
     background: white;
     font-size: 1rem;
     font-weight: 500;
@@ -235,13 +245,13 @@
     font-weight: 800;
     text-transform: uppercase;
     color: var(--text-muted);
-    border-bottom: 1px solid #F1F5F9;
+    border-bottom: 1px solid #f1f5f9;
   }
 
   td {
     padding: 20px 24px;
     font-size: 0.9rem;
-    border-bottom: 1px solid #F1F5F9;
+    border-bottom: 1px solid #f1f5f9;
   }
 
   tr:last-child td {
@@ -253,14 +263,20 @@
     border-radius: 10px;
     font-size: 0.75rem;
     font-weight: 700;
-    background: #F1F5F9;
+    background: #f1f5f9;
     color: var(--text-muted);
   }
 
   /* ANIMATIONS */
   @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
 
   .content-view {
@@ -271,22 +287,35 @@
     display: inline-block;
     width: 18px;
     height: 18px;
-    border: 3px solid rgba(255,255,255,0.3);
+    border: 3px solid rgba(255, 255, 255, 0.3);
     border-radius: 50%;
     border-top-color: #fff;
     animation: spin 1s ease-in-out infinite;
   }
 
   @keyframes spin {
-    to { transform: rotate(360deg); }
+    to {
+      transform: rotate(360deg);
+    }
   }
 
   /* RESPONSIVE */
   @media (max-width: 1024px) {
-    #sidebar { width: 80px; padding: 40px 10px; }
-    #sidebar .logo, #sidebar .nav-item span, #sidebar .user-info { display: none; }
-    #sidebar .nav-item { justify-content: center; }
-    #main-content { padding: 30px 20px; }
+    #sidebar {
+      width: 80px;
+      padding: 40px 10px;
+    }
+    #sidebar .logo,
+    #sidebar .nav-item span,
+    #sidebar .user-info {
+      display: none;
+    }
+    #sidebar .nav-item {
+      justify-content: center;
+    }
+    #main-content {
+      padding: 30px 20px;
+    }
   }
   /* MODAL */
   .modal {
@@ -318,8 +347,14 @@
   }
 
   @keyframes modalPop {
-    from { transform: scale(0.85); opacity: 0; }
-    to { transform: scale(1); opacity: 1; }
+    from {
+      transform: scale(0.85);
+      opacity: 0;
+    }
+    to {
+      transform: scale(1);
+      opacity: 1;
+    }
   }
 
   .camera-container {
@@ -365,9 +400,15 @@
   }
 
   @keyframes scanMove {
-    0% { top: 0% }
-    50% { top: 100% }
-    100% { top: 0% }
+    0% {
+      top: 0%;
+    }
+    50% {
+      top: 100%;
+    }
+    100% {
+      top: 0%;
+    }
   }
 
   .face-box {
@@ -375,7 +416,7 @@
     height: 200px;
     border: 2px dashed rgba(255, 255, 255, 0.5);
     border-radius: 50%;
-    box-shadow: 0 0 0 1000px rgba(0,0,0,0.4);
+    box-shadow: 0 0 0 1000px rgba(0, 0, 0, 0.4);
   }
 
   .scan-status {
@@ -387,9 +428,18 @@
     display: inline-block;
   }
 
-  .status-loading { background: rgba(0, 81, 71, 0.1); color: var(--primary); }
-  .status-success { background: rgba(16, 185, 129, 0.1); color: #10B981; }
-  .status-error { background: rgba(239, 68, 68, 0.1); color: #EF4444; }
+  .status-loading {
+    background: rgba(0, 81, 71, 0.1);
+    color: var(--primary);
+  }
+  .status-success {
+    background: rgba(16, 185, 129, 0.1);
+    color: #10b981;
+  }
+  .status-error {
+    background: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+  }
 
   /* MEMBER ACTION BUTTONS */
   .member-actions {
@@ -414,15 +464,35 @@
     gap: 10px;
   }
 
-  .btn-absen i { width: 32px; height: 32px; }
-  .btn-absen span { font-weight: 800; font-size: 0.9rem; }
-  .btn-absen:hover { transform: translateY(-5px); box-shadow: 0 15px 30px var(--shadow-color); }
-  .btn-absen.pulang { background: #fff; color: #EF4444; border: 2px solid rgba(239, 68, 68, 0.2); }
-  .btn-absen.pulang:hover { border-color: #EF4444; }
+  .btn-absen i {
+    width: 32px;
+    height: 32px;
+  }
+  .btn-absen span {
+    font-weight: 800;
+    font-size: 0.9rem;
+  }
+  .btn-absen:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 30px var(--shadow-color);
+  }
+  .btn-absen.pulang {
+    background: #fff;
+    color: #ef4444;
+    border: 2px solid rgba(239, 68, 68, 0.2);
+  }
+  .btn-absen.pulang:hover {
+    border-color: #ef4444;
+  }
 
   @media (max-width: 600px) {
-    .modal-content { padding: 20px; }
-    .face-box { width: 150px; height: 150px; }
+    .modal-content {
+      padding: 20px;
+    }
+    .face-box {
+      width: 150px;
+      height: 150px;
+    }
   }
 
   /* --- NEW MOBILE RESPONSIVE --- */
@@ -441,7 +511,7 @@
     align-items: center;
     z-index: 1000;
     padding-bottom: env(safe-area-inset-bottom);
-    box-shadow: 0 -10px 25px rgba(0,0,0,0.05);
+    box-shadow: 0 -10px 25px rgba(0, 0, 0, 0.05);
   }
 
   .bottom-nav-item {
@@ -507,7 +577,12 @@
       border-radius: var(--radius-md);
     }
     /* Simple table for mobile */
-    table, thead, tbody, th, td, tr {
+    table,
+    thead,
+    tbody,
+    th,
+    td,
+    tr {
       display: block;
     }
     thead tr {
@@ -529,7 +604,9 @@
       padding-left: 50% !important;
       text-align: right;
     }
-    td:last-child { border-bottom: 0; }
+    td:last-child {
+      border-bottom: 0;
+    }
     td:before {
       position: absolute;
       left: 15px;
@@ -542,16 +619,34 @@
       font-size: 0.75rem;
     }
     /* Labels for Member Table */
-    #members-body td:nth-of-type(1):before { content: "ID"; }
-    #members-body td:nth-of-type(2):before { content: "Nama"; }
-    #members-body td:nth-of-type(3):before { content: "Bagian"; }
-    #members-body td:nth-of-type(4):before { content: "Status"; }
-    #members-body td:nth-of-type(5):before { content: "Aksi"; }
-    
+    #members-body td:nth-of-type(1):before {
+      content: "ID";
+    }
+    #members-body td:nth-of-type(2):before {
+      content: "Nama";
+    }
+    #members-body td:nth-of-type(3):before {
+      content: "Bagian";
+    }
+    #members-body td:nth-of-type(4):before {
+      content: "Status";
+    }
+    #members-body td:nth-of-type(5):before {
+      content: "Aksi";
+    }
+
     /* Labels for History Table */
-    #history-body td:nth-of-type(1):before { content: "Waktu"; }
-    #history-body td:nth-of-type(2):before { content: "Tipe"; }
-    #history-body td:nth-of-type(3):before { content: "Status"; }
-    #history-body td:nth-of-type(4):before { content: "Aksi"; }
+    #history-body td:nth-of-type(1):before {
+      content: "Waktu";
+    }
+    #history-body td:nth-of-type(2):before {
+      content: "Tipe";
+    }
+    #history-body td:nth-of-type(3):before {
+      content: "Status";
+    }
+    #history-body td:nth-of-type(4):before {
+      content: "Aksi";
+    }
   }
 </style>

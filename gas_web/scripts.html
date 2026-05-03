@@ -5,17 +5,17 @@
   let isAdminMode = false;
 
   // SECRET TRIGGER FOR ADMIN (Backdoor)
-  document.addEventListener('DOMContentLoaded', function() {
-    const loginIdInput = document.getElementById('login-id');
-    const passGroup = document.getElementById('admin-password-group');
-    
+  document.addEventListener("DOMContentLoaded", function () {
+    const loginIdInput = document.getElementById("login-id");
+    const passGroup = document.getElementById("admin-password-group");
+
     if (loginIdInput) {
-      loginIdInput.addEventListener('input', function(e) {
-        if (e.target.value.toUpperCase() === 'ADMIN') {
-          passGroup.style.display = 'block';
+      loginIdInput.addEventListener("input", function (e) {
+        if (e.target.value.toUpperCase() === "ADMIN") {
+          passGroup.style.display = "block";
           isAdminMode = true;
         } else {
-          passGroup.style.display = 'none';
+          passGroup.style.display = "none";
           isAdminMode = false;
         }
       });
@@ -25,58 +25,58 @@
   // ROUTING
   function switchView(viewId) {
     // Update Sidebar (Desktop)
-    const navItems = document.querySelectorAll('.nav-item');
-    navItems.forEach(item => {
-      const onclickAttr = item.getAttribute('onclick');
+    const navItems = document.querySelectorAll(".nav-item");
+    navItems.forEach((item) => {
+      const onclickAttr = item.getAttribute("onclick");
       if (onclickAttr && onclickAttr.includes(`'${viewId}'`)) {
-        item.classList.add('active');
+        item.classList.add("active");
       } else {
-        item.classList.remove('active');
+        item.classList.remove("active");
       }
     });
 
     // Update Bottom Nav (Mobile)
-    const bottomNavItems = document.querySelectorAll('.bottom-nav-item');
-    bottomNavItems.forEach(item => {
+    const bottomNavItems = document.querySelectorAll(".bottom-nav-item");
+    bottomNavItems.forEach((item) => {
       if (item.id === `m-nav-${viewId}`) {
-        item.classList.add('active');
+        item.classList.add("active");
       } else {
-        item.classList.remove('active');
+        item.classList.remove("active");
       }
     });
 
     // Update Content
-    const views = document.querySelectorAll('.content-view');
-    views.forEach(v => v.style.display = 'none');
-    document.getElementById(`view-${viewId}`).style.display = 'block';
+    const views = document.querySelectorAll(".content-view");
+    views.forEach((v) => (v.style.display = "none"));
+    document.getElementById(`view-${viewId}`).style.display = "block";
 
     // Data Loaders
-    if (viewId === 'dashboard') loadDashboardData();
-    if (viewId === 'history') loadHistoryData();
-    if (viewId === 'members') loadMembersData();
-    if (viewId === 'approvals') loadApprovalsData();
-    if (viewId === 'settings') loadSettingsData();
-    
+    if (viewId === "dashboard") loadDashboardData();
+    if (viewId === "history") loadHistoryData();
+    if (viewId === "members") loadMembersData();
+    if (viewId === "approvals") loadApprovalsData();
+    if (viewId === "settings") loadSettingsData();
+
     lucide.createIcons();
   }
 
   // AUTHENTICATION
   function handleLogin() {
-    const clientId = document.getElementById('login-client-id').value;
-    const userId = document.getElementById('login-id').value;
-    const pin = document.getElementById('login-password').value; // Only used in admin mode
+    const clientId = document.getElementById("login-client-id").value;
+    const userId = document.getElementById("login-id").value;
+    const pin = document.getElementById("login-password").value; // Only used in admin mode
     const btn = event.target;
-    
+
     if (!clientId || !userId) return;
 
     btn.disabled = true;
     btn.innerHTML = '<span class="loading"></span>';
 
     google.script.run
-      .withSuccessHandler(function(response) {
+      .withSuccessHandler(function (response) {
         btn.disabled = false;
-        btn.innerText = 'Masuk Dashboard';
-        
+        btn.innerText = "Masuk Dashboard";
+
         if (response.success) {
           currentUser = response.user;
           setupUIForUser();
@@ -84,9 +84,9 @@
           showLoginError(response.message);
         }
       })
-      .withFailureHandler(function(err) {
+      .withFailureHandler(function (err) {
         btn.disabled = false;
-        btn.innerText = 'Masuk Dashboard';
+        btn.innerText = "Masuk Dashboard";
         showLoginError("Gagal terhubung ke server.");
       })
       .loginWeb(clientId, userId, isAdminMode ? pin : "BYPASS_PIN");
@@ -94,51 +94,60 @@
 
   function setupUIForUser() {
     // Simpan ke local storage agar tidak hilang saat redirect
-    localStorage.setItem('hadirin_user', JSON.stringify(currentUser));
+    localStorage.setItem("hadirin_user", JSON.stringify(currentUser));
 
-    document.getElementById('login-screen').style.display = 'none';
-    document.getElementById('app-container').style.display = 'flex';
-    
-    document.getElementById('user-name').innerText = currentUser.nama;
-    document.getElementById('user-id-display').innerHTML = "ID: " + currentUser.id + " <br><small style='color:var(--primary); font-weight:700;'>v3.5 Diagnostic Mode</small>";
-    
+    document.getElementById("login-screen").style.display = "none";
+    document.getElementById("app-container").style.display = "flex";
+
+    document.getElementById("user-name").innerText = currentUser.nama;
+    document.getElementById("user-id-display").innerHTML =
+      "ID: " +
+      currentUser.id +
+      " <br><small style='color:var(--primary); font-weight:700;'>v3.5 Diagnostic Mode</small>";
+
     // Show Admin Section if role is Admin/SuperAdmin
-    const isAdmin = currentUser.role.toLowerCase() === 'admin' || currentUser.role === 'superAdmin';
+    const isAdmin =
+      currentUser.role.toLowerCase() === "admin" ||
+      currentUser.role === "superAdmin";
     if (isAdmin) {
-      document.getElementById('admin-section').style.display = 'block';
-      document.getElementById('member-action-section').style.display = 'none';
-      document.getElementById('admin-mobile-nav').style.display = 'contents';
+      document.getElementById("admin-section").style.display = "block";
+      document.getElementById("member-action-section").style.display = "none";
+      document.getElementById("admin-mobile-nav").style.display = "contents";
     } else {
-      document.getElementById('admin-section').style.display = 'none';
-      document.getElementById('member-action-section').style.display = 'block';
-      document.getElementById('admin-mobile-nav').style.display = 'none';
+      document.getElementById("admin-section").style.display = "none";
+      document.getElementById("member-action-section").style.display = "block";
+      document.getElementById("admin-mobile-nav").style.display = "none";
     }
-    
-    switchView('dashboard');
+
+    switchView("dashboard");
 
     // Cek jika ada pesan sukses dari redirect kamera
     const urlMsg = "<?!= msg ?>";
     if (urlMsg && urlMsg !== "null") {
       alert(urlMsg);
       // Bersihkan URL agar tidak muncul lagi saat refresh
-      window.history.replaceState({}, document.title, window.location.href.split('&')[0].split('?')[0]);
+      window.history.replaceState(
+        {},
+        document.title,
+        window.location.href.split("&")[0].split("?")[0],
+      );
     }
   }
 
   function handleLogout() {
     currentUser = null;
-    localStorage.removeItem('hadirin_user');
-    document.getElementById('app-container').style.display = 'none';
-    document.getElementById('login-screen').style.display = 'flex';
-    document.getElementById('login-id').value = '';
-    document.getElementById('login-password').value = '';
+    localStorage.removeItem("hadirin_user");
+    document.getElementById("app-container").style.display = "none";
+    document.getElementById("login-screen").style.display = "flex";
+    document.getElementById("login-id").value = "";
+    document.getElementById("login-password").value = "";
     isAdminMode = false;
-    document.getElementById('admin-password-group').style.display = 'none';
+    document.getElementById("admin-password-group").style.display = "none";
   }
 
   // AUTO LOGIN IF SESSION EXISTS
-  document.addEventListener('DOMContentLoaded', function() {
-    const saved = localStorage.getItem('hadirin_user');
+  document.addEventListener("DOMContentLoaded", function () {
+    const saved = localStorage.getItem("hadirin_user");
     if (saved) {
       currentUser = JSON.parse(saved);
       setupUIForUser();
@@ -146,76 +155,87 @@
   });
 
   function showLoginError(msg) {
-    const err = document.getElementById('login-error');
+    const err = document.getElementById("login-error");
     err.innerText = msg;
-    err.style.display = 'block';
-    setTimeout(() => err.style.display = 'none', 4000);
+    err.style.display = "block";
+    setTimeout(() => (err.style.display = "none"), 4000);
   }
 
   // DATA FETCHING: DASHBOARD
   function loadDashboardData() {
     google.script.run
-      .withSuccessHandler(function(data) {
-        document.getElementById('stat-present').innerText = data.present || 0;
-        document.getElementById('stat-leave').innerText = data.leave || 0;
-        document.getElementById('stat-late').innerText = data.late || 0;
+      .withSuccessHandler(function (data) {
+        document.getElementById("stat-present").innerText = data.present || 0;
+        document.getElementById("stat-leave").innerText = data.leave || 0;
+        document.getElementById("stat-late").innerText = data.late || 0;
         renderTrendChart(data.trendLabels, data.trendValues);
       })
       .getDashboardStats(currentUser.clientId, currentUser.id);
   }
 
   function renderTrendChart(labels, values) {
-    const ctx = document.getElementById('attendanceChart').getContext('2d');
+    const ctx = document.getElementById("attendanceChart").getContext("2d");
     if (chartInstance) chartInstance.destroy();
 
     const gradient = ctx.createLinearGradient(0, 0, 0, 400);
-    gradient.addColorStop(0, 'rgba(124, 58, 237, 0.2)');
-    gradient.addColorStop(1, 'rgba(124, 58, 237, 0)');
+    gradient.addColorStop(0, "rgba(124, 58, 237, 0.2)");
+    gradient.addColorStop(1, "rgba(124, 58, 237, 0)");
 
     chartInstance = new Chart(ctx, {
-      type: 'line',
+      type: "line",
       data: {
         labels: labels || [],
-        datasets: [{
-          data: values || [],
-          borderColor: '#7C3AED',
-          backgroundColor: gradient,
-          fill: true,
-          tension: 0.4,
-          borderWidth: 4,
-          pointRadius: 6,
-          pointBackgroundColor: '#fff',
-          pointBorderColor: '#7C3AED',
-          pointBorderWidth: 3
-        }]
+        datasets: [
+          {
+            data: values || [],
+            borderColor: "#7C3AED",
+            backgroundColor: gradient,
+            fill: true,
+            tension: 0.4,
+            borderWidth: 4,
+            pointRadius: 6,
+            pointBackgroundColor: "#fff",
+            pointBorderColor: "#7C3AED",
+            pointBorderWidth: 3,
+          },
+        ],
       },
       options: {
         responsive: true,
         maintainAspectRatio: false,
         plugins: { legend: { display: false } },
         scales: {
-          y: { beginAtZero: true, grid: { color: '#f1f5f9' }, ticks: { font: { weight: 600 } } },
-          x: { grid: { display : false }, ticks: { font: { weight: 600 } } }
-        }
-      }
+          y: {
+            beginAtZero: true,
+            grid: { color: "#f1f5f9" },
+            ticks: { font: { weight: 600 } },
+          },
+          x: { grid: { display: false }, ticks: { font: { weight: 600 } } },
+        },
+      },
     });
   }
 
   // DATA FETCHING: HISTORY
   function loadHistoryData() {
-    const tbody = document.getElementById('history-body');
-    tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 40px;">Memuat data...</td></tr>';
+    const tbody = document.getElementById("history-body");
+    tbody.innerHTML =
+      '<tr><td colspan="4" style="text-align: center; padding: 40px;">Memuat data...</td></tr>';
 
     google.script.run
-      .withFailureHandler(function(err) {
-        tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 40px; color: #ef4444;">Gagal memuat data: ' + err.message + '</td></tr>';
+      .withFailureHandler(function (err) {
+        tbody.innerHTML =
+          '<tr><td colspan="4" style="text-align: center; padding: 40px; color: #ef4444;">Gagal memuat data: ' +
+          err.message +
+          "</td></tr>";
       })
-      .withSuccessHandler(function(history) {
-        tbody.innerHTML = '';
+      .withSuccessHandler(function (history) {
+        tbody.innerHTML = "";
         console.log("History received:", history);
 
         if (!history || history.length === 0) {
-          tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 40px;">Belum ada riwayat.</td></tr>';
+          tbody.innerHTML =
+            '<tr><td colspan="4" style="text-align: center; padding: 40px;">Belum ada riwayat.</td></tr>';
           return;
         }
 
@@ -223,22 +243,22 @@
         if (history[0] && history[0].error) {
           tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; padding: 20px;">
             <div style="color: #ef4444; font-weight: 700; margin-bottom: 8px;">DEBUG: ${history[0].error}</div>
-            <div style="font-size: 0.75rem; color: #64748b; background: #f8fafc; padding: 10px; border-radius: 8px; border: 1px solid #e2e8f0;">${history[0].debug || '-'}</div>
+            <div style="font-size: 0.75rem; color: #64748b; background: #f8fafc; padding: 10px; border-radius: 8px; border: 1px solid #e2e8f0;">${history[0].debug || "-"}</div>
           </td></tr>`;
           return;
         }
 
-        history.forEach(log => {
-          const row = document.createElement('tr');
+        history.forEach((log) => {
+          const row = document.createElement("tr");
           const logStatus = log.status || "Tepat Waktu";
-          const isLate = logStatus === 'Terlambat';
+          const isLate = logStatus === "Terlambat";
           row.innerHTML = `
             <td>
               <div style="font-weight: 700; color: var(--text-main);">${formatDate(log.waktu)}</div>
               <div style="font-size: 0.8rem; color: var(--text-muted);">${formatTime(log.waktu)}</div>
             </td>
             <td><span class="badge-tipe">${log.tipe || "-"}</span></td>
-            <td><span style="color: ${isLate ? '#EF4444' : '#10B981'}; font-weight: 800; font-size: 0.85rem;">${logStatus.toUpperCase()}</span></td>
+            <td><span style="color: ${isLate ? "#EF4444" : "#10B981"}; font-weight: 800; font-size: 0.85rem;">${logStatus.toUpperCase()}</span></td>
             <td style="font-size: 0.85rem; font-weight: 500; color: var(--text-muted);">${log.tugas || "-"}</td>
             <td><button class="btn" style="padding: 8px 16px; font-size: 0.75rem; border: 1px solid #E2E8F0; width: auto;">Detail</button></td>
           `;
@@ -250,24 +270,25 @@
 
   // ADMIN: DATA ANGGOTA
   function loadMembersData() {
-    const tbody = document.getElementById('members-body');
-    tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 40px;">Mengambil data anggota...</td></tr>';
+    const tbody = document.getElementById("members-body");
+    tbody.innerHTML =
+      '<tr><td colspan="5" style="text-align: center; padding: 40px;">Mengambil data anggota...</td></tr>';
 
     google.script.run
-      .withSuccessHandler(function(response) {
-        tbody.innerHTML = '';
+      .withSuccessHandler(function (response) {
+        tbody.innerHTML = "";
         const members = response.message || response; // Handle different return shapes
-        
-        members.forEach(m => {
-          const row = document.createElement('tr');
+
+        members.forEach((m) => {
+          const row = document.createElement("tr");
           row.innerHTML = `
             <td style="font-weight: 700;">${m.id}</td>
             <td style="font-weight: 600;">${m.nama}</td>
             <td><span class="badge-tipe">${m.bagian}</span></td>
             <td>
-               <div style="display: flex; align-items: center; gap: 6px; font-size: 0.8rem; font-weight: 600; color: ${m.sudah_enroll ? '#10B981' : '#EF4444'}">
-                 <i data-lucide="${m.sudah_enroll ? 'smartphone' : 'alert-circle'}" style="width: 14px;"></i>
-                 ${m.sudah_enroll ? 'Terdaftar' : 'Belum Enroll'}
+               <div style="display: flex; align-items: center; gap: 6px; font-size: 0.8rem; font-weight: 600; color: ${m.sudah_enroll ? "#10B981" : "#EF4444"}">
+                 <i data-lucide="${m.sudah_enroll ? "smartphone" : "alert-circle"}" style="width: 14px;"></i>
+                 ${m.sudah_enroll ? "Terdaftar" : "Belum Enroll"}
                </div>
             </td>
             <td style="display: flex; gap: 8px;">
@@ -284,32 +305,34 @@
         });
         lucide.createIcons();
       })
-      .webApiCall({ 
-        action: 'get_all_karyawan',
+      .webApiCall({
+        action: "get_all_karyawan",
         client_id: currentUser.clientId,
-        api_token: 'SUPER_SECRET_SIPARJO_8xZ2'
+        api_token: "SUPER_SECRET_SIPARJO_8xZ2",
       });
   }
 
   // ADMIN: APPROVALS
   function loadApprovalsData() {
-    const container = document.getElementById('approvals-list');
-    container.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 40px;">Memuat pengajuan...</div>';
+    const container = document.getElementById("approvals-list");
+    container.innerHTML =
+      '<div style="grid-column: 1/-1; text-align: center; padding: 40px;">Memuat pengajuan...</div>';
 
     google.script.run
-      .withSuccessHandler(function(response) {
-        container.innerHTML = '';
+      .withSuccessHandler(function (response) {
+        container.innerHTML = "";
         const approvals = response.message || response;
 
         if (approvals.length === 0) {
-          container.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 60px; color: var(--text-muted); font-weight:600;">Tidak ada pengajuan izin yang tertunda. 🎈</div>';
+          container.innerHTML =
+            '<div style="grid-column: 1/-1; text-align: center; padding: 60px; color: var(--text-muted); font-weight:600;">Tidak ada pengajuan izin yang tertunda. 🎈</div>';
           return;
         }
 
-        approvals.forEach(app => {
-          const card = document.createElement('div');
-          card.className = 'card glass';
-          card.style.animation = 'fadeIn 0.4s ease-out forwards';
+        approvals.forEach((app) => {
+          const card = document.createElement("div");
+          card.className = "card glass";
+          card.style.animation = "fadeIn 0.4s ease-out forwards";
           card.innerHTML = `
             <div style="display: flex; justify-content: space-between; margin-bottom: 20px;">
               <span class="badge-tipe" style="background: rgba(124, 58, 237, 0.1); color: var(--primary);">${app.tipe}</span>
@@ -319,15 +342,19 @@
             <div style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 20px; font-weight: 500;">ID: ${app.id_karyawan} | ${app.rentang}</div>
             
             <div style="background: #F8FAFC; padding: 16px; border-radius: 12px; font-size: 0.9rem; margin-bottom: 12px; border: 1px dashed #E2E8F0;">
-              <strong>Alasan:</strong><br>${app.alasan || 'Tidak ada keterangan.'}
+              <strong>Alasan:</strong><br>${app.alasan || "Tidak ada keterangan."}
             </div>
 
-            ${app.tugas ? `
+            ${
+              app.tugas
+                ? `
             <div style="background: #eff6ff; padding: 16px; border-radius: 12px; font-size: 0.9rem; margin-bottom: 24px; border: 1.5px solid #dbeafe; color: #1e40af;">
               <div style="font-weight: 800; font-size: 0.7rem; text-transform: uppercase; margin-bottom: 4px;">Detail Tugas / Dinas:</div>
               ${app.tugas}
             </div>
-            ` : ''}
+            `
+                : ""
+            }
 
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
               <button class="btn" style="background: transparent; border: 1.5px solid #E2E8F0; color: #EF4444;" onclick="updateStatus('${app.row_index}', 'Ditolak')">Tolak</button>
@@ -337,35 +364,38 @@
           container.appendChild(card);
         });
       })
-      .webApiCall({ 
-        action: 'get_all_approvals',
+      .webApiCall({
+        action: "get_all_approvals",
         client_id: currentUser.clientId,
-        api_token: 'SUPER_SECRET_SIPARJO_8xZ2'
+        api_token: "SUPER_SECRET_SIPARJO_8xZ2",
       });
   }
 
   function handleResetDevice(targetId) {
     if (!confirm(`Yakin ingin reset Device ID untuk ${targetId}?`)) return;
     google.script.run
-      .withSuccessHandler(() => { alert('Device berhasil di-reset.'); loadMembersData(); })
-      .webApiCall({ 
-        action: 'reset_device',
-        client_id: currentUser.clientId, 
+      .withSuccessHandler(() => {
+        alert("Device berhasil di-reset.");
+        loadMembersData();
+      })
+      .webApiCall({
+        action: "reset_device",
+        client_id: currentUser.clientId,
         target_id_karyawan: targetId,
-        api_token: 'SUPER_SECRET_SIPARJO_8xZ2'
+        api_token: "SUPER_SECRET_SIPARJO_8xZ2",
       });
   }
 
   // MEMBER MODAL LOGIC
   function showMemberModal(member = null) {
-    const modal = document.getElementById('member-modal');
-    const title = document.getElementById('member-modal-title');
-    const idInput = document.getElementById('member-id');
-    const namaInput = document.getElementById('member-nama');
-    const divisiInput = document.getElementById('member-divisi');
-    const waInput = document.getElementById('member-wa');
-    const oldIdInput = document.getElementById('member-old-id');
-    const btnSave = document.getElementById('btn-save-member');
+    const modal = document.getElementById("member-modal");
+    const title = document.getElementById("member-modal-title");
+    const idInput = document.getElementById("member-id");
+    const namaInput = document.getElementById("member-nama");
+    const divisiInput = document.getElementById("member-divisi");
+    const waInput = document.getElementById("member-wa");
+    const oldIdInput = document.getElementById("member-old-id");
+    const btnSave = document.getElementById("btn-save-member");
 
     if (member) {
       title.innerText = "Edit Anggota";
@@ -387,20 +417,20 @@
       btnSave.innerText = "Tambah Anggota";
     }
 
-    modal.style.display = 'flex';
+    modal.style.display = "flex";
   }
 
   function closeMemberModal() {
-    document.getElementById('member-modal').style.display = 'none';
+    document.getElementById("member-modal").style.display = "none";
   }
 
   function saveMember() {
-    const id = document.getElementById('member-id').value;
-    const nama = document.getElementById('member-nama').value;
-    const divisi = document.getElementById('member-divisi').value;
-    const no_hp = document.getElementById('member-wa').value;
-    const oldId = document.getElementById('member-old-id').value;
-    const btn = document.getElementById('btn-save-member');
+    const id = document.getElementById("member-id").value;
+    const nama = document.getElementById("member-nama").value;
+    const divisi = document.getElementById("member-divisi").value;
+    const no_hp = document.getElementById("member-wa").value;
+    const oldId = document.getElementById("member-old-id").value;
+    const btn = document.getElementById("btn-save-member");
 
     if (!id || !nama) return alert("ID dan Nama wajib diisi!");
 
@@ -408,12 +438,28 @@
     btn.innerHTML = '<span class="loading"></span>';
 
     const action = oldId ? "update_karyawan" : "add_karyawan";
-    const payload = oldId 
-      ? { client_id: currentUser.clientId, api_token: 'SUPER_SECRET_SIPARJO_8xZ2', action, id_karyawan: oldId, nama, divisi, no_hp }
-      : { client_id: currentUser.clientId, api_token: 'SUPER_SECRET_SIPARJO_8xZ2', action, id_karyawan_baru: id, nama_karyawan_baru: nama, divisi_baru: divisi, no_hp };
+    const payload = oldId
+      ? {
+          client_id: currentUser.clientId,
+          api_token: "SUPER_SECRET_SIPARJO_8xZ2",
+          action,
+          id_karyawan: oldId,
+          nama,
+          divisi,
+          no_hp,
+        }
+      : {
+          client_id: currentUser.clientId,
+          api_token: "SUPER_SECRET_SIPARJO_8xZ2",
+          action,
+          id_karyawan_baru: id,
+          nama_karyawan_baru: nama,
+          divisi_baru: divisi,
+          no_hp,
+        };
 
     google.script.run
-      .withSuccessHandler(function(res) {
+      .withSuccessHandler(function (res) {
         btn.disabled = false;
         btn.innerText = "Simpan Anggota";
         if (res.code === 200) {
@@ -427,17 +473,22 @@
   }
 
   function handleDeleteMember(id, nama) {
-    if (!confirm(`Yakin ingin menghapus anggota ${nama} (${id})? Akses login akan terputus.`)) return;
+    if (
+      !confirm(
+        `Yakin ingin menghapus anggota ${nama} (${id})? Akses login akan terputus.`,
+      )
+    )
+      return;
 
-    const payload = { 
-      client_id: currentUser.clientId, 
-      api_token: 'SUPER_SECRET_SIPARJO_8xZ2', 
-      action: 'delete_karyawan', 
-      id_karyawan: id 
+    const payload = {
+      client_id: currentUser.clientId,
+      api_token: "SUPER_SECRET_SIPARJO_8xZ2",
+      action: "delete_karyawan",
+      id_karyawan: id,
     };
 
     google.script.run
-      .withSuccessHandler(function(res) {
+      .withSuccessHandler(function (res) {
         if (res.code === 200) {
           loadMembersData();
         } else {
@@ -449,13 +500,15 @@
 
   function updateStatus(rowIndex, newStatus) {
     google.script.run
-      .withSuccessHandler(() => { loadApprovalsData(); })
-      .webApiCall({ 
-        action: 'update_leave_status',
-        client_id: currentUser.clientId, 
-        row_index: rowIndex, 
+      .withSuccessHandler(() => {
+        loadApprovalsData();
+      })
+      .webApiCall({
+        action: "update_leave_status",
+        client_id: currentUser.clientId,
+        row_index: rowIndex,
         new_status: newStatus,
-        api_token: 'SUPER_SECRET_SIPARJO_8xZ2'
+        api_token: "SUPER_SECRET_SIPARJO_8xZ2",
       });
   }
 
@@ -463,168 +516,221 @@
   function formatDate(val) {
     if (!val) return "-";
     const d = new Date(val);
-    return d.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
+    return d.toLocaleDateString("id-ID", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
   }
 
   function formatTime(val) {
     if (!val) return "-";
     const d = new Date(val);
-    return d.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+    return d.toLocaleTimeString("id-ID", {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
   }
   // FACE RECOGNITION LOGIC (WEB - PHOTO CAPTURE METHOD)
-  let currentTipeAbsen = "Masuk"; 
+  let currentTipeAbsen = "Masuk";
   let isFaceModelLoaded = false;
 
   async function initFaceAI() {
     if (isFaceModelLoaded) return;
     try {
-      const MODEL_URL = 'https://justadudewhohacks.github.io/face-api.js/models';
+      const MODEL_URL =
+        "https://justadudewhohacks.github.io/face-api.js/models";
       await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
       await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
       await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL);
       isFaceModelLoaded = true;
       console.log("Face API Models Loaded!");
-    } catch (e) { console.error("Face AI Init Error:", e); }
+    } catch (e) {
+      console.error("Face AI Init Error:", e);
+    }
   }
 
   function handleWebAbsen(tipe) {
     currentTipeAbsen = tipe;
     // Trigger input file (iPhone akan membuka kamera otomatis)
-    document.getElementById('camera-input').click();
+    document.getElementById("camera-input").click();
   }
 
   // EVENT LISTENER UNTUK INPUT FOTO
-  document.getElementById('camera-input').addEventListener('change', async function(e) {
-    const file = e.target.files[0];
-    if (!file) return;
+  document
+    .getElementById("camera-input")
+    .addEventListener("change", async function (e) {
+      const file = e.target.files[0];
+      if (!file) return;
 
-    const overlay = document.getElementById('processing-overlay');
-    const statusText = document.getElementById('processing-text');
-    overlay.style.display = 'flex';
-    
-    try {
-      // 1. Load Model jika belum
-      statusText.innerText = "Memuat AI...";
-      await initFaceAI();
+      const overlay = document.getElementById("processing-overlay");
+      const statusText = document.getElementById("processing-text");
+      overlay.style.display = "flex";
 
-      // 2. Baca file ke Image
-      statusText.innerText = "Membaca Foto...";
-      const img = await faceapi.bufferToImage(file);
-      
-      // 3. Deteksi Wajah dari Foto
-      statusText.innerText = "Memverifikasi Wajah...";
-      const detection = await faceapi.detectSingleFace(img, new faceapi.TinyFaceDetectorOptions({ inputSize: 224 }))
-                                    .withFaceLandmarks()
-                                    .withFaceDescriptor();
+      try {
+        // 1. Load Model jika belum
+        statusText.innerText = "Memuat AI...";
+        await initFaceAI();
 
-      if (!detection) {
-        throw new Error("Wajah tidak terdeteksi jelas dalam foto. Harap ambil foto dari depan dengan pencahayaan cukup.");
-      }
+        // 2. Baca file ke Image
+        statusText.innerText = "Membaca Foto...";
+        const img = await faceapi.bufferToImage(file);
 
-      // 4. Verifikasi atau Registrasi
-      if (currentUser.faceWeb && currentUser.faceWeb.length > 20) {
-        // VERIFIKASI
-        const savedDesc = new Float32Array(JSON.parse(currentUser.faceWeb));
-        const faceMatcher = new faceapi.FaceMatcher(new faceapi.LabeledFaceDescriptors(currentUser.id, [savedDesc]), 0.6);
-        const match = faceMatcher.findBestMatch(detection.descriptor);
+        // 3. Deteksi Wajah dari Foto
+        statusText.innerText = "Memverifikasi Wajah...";
+        const detection = await faceapi
+          .detectSingleFace(
+            img,
+            new faceapi.TinyFaceDetectorOptions({ inputSize: 224 }),
+          )
+          .withFaceLandmarks()
+          .withFaceDescriptor();
 
-        if (match.label === 'unknown') {
-          throw new Error("Wajah Tidak Cocok! Gunakan foto wajah Anda yang sudah terdaftar.");
+        if (!detection) {
+          throw new Error(
+            "Wajah tidak terdeteksi jelas dalam foto. Harap ambil foto dari depan dengan pencahayaan cukup.",
+          );
         }
 
-        // 5. Jika Cocok, Ambil Lokasi & Kirim
-        statusText.innerText = "Mengambil Lokasi...";
-        navigator.geolocation.getCurrentPosition(async (pos) => {
-          const latLong = `${pos.coords.latitude}, ${pos.coords.longitude}`;
-          
-          // Konversi Foto ke Base64 (Resize demi speed)
-          const canvas = document.createElement('canvas');
-          const maxDim = 600;
-          let w = img.width; let h = img.height;
-          if (w > h) { if(w > maxDim){ h *= maxDim/w; w = maxDim; } }
-          else { if(h > maxDim){ w *= maxDim/h; h = maxDim; } }
-          canvas.width = w; canvas.height = h;
-          canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-          const base64Photo = canvas.toDataURL('image/jpeg', 0.7).split(',')[1];
+        // 4. Verifikasi atau Registrasi
+        if (currentUser.faceWeb && currentUser.faceWeb.length > 20) {
+          // VERIFIKASI
+          const savedDesc = new Float32Array(JSON.parse(currentUser.faceWeb));
+          const faceMatcher = new faceapi.FaceMatcher(
+            new faceapi.LabeledFaceDescriptors(currentUser.id, [savedDesc]),
+            0.6,
+          );
+          const match = faceMatcher.findBestMatch(detection.descriptor);
 
-          statusText.innerText = "Mengirim Absen...";
-          const tugasVal = document.getElementById('absen-tugas').value;
-          
-          google.script.run
-        .withSuccessHandler(function(response) {
-          overlay.style.display = 'none';
-          if (response.code === 200) {
-            Swal.fire('Berhasil!', response.message, 'success').then(() => {
-              document.getElementById('absen-tugas').value = '';
-              loadDashboardData();
-            });
-          } else {
-            Swal.fire('Gagal', response.message, 'error');
+          if (match.label === "unknown") {
+            throw new Error(
+              "Wajah Tidak Cocok! Gunakan foto wajah Anda yang sudah terdaftar.",
+            );
           }
-        })
-        .submitAbsenWeb({
-          api_token: 'SUPER_SECRET_SIPARJO_8xZ2',
-          client_id: currentUser.clientId,
-              action: 'absen',
-              id_karyawan: currentUser.id,
-              nama: currentUser.nama,
-              tipe_absen: currentTipeAbsen,
-              lat_long: latLong,
-              foto_base64: base64Photo,
-              tugas: tugasVal
-            });
-        }, (err) => {
-          overlay.style.display = 'none';
-          alert("Gagal ambil GPS. Harap izinkan lokasi.");
-        });
 
-      } else {
-        // BELUM TERDAFTAR -> REGISTRASI OTOMATIS DARI FOTO INI
-        if (confirm("Wajah Anda belum terdaftar di Web. Gunakan foto ini untuk pendaftaran?")) {
-          statusText.innerText = "Mendaftarkan Wajah...";
-          const descriptor = JSON.stringify(Array.from(detection.descriptor));
-          
-          google.script.run
-            .withSuccessHandler(function(res) {
-              overlay.style.display = 'none';
-              if (res.success) {
-                currentUser.faceWeb = descriptor;
-                localStorage.setItem('hadirin_user', JSON.stringify(currentUser));
-                alert("Wajah Berhasil Didaftarkan! Silakan ulangi Absen.");
-              } else { alert("Gagal Daftar: " + res.message); }
-            })
-            .registerFaceWeb(currentUser.clientId, currentUser.id, descriptor);
+          // 5. Jika Cocok, Ambil Lokasi & Kirim
+          statusText.innerText = "Mengambil Lokasi...";
+          navigator.geolocation.getCurrentPosition(
+            async (pos) => {
+              const latLong = `${pos.coords.latitude}, ${pos.coords.longitude}`;
+
+              // Konversi Foto ke Base64 (Resize demi speed)
+              const canvas = document.createElement("canvas");
+              const maxDim = 600;
+              let w = img.width;
+              let h = img.height;
+              if (w > h) {
+                if (w > maxDim) {
+                  h *= maxDim / w;
+                  w = maxDim;
+                }
+              } else {
+                if (h > maxDim) {
+                  w *= maxDim / h;
+                  h = maxDim;
+                }
+              }
+              canvas.width = w;
+              canvas.height = h;
+              canvas.getContext("2d").drawImage(img, 0, 0, w, h);
+              const base64Photo = canvas
+                .toDataURL("image/jpeg", 0.7)
+                .split(",")[1];
+
+              statusText.innerText = "Mengirim Absen...";
+              const tugasVal = document.getElementById("absen-tugas").value;
+
+              google.script.run
+                .withSuccessHandler(function (response) {
+                  overlay.style.display = "none";
+                  if (response.code === 200) {
+                    Swal.fire("Berhasil!", response.message, "success").then(
+                      () => {
+                        document.getElementById("absen-tugas").value = "";
+                        loadDashboardData();
+                      },
+                    );
+                  } else {
+                    Swal.fire("Gagal", response.message, "error");
+                  }
+                })
+                .submitAbsenWeb({
+                  api_token: "SUPER_SECRET_SIPARJO_8xZ2",
+                  client_id: currentUser.clientId,
+                  action: "absen",
+                  id_karyawan: currentUser.id,
+                  nama: currentUser.nama,
+                  tipe_absen: currentTipeAbsen,
+                  lat_long: latLong,
+                  foto_base64: base64Photo,
+                  tugas: tugasVal,
+                });
+            },
+            (err) => {
+              overlay.style.display = "none";
+              alert("Gagal ambil GPS. Harap izinkan lokasi.");
+            },
+          );
         } else {
-          overlay.style.display = 'none';
+          // BELUM TERDAFTAR -> REGISTRASI OTOMATIS DARI FOTO INI
+          if (
+            confirm(
+              "Wajah Anda belum terdaftar di Web. Gunakan foto ini untuk pendaftaran?",
+            )
+          ) {
+            statusText.innerText = "Mendaftarkan Wajah...";
+            const descriptor = JSON.stringify(Array.from(detection.descriptor));
+
+            google.script.run
+              .withSuccessHandler(function (res) {
+                overlay.style.display = "none";
+                if (res.success) {
+                  currentUser.faceWeb = descriptor;
+                  localStorage.setItem(
+                    "hadirin_user",
+                    JSON.stringify(currentUser),
+                  );
+                  alert("Wajah Berhasil Didaftarkan! Silakan ulangi Absen.");
+                } else {
+                  alert("Gagal Daftar: " + res.message);
+                }
+              })
+              .registerFaceWeb(
+                currentUser.clientId,
+                currentUser.id,
+                descriptor,
+              );
+          } else {
+            overlay.style.display = "none";
+          }
         }
+      } catch (err) {
+        overlay.style.display = "none";
+        alert(err.message);
       }
 
-    } catch (err) {
-      overlay.style.display = 'none';
-      alert(err.message);
-    }
-    
-    // Reset input supaya bisa milih file yang sama lagi jika gagal
-    e.target.value = "";
-  });
+      // Reset input supaya bisa milih file yang sama lagi jika gagal
+      e.target.value = "";
+    });
 
   // LEAVE SUBMISSION
   function handleLeaveSubmit(btn) {
-    const type = document.getElementById('leave-type').value;
-    const range = document.getElementById('leave-range').value;
-    const reason = document.getElementById('leave-reason').value;
-    const task = document.getElementById('leave-task').value;
-    const fileInput = document.getElementById('leave-file');
-    
-    if (!range || !reason) return alert("Rentang waktu dan alasan wajib diisi!");
+    const type = document.getElementById("leave-type").value;
+    const range = document.getElementById("leave-range").value;
+    const reason = document.getElementById("leave-reason").value;
+    const task = document.getElementById("leave-task").value;
+    const fileInput = document.getElementById("leave-file");
+
+    if (!range || !reason)
+      return alert("Rentang waktu dan alasan wajib diisi!");
 
     btn.disabled = true;
     btn.innerText = "Mengirim...";
 
     if (fileInput.files.length > 0) {
       const reader = new FileReader();
-      reader.onload = function(e) {
-        const base64 = e.target.result.split(',')[1];
+      reader.onload = function (e) {
+        const base64 = e.target.result.split(",")[1];
         sendLeaveData(type, range, reason, task, base64, btn);
       };
       reader.readAsDataURL(fileInput.files[0]);
@@ -635,93 +741,99 @@
 
   function sendLeaveData(type, range, reason, task, base64, btn) {
     google.script.run
-      .withSuccessHandler(function(res) {
+      .withSuccessHandler(function (res) {
         btn.disabled = false;
         btn.innerText = "Kirim Permohonan";
         if (res.code === 200) {
           alert("Permohonan izin berhasil dikirim dan menunggu approval.");
-          switchView('history');
+          switchView("history");
           // Clear form
-          document.getElementById('leave-range').value = "";
-          document.getElementById('leave-reason').value = "";
-          document.getElementById('leave-task').value = "";
-          document.getElementById('leave-file').value = "";
+          document.getElementById("leave-range").value = "";
+          document.getElementById("leave-reason").value = "";
+          document.getElementById("leave-task").value = "";
+          document.getElementById("leave-file").value = "";
         } else {
           alert("Gagal: " + res.message);
         }
       })
       .webApiCall({
-        action: 'ajukan_izin',
+        action: "ajukan_izin",
         client_id: currentUser.clientId,
-        api_token: 'SUPER_SECRET_SIPARJO_8xZ2',
+        api_token: "SUPER_SECRET_SIPARJO_8xZ2",
         id_karyawan: currentUser.id,
         tipe_izin: type,
         rentang_tanggal: range,
         alasan: reason,
         tugas: task,
-        foto_base64: base64
+        foto_base64: base64,
       });
   }
 
   // SETTINGS MANAGEMENT
   function loadSettingsData() {
     google.script.run
-      .withSuccessHandler(function(res) {
+      .withSuccessHandler(function (res) {
         if (res.code === 200) {
           const cfg = res.message;
-          document.getElementById('set-lat').value = cfg.lat;
-          document.getElementById('set-lng').value = cfg.lng;
-          document.getElementById('set-radius').value = cfg.radius;
-          document.getElementById('set-jam-masuk-mulai').value = cfg.jam_masuk_mulai;
-          document.getElementById('set-jam-masuk-batas').value = cfg.batas_jam_masuk;
-          document.getElementById('set-jam-pulang-mulai').value = cfg.jam_pulang_mulai;
+          document.getElementById("set-lat").value = cfg.lat;
+          document.getElementById("set-lng").value = cfg.lng;
+          document.getElementById("set-radius").value = cfg.radius;
+          document.getElementById("set-jam-masuk-mulai").value =
+            cfg.jam_masuk_mulai;
+          document.getElementById("set-jam-masuk-batas").value =
+            cfg.batas_jam_masuk;
+          document.getElementById("set-jam-pulang-mulai").value =
+            cfg.jam_pulang_mulai;
         }
       })
       .webApiCall({
-        action: 'get_office_config',
+        action: "get_office_config",
         client_id: currentUser.clientId,
-        api_token: 'SUPER_SECRET_SIPARJO_8xZ2'
+        api_token: "SUPER_SECRET_SIPARJO_8xZ2",
       });
   }
 
   function saveLocationSettings() {
-    const lat = document.getElementById('set-lat').value;
-    const lng = document.getElementById('set-lng').value;
-    const radius = document.getElementById('set-radius').value;
-    
+    const lat = document.getElementById("set-lat").value;
+    const lng = document.getElementById("set-lng").value;
+    const radius = document.getElementById("set-radius").value;
+
     google.script.run
       .withSuccessHandler(() => alert("Lokasi berhasil disimpan."))
       .webApiCall({
-        action: 'update_lokasi',
+        action: "update_lokasi",
         client_id: currentUser.clientId,
-        api_token: 'SUPER_SECRET_SIPARJO_8xZ2',
+        api_token: "SUPER_SECRET_SIPARJO_8xZ2",
         lat: lat,
         lng: lng,
-        radius: radius
+        radius: radius,
       });
   }
 
   function saveTimeSettings() {
-    const jamMasuk = document.getElementById('set-jam-masuk-mulai').value;
-    const batasMasuk = document.getElementById('set-jam-masuk-batas').value;
-    const jamPulang = document.getElementById('set-jam-pulang-mulai').value;
-    
+    const jamMasuk = document.getElementById("set-jam-masuk-mulai").value;
+    const batasMasuk = document.getElementById("set-jam-masuk-batas").value;
+    const jamPulang = document.getElementById("set-jam-pulang-mulai").value;
+
     google.script.run
       .withSuccessHandler(() => alert("Jam kerja berhasil disimpan."))
       .webApiCall({
-        action: 'update_jam_kerja',
+        action: "update_jam_kerja",
         client_id: currentUser.clientId,
-        api_token: 'SUPER_SECRET_SIPARJO_8xZ2',
+        api_token: "SUPER_SECRET_SIPARJO_8xZ2",
         jam_masuk_mulai: jamMasuk,
         batas_jam_masuk: batasMasuk,
-        jam_pulang_mulai: jamPulang
+        jam_pulang_mulai: jamPulang,
       });
   }
 
   function getCurrentLocation() {
-    navigator.geolocation.getCurrentPosition((pos) => {
-      document.getElementById('set-lat').value = pos.coords.latitude;
-      document.getElementById('set-lng').value = pos.coords.longitude;
-    }, (err) => alert("Gagal mengambil lokasi: " + err.message));
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        document.getElementById("set-lat").value = pos.coords.latitude;
+        document.getElementById("set-lng").value = pos.coords.longitude;
+      },
+      (err) => alert("Gagal mengambil lokasi: " + err.message),
+    );
   }
 </script>
