@@ -98,6 +98,7 @@
   function handleLogout() {
     currentUser = null;
     localStorage.removeItem("sdit_user");
+    document.body.classList.remove("is-loggedin"); // Hide mobile nav
     document.getElementById("app-container").style.display = "none";
     document.getElementById("login-screen").style.display = "flex";
     document.getElementById("login-id").value = "";
@@ -126,6 +127,7 @@
 
     document.getElementById("login-screen").style.display = "none";
     document.getElementById("app-container").style.display = "flex";
+    document.body.classList.add("is-loggedin"); // Show mobile nav
 
     document.getElementById("user-name").innerText = currentUser.nama;
     document.getElementById("user-id-display").innerHTML =

@@ -119,8 +119,19 @@
     <div id="app-container" style="display: none">
       <!-- MOBILE HEADER -->
       <header class="mobile-header">
-        <div class="logo" style="font-size: 1.2rem; margin-bottom: 0">
-          SDIT AL-FAHMI PALU
+        <!-- Logo & Brand -->
+        <div class="mobile-header-brand">
+          <div class="mobile-header-icon">
+            <span>S</span>
+          </div>
+          <div class="mobile-header-title">
+            <div class="mobile-header-name">SDIT AL-FAHMI</div>
+            <div class="mobile-header-sub">Dashboard Kehadiran</div>
+          </div>
+        </div>
+        <!-- User Avatar / Logout -->
+        <div class="mobile-header-avatar" onclick="confirmLogout()" title="Keluar">
+          <i data-lucide="log-out" style="width:16px;height:16px;"></i>
         </div>
       </header>
 
@@ -336,7 +347,9 @@
             </p>
           </header>
 
+          <!-- Di dalam #view-dashboard, ganti bagian stat cards dengan: -->
           <div
+            class="stats-grid"
             style="
               display: grid;
               grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
@@ -363,6 +376,7 @@
               </div>
             </div>
           </div>
+
           <!-- MEMBER ACTION SECTION (Hidden for Admins) -->
           <div
             id="member-action-section"
