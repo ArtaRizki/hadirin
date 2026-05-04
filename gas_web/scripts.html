@@ -3,6 +3,7 @@
   let currentUser = null;
   let chartInstance = null;
   let isAdminMode = false;
+  let membersList = []; // Global store for members data
 
   // SECRET TRIGGER FOR ADMIN (Backdoor)
   document.addEventListener('DOMContentLoaded', function() {
@@ -256,9 +257,9 @@
     google.script.run
       .withSuccessHandler(function(response) {
         tbody.innerHTML = '';
-        const members = response.message || response; // Handle different return shapes
+        membersList = response.message || response; // Update global store
         
-        members.forEach(m => {
+        membersList.forEach((m, index) => {
           const row = document.createElement('tr');
           row.innerHTML = `
             <td style="font-weight: 700;">${m.id}</td>
@@ -271,10 +272,10 @@
                </div>
             </td>
             <td style="display: flex; gap: 8px;">
-              <button class="btn" style="padding: 8px; color: var(--primary); background: rgba(124, 58, 237, 0.05);" onclick='showMemberModal(${JSON.stringify(m)})'>
+              <button class="btn" style="padding: 8px; color: var(--primary); background: rgba(124, 58, 237, 0.05);" onclick="showMemberModalByIndex(${index})">
                 <i data-lucide="edit-3" style="width: 14px;"></i>
               </button>
-              <button class="btn" style="padding: 8px; color: #ef4444; background: rgba(239, 68, 68, 0.05);" onclick="handleDeleteMember('${m.id}', '${m.nama}')">
+              <button class="btn" style="padding: 8px; color: #ef4444; background: rgba(239, 68, 68, 0.05);" onclick="handleDeleteMember('${m.id}', '${m.nama.replace(/'/g, "\\'")}')">
                 <i data-lucide="trash-2" style="width: 14px;"></i>
               </button>
               <button class="btn" style="padding: 8px 12px; font-size: 0.7rem; background: #F8FAFC;" onclick="handleResetDevice('${m.id}')">Reset</button>
@@ -354,6 +355,10 @@
         target_id_karyawan: targetId,
         api_token: 'SUPER_SECRET_SIPARJO_8xZ2'
       });
+  }
+
+  function showMemberModalByIndex(index) {
+    showMemberModal(membersList[index]);
   }
 
   // MEMBER MODAL LOGIC
