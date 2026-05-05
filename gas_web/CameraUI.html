@@ -1,486 +1,294 @@
 <!doctype html>
 <html>
-  <head>
-    <base target="_top" />
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Verifikasi Wajah</title>
-    <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap"
-      rel="stylesheet"
-    />
-    <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
-    <style>
-      :root {
-        --primary: #005147;
-        --primary-gradient: linear-gradient(135deg, #005147 0%, #007668 100%);
-        --bg: #0f172a;
-        --card-bg: #ffffff;
-        --radius: 24px;
-      }
 
-      body {
-        margin: 0;
-        padding: 0;
-        font-family: "Inter", sans-serif;
-        background: var(--bg);
-        color: #fff;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        min-height: 100vh;
-        overflow: hidden;
-        -webkit-user-select: none;
-        user-select: none;
-      }
+<head>
+  <base target="_top" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Verifikasi Wajah</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap"
+    rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+  <style>
+    :root {
+      --primary: #005147;
+      --primary-gradient: linear-gradient(135deg, #005147 0%, #007668 100%);
+      --bg: #0f172a;
+      --card-bg: #ffffff;
+      --radius: 24px;
+    }
 
-      .container {
-        width: 100%;
-        height: 100%;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        padding: 40px 20px;
-        box-sizing: border-box;
-      }
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: "Inter", sans-serif;
+      background: var(--bg);
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      overflow: hidden;
+    }
 
-      .title {
-        font-size: 1.5rem;
-        font-weight: 800;
-        margin-bottom: 5px;
-        letter-spacing: -0.5px;
-        text-align: center;
-      }
+    .container {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 20px;
+      box-sizing: border-box;
+    }
 
-      .subtitle {
-        font-size: 0.9rem;
-        color: rgba(255, 255, 255, 0.6);
-        margin-bottom: 20px;
-        text-align: center;
-        padding: 0 10px;
-      }
+    .title {
+      font-size: 1.5rem;
+      font-weight: 800;
+      margin-bottom: 5px;
+      letter-spacing: -0.5px;
+    }
 
-      .camera-box {
-        width: 100%;
-        max-width: 480px;
-        aspect-ratio: 1/1;
-        background: #000;
-        border-radius: var(--radius);
-        position: relative;
-        overflow: hidden;
-        border: 4px solid rgba(255, 255, 255, 0.1);
-        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
-      }
+    .subtitle {
+      font-size: 0.9rem;
+      color: rgba(255, 255, 255, 0.6);
+      margin-bottom: 20px;
+    }
 
-      #video {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-        transform: scaleX(-1);
-      }
+    .camera-box {
+      width: 100%;
+      max-width: 480px;
+      aspect-ratio: 1/1;
+      background: #000;
+      border-radius: var(--radius);
+      position: relative;
+      overflow: hidden;
+      border: 4px solid rgba(255, 255, 255, 0.1);
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+    }
 
-      .overlay {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        pointer-events: none;
-      }
+    #video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transform: scaleX(-1);
+    }
 
-      .face-guide {
-        width: 260px;
-        height: 260px;
-        border: 3px dashed rgba(255, 255, 255, 0.3);
-        border-radius: 50%;
-        box-shadow: 0 0 0 1000px rgba(15, 23, 42, 0.5);
-      }
+    .overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      pointer-events: none;
+    }
 
-      .scan-line {
-        position: absolute;
+    .face-guide {
+      width: 260px;
+      height: 260px;
+      border: 3px dashed rgba(255, 255, 255, 0.3);
+      border-radius: 50%;
+      box-shadow: 0 0 0 1000px rgba(15, 23, 42, 0.5);
+    }
+
+    .scan-line {
+      position: absolute;
+      top: 20%;
+      left: 0;
+      width: 100%;
+      height: 3px;
+      background: #10b981;
+      box-shadow: 0 0 15px #10b981;
+      animation: scan 3s infinite linear;
+    }
+
+    @keyframes scan {
+      0% {
         top: 20%;
-        left: 0;
-        width: 100%;
-        height: 3px;
-        background: #10b981;
-        box-shadow: 0 0 15px #10b981;
-        animation: scan 3s infinite linear;
       }
 
-      @keyframes scan {
-        0% {
-          top: 20%;
-        }
-        50% {
-          top: 80%;
-        }
-        100% {
-          top: 20%;
-        }
+      50% {
+        top: 80%;
       }
 
-      .status {
-        margin-top: 30px;
-        padding: 12px 24px;
-        background: rgba(255, 255, 255, 0.1);
-        border-radius: 30px;
-        font-weight: 700;
-        font-size: 0.9rem;
-        backdrop-filter: blur(10px);
-        text-align: center;
+      100% {
+        top: 20%;
       }
+    }
 
-      .status.loading {
-        color: #aaa;
-      }
-      .status.success {
-        background: #10b981;
-        color: #fff;
-      }
-      .status.error {
-        background: #ef4444;
-        color: #fff;
-      }
+    .status {
+      margin-top: 30px;
+      padding: 12px 24px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 30px;
+      font-weight: 700;
+      font-size: 0.9rem;
+      backdrop-filter: blur(10px);
+    }
 
-      .btn-group {
-        margin-top: 30px;
-        display: flex;
-        gap: 15px;
-        width: 100%;
-        max-width: 400px;
-        padding: 0 10px;
-      }
+    .status.loading {
+      color: #aaa;
+    }
 
-      .btn {
-        flex: 1;
-        padding: 16px;
-        border-radius: 16px;
-        border: none;
-        font-weight: 800;
-        cursor: pointer;
-        font-family: inherit;
-        transition: all 0.2s;
-        font-size: 0.9rem;
-      }
+    .status.success {
+      background: #10b981;
+      color: #fff;
+    }
 
-      .btn-close {
-        background: rgba(255, 255, 255, 0.1);
-        color: #fff;
-      }
+    .status.error {
+      background: #ef4444;
+      color: #fff;
+    }
 
-      .btn-action {
-        background: var(--primary-gradient);
-        color: white;
-        display: none;
-      }
+    .btn-group {
+      margin-top: 30px;
+      display: flex;
+      gap: 15px;
+      width: 100%;
+      max-width: 400px;
+    }
 
-      canvas {
-        position: absolute;
-        top: 0;
-        left: 0;
-        z-index: 10;
-      }
+    .btn {
+      flex: 1;
+      padding: 16px;
+      border-radius: 16px;
+      border: none;
+      font-weight: 800;
+      cursor: pointer;
+      font-family: inherit;
+      transition: all 0.2s;
+    }
 
-      /* ============================================ */
-      /* MOBILE RESPONSIVE */
-      /* ============================================ */
+    .btn-close {
+      background: rgba(255, 255, 255, 0.1);
+      color: #fff;
+    }
 
-      @media (max-width: 768px) {
-        .container {
-          padding: 20px 15px;
-        }
+    .btn-action {
+      background: var(--primary-gradient);
+      color: white;
+      display: none;
+    }
 
-        .title {
-          font-size: 1.3rem;
-        }
+    canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      z-index: 10;
+    }
+  </style>
+</head>
 
-        .subtitle {
-          font-size: 0.85rem;
-          margin-bottom: 15px;
-        }
+<body>
+  <div class="container">
+    <div class="title" id="title">Verifikasi Wajah</div>
+    <div class="subtitle">Arahkan wajah Anda ke dalam lingkaran</div>
 
-        .camera-box {
-          max-width: 100%;
-          border-radius: 20px;
-          border-width: 3px;
-        }
-
-        .face-guide {
-          width: 200px;
-          height: 200px;
-        }
-
-        .status {
-          margin-top: 20px;
-          padding: 10px 20px;
-          font-size: 0.85rem;
-        }
-
-        .btn-group {
-          margin-top: 20px;
-          gap: 10px;
-          max-width: 100%;
-        }
-
-        .btn {
-          padding: 14px;
-          font-size: 0.85rem;
-          border-radius: 14px;
-        }
-      }
-
-      @media (max-width: 400px) {
-        .container {
-          padding: 15px 10px;
-        }
-
-        .title {
-          font-size: 1.2rem;
-        }
-
-        .subtitle {
-          font-size: 0.8rem;
-        }
-
-        .camera-box {
-          border-radius: 16px;
-        }
-
-        .face-guide {
-          width: 180px;
-          height: 180px;
-        }
-
-        .btn {
-          padding: 12px;
-          font-size: 0.8rem;
-        }
-      }
-
-      /* Landscape Mobile */
-      @media (max-width: 768px) and (orientation: landscape) {
-        .container {
-          padding: 15px;
-        }
-
-        .camera-box {
-          max-width: 350px;
-        }
-
-        .face-guide {
-          width: 180px;
-          height: 180px;
-        }
-
-        .btn-group {
-          margin-top: 15px;
-        }
-      }
-
-      /* Touch Optimization */
-      @media (hover: none) and (pointer: coarse) {
-        .btn {
-          min-height: 44px;
-          min-width: 44px;
-        }
-
-        .btn:active {
-          transform: scale(0.95);
-          opacity: 0.8;
-        }
-      }
-
-      /* Safe Area Insets (iPhone X+) */
-      @supports (padding: max(0px)) {
-        .container {
-          padding-top: max(env(safe-area-inset-top), 20px);
-          padding-bottom: max(env(safe-area-inset-bottom), 20px);
-          padding-left: max(env(safe-area-inset-left), 15px);
-          padding-right: max(env(safe-area-inset-right), 15px);
-        }
-      }
-    </style>
-  </head>
-
-  <body>
-    <div class="container">
-      <div class="title" id="title">Verifikasi Wajah</div>
-      <div class="subtitle">Arahkan wajah Anda ke dalam lingkaran</div>
-
-      <div class="camera-box">
-        <video id="video" autoplay muted playsinline></video>
-        <div class="overlay">
-          <div class="face-guide"></div>
-          <div class="scan-line" id="scan-line"></div>
-        </div>
-      </div>
-
-      <div id="status" class="status loading">Memuat Kamera...</div>
-
-      <div class="btn-group">
-        <button class="btn btn-close" onclick="window.close()">Tutup</button>
-        <button
-          id="btn-register"
-          class="btn btn-action"
-          onclick="registerFace()"
-        >
-          Daftarkan Wajah
-        </button>
+    <div class="camera-box">
+      <video id="video" autoplay muted playsinline></video>
+      <div class="overlay">
+        <div class="face-guide"></div>
+        <div class="scan-line" id="scan-line"></div>
       </div>
     </div>
 
-    <script>
-      let userData = null;
-      let mode = "absen";
-      let isModelLoaded = false;
-      let faceMatcher = null;
-      let scanInterval = null;
+    <div id="status" class="status loading">Memuat Kamera...</div>
 
-      // Ambil Data User dari URL (base64)
-      const urlParams = new URLSearchParams(window.location.search);
+    <div class="btn-group">
+      <button class="btn btn-close" onclick="window.close()">Tutup</button>
+      <button id="btn-register" class="btn btn-action" onclick="registerFace()">
+        Daftarkan Wajah
+      </button>
+    </div>
+  </div>
+
+  <script>
+    let userData = null;
+    let mode = "absen";
+    let isModelLoaded = false;
+    let faceMatcher = null;
+    let scanInterval = null;
+
+    // Ambil Data User dari URL (base64)
+    const urlParams = new URLSearchParams(window.location.search);
+    try {
+      if (urlParams.get("data")) {
+        userData = JSON.parse(atob(urlParams.get("data")));
+        mode = urlParams.get("mode") || "absen";
+        document.getElementById("title").innerText =
+          mode === "register" ? "Registrasi Wajah" : "Verifikasi Wajah";
+      }
+    } catch (e) {
+      console.error("Data parse error", e);
+    }
+
+    async function init() {
       try {
-        if (urlParams.get("data")) {
-          userData = JSON.parse(atob(urlParams.get("data")));
-          mode = urlParams.get("mode") || "absen";
-          document.getElementById("title").innerText =
-            mode === "register" ? "Registrasi Wajah" : "Verifikasi Wajah";
-        }
+        const MODEL_URL =
+          "https://justadudewhohacks.github.io/face-api.js/models";
+        await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
+        await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
+        await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL);
+        isModelLoaded = true;
+        startCamera();
       } catch (e) {
-        console.error("Data parse error", e);
+        document.getElementById("status").innerText =
+          "Gagal memuat AI: " + e.message;
+        document.getElementById("status").className = "status error";
       }
+    }
 
-      async function init() {
-        try {
-          const MODEL_URL =
-            "https://justadudewhohacks.github.io/face-api.js/models";
-          await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
-          await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
-          await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL);
-          isModelLoaded = true;
-          startCamera();
-        } catch (e) {
-          document.getElementById("status").innerText =
-            "Gagal memuat AI: " + e.message;
-          document.getElementById("status").className = "status error";
-        }
-      }
-
-      async function startCamera() {
-        try {
-          const video = document.getElementById("video");
-          const stream = await navigator.mediaDevices.getUserMedia({
-            video: { facingMode: "user" },
-          });
-          video.srcObject = stream;
-          video.onplay = () => startScanning();
-        } catch (e) {
-          document.getElementById("status").innerText = "Kamera Terblokir!";
-          document.getElementById("status").className = "status error";
-        }
-      }
-
-      function startScanning() {
+    async function startCamera() {
+      try {
         const video = document.getElementById("video");
-        const status = document.getElementById("status");
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: "user" },
+        });
+        video.srcObject = stream;
+        video.onplay = () => startScanning();
+      } catch (e) {
+        document.getElementById("status").innerText = "Kamera Terblokir!";
+        document.getElementById("status").className = "status error";
+      }
+    }
 
-        status.innerText = "Memindai...";
-        status.className = "status loading";
+    function startScanning() {
+      const video = document.getElementById("video");
+      const status = document.getElementById("status");
 
-        // Setup Matcher jika ada data wajah lama
-        if (userData.faceWeb && userData.faceWeb.length > 20) {
-          const desc = new Float32Array(JSON.parse(userData.faceWeb));
-          faceMatcher = new faceapi.FaceMatcher(
-            new faceapi.LabeledFaceDescriptors(userData.id, [desc]),
-            0.5,
-          );
-        } else {
-          status.innerText = "Wajah Belum Terdaftar";
-          status.className = "status error";
-          document.getElementById("btn-register").style.display = "block";
-          document.getElementById("scan-line").style.display = "none";
-          return;
-        }
+      status.innerText = "Memindai...";
+      status.className = "status loading";
 
-        scanInterval = setInterval(async () => {
-          const detection = await faceapi
-            .detectSingleFace(
-              video,
-              new faceapi.TinyFaceDetectorOptions({ inputSize: 224 }),
-            )
-            .withFaceLandmarks()
-            .withFaceDescriptor();
-
-          if (detection && faceMatcher) {
-            const match = faceMatcher.findBestMatch(detection.descriptor);
-            if (match.label !== "unknown") {
-              clearInterval(scanInterval);
-              status.innerText = "WAJAH COCOK!";
-              status.className = "status success";
-
-              // Ambil Foto & GPS
-              processFinalResult(video);
-            } else {
-              status.innerText = "Wajah Tidak Dikenali";
-              status.className = "status error";
-            }
+      // Setup Matcher jika ada data wajah lama
+      let isValidDesc = false;
+      if (userData.faceWeb && userData.faceWeb.length > 20) {
+        try {
+          const parsed = JSON.parse(userData.faceWeb);
+          if (Array.isArray(parsed) && parsed.length === 128) {
+            const desc = new Float32Array(parsed);
+            faceMatcher = new faceapi.FaceMatcher(
+              new faceapi.LabeledFaceDescriptors(userData.id, [desc]),
+              0.5,
+            );
+            isValidDesc = true;
           }
-        }, 1000);
+        } catch (e) {
+          console.error("Descriptor parse error", e);
+        }
       }
 
-      async function processFinalResult(video) {
-        document.getElementById("status").innerText = "Cek Lokasi GPS...";
-
-        navigator.geolocation.getCurrentPosition(
-          (pos) => {
-            // Ambil Snapshot
-            const canvas = document.createElement("canvas");
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
-            canvas.getContext("2d").drawImage(video, 0, 0);
-            const base64 = canvas.toDataURL("image/jpeg", 0.5).split(",")[1];
-
-            document.getElementById("status").innerText = "Mengirim Absen...";
-            const dashboardUrl = window.location.href.split("?")[0];
-
-            google.script.run
-              .withSuccessHandler(function (res) {
-                if (res.code === 200) {
-                  window.top.location.href =
-                    dashboardUrl +
-                    "?msg=" +
-                    encodeURIComponent("Absen " + userData.tipe + " Berhasil!");
-                } else {
-                  alert("Gagal Absen: " + res.message);
-                  window.close();
-                }
-              })
-              .submitAbsenWeb({
-                api_token: "sdit-palu",
-                client_id: userData.clientId,
-                action: "absen",
-                id_karyawan: userData.id,
-                nama: userData.nama,
-                tipe_absen: userData.tipe,
-                lat_long: `${pos.coords.latitude}, ${pos.coords.longitude}`,
-                foto_base64: base64,
-              });
-          },
-          (err) => {
-            alert("Gagal ambil GPS. Harap izinkan lokasi.");
-            window.close();
-          },
-        );
+      if (!isValidDesc) {
+        status.innerText = "Wajah Belum Terdaftar / Data Tidak Valid";
+        status.className = "status error";
+        document.getElementById("btn-register").style.display = "block";
+        document.getElementById("scan-line").style.display = "none";
+        return;
       }
 
-      async function registerFace() {
-        const video = document.getElementById("video");
-        const status = document.getElementById("status");
-        status.innerText = "Mendaftarkan...";
-
+      scanInterval = setInterval(async () => {
         const detection = await faceapi
           .detectSingleFace(
             video,
@@ -489,30 +297,134 @@
           .withFaceLandmarks()
           .withFaceDescriptor();
 
-        if (detection) {
-          const descriptor = JSON.stringify(Array.from(detection.descriptor));
-          const dashboardUrl = window.location.href.split("?")[0];
+        if (detection && faceMatcher) {
+          const match = faceMatcher.findBestMatch(detection.descriptor);
+          if (match.label !== "unknown") {
+            clearInterval(scanInterval);
+            status.innerText = "WAJAH COCOK!";
+            status.className = "status success";
 
-          google.script.run
-            .withSuccessHandler(function (res) {
-              if (res.success) {
-                window.top.location.href =
-                  dashboardUrl +
-                  "?msg=" +
-                  encodeURIComponent(
-                    "Pendaftaran Wajah Berhasil! Silakan Absen Sekarang.",
-                  );
-              } else {
-                alert("Gagal: " + res.message);
-              }
-            })
-            .registerFaceWeb(userData.clientId, userData.id, descriptor);
-        } else {
-          alert("Wajah tidak terdeteksi jelas.");
+            // Ambil Foto & GPS
+            processFinalResult(video);
+          } else {
+            status.innerText = "Wajah Tidak Dikenali";
+            status.className = "status error";
+          }
         }
-      }
+      }, 1000);
+    }
 
-      init();
-    </script>
-  </body>
+    async function processFinalResult(video) {
+      document.getElementById("status").innerText = "Cek Lokasi GPS...";
+
+      const sendData = (pos) => {
+        // Ambil Snapshot
+        const canvas = document.createElement("canvas");
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        canvas.getContext("2d").drawImage(video, 0, 0);
+        const base64 = canvas.toDataURL("image/jpeg", 0.5).split(",")[1];
+
+        document.getElementById("status").innerText = "Mengirim Absen...";
+        const dashboardUrl = window.location.href.split("?")[0];
+        const latLong = pos ? `${pos.coords.latitude}, ${pos.coords.longitude}` : "GPS_OFF";
+
+        google.script.run
+          .withSuccessHandler(function (res) {
+            if (res.code === 200) {
+              window.top.location.href =
+                dashboardUrl +
+                "?msg=" +
+                encodeURIComponent("Absen " + userData.tipe + " Berhasil!");
+            } else {
+              alert("Gagal Absen: " + res.message);
+              window.close();
+            }
+          })
+          .submitAbsenWeb({
+            api_token: "sdit-palu",
+            client_id: userData.clientId,
+            action: "absen",
+            id_karyawan: userData.id,
+            nama: userData.nama,
+            tipe_absen: userData.tipe,
+            lat_long: latLong,
+            foto_base64: base64,
+          });
+      };
+
+      // Tahap 1: Coba GPS Akurasi Tinggi
+      navigator.geolocation.getCurrentPosition(
+        (pos) => sendData(pos),
+        (err) => {
+          console.warn("High accuracy GPS failed, trying network...", err);
+          // Tahap 2: Coba Akurasi Rendah (Cell/WiFi)
+          navigator.geolocation.getCurrentPosition(
+            (pos) => sendData(pos),
+            (err2) => {
+              // Tahap 3: Coba IP Geolocation (Non-GPS)
+              fetch('https://ipapi.co/json/')
+                .then(response => response.json())
+                .then(data => {
+                  if (data.latitude && data.longitude) {
+                    sendData({ coords: { latitude: data.latitude, longitude: data.longitude } });
+                  } else {
+                    throw new Error("Invalid IP Data");
+                  }
+                })
+                .catch(() => {
+                  if (confirm("Gagal mendapatkan lokasi GPS. Tetap absen tanpa verifikasi lokasi?")) {
+                    sendData(null);
+                  } else {
+                    window.close();
+                  }
+                });
+            },
+            { enableHighAccuracy: false, timeout: 5000 }
+          );
+        },
+        { enableHighAccuracy: true, timeout: 8000 }
+      );
+    }
+
+    async function registerFace() {
+      const video = document.getElementById("video");
+      const status = document.getElementById("status");
+      status.innerText = "Mendaftarkan...";
+
+      const detection = await faceapi
+        .detectSingleFace(
+          video,
+          new faceapi.TinyFaceDetectorOptions({ inputSize: 224 }),
+        )
+        .withFaceLandmarks()
+        .withFaceDescriptor();
+
+      if (detection) {
+        const descriptor = JSON.stringify(Array.from(detection.descriptor));
+        const dashboardUrl = window.location.href.split("?")[0];
+
+        google.script.run
+          .withSuccessHandler(function (res) {
+            if (res.success) {
+              window.top.location.href =
+                dashboardUrl +
+                "?msg=" +
+                encodeURIComponent(
+                  "Pendaftaran Wajah Berhasil! Silakan Absen Sekarang.",
+                );
+            } else {
+              alert("Gagal: " + res.message);
+            }
+          })
+          .registerFaceWeb(userData.clientId, userData.id, descriptor);
+      } else {
+        alert("Wajah tidak terdeteksi jelas.");
+      }
+    }
+
+    init();
+  </script>
+</body>
+
 </html>

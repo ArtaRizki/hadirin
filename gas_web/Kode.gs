@@ -43,9 +43,9 @@ function loginWeb(clientId, id, pin) {
     var lookupId = String(clientId || "")
       .trim()
       .toUpperCase();
-    
+
     console.log("[LOGIN] Attempting login for Client: " + lookupId + ", User: " + id);
-    
+
     var config = allConfigs[lookupId];
     if (!config)
       return { success: false, message: "Kode Instansi tidak terdaftar." };
@@ -142,7 +142,7 @@ function getDashboardStats(clientId, id) {
       var date = new Date();
       date.setDate(date.getDate() - d);
       date.setHours(0, 0, 0, 0);
-      stats.trendLabels.push(Utilities.formatDate(date, "GMT+7", "dd MMM"));
+      stats.trendLabels.push(Utilities.formatDate(date, "GMT+8", "dd MMM"));
       var count = 0;
       for (var j = 1; j < data.length; j++) {
         if (!data[j][0]) continue;
@@ -389,7 +389,7 @@ function handleSubmitLaporanNgaji(payload) {
     "Log_Ngaji_Guru",
   );
   sheet.appendRow([
-    Utilities.formatDate(new Date(), "GMT+7", "yyyy-MM-dd HH:mm:ss"),
+    Utilities.formatDate(new Date(), "GMT+8", "yyyy-MM-dd HH:mm:ss"),
     payload.id_guru,
     payload.nama_kelompok,
     payload.lokasi,
@@ -498,7 +498,7 @@ function handleAbsenKegiatan(payload) {
   }
 
   sheet.appendRow([
-    Utilities.formatDate(new Date(), "GMT+7", "yyyy-MM-dd HH:mm:ss"),
+    Utilities.formatDate(new Date(), "GMT+8", "yyyy-MM-dd HH:mm:ss"),
     payload.id_kegiatan,
     payload.id_karyawan,
     // Mengambil status_kehadiran dari payload mobile
@@ -519,11 +519,11 @@ function handleAbsensi(payload) {
   // ============================================================
   // VALIDASI 1: GEOFENCING — Cek jarak dari lokasi kantor
   // ============================================================
-  if (payload.lat_long) {
+  if (payload.lat_long && payload.lat_long.indexOf(",") !== -1) {
     try {
       var configSheet = ss.getSheetByName("Config_Kantor");
       var kantorLat = 0, kantorLng = 0, radiusMeter = config.radius || 100;
-      
+
       if (configSheet) {
         var kantor = configSheet.getRange("A2:D2").getValues()[0];
         kantorLat = parseFloat(kantor[1]);
@@ -551,30 +551,30 @@ function handleAbsensi(payload) {
   // VALIDASI 2: CEK DUPLIKAT — Tidak boleh absen 2x tipe sama
   // ============================================================
   var now = new Date();
-  var todayStr = Utilities.formatDate(now, "GMT+7", "yyyy-MM-dd");
+  var todayStr = Utilities.formatDate(now, "GMT+8", "yyyy-MM-dd");
   var logSheet = ss.getSheetByName("Log_Absensi");
   var logData = logSheet.getDataRange().getValues();
-  
+
   for (var i = logData.length - 1; i >= 1; i--) {
     var val = logData[i][0];
     var tglLog = "";
     if (val instanceof Date) {
-      tglLog = Utilities.formatDate(val, "GMT+7", "yyyy-MM-dd");
+      tglLog = Utilities.formatDate(val, "GMT+8", "yyyy-MM-dd");
     } else {
       tglLog = String(val).split(" ")[0]; // Asumsi "yyyy-MM-dd HH:mm:ss"
     }
 
     if (tglLog === todayStr) {
       if (String(logData[i][1]).trim().toLowerCase() === String(payload.id_karyawan).trim().toLowerCase()
-          && String(logData[i][2]).trim().toLowerCase() === String(payload.tipe_absen).trim().toLowerCase()) {
-        
+        && String(logData[i][2]).trim().toLowerCase() === String(payload.tipe_absen).trim().toLowerCase()) {
+
         var waktuLog = "";
         if (val instanceof Date) {
-           waktuLog = Utilities.formatDate(val, "GMT+7", "HH:mm");
+          waktuLog = Utilities.formatDate(val, "GMT+8", "HH:mm");
         } else {
-           waktuLog = String(val).split(" ")[1] ? String(val).split(" ")[1].substring(0, 5) : "";
+          waktuLog = String(val).split(" ")[1] ? String(val).split(" ")[1].substring(0, 5) : "";
         }
-        
+
         return responseJSON(409, "error",
           "Anda sudah melakukan absen " + payload.tipe_absen + " hari ini pada pukul " + waktuLog + " WITA.");
       }
@@ -585,7 +585,7 @@ function handleAbsensi(payload) {
   // STATUS TERLAMBAT
   // ============================================================
   var status =
-    parseInt(Utilities.formatDate(now, "GMT+7", "HH")) >=
+    parseInt(Utilities.formatDate(now, "GMT+8", "HH")) >=
       config.batasJam && payload.tipe_absen === "Masuk"
       ? "Terlambat"
       : "Tepat Waktu";
@@ -601,7 +601,7 @@ function handleAbsensi(payload) {
         "Absen_" +
         payload.id_karyawan +
         "_" +
-        Utilities.formatDate(now, "GMT+7", "yyyyMMdd_HHmmss") +
+        Utilities.formatDate(now, "GMT+8", "yyyyMMdd_HHmmss") +
         ".jpg";
       var blob = Utilities.newBlob(
         Utilities.base64Decode(payload.foto_base64),
@@ -619,7 +619,7 @@ function handleAbsensi(payload) {
   // SIMPAN LOG ABSENSI
   // ============================================================
   logSheet.appendRow([
-    Utilities.formatDate(now, "GMT+7", "yyyy-MM-dd HH:mm:ss"),
+    Utilities.formatDate(now, "GMT+8", "yyyy-MM-dd HH:mm:ss"),
     payload.id_karyawan,
     payload.tipe_absen,
     payload.lat_long,
@@ -638,8 +638,8 @@ function hitungJarakMeter(lat1, lon1, lat2, lon2) {
   var dLat = (lat2 - lat1) * Math.PI / 180;
   var dLon = (lon2 - lon1) * Math.PI / 180;
   var a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-          Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-          Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLon / 2) * Math.sin(dLon / 2);
   var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   return R * c;
 }
@@ -657,7 +657,7 @@ function handleAjukanIzin(payload) {
         "Lampiran_" +
         payload.id_karyawan +
         "_" +
-        Utilities.formatDate(new Date(), "GMT+7", "yyyyMMdd_HHmmss") +
+        Utilities.formatDate(new Date(), "GMT+8", "yyyyMMdd_HHmmss") +
         ".jpg";
       var blob = Utilities.newBlob(
         Utilities.base64Decode(payload.foto_base64),
@@ -672,7 +672,7 @@ function handleAjukanIzin(payload) {
 
   // MENYIMPAN GURU PENGGANTI KE KOLOM H
   sheet.appendRow([
-    Utilities.formatDate(new Date(), "GMT+7", "yyyy-MM-dd HH:mm:ss"),
+    Utilities.formatDate(new Date(), "GMT+8", "yyyy-MM-dd HH:mm:ss"),
     payload.id_karyawan,
     payload.tipe_izin,
     payload.rentang_tanggal,
@@ -839,7 +839,7 @@ function handleSubmitNilaiQuran(payload) {
     "Log_Nilai_Quran",
   );
   sheet.appendRow([
-    Utilities.formatDate(new Date(), "GMT+7", "yyyy-MM-dd HH:mm:ss"),
+    Utilities.formatDate(new Date(), "GMT+8", "yyyy-MM-dd HH:mm:ss"),
     payload.nis,
     payload.id_guru,
     payload.id_materi,
@@ -1076,11 +1076,11 @@ function handleCekStatusHariIni(payload) {
     .getSheetByName("Log_Absensi")
     .getDataRange()
     .getValues();
-  var today = Utilities.formatDate(new Date(), "GMT+7", "yyyy-MM-dd");
+  var today = Utilities.formatDate(new Date(), "GMT+8", "yyyy-MM-dd");
   for (var i = logs.length - 1; i >= 1; i--) {
     var rowDate = Utilities.formatDate(
       new Date(logs[i][0]),
-      "GMT+7",
+      "GMT+8",
       "yyyy-MM-dd",
     );
     if (
@@ -1186,7 +1186,7 @@ function handleGetMonthlyReport(payload) {
         String(logs[i][1]) === payload.id_karyawan_target
       ) {
         results.push({
-          waktu: Utilities.formatDate(d, "GMT+7", "yyyy-MM-dd HH:mm:ss"),
+          waktu: Utilities.formatDate(d, "GMT+8", "yyyy-MM-dd HH:mm:ss"),
           id_karyawan: logs[i][1],
           nama: namaMap[logs[i][1]] || "-",
           tipe: logs[i][2],
@@ -1214,7 +1214,7 @@ function handleAddBanner(payload) {
       var folder = DriveApp.getFolderById(config.folderDriveId);
       var fileName =
         "Banner_" +
-        Utilities.formatDate(new Date(), "GMT+7", "yyyyMMdd_HHmmss") +
+        Utilities.formatDate(new Date(), "GMT+8", "yyyyMMdd_HHmmss") +
         ".jpg";
       var blob = Utilities.newBlob(
         Utilities.base64Decode(payload.foto_base64),
@@ -1425,7 +1425,7 @@ function handleAbsenBriefing(payload) {
   }
 
   sheet.appendRow([
-    Utilities.formatDate(new Date(), "GMT+7", "yyyy-MM-dd HH:mm:ss"),
+    Utilities.formatDate(new Date(), "GMT+8", "yyyy-MM-dd HH:mm:ss"),
     payload.id_karyawan,
     payload.status_kehadiran, // contoh: Hadir, Izin, Sakit
     fotoUrl,
@@ -1876,11 +1876,20 @@ function handleGetEnhancedStats(payload) {
     trendValues.push(count);
   }
 
+  // Statistik registrasi: Wajah & HP
+  var totalWajah = 0, totalHP = 0;
+  for (var k = 1; k < employees.length; k++) {
+    if (employees[k][3] && String(employees[k][3]).trim() !== "") totalHP++;
+    if (employees[k][4] && String(employees[k][4]).trim() !== "") totalWajah++;
+  }
+
   return responseJSON(200, "success", {
     present: totalHadir,
     late: totalTerlambat,
     leave: totalIzin,
     total_anggota: employees.length - 1,
+    total_wajah: totalWajah,
+    total_hp: totalHP,
     pie_jabatan: pieData,
     trendLabels: trendLabels,
     trendValues: trendValues,
@@ -1920,7 +1929,7 @@ function handleGetEmployeeStats(payload) {
       sortedLogs.push({ date: new Date(logs[s][0]), status: logs[s][6] });
     }
   }
-  sortedLogs.sort(function(a, b) { return b.date - a.date; });
+  sortedLogs.sort(function (a, b) { return b.date - a.date; });
   for (var x = 0; x < sortedLogs.length; x++) {
     if (sortedLogs[x].status === "Tepat Waktu" || sortedLogs[x].status === "Terlambat") {
       streak++;

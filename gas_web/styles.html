@@ -23,11 +23,22 @@
     -webkit-tap-highlight-color: transparent;
   }
 
+  html, body {
+    height: 100%;
+    width: 100%;
+    overflow: hidden; /* Lock body scroll for GAS iframe centering */
+  }
+
   body {
     background-color: var(--bg-light);
     color: var(--text-main);
-    overflow-x: hidden;
-    min-height: 100vh;
+  }
+
+  #app-container {
+    height: 100%;
+    width: 100%;
+    overflow-y: auto; /* Scrolling happens here */
+    -webkit-overflow-scrolling: touch;
   }
 
   /* UTILITIES */
@@ -359,13 +370,18 @@
     z-index: 10000;
     top: 0;
     left: 0;
+    right: 0;
+    bottom: 0;
     width: 100%;
     height: 100%;
     background: rgba(15, 23, 42, 0.7);
     backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    display: none; /* default */
     align-items: center;
     justify-content: center;
     padding: 20px;
+    box-sizing: border-box;
   }
 
   .modal-active {
@@ -375,7 +391,7 @@
   .modal-content {
     width: 100%;
     max-width: 500px;
-    max-height: 90vh;
+    max-height: 85vh;
     overflow-y: auto;
     background: white;
     border: 1px solid var(--glass-border);
@@ -384,7 +400,25 @@
     padding: 30px;
     text-align: center;
     position: relative;
+    margin: auto;
     animation: modalPop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  }
+
+  /* SweetAlert centering fix for mobile & GAS iframe */
+  .swal2-container {
+    z-index: 20000 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+  }
+  
+  body.swal2-height-auto {
+    height: 100vh !important;
   }
 
   @keyframes modalPop {

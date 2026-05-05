@@ -96,6 +96,7 @@
   }
 
   function handleLogout() {
+    console.log("handleLogout initiated");
     currentUser = null;
     localStorage.removeItem("sdit_user");
     document.body.classList.remove("is-loggedin"); // Hide mobile nav
@@ -107,10 +108,33 @@
       document.getElementById("login-password").value = "";
     }
     isAdminMode = false;
-    document.getElementById("admin-password-group").style.display = "none";
+    if (document.getElementById("admin-password-group")) {
+      document.getElementById("admin-password-group").style.display = "none";
+    }
+    console.log("handleLogout completed");
   }
 
   window.handleLogout = handleLogout;
+
+  function confirmLogout() {
+    console.log("confirmLogout initiated");
+    Swal.fire({
+      title: "Konfirmasi Keluar",
+      text: "Apakah Anda yakin ingin keluar dari dashboard?",
+      icon: "question",
+      showCancelButton: true,
+      confirmButtonColor: "#005147",
+      cancelButtonColor: "#ef4444",
+      confirmButtonText: "Ya, Keluar",
+      cancelButtonText: "Batal",
+    }).then((result) => {
+      if (result.isConfirmed) {
+        handleLogout();
+      }
+    });
+  }
+
+  window.confirmLogout = confirmLogout;
 
   // ============================================
   // UI SETUP
@@ -1031,7 +1055,18 @@
           if (!detection) throw new Error("Wajah tidak terdeteksi.");
 
           if (currentUser.faceWeb) {
-            const savedDesc = new Float32Array(JSON.parse(currentUser.faceWeb));
+            let parsed;
+            try {
+              parsed = JSON.parse(currentUser.faceWeb);
+            } catch (e) {
+              throw new Error("Data wajah tidak valid. Silakan hubungi admin.");
+            }
+
+            if (!Array.isArray(parsed) || parsed.length !== 128) {
+              throw new Error("Format wajah lama tidak didukung. Silakan daftar ulang wajah Anda.");
+            }
+
+            const savedDesc = new Float32Array(parsed);
             const faceMatcher = new faceapi.FaceMatcher(
               new faceapi.LabeledFaceDescriptors(currentUser.id, [savedDesc]),
               0.6,
@@ -1041,43 +1076,83 @@
             if (match.label === "unknown")
               throw new Error("Wajah Tidak Cocok!");
 
-            navigator.geolocation.getCurrentPosition(
-              (pos) => {
-                const canvas = document.createElement("canvas");
-                canvas.width = 600;
-                canvas.height = 800;
-                canvas.getContext("2d").drawImage(img, 0, 0, 600, 800);
-                const base64Photo = canvas
-                  .toDataURL("image/jpeg", 0.7)
-                  .split(",")[1];
-                const tugasVal = document.getElementById("absen-tugas").value;
+            if (!navigator.geolocation) {
+              overlay.style.display = "none";
+              Swal.fire("Error", "Browser Anda tidak mendukung fitur lokasi GPS.", "error");
+              return;
+            }
 
-                google.script.run
-                  .withSuccessHandler((res) => {
-                    overlay.style.display = "none";
-                    if (res.code === 200) {
-                      Swal.fire("Berhasil!", res.message, "success").then(() =>
-                        loadDashboardData(),
-                      );
-                    } else {
-                      Swal.fire("Gagal", res.message, "error");
-                    }
-                  })
-                  .submitAbsenWeb({
-                    api_token: "sdit-palu",
-                    client_id: currentUser.clientId,
-                    action: "absen",
-                    id_karyawan: currentUser.id,
-                    tipe_absen: currentTipeAbsen,
-                    lat_long: `${pos.coords.latitude}, ${pos.coords.longitude}`,
-                    foto_base64: base64Photo,
-                    tugas: tugasVal,
-                  });
-              },
+            const sendAbsen = (pos) => {
+              const canvas = document.createElement("canvas");
+              canvas.width = 600;
+              canvas.height = 800;
+              canvas.getContext("2d").drawImage(img, 0, 0, 600, 800);
+              const base64Photo = canvas.toDataURL("image/jpeg", 0.7).split(",")[1];
+              const tugasVal = document.getElementById("absen-tugas").value;
+              const latLong = pos ? `${pos.coords.latitude}, ${pos.coords.longitude}` : "GPS_OFF";
+
+              google.script.run
+                .withSuccessHandler((res) => {
+                  overlay.style.display = "none";
+                  if (res.code === 200) {
+                    Swal.fire("Berhasil!", res.message, "success").then(() => loadDashboardData());
+                  } else {
+                    Swal.fire("Gagal", res.message, "error");
+                  }
+                })
+                .submitAbsenWeb({
+                  api_token: "sdit-palu",
+                  client_id: currentUser.clientId,
+                  action: "absen",
+                  id_karyawan: currentUser.id,
+                  tipe_absen: currentTipeAbsen,
+                  lat_long: latLong,
+                  foto_base64: base64Photo,
+                  tugas: tugasVal,
+                });
+            };
+
+            // Tahap 1: Coba GPS Akurasi Tinggi
+            navigator.geolocation.getCurrentPosition(
+              (pos) => sendAbsen(pos),
               (err) => {
-                overlay.style.display = "none";
-                Swal.fire("Error", "Gagal mendapatkan lokasi GPS.", "error");
+                console.warn("High accuracy GPS failed, trying network location...", err);
+                // Tahap 2: Coba Akurasi Rendah (Cell/WiFi - Lebih Cepat & Hemat Baterai)
+                navigator.geolocation.getCurrentPosition(
+                  (pos) => sendAbsen(pos),
+                  (err2) => {
+                    // Tahap 3: Coba IP Geolocation (Non-GPS) sebagai cadangan terakhir
+                    fetch('https://ipapi.co/json/')
+                      .then(response => response.json())
+                      .then(data => {
+                        if (data.latitude && data.longitude) {
+                          sendAbsen({ coords: { latitude: data.latitude, longitude: data.longitude, accuracy: 'IP' } });
+                        } else {
+                          throw new Error("Invalid IP Data");
+                        }
+                      })
+                      .catch(() => {
+                        overlay.style.display = "none";
+                        Swal.fire({
+                          title: "GPS Gagal",
+                          text: "Gagal mendapatkan lokasi. Tetap absen tanpa verifikasi jarak (GPS)?",
+                          icon: "warning",
+                          showCancelButton: true,
+                          confirmButtonText: "Ya, Absen Tanpa GPS",
+                          cancelButtonText: "Batal",
+                          confirmButtonColor: "#005147",
+                        }).then((result) => {
+                          if (result.isConfirmed) {
+                            overlay.style.display = "flex";
+                            sendAbsen(null); // Kirim tanpa koordinat
+                          }
+                        });
+                      });
+                  },
+                  { enableHighAccuracy: false, timeout: 5000 }
+                );
               },
+              { enableHighAccuracy: true, timeout: 8000 }
             );
           } else {
             if (confirm("Wajah belum terdaftar. Daftarkan sekarang?")) {
