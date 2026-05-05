@@ -538,8 +538,11 @@ function handleAbsensi(payload) {
 
         var jarak = hitungJarakMeter(kantorLat, kantorLng, userLat, userLng);
         if (jarak > radiusMeter) {
+          var jarakTeks = jarak >= 1000 ? (jarak / 1000).toFixed(2) + " km" : Math.round(jarak) + " m";
+          var radiusTeks = radiusMeter >= 1000 ? (radiusMeter / 1000).toFixed(2) + " km" : Math.round(radiusMeter) + " m";
+          
           return responseJSON(403, "error",
-            "Anda berada di luar area kantor (" + Math.round(jarak) + "m dari titik). Radius absen: " + Math.round(radiusMeter) + "m.");
+            "Anda berada di luar area kantor (" + jarakTeks + " dari titik). Radius absen: " + radiusTeks + ".");
         }
       }
     } catch (e) {
