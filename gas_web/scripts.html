@@ -1,35 +1,224 @@
 <script>
+  console.log("=== SCRIPTS.HTML LOADED ===");
+
+  // ============================================
   // STATE MANAGEMENT
+  // ============================================
   let currentUser = null;
   let chartInstance = null;
   let isAdminMode = false;
-  let membersList = []; // Global store for members data
+  let currentSchedule = null;
+  let officeConfig = null;
+  let rawTodayData = [];
+  let allShifts = [];
 
-  // SECRET TRIGGER FOR ADMIN (Backdoor)
-  document.addEventListener("DOMContentLoaded", function () {
-    const loginIdInput = document.getElementById("login-id");
-    const passGroup = document.getElementById("admin-password-group");
+  // ============================================
+  // POLYFILLS
+  // ============================================
+  if (!String.prototype.padLeft) {
+    String.prototype.padLeft = function (n, str) {
+      return Array(n - String(this).length + 1).join(str || "0") + this;
+    };
+  }
 
-    if (loginIdInput) {
-      loginIdInput.addEventListener("input", function (e) {
-        if (e.target.value.toUpperCase() === "ADMIN") {
-          passGroup.style.display = "block";
-          isAdminMode = true;
-        } else {
-          passGroup.style.display = "none";
-          isAdminMode = false;
-        }
-      });
+  // ============================================
+  // AUTHENTICATION
+  // ============================================
+
+  function handleLogin(btn) {
+    console.log("handleLogin called", btn);
+
+    const clientIdInput = document.getElementById("login-client-id");
+    const userIdInput = document.getElementById("login-id");
+    const pinInput = document.getElementById("login-password");
+
+    if (!clientIdInput || !userIdInput) {
+      console.error("Input elements not found");
+      Swal.fire("Error", "Form tidak ditemukan. Refresh halaman.", "error");
+      return;
     }
-  });
 
+    const clientId = clientIdInput.value.trim();
+    const userId = userIdInput.value.trim().toLowerCase();
+    const pin = pinInput ? pinInput.value : "";
+
+    console.log("Login attempt:", { clientId, userId, isAdminMode });
+
+    if (!clientId || !userId) {
+      Swal.fire("Peringatan", "Kode Instansi dan ID wajib diisi.", "warning");
+      return;
+    }
+
+    if (btn) {
+      btn.disabled = true;
+      btn.innerHTML = '<span class="loading"></span> Masuk...';
+    }
+
+    google.script.run
+      .withSuccessHandler(function (response) {
+        console.log("Login response:", response);
+
+        if (btn) {
+          btn.disabled = false;
+          btn.innerText = "Masuk Dashboard";
+        }
+
+        if (response.success) {
+          currentUser = response.user;
+          setupUIForUser();
+        } else {
+          showLoginError(response.message || "Login gagal. Silakan coba lagi.");
+        }
+      })
+      .withFailureHandler(function (err) {
+        console.error("Login Failure:", err);
+
+        if (btn) {
+          btn.disabled = false;
+          btn.innerText = "Masuk Dashboard";
+        }
+
+        showLoginError("Gagal terhubung ke server. Silakan coba lagi.");
+      })
+      .loginWeb(clientId, userId, isAdminMode ? pin : "BYPASS_PIN");
+  }
+
+  // Make globally accessible
+  window.handleLogin = handleLogin;
+
+  function showLoginError(msg) {
+    const err = document.getElementById("login-error");
+    if (err) {
+      err.innerText = msg;
+      err.style.display = "block";
+      setTimeout(() => (err.style.display = "none"), 4000);
+    }
+  }
+
+  function handleLogout() {
+    console.log("handleLogout initiated");
+    currentUser = null;
+    localStorage.removeItem("sdit_user");
+    document.body.classList.remove("is-loggedin"); // Hide mobile nav
+    document.getElementById("app-container").style.display = "none";
+    document.getElementById("login-screen").style.display = "flex";
+    document.getElementById("login-id").value = "";
+    document.getElementById("login-client-id").value = "";
+    if (document.getElementById("login-password")) {
+      document.getElementById("login-password").value = "";
+    }
+    isAdminMode = false;
+    if (document.getElementById("admin-password-group")) {
+      document.getElementById("admin-password-group").style.display = "none";
+    }
+    console.log("handleLogout completed");
+  }
+
+  window.handleLogout = handleLogout;
+
+  function confirmLogout() {
+    console.log("confirmLogout initiated");
+    Swal.fire({
+      title: "Konfirmasi Keluar",
+      text: "Apakah Anda yakin ingin keluar dari dashboard?",
+      icon: "question",
+      showCancelButton: true,
+      confirmButtonColor: "#005147",
+      cancelButtonColor: "#ef4444",
+      confirmButtonText: "Ya, Keluar",
+      cancelButtonText: "Batal",
+    }).then((result) => {
+      if (result.isConfirmed) {
+        handleLogout();
+      }
+    });
+  }
+
+  window.confirmLogout = confirmLogout;
+
+  // ============================================
+  // UI SETUP
+  // ============================================
+
+  function setupUIForUser() {
+    if (!currentUser || !currentUser.id) {
+      handleLogout();
+      return;
+    }
+
+    console.log("Setting up UI for user:", currentUser);
+    localStorage.setItem("sdit_user", JSON.stringify(currentUser));
+
+    document.getElementById("login-screen").style.display = "none";
+    document.getElementById("app-container").style.display = "flex";
+    document.body.classList.add("is-loggedin"); // Show mobile nav
+
+    document.getElementById("user-name").innerText = currentUser.nama;
+    document.getElementById("user-id-display").innerHTML =
+      "ID: " +
+      currentUser.id +
+      " <br><small style='color:var(--primary); font-weight:700;'>v3.7 Mobile</small>";
+
+    const role =
+      currentUser && currentUser.role ? currentUser.role.toLowerCase() : "";
+    const isAdmin =
+      role === "admin" || role === "superadmin" || role === "super admin";
+
+    if (isAdmin) {
+      document.getElementById("admin-section").style.display = "block";
+      document.getElementById("member-action-section").style.display = "none";
+      if (document.getElementById("admin-mobile-nav"))
+        document.getElementById("admin-mobile-nav").style.display = "contents";
+      if (document.getElementById("btn-re-register-face"))
+        document.getElementById("btn-re-register-face").style.display = "none";
+    } else {
+      document.getElementById("admin-section").style.display = "none";
+      document.getElementById("member-action-section").style.display = "block";
+      if (document.getElementById("admin-mobile-nav"))
+        document.getElementById("admin-mobile-nav").style.display = "none";
+      if (document.getElementById("btn-re-register-face"))
+        document.getElementById("btn-re-register-face").style.display = "flex";
+    }
+
+    const now = new Date();
+    const monthVal =
+      now.getFullYear() + "-" + String(now.getMonth() + 1).padLeft(2, "0");
+    const mPicker = document.getElementById("shift-month-picker");
+    if (mPicker) {
+      mPicker.value = monthVal;
+      mPicker.addEventListener("change", loadShiftData);
+    }
+
+    switchView("dashboard");
+
+    const urlMsg = "<?!= msg ?>";
+    if (urlMsg && urlMsg !== "null" && urlMsg !== "") {
+      Swal.fire({
+        icon: "success",
+        title: "Berhasil",
+        text: urlMsg,
+        timer: 2000,
+      });
+      window.history.replaceState(
+        {},
+        document.title,
+        window.location.href.split("&")[0].split("?")[0],
+      );
+    }
+  }
+
+  // ============================================
   // ROUTING
+  // ============================================
+
   function switchView(viewId) {
+    console.log("Switching to view:", viewId);
+
     // Update Sidebar (Desktop)
     const navItems = document.querySelectorAll(".nav-item");
     navItems.forEach((item) => {
-      const onclickAttr = item.getAttribute("onclick");
-      if (onclickAttr && onclickAttr.includes(`'${viewId}'`)) {
+      const onclickAttr = item.getAttribute("onclick") || "";
+      if (onclickAttr.includes(`'${viewId}'`)) {
         item.classList.add("active");
       } else {
         item.classList.remove("active");
@@ -49,140 +238,75 @@
     // Update Content
     const views = document.querySelectorAll(".content-view");
     views.forEach((v) => (v.style.display = "none"));
-    document.getElementById(`view-${viewId}`).style.display = "block";
+    const targetView = document.getElementById(`view-${viewId}`);
+    if (targetView) targetView.style.display = "block";
 
     // Data Loaders
     if (viewId === "dashboard") loadDashboardData();
     if (viewId === "history") loadHistoryData();
     if (viewId === "members") loadMembersData();
     if (viewId === "approvals") loadApprovalsData();
-    if (viewId === "settings") loadSettingsData();
+    if (viewId === "settings") loadOfficeSettings();
+    if (viewId === "today") loadTodayAttendanceData();
+    if (viewId === "shifts") loadShiftData();
+    if (viewId === "reports") initReportView();
+    if (viewId === "kegiatan") loadKegiatanData();
+    if (viewId === "pengajian") loadPengajianData();
 
     lucide.createIcons();
   }
 
-  // AUTHENTICATION
-  function handleLogin() {
-    const clientId = document.getElementById("login-client-id").value;
-    const userId = document.getElementById("login-id").value;
-    const pin = document.getElementById("login-password").value; // Only used in admin mode
-    const btn = event.target;
+  window.switchView = switchView;
 
-    if (!clientId || !userId) return;
+  // ============================================
+  // DATA FETCHING: DASHBOARD
+  // ============================================
 
-    btn.disabled = true;
-    btn.innerHTML = '<span class="loading"></span>';
+  function loadDashboardData() {
+    if (!currentUser || !currentUser.clientId) {
+      console.warn("loadDashboardData skipped: No clientId");
+      return;
+    }
 
     google.script.run
       .withSuccessHandler(function (response) {
-        btn.disabled = false;
-        btn.innerText = "Masuk Dashboard";
+        if (!response || response.error) {
+          console.error(
+            "Dashboard Error:",
+            response ? response.error : "No response",
+          );
+          return;
+        }
 
-        if (response.success) {
-          currentUser = response.user;
-          setupUIForUser();
-        } else {
-          showLoginError(response.message);
+        const stats = response.stats || response;
+        document.getElementById("stat-present").innerText = stats.present || 0;
+        document.getElementById("stat-leave").innerText = stats.leave || 0;
+        document.getElementById("stat-late").innerText = stats.late || 0;
+        renderTrendChart(stats.trendLabels, stats.trendValues);
+
+        if (response.schedule) {
+          currentSchedule = response.schedule;
+          officeConfig = response.office;
         }
       })
       .withFailureHandler(function (err) {
-        btn.disabled = false;
-        btn.innerText = "Masuk Dashboard";
-        showLoginError("Gagal terhubung ke server.");
-      })
-      .loginWeb(clientId, userId, isAdminMode ? pin : "BYPASS_PIN");
-  }
-
-  function setupUIForUser() {
-    // Simpan ke local storage agar tidak hilang saat redirect
-    localStorage.setItem("hadirin_user", JSON.stringify(currentUser));
-
-    document.getElementById("login-screen").style.display = "none";
-    document.getElementById("app-container").style.display = "flex";
-
-    document.getElementById("user-name").innerText = currentUser.nama;
-    document.getElementById("user-id-display").innerHTML =
-      "ID: " +
-      currentUser.id +
-      " <br><small style='color:var(--primary); font-weight:700;'>v3.5 Diagnostic Mode</small>";
-
-    // Show Admin Section if role is Admin/SuperAdmin
-    const isAdmin =
-      currentUser.role.toLowerCase() === "admin" ||
-      currentUser.role === "superAdmin";
-    if (isAdmin) {
-      document.getElementById("admin-section").style.display = "block";
-      document.getElementById("member-action-section").style.display = "none";
-      document.getElementById("admin-mobile-nav").style.display = "contents";
-    } else {
-      document.getElementById("admin-section").style.display = "none";
-      document.getElementById("member-action-section").style.display = "block";
-      document.getElementById("admin-mobile-nav").style.display = "none";
-    }
-
-    switchView("dashboard");
-
-    // Cek jika ada pesan sukses dari redirect kamera
-    const urlMsg = "<?!= msg ?>";
-    if (urlMsg && urlMsg !== "null") {
-      alert(urlMsg);
-      // Bersihkan URL agar tidak muncul lagi saat refresh
-      window.history.replaceState(
-        {},
-        document.title,
-        window.location.href.split("&")[0].split("?")[0],
-      );
-    }
-  }
-
-  function handleLogout() {
-    currentUser = null;
-    localStorage.removeItem("hadirin_user");
-    document.getElementById("app-container").style.display = "none";
-    document.getElementById("login-screen").style.display = "flex";
-    document.getElementById("login-id").value = "";
-    document.getElementById("login-password").value = "";
-    isAdminMode = false;
-    document.getElementById("admin-password-group").style.display = "none";
-  }
-
-  // AUTO LOGIN IF SESSION EXISTS
-  document.addEventListener("DOMContentLoaded", function () {
-    const saved = localStorage.getItem("hadirin_user");
-    if (saved) {
-      currentUser = JSON.parse(saved);
-      setupUIForUser();
-    }
-  });
-
-  function showLoginError(msg) {
-    const err = document.getElementById("login-error");
-    err.innerText = msg;
-    err.style.display = "block";
-    setTimeout(() => (err.style.display = "none"), 4000);
-  }
-
-  // DATA FETCHING: DASHBOARD
-  function loadDashboardData() {
-    google.script.run
-      .withSuccessHandler(function (data) {
-        document.getElementById("stat-present").innerText = data.present || 0;
-        document.getElementById("stat-leave").innerText = data.leave || 0;
-        document.getElementById("stat-late").innerText = data.late || 0;
-        renderTrendChart(data.trendLabels, data.trendValues);
+        console.error("Dashboard load failed:", err);
       })
       .getDashboardStats(currentUser.clientId, currentUser.id);
   }
 
   function renderTrendChart(labels, values) {
-    const ctx = document.getElementById("attendanceChart").getContext("2d");
+    const ctx = document.getElementById("attendanceChart");
+    if (!ctx) return;
+
+    const context = ctx.getContext("2d");
     if (chartInstance) chartInstance.destroy();
 
-    const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+    const gradient = context.createLinearGradient(0, 0, 0, 400);
     gradient.addColorStop(0, "rgba(124, 58, 237, 0.2)");
     gradient.addColorStop(1, "rgba(124, 58, 237, 0)");
 
-    chartInstance = new Chart(ctx, {
+    chartInstance = new Chart(context, {
       type: "line",
       data: {
         labels: labels || [],
@@ -211,111 +335,256 @@
             grid: { color: "#f1f5f9" },
             ticks: { font: { weight: 600 } },
           },
-          x: { grid: { display: false }, ticks: { font: { weight: 600 } } },
+          x: {
+            grid: { display: false },
+            ticks: { font: { weight: 600 } },
+          },
         },
       },
     });
   }
 
+  // ============================================
   // DATA FETCHING: HISTORY
+  // ============================================
+
   function loadHistoryData() {
     const tbody = document.getElementById("history-body");
+    if (!tbody) return;
+
     tbody.innerHTML =
-      '<tr><td colspan="4" style="text-align: center; padding: 40px;">Memuat data...</td></tr>';
+      '<tr><td colspan="5" style="text-align: center; padding: 40px;">Memuat data...</td></tr>';
 
     google.script.run
       .withFailureHandler(function (err) {
         tbody.innerHTML =
-          '<tr><td colspan="4" style="text-align: center; padding: 40px; color: #ef4444;">Gagal memuat data: ' +
+          '<tr><td colspan="5" style="text-align: center; padding: 40px; color: #ef4444;">Gagal memuat data: ' +
           err.message +
           "</td></tr>";
       })
       .withSuccessHandler(function (history) {
         tbody.innerHTML = "";
-        console.log("History received:", history);
-
         if (!history || history.length === 0) {
           tbody.innerHTML =
-            '<tr><td colspan="4" style="text-align: center; padding: 40px;">Belum ada riwayat.</td></tr>';
+            '<tr><td colspan="5" style="text-align: center; padding: 40px;">Belum ada riwayat.</td></tr>';
           return;
         }
 
-        // Check for Diagnostic Errors from Server
         if (history[0] && history[0].error) {
-          tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; padding: 20px;">
-            <div style="color: #ef4444; font-weight: 700; margin-bottom: 8px;">DEBUG: ${history[0].error}</div>
-            <div style="font-size: 0.75rem; color: #64748b; background: #f8fafc; padding: 10px; border-radius: 8px; border: 1px solid #e2e8f0;">${history[0].debug || "-"}</div>
-          </td></tr>`;
+          tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; padding: 20px;"><div style="color: #ef4444; font-weight: 700;">${history[0].error}</div></td></tr>`;
           return;
         }
 
         history.forEach((log) => {
           const row = document.createElement("tr");
           const logStatus = log.status || "Tepat Waktu";
-          const isLate = logStatus === "Terlambat";
+          let statusColor = "#10B981";
+          if (logStatus === "Terlambat") statusColor = "#F59E0B";
+          if (["Izin", "Sakit", "Cuti"].indexOf(logStatus) !== -1)
+            statusColor = "#3B82F6";
+
           row.innerHTML = `
-            <td>
-              <div style="font-weight: 700; color: var(--text-main);">${formatDate(log.waktu)}</div>
+            <td data-label="Waktu">
+              <div style="font-weight: 700;">${formatDate(log.waktu)}</div>
               <div style="font-size: 0.8rem; color: var(--text-muted);">${formatTime(log.waktu)}</div>
             </td>
-            <td><span class="badge-tipe">${log.tipe || "-"}</span></td>
-            <td><span style="color: ${isLate ? "#EF4444" : "#10B981"}; font-weight: 800; font-size: 0.85rem;">${logStatus.toUpperCase()}</span></td>
-            <td style="font-size: 0.85rem; font-weight: 500; color: var(--text-muted);">${log.tugas || "-"}</td>
-            <td><button class="btn" style="padding: 8px 16px; font-size: 0.75rem; border: 1px solid #E2E8F0; width: auto;">Detail</button></td>
+            <td data-label="Tipe"><span class="badge-tipe">${log.tipe || "-"}</span></td>
+            <td data-label="Status"><span style="color: ${statusColor}; font-weight: 800; font-size: 0.85rem;">${logStatus.toUpperCase()}</span></td>
+            <td data-label="Tugas" style="font-size: 0.85rem; font-weight: 500; color: var(--text-muted);">${log.tugas || log.keterangan || "-"}</td>
+            <td data-label="Aksi"><button class="btn" style="padding: 8px 16px; font-size: 0.75rem; border: 1px solid #E2E8F0; width: auto;" onclick="alert('Detail: ${(log.keterangan || "-").replace(/'/g, "\\'")}')">Detail</button></td>
           `;
           tbody.appendChild(row);
         });
+
+        optimizeTablesForMobile();
       })
       .getAttendanceHistory(currentUser.clientId, currentUser.id);
   }
 
+  // ============================================
   // ADMIN: DATA ANGGOTA
+  // ============================================
+
   function loadMembersData() {
     const tbody = document.getElementById("members-body");
+    if (!tbody) return;
+
     tbody.innerHTML =
-      '<tr><td colspan="5" style="text-align: center; padding: 40px;">Mengambil data anggota...</td></tr>';
+      '<tr><td colspan="6" style="text-align: center; padding: 40px;">Mengambil data anggota...</td></tr>';
 
     google.script.run
-      .withSuccessHandler(function(response) {
-        tbody.innerHTML = '';
-        membersList = response.message || response; // Update global store
-        
-        membersList.forEach((m, index) => {
-          const row = document.createElement('tr');
-          row.innerHTML = `
-            <td style="font-weight: 700;">${m.id}</td>
-            <td style="font-weight: 600;">${m.nama}</td>
-            <td><span class="badge-tipe">${m.bagian}</span></td>
-            <td>
-               <div style="display: flex; align-items: center; gap: 6px; font-size: 0.8rem; font-weight: 600; color: ${m.sudah_enroll ? "#10B981" : "#EF4444"}">
-                 <i data-lucide="${m.sudah_enroll ? "smartphone" : "alert-circle"}" style="width: 14px;"></i>
-                 ${m.sudah_enroll ? "Terdaftar" : "Belum Enroll"}
-               </div>
-            </td>
-            <td style="display: flex; gap: 8px;">
-              <button class="btn" style="padding: 8px; color: var(--primary); background: rgba(124, 58, 237, 0.05);" onclick="showMemberModalByIndex(${index})">
-                <i data-lucide="edit-3" style="width: 14px;"></i>
-              </button>
-              <button class="btn" style="padding: 8px; color: #ef4444; background: rgba(239, 68, 68, 0.05);" onclick="handleDeleteMember('${m.id}', '${m.nama.replace(/'/g, "\\'")}')">
-                <i data-lucide="trash-2" style="width: 14px;"></i>
-              </button>
-              <button class="btn" style="padding: 8px 12px; font-size: 0.7rem; background: #F8FAFC;" onclick="handleResetDevice('${m.id}')">Reset</button>
-            </td>
-          `;
-          tbody.appendChild(row);
-        });
-        lucide.createIcons();
+      .withSuccessHandler(function (shiftRes) {
+        allShifts = shiftRes.shifts || [];
+
+        google.script.run
+          .withSuccessHandler(function (response) {
+            tbody.innerHTML = "";
+            const members = response.message || response;
+
+            members.forEach((m) => {
+              const row = document.createElement("tr");
+              const shiftOptions = allShifts
+                .map(
+                  (s) =>
+                    `<option value="${s.id}" ${m.id_shift_default === s.id ? "selected" : ""}>${s.nama} (${s.id})</option>`,
+                )
+                .join("");
+
+              row.innerHTML = `
+                <td data-label="ID" style="font-weight: 700;">${m.id}</td>
+                <td data-label="Nama" style="font-weight: 600;">${m.nama}</td>
+                <td data-label="Bagian"><span class="badge-tipe">${m.bagian || "-"}</span></td>
+                <td data-label="Enrollment">
+                   <div style="display: flex; align-items: center; gap: 6px; font-size: 0.8rem; font-weight: 600; color: ${m.sudah_enroll ? "#10B981" : "#EF4444"}">
+                     <i data-lucide="${m.sudah_enroll ? "smartphone" : "alert-circle"}" style="width: 14px;"></i>
+                     ${m.sudah_enroll ? "Terdaftar" : "Belum Enroll"}
+                   </div>
+                </td>
+                <td data-label="Shift">
+                  <select class="glass-input" style="padding: 4px 8px; font-size: 0.8rem;" onchange="updateMemberShift('${m.id}', this.value)">
+                    <option value="">Standar Kantor</option>
+                    ${shiftOptions}
+                  </select>
+                </td>
+                <td data-label="Aksi">
+                  <div style="display: flex; gap: 8px;">
+                    <button class="btn" style="padding: 8px; color: var(--primary); background: rgba(124, 58, 237, 0.05);" onclick='showMemberModal(${JSON.stringify(m)})'>
+                      <i data-lucide="edit-3" style="width: 14px;"></i>
+                    </button>
+                    <button class="btn" onclick="handleResetDevice('${m.id}')" title="Reset Device"><i data-lucide="refresh-cw" style="width: 16px;"></i></button>
+                    <button class="btn" onclick="handleDeleteMember('${m.id}')" style="color:#EF4444;" title="Hapus"><i data-lucide="trash-2" style="width: 16px;"></i></button>
+                  </div>
+                </td>
+              `;
+              tbody.appendChild(row);
+            });
+
+            lucide.createIcons();
+            optimizeTablesForMobile();
+          })
+          .handleGetAllAnggota({ client_id: currentUser.clientId });
       })
-      .webApiCall({
-        action: "get_all_karyawan",
-        client_id: currentUser.clientId,
-        api_token: "SUPER_SECRET_SIPARJO_8xZ2",
-      });
+      .getShiftList(currentUser.clientId);
   }
 
+  function updateMemberShift(targetId, shiftId) {
+    showOverlay("Memperbarui Shift Default...");
+    google.script.run
+      .withSuccessHandler(function (res) {
+        hideOverlay();
+        if (res.code === 200 || res.success) {
+          Swal.fire({
+            icon: "success",
+            title: "Berhasil",
+            text: "Shift default diperbarui.",
+            timer: 1500,
+          });
+        } else {
+          Swal.fire("Gagal", res.message || "Gagal memperbarui.", "error");
+          loadMembersData();
+        }
+      })
+      .updateDefaultShift(currentUser.clientId, targetId, shiftId);
+  }
+
+  window.updateMemberShift = updateMemberShift;
+
+  // ============================================
+  // ADMIN: TODAY'S ATTENDANCE
+  // ============================================
+
+  function loadTodayAttendanceData() {
+    const body = document.getElementById("today-body");
+    if (!body) return;
+
+    body.innerHTML =
+      '<tr><td colspan="5" style="text-align:center; padding: 40px; color: var(--text-muted);">Memuat data absensi...</td></tr>';
+
+    google.script.run
+      .withSuccessHandler(function (response) {
+        rawTodayData = response || [];
+        renderTodayTable(rawTodayData);
+        updateTodaySummary(rawTodayData);
+      })
+      .getTodayAttendanceAdmin(currentUser.clientId);
+  }
+
+  function renderTodayTable(data) {
+    const body = document.getElementById("today-body");
+    if (!body) return;
+
+    body.innerHTML = "";
+    data.forEach((item) => {
+      const row = document.createElement("tr");
+      const status = item.status_absen || "Belum Absen";
+      let badgeClass = "badge-neutral";
+      if (status === "Hadir") badgeClass = "badge-success";
+      if (status === "Terlambat") badgeClass = "badge-warning";
+      if (status === "Belum Absen") badgeClass = "badge-danger";
+      if (["Izin", "Sakit", "Cuti"].indexOf(status) !== -1)
+        badgeClass = "badge-info";
+
+      row.innerHTML = `
+        <td data-label="Anggota"><div style="font-weight: 700;">${item.nama}</div><div style="font-size: 0.75rem; color: var(--text-muted);">${item.id}</div></td>
+        <td data-label="Bagian">${item.bagian}</td>
+        <td data-label="Masuk"><div style="font-weight: 700;">${item.masuk || "-"}</div><small>${item.status_masuk || ""}</small></td>
+        <td data-label="Pulang"><div style="font-weight: 700;">${item.pulang || "-"}</div><small>${item.status_pulang || ""}</small></td>
+        <td data-label="Status"><span class="badge ${badgeClass}">${status}</span></td>
+      `;
+      body.appendChild(row);
+    });
+
+    optimizeTablesForMobile();
+  }
+
+  function updateTodaySummary(data) {
+    let h = 0,
+      t = 0,
+      b = 0,
+      i = 0;
+    data.forEach((item) => {
+      const s = item.status_absen || "Belum Absen";
+      if (s === "Hadir") h++;
+      else if (s === "Terlambat") t++;
+      else if (s === "Belum Absen") b++;
+      else i++;
+    });
+
+    const hEl = document.getElementById("today-h-count");
+    const tEl = document.getElementById("today-t-count");
+    const bEl = document.getElementById("today-b-count");
+    const iEl = document.getElementById("today-i-count");
+
+    if (hEl) hEl.innerText = h;
+    if (tEl) tEl.innerText = t;
+    if (bEl) bEl.innerText = b;
+    if (iEl) iEl.innerText = i;
+  }
+
+  function applyTodayFilter() {
+    const searchInput = document.getElementById("today-search");
+    if (!searchInput) return;
+
+    const query = searchInput.value.toLowerCase();
+    const filtered = rawTodayData.filter(
+      (item) =>
+        (item.nama || "").toLowerCase().includes(query) ||
+        (item.bagian || "").toLowerCase().includes(query) ||
+        (item.id || "").toLowerCase().includes(query),
+    );
+    renderTodayTable(filtered);
+  }
+
+  window.applyTodayFilter = applyTodayFilter;
+
+  // ============================================
   // ADMIN: APPROVALS
+  // ============================================
+
   function loadApprovalsData() {
     const container = document.getElementById("approvals-list");
+    if (!container) return;
+
     container.innerHTML =
       '<div style="grid-column: 1/-1; text-align: center; padding: 40px;">Memuat pengajuan...</div>';
 
@@ -326,476 +595,378 @@
 
         if (approvals.length === 0) {
           container.innerHTML =
-            '<div style="grid-column: 1/-1; text-align: center; padding: 60px; color: var(--text-muted); font-weight:600;">Tidak ada pengajuan izin yang tertunda. 🎈</div>';
+            '<div style="grid-column: 1/-1; text-align: center; padding: 60px; color: var(--text-muted);">Tidak ada pengajuan.</div>';
           return;
         }
 
         approvals.forEach((app) => {
           const card = document.createElement("div");
           card.className = "card glass";
-          card.style.animation = "fadeIn 0.4s ease-out forwards";
           card.innerHTML = `
             <div style="display: flex; justify-content: space-between; margin-bottom: 20px;">
-              <span class="badge-tipe" style="background: rgba(124, 58, 237, 0.1); color: var(--primary);">${app.tipe}</span>
+              <span class="badge-tipe">${app.tipe}</span>
               <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600;">${formatDate(app.waktu_pengajuan)}</span>
             </div>
             <div style="font-weight: 800; font-size: 1.1rem; margin-bottom: 4px;">${app.nama}</div>
-            <div style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 20px; font-weight: 500;">ID: ${app.id_karyawan} | ${app.rentang}</div>
-            
-            <div style="background: #F8FAFC; padding: 16px; border-radius: 12px; font-size: 0.9rem; margin-bottom: 12px; border: 1px dashed #E2E8F0;">
+            <div style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 20px;">ID: ${app.id_karyawan} | ${app.rentang}</div>
+            <div style="background: #F8FAFC; padding: 16px; border-radius: 12px; font-size: 0.9rem; margin-bottom: 24px; border: 1px dashed #E2E8F0;">
               <strong>Alasan:</strong><br>${app.alasan || "Tidak ada keterangan."}
             </div>
-
-            ${
-              app.tugas
-                ? `
-            <div style="background: #eff6ff; padding: 16px; border-radius: 12px; font-size: 0.9rem; margin-bottom: 24px; border: 1.5px solid #dbeafe; color: #1e40af;">
-              <div style="font-weight: 800; font-size: 0.7rem; text-transform: uppercase; margin-bottom: 4px;">Detail Tugas / Dinas:</div>
-              ${app.tugas}
-            </div>
-            `
-                : ""
-            }
-
+            ${app.tugas ? `<div style="background: #eff6ff; padding: 12px; border-radius: 8px; margin-bottom: 12px; font-size: 0.85rem;"><strong>Tugas:</strong> ${app.tugas}</div>` : ""}
+            ${app.guru_pengganti && app.guru_pengganti !== "-" ? `<div style="background: #f0fdf4; padding: 12px; border-radius: 8px; margin-bottom: 12px; font-size: 0.85rem;"><strong>Guru Pengganti:</strong> ${app.guru_pengganti}</div>` : ""}
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-              <button class="btn" style="background: transparent; border: 1.5px solid #E2E8F0; color: #EF4444;" onclick="updateStatus('${app.row_index}', 'Ditolak')">Tolak</button>
+              <button class="btn" style="color: #EF4444;" onclick="updateStatus('${app.row_index}', 'Ditolak')">Tolak</button>
               <button class="btn btn-primary" onclick="updateStatus('${app.row_index}', 'Disetujui')">Setujui</button>
             </div>
           `;
           container.appendChild(card);
         });
       })
-      .webApiCall({
-        action: "get_all_approvals",
-        client_id: currentUser.clientId,
-        api_token: "SUPER_SECRET_SIPARJO_8xZ2",
-      });
-  }
-
-  function handleResetDevice(targetId) {
-    if (!confirm(`Yakin ingin reset Device ID untuk ${targetId}?`)) return;
-    google.script.run
-      .withSuccessHandler(() => {
-        alert("Device berhasil di-reset.");
-        loadMembersData();
-      })
-      .webApiCall({
-        action: "reset_device",
-        client_id: currentUser.clientId,
-        target_id_karyawan: targetId,
-        api_token: "SUPER_SECRET_SIPARJO_8xZ2",
-      });
-  }
-
-  function showMemberModalByIndex(index) {
-    showMemberModal(membersList[index]);
-  }
-
-  // MEMBER MODAL LOGIC
-  function showMemberModal(member = null) {
-    const modal = document.getElementById("member-modal");
-    const title = document.getElementById("member-modal-title");
-    const idInput = document.getElementById("member-id");
-    const namaInput = document.getElementById("member-nama");
-    const divisiInput = document.getElementById("member-divisi");
-    const waInput = document.getElementById("member-wa");
-    const oldIdInput = document.getElementById("member-old-id");
-    const btnSave = document.getElementById("btn-save-member");
-
-    if (member) {
-      title.innerText = "Edit Anggota";
-      idInput.value = member.id;
-      idInput.disabled = true; // Cannot change ID during edit
-      namaInput.value = member.nama;
-      divisiInput.value = member.bagian;
-      waInput.value = member.no_hp || "";
-      oldIdInput.value = member.id;
-      btnSave.innerText = "Simpan Perubahan";
-    } else {
-      title.innerText = "Tambah Anggota Baru";
-      idInput.value = "";
-      idInput.disabled = false;
-      namaInput.value = "";
-      divisiInput.value = "";
-      waInput.value = "";
-      oldIdInput.value = "";
-      btnSave.innerText = "Tambah Anggota";
-    }
-
-    modal.style.display = "flex";
-  }
-
-  function closeMemberModal() {
-    document.getElementById("member-modal").style.display = "none";
-  }
-
-  function saveMember() {
-    const id = document.getElementById("member-id").value;
-    const nama = document.getElementById("member-nama").value;
-    const divisi = document.getElementById("member-divisi").value;
-    const no_hp = document.getElementById("member-wa").value;
-    const oldId = document.getElementById("member-old-id").value;
-    const btn = document.getElementById("btn-save-member");
-
-    if (!id || !nama) return alert("ID dan Nama wajib diisi!");
-
-    btn.disabled = true;
-    btn.innerHTML = '<span class="loading"></span>';
-
-    const action = oldId ? "update_karyawan" : "add_karyawan";
-    const payload = oldId
-      ? {
-          client_id: currentUser.clientId,
-          api_token: "SUPER_SECRET_SIPARJO_8xZ2",
-          action,
-          id_karyawan: oldId,
-          nama,
-          divisi,
-          no_hp,
-        }
-      : {
-          client_id: currentUser.clientId,
-          api_token: "SUPER_SECRET_SIPARJO_8xZ2",
-          action,
-          id_karyawan_baru: id,
-          nama_karyawan_baru: nama,
-          divisi_baru: divisi,
-          no_hp,
-        };
-
-    google.script.run
-      .withSuccessHandler(function (res) {
-        btn.disabled = false;
-        btn.innerText = "Simpan Anggota";
-        if (res.code === 200) {
-          closeMemberModal();
-          loadMembersData();
-        } else {
-          alert("Gagal: " + res.message);
-        }
-      })
-      .webApiCall(payload);
-  }
-
-  function handleDeleteMember(id, nama) {
-    if (
-      !confirm(
-        `Yakin ingin menghapus anggota ${nama} (${id})? Akses login akan terputus.`,
-      )
-    )
-      return;
-
-    const payload = {
-      client_id: currentUser.clientId,
-      api_token: "SUPER_SECRET_SIPARJO_8xZ2",
-      action: "delete_karyawan",
-      id_karyawan: id,
-    };
-
-    google.script.run
-      .withSuccessHandler(function (res) {
-        if (res.code === 200) {
-          loadMembersData();
-        } else {
-          alert("Gagal hapus: " + res.message);
-        }
-      })
-      .webApiCall(payload);
+      .handleGetAllApprovals({ client_id: currentUser.clientId });
   }
 
   function updateStatus(rowIndex, newStatus) {
     google.script.run
       .withSuccessHandler(() => {
+        Swal.fire({
+          icon: "success",
+          title: "Berhasil",
+          text: `Permohonan ${newStatus.toLowerCase()}.`,
+          timer: 1500,
+        });
         loadApprovalsData();
       })
-      .webApiCall({
-        action: "update_leave_status",
+      .handleUpdateLeaveStatus({
         client_id: currentUser.clientId,
         row_index: rowIndex,
         new_status: newStatus,
-        api_token: "SUPER_SECRET_SIPARJO_8xZ2",
       });
   }
 
-  // HELPERS
-  function formatDate(val) {
-    if (!val) return "-";
-    const d = new Date(val);
-    return d.toLocaleDateString("id-ID", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-    });
+  window.updateStatus = updateStatus;
+
+  // ============================================
+  // ADMIN: SHIFT & PLOTTING
+  // ============================================
+
+  function switchShiftTab(event, tab) {
+    document
+      .querySelectorAll(".tab-btn")
+      .forEach((b) => b.classList.remove("active"));
+    if (event) event.currentTarget.classList.add("active");
+
+    const calTab = document.getElementById("shift-tab-calendar");
+    const listTab = document.getElementById("shift-tab-list");
+
+    if (calTab) calTab.style.display = tab === "calendar" ? "block" : "none";
+    if (listTab) listTab.style.display = tab === "list" ? "block" : "none";
   }
 
-  function formatTime(val) {
-    if (!val) return "-";
-    const d = new Date(val);
-    return d.toLocaleTimeString("id-ID", {
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  }
-  // FACE RECOGNITION LOGIC (WEB - PHOTO CAPTURE METHOD)
-  let currentTipeAbsen = "Masuk";
-  let isFaceModelLoaded = false;
+  window.switchShiftTab = switchShiftTab;
 
-  async function initFaceAI() {
-    if (isFaceModelLoaded) return;
-    try {
-      const MODEL_URL =
-        "https://justadudewhohacks.github.io/face-api.js/models";
-      await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
-      await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
-      await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL);
-      isFaceModelLoaded = true;
-      console.log("Face API Models Loaded!");
-    } catch (e) {
-      console.error("Face AI Init Error:", e);
-    }
-  }
+  function loadShiftData() {
+    const monthPicker = document.getElementById("shift-month-picker");
+    if (!monthPicker || !monthPicker.value) return;
 
-  function handleWebAbsen(tipe) {
-    currentTipeAbsen = tipe;
-    // Trigger input file (iPhone akan membuka kamera otomatis)
-    document.getElementById("camera-input").click();
-  }
+    const [year, month] = monthPicker.value.split("-");
 
-  // EVENT LISTENER UNTUK INPUT FOTO
-  document
-    .getElementById("camera-input")
-    .addEventListener("change", async function (e) {
-      const file = e.target.files[0];
-      if (!file) return;
-
-      const overlay = document.getElementById("processing-overlay");
-      const statusText = document.getElementById("processing-text");
-      overlay.style.display = "flex";
-
-      try {
-        // 1. Load Model jika belum
-        statusText.innerText = "Memuat AI...";
-        await initFaceAI();
-
-        // 2. Baca file ke Image
-        statusText.innerText = "Membaca Foto...";
-        const img = await faceapi.bufferToImage(file);
-
-        // 3. Deteksi Wajah dari Foto
-        statusText.innerText = "Memverifikasi Wajah...";
-        const detection = await faceapi
-          .detectSingleFace(
-            img,
-            new faceapi.TinyFaceDetectorOptions({ inputSize: 224 }),
-          )
-          .withFaceLandmarks()
-          .withFaceDescriptor();
-
-        if (!detection) {
-          throw new Error(
-            "Wajah tidak terdeteksi jelas dalam foto. Harap ambil foto dari depan dengan pencahayaan cukup.",
-          );
+    google.script.run
+      .withSuccessHandler(function (response) {
+        if (response.success) {
+          allShifts = response.shifts;
+          renderPlottingCalendar(year, month, response.plotting);
+          renderShiftList(allShifts);
         }
+      })
+      .getShiftSettings(currentUser.clientId, year, month);
+  }
 
-        // 4. Verifikasi atau Registrasi
-        if (currentUser.faceWeb && currentUser.faceWeb.length > 20) {
-          // VERIFIKASI
-          const savedDesc = new Float32Array(JSON.parse(currentUser.faceWeb));
-          const faceMatcher = new faceapi.FaceMatcher(
-            new faceapi.LabeledFaceDescriptors(currentUser.id, [savedDesc]),
-            0.6,
-          );
-          const match = faceMatcher.findBestMatch(detection.descriptor);
+  function renderPlottingCalendar(year, month, plotting) {
+    const head = document.getElementById("shift-calendar-head");
+    const body = document.getElementById("shift-calendar-body");
+    if (!head || !body) return;
 
-          if (match.label === "unknown") {
-            throw new Error(
-              "Wajah Tidak Cocok! Gunakan foto wajah Anda yang sudah terdaftar.",
-            );
+    const daysInMonth = new Date(year, month, 0).getDate();
+
+    let headHtml = '<tr><th class="sticky-col">Anggota</th>';
+    for (let d = 1; d <= daysInMonth; d++) headHtml += `<th>${d}</th>`;
+    headHtml += "</tr>";
+    head.innerHTML = headHtml;
+
+    google.script.run
+      .withSuccessHandler((members) => {
+        body.innerHTML = "";
+        members.forEach((m) => {
+          let rowHtml = `<tr data-id="${m.id}"><td class="sticky-col"><strong>${m.nama}</strong><br><small>${m.id}</small></td>`;
+          for (let d = 1; d <= daysInMonth; d++) {
+            const dateStr = `${year}-${month.toString().padLeft(2, "0")}-${d.toString().padLeft(2, "0")}`;
+            const key = `${dateStr}_${m.id}`;
+            const currentShift = plotting[key] || "";
+            rowHtml += `<td>
+              <select class="shift-select" data-key="${key}" data-date="${dateStr}" data-emp="${m.id}">
+                <option value="">-</option>
+                <option value="LIBUR" ${currentShift === "LIBUR" ? "selected" : ""}>OFF</option>
+                ${allShifts.map((s) => `<option value="${s.id}" ${currentShift === s.id ? "selected" : ""}>${s.id}</option>`).join("")}
+              </select>
+            </td>`;
           }
+          rowHtml += "</tr>";
+          body.insertAdjacentHTML("beforeend", rowHtml);
+        });
+      })
+      .handleGetAllAnggota({ client_id: currentUser.clientId });
+  }
 
-          // 5. Jika Cocok, Ambil Lokasi & Kirim
-          statusText.innerText = "Mengambil Lokasi...";
-          navigator.geolocation.getCurrentPosition(
-            async (pos) => {
-              const latLong = `${pos.coords.latitude}, ${pos.coords.longitude}`;
+  function renderShiftList(shifts) {
+    const body = document.getElementById("shift-list-body");
+    if (!body) return;
 
-              // Konversi Foto ke Base64 (Resize demi speed)
-              const canvas = document.createElement("canvas");
-              const maxDim = 600;
-              let w = img.width;
-              let h = img.height;
-              if (w > h) {
-                if (w > maxDim) {
-                  h *= maxDim / w;
-                  w = maxDim;
-                }
-              } else {
-                if (h > maxDim) {
-                  w *= maxDim / h;
-                  h = maxDim;
-                }
-              }
-              canvas.width = w;
-              canvas.height = h;
-              canvas.getContext("2d").drawImage(img, 0, 0, w, h);
-              const base64Photo = canvas
-                .toDataURL("image/jpeg", 0.7)
-                .split(",")[1];
-
-              statusText.innerText = "Mengirim Absen...";
-              const tugasVal = document.getElementById("absen-tugas").value;
-
-              google.script.run
-                .withSuccessHandler(function (response) {
-                  overlay.style.display = "none";
-                  if (response.code === 200) {
-                    Swal.fire("Berhasil!", response.message, "success").then(
-                      () => {
-                        document.getElementById("absen-tugas").value = "";
-                        loadDashboardData();
-                      },
-                    );
-                  } else {
-                    Swal.fire("Gagal", response.message, "error");
-                  }
-                })
-                .submitAbsenWeb({
-                  api_token: "SUPER_SECRET_SIPARJO_8xZ2",
-                  client_id: currentUser.clientId,
-                  action: "absen",
-                  id_karyawan: currentUser.id,
-                  nama: currentUser.nama,
-                  tipe_absen: currentTipeAbsen,
-                  lat_long: latLong,
-                  foto_base64: base64Photo,
-                  tugas: tugasVal,
-                });
-            },
-            (err) => {
-              overlay.style.display = "none";
-              alert("Gagal ambil GPS. Harap izinkan lokasi.");
-            },
-          );
-        } else {
-          // BELUM TERDAFTAR -> REGISTRASI OTOMATIS DARI FOTO INI
-          if (
-            confirm(
-              "Wajah Anda belum terdaftar di Web. Gunakan foto ini untuk pendaftaran?",
-            )
-          ) {
-            statusText.innerText = "Mendaftarkan Wajah...";
-            const descriptor = JSON.stringify(Array.from(detection.descriptor));
-
-            google.script.run
-              .withSuccessHandler(function (res) {
-                overlay.style.display = "none";
-                if (res.success) {
-                  currentUser.faceWeb = descriptor;
-                  localStorage.setItem(
-                    "hadirin_user",
-                    JSON.stringify(currentUser),
-                  );
-                  alert("Wajah Berhasil Didaftarkan! Silakan ulangi Absen.");
-                } else {
-                  alert("Gagal Daftar: " + res.message);
-                }
-              })
-              .registerFaceWeb(
-                currentUser.clientId,
-                currentUser.id,
-                descriptor,
-              );
-          } else {
-            overlay.style.display = "none";
-          }
-        }
-      } catch (err) {
-        overlay.style.display = "none";
-        alert(err.message);
-      }
-
-      // Reset input supaya bisa milih file yang sama lagi jika gagal
-      e.target.value = "";
+    body.innerHTML = "";
+    shifts.forEach((s) => {
+      const row = document.createElement("tr");
+      row.innerHTML = `
+        <td><input type="text" class="glass-input" value="${s.id}" readonly></td>
+        <td><input type="text" class="glass-input" value="${s.nama}"></td>
+        <td><input type="time" class="glass-input" value="${s.jam_buka}"></td>
+        <td><input type="time" class="glass-input" value="${s.jam_masuk}"></td>
+        <td><input type="time" class="glass-input" value="${s.jam_batas}"></td>
+        <td><input type="time" class="glass-input" value="${s.pulang}"></td>
+        <td><button class="btn" onclick="this.closest('tr').remove()" style="color:#ef4444;"><i data-lucide="trash-2" style="width:14px;"></i></button></td>
+      `;
+      body.appendChild(row);
     });
+    lucide.createIcons();
+  }
 
-  // LEAVE SUBMISSION
-  function handleLeaveSubmit(btn) {
-    const type = document.getElementById("leave-type").value;
-    const range = document.getElementById("leave-range").value;
-    const reason = document.getElementById("leave-reason").value;
-    const task = document.getElementById("leave-task").value;
-    const fileInput = document.getElementById("leave-file");
+  function addNewShiftRow() {
+    const body = document.getElementById("shift-list-body");
+    if (!body) return;
 
-    if (!range || !reason)
-      return alert("Rentang waktu dan alasan wajib diisi!");
+    const newId = "S" + (body.children.length + 1);
+    const row = document.createElement("tr");
+    row.innerHTML = `
+            <td><input type="text" class="glass-input" value="${newId}"></td>
+      <td><input type="text" class="glass-input" value="Shift Baru"></td>
+      <td><input type="time" class="glass-input" value="04:00"></td>
+      <td><input type="time" class="glass-input" value="08:00"></td>
+      <td><input type="time" class="glass-input" value="08:00"></td>
+      <td><input type="time" class="glass-input" value="16:00"></td>
+      <td><button class="btn" onclick="this.closest('tr').remove()" style="color:#ef4444;"><i data-lucide="trash-2" style="width:14px;"></i></button></td>
+    `;
+    body.appendChild(row);
+    lucide.createIcons();
+  }
 
-    btn.disabled = true;
-    btn.innerText = "Mengirim...";
+  window.addNewShiftRow = addNewShiftRow;
 
-    if (fileInput.files.length > 0) {
-      const reader = new FileReader();
-      reader.onload = function (e) {
-        const base64 = e.target.result.split(",")[1];
-        sendLeaveData(type, range, reason, task, base64, btn);
+  function saveShiftDefinitions() {
+    const rows = document.querySelectorAll("#shift-list-body tr");
+    const shiftList = Array.from(rows).map((row) => {
+      const inputs = row.querySelectorAll("input");
+      return {
+        id: inputs[0].value,
+        nama: inputs[1].value,
+        jam_buka: inputs[2].value,
+        jam_masuk: inputs[3].value,
+        jam_batas: inputs[4].value,
+        pulang: inputs[5].value,
       };
-      reader.readAsDataURL(fileInput.files[0]);
-    } else {
-      sendLeaveData(type, range, reason, task, "", btn);
+    });
+
+    google.script.run
+      .withSuccessHandler(() => {
+        Swal.fire("Berhasil", "Shift diperbarui.", "success");
+        loadShiftData();
+      })
+      .saveShiftDefinitions(currentUser.clientId, shiftList);
+  }
+
+  window.saveShiftDefinitions = saveShiftDefinitions;
+
+  function saveActivePlotting() {
+    const selects = document.querySelectorAll(".shift-select");
+    const plottingList = Array.from(selects).map((s) => ({
+      key_id: s.dataset.key,
+      tanggal: s.dataset.date,
+      id_karyawan: s.dataset.emp,
+      id_shift: s.value,
+    }));
+
+    google.script.run
+      .withSuccessHandler(() =>
+        Swal.fire("Berhasil", "Plotting disimpan.", "success"),
+      )
+      .savePlottingAssignments(currentUser.clientId, plottingList);
+  }
+
+  window.saveActivePlotting = saveActivePlotting;
+
+  // ============================================
+  // ADMIN: REPORTS
+  // ============================================
+
+  function initReportView() {
+    const now = new Date();
+    const picker = document.getElementById("report-month-picker");
+    if (picker) {
+      picker.value =
+        now.getFullYear() + "-" + String(now.getMonth() + 1).padLeft(2, "0");
     }
+    loadReportData();
   }
 
-  function sendLeaveData(type, range, reason, task, base64, btn) {
+  function loadReportData() {
+    const picker = document.getElementById("report-month-picker");
+    const body = document.getElementById("report-body");
+    if (!picker || !body) return;
+
+    body.innerHTML =
+      '<tr><td colspan="5" style="text-align:center; padding: 20px;">Memuat data...</td></tr>';
+
     google.script.run
       .withSuccessHandler(function (res) {
-        btn.disabled = false;
-        btn.innerText = "Kirim Permohonan";
-        if (res.code === 200) {
-          alert("Permohonan izin berhasil dikirim dan menunggu approval.");
-          switchView("history");
-          // Clear form
-          document.getElementById("leave-range").value = "";
-          document.getElementById("leave-reason").value = "";
-          document.getElementById("leave-task").value = "";
-          document.getElementById("leave-file").value = "";
-        } else {
-          alert("Gagal: " + res.message);
+        body.innerHTML = "";
+        if (res.status === "success") {
+          res.message.forEach((row) => {
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+              <td data-label="Waktu">${row.waktu}</td>
+              <td data-label="ID">${row.id_karyawan}</td>
+              <td data-label="Nama">${row.nama}</td>
+              <td data-label="Tipe">${row.tipe}</td>
+              <td data-label="Status">${row.status}</td>
+            `;
+            body.appendChild(tr);
+          });
+          optimizeTablesForMobile();
         }
       })
-      .webApiCall({
-        action: "ajukan_izin",
+      .handleGetMonthlyReport({
         client_id: currentUser.clientId,
-        api_token: "SUPER_SECRET_SIPARJO_8xZ2",
-        id_karyawan: currentUser.id,
-        tipe_izin: type,
-        rentang_tanggal: range,
-        alasan: reason,
-        tugas: task,
-        foto_base64: base64,
+        bulan_tahun: picker.value.split("-").reverse().join("-"),
+        id_karyawan_target: "SEMUA",
       });
   }
 
-  // SETTINGS MANAGEMENT
-  function loadSettingsData() {
+  function downloadReport() {
+    const picker = document.getElementById("report-month-picker");
+    if (!picker) return;
+
     google.script.run
       .withSuccessHandler(function (res) {
-        if (res.code === 200) {
-          const cfg = res.message;
-          document.getElementById("set-lat").value = cfg.lat;
-          document.getElementById("set-lng").value = cfg.lng;
-          document.getElementById("set-radius").value = cfg.radius;
-          document.getElementById("set-jam-masuk-mulai").value =
-            cfg.jam_masuk_mulai;
-          document.getElementById("set-jam-masuk-batas").value =
-            cfg.batas_jam_masuk;
-          document.getElementById("set-jam-pulang-mulai").value =
-            cfg.jam_pulang_mulai;
+        if (res.status === "success") {
+          const data = res.message.map((r) => ({
+            Waktu: r.waktu,
+            ID: r.id_karyawan,
+            Nama: r.nama,
+            Tipe: r.tipe,
+            Status: r.status,
+          }));
+          const ws = XLSX.utils.json_to_sheet(data);
+          const wb = XLSX.utils.book_new();
+          XLSX.utils.book_append_sheet(wb, ws, "Laporan");
+          XLSX.writeFile(wb, `Laporan_SDIT_AL-FAHMI_PALU_${picker.value}.xlsx`);
         }
       })
-      .webApiCall({
-        action: "get_office_config",
+      .handleGetMonthlyReport({
         client_id: currentUser.clientId,
-        api_token: "SUPER_SECRET_SIPARJO_8xZ2",
+        bulan_tahun: picker.value.split("-").reverse().join("-"),
+        id_karyawan_target: "SEMUA",
       });
+  }
+
+  window.downloadReport = downloadReport;
+
+  // ============================================
+  // ADMIN: KEGIATAN & PENGAJIAN
+  // ============================================
+
+  function loadKegiatanData() {
+    const body = document.getElementById("kegiatan-body");
+    if (!body) return;
+
+    body.innerHTML =
+      '<tr><td colspan="5" style="text-align:center; padding: 20px;">Memuat...</td></tr>';
+
+    google.script.run
+      .withSuccessHandler((res) => {
+        body.innerHTML = "";
+        if (res.code === 200 && res.data) {
+          res.data.forEach((item) => {
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+              <td data-label="Tanggal">${item.tanggal}</td>
+              <td data-label="Kegiatan">${item.nama}</td>
+              <td data-label="Waktu">${item.waktu}</td>
+              <td data-label="Lokasi">${item.lokasi}</td>
+              <td data-label="Aksi"><button class="btn" onclick="handleDeleteKegiatan('${item.id}')"><i data-lucide="trash-2" style="width:14px"></i></button></td>
+            `;
+            body.appendChild(tr);
+          });
+          lucide.createIcons();
+          optimizeTablesForMobile();
+        }
+      })
+      .getJadwalKegiatan(currentUser.clientId);
+  }
+
+  function loadPengajianData() {
+    const body = document.getElementById("pengajian-body");
+    if (!body) return;
+
+    body.innerHTML =
+      '<tr><td colspan="5" style="text-align:center; padding: 20px;">Memuat...</td></tr>';
+
+    google.script.run
+      .withSuccessHandler((res) => {
+        body.innerHTML = "";
+        if (res.code === 200 && res.data) {
+          res.data.forEach((item) => {
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+              <td data-label="Waktu">${formatDate(item.waktu)}</td>
+              <td data-label="Nama Guru">${item.nama_guru}</td>
+              <td data-label="Kelompok">${item.nama_kelompok}</td>
+              <td data-label="Materi">${item.materi}</td>
+              <td data-label="Kehadiran">${item.jumlah_hadir || "-"}</td>
+            `;
+            body.appendChild(tr);
+          });
+          optimizeTablesForMobile();
+        }
+      })
+      .getLaporanNgaji(currentUser.clientId);
+  }
+
+  // ============================================
+  // ADMIN: SETTINGS
+  // ============================================
+
+  function loadOfficeSettings() {
+    google.script.run
+      .withSuccessHandler(function (response) {
+        if (response.status === "success") {
+          const config = response.message;
+          const latEl = document.getElementById("set-lat");
+          const lngEl = document.getElementById("set-lng");
+          const radiusEl = document.getElementById("set-radius");
+          const masukMulaiEl = document.getElementById("set-jam-masuk-mulai");
+          const masukBatasEl = document.getElementById("set-jam-masuk-batas");
+          const pulangMulaiEl = document.getElementById("set-jam-pulang-mulai");
+          const intervalEl = document.getElementById("set-interval");
+          const maxTierEl = document.getElementById("set-max-tier");
+
+          if (latEl) latEl.value = config.lat;
+          if (lngEl) lngEl.value = config.lng;
+          if (radiusEl) radiusEl.value = config.radius;
+          if (masukMulaiEl) masukMulaiEl.value = config.jam_masuk_mulai;
+          if (masukBatasEl) masukBatasEl.value = config.batas_jam_masuk;
+          if (pulangMulaiEl) pulangMulaiEl.value = config.jam_pulang_mulai;
+          if (intervalEl) intervalEl.value = config.tl_interval || 30;
+          if (maxTierEl) maxTierEl.value = config.max_tier || 0;
+        }
+      })
+      .handleGetOfficeConfig({ client_id: currentUser.clientId });
   }
 
   function saveLocationSettings() {
@@ -804,41 +975,582 @@
     const radius = document.getElementById("set-radius").value;
 
     google.script.run
-      .withSuccessHandler(() => alert("Lokasi berhasil disimpan."))
-      .webApiCall({
-        action: "update_lokasi",
+      .withSuccessHandler(() =>
+        Swal.fire("Berhasil", "Lokasi diperbarui.", "success"),
+      )
+      .handleUpdateLokasi({
         client_id: currentUser.clientId,
-        api_token: "SUPER_SECRET_SIPARJO_8xZ2",
-        lat: lat,
-        lng: lng,
-        radius: radius,
+        lat,
+        lng,
+        radius: parseInt(radius),
       });
   }
+
+  window.saveLocationSettings = saveLocationSettings;
 
   function saveTimeSettings() {
-    const jamMasuk = document.getElementById("set-jam-masuk-mulai").value;
-    const batasMasuk = document.getElementById("set-jam-masuk-batas").value;
-    const jamPulang = document.getElementById("set-jam-pulang-mulai").value;
+    const masuk = document.getElementById("set-jam-masuk-mulai").value;
+    const batas = document.getElementById("set-jam-masuk-batas").value;
+    const pulang = document.getElementById("set-jam-pulang-mulai").value;
+    const interval = document.getElementById("set-interval").value;
+    const maxTier = document.getElementById("set-max-tier").value;
 
     google.script.run
-      .withSuccessHandler(() => alert("Jam kerja berhasil disimpan."))
-      .webApiCall({
-        action: "update_jam_kerja",
+      .withSuccessHandler(() =>
+        Swal.fire("Berhasil", "Jam kerja diperbarui.", "success"),
+      )
+      .handleUpdateJamKerja({
         client_id: currentUser.clientId,
-        api_token: "SUPER_SECRET_SIPARJO_8xZ2",
-        jam_masuk_mulai: jamMasuk,
-        batas_jam_masuk: batasMasuk,
-        jam_pulang_mulai: jamPulang,
+        jam_masuk_mulai: masuk,
+        batas_jam_masuk: batas,
+        jam_pulang_mulai: pulang,
+        tl_interval: parseInt(interval),
+        max_tier: parseInt(maxTier),
       });
   }
 
-  function getCurrentLocation() {
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        document.getElementById("set-lat").value = pos.coords.latitude;
-        document.getElementById("set-lng").value = pos.coords.longitude;
-      },
-      (err) => alert("Gagal mengambil lokasi: " + err.message),
-    );
+  window.saveTimeSettings = saveTimeSettings;
+
+  // ============================================
+  // FACE RECOGNITION (WEB)
+  // ============================================
+
+  let currentTipeAbsen = "Masuk";
+
+  async function initFaceAI() {
+    const MODEL_URL = "https://justadudewhohacks.github.io/face-api.js/models";
+    await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
+    await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
+    await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL);
   }
+
+  function handleWebAbsen(tipe) {
+    currentTipeAbsen = tipe;
+    document.getElementById("camera-input").click();
+  }
+
+  window.handleWebAbsen = handleWebAbsen;
+
+  document.addEventListener("DOMContentLoaded", function () {
+    const cameraInput = document.getElementById("camera-input");
+    if (cameraInput) {
+      cameraInput.addEventListener("change", async function (e) {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const overlay = document.getElementById("processing-overlay");
+        overlay.style.display = "flex";
+
+        try {
+          await initFaceAI();
+          const img = await faceapi.bufferToImage(file);
+          const detection = await faceapi
+            .detectSingleFace(
+              img,
+              new faceapi.TinyFaceDetectorOptions({ inputSize: 224 }),
+            )
+            .withFaceLandmarks()
+            .withFaceDescriptor();
+
+          if (!detection) throw new Error("Wajah tidak terdeteksi.");
+
+          if (currentUser.faceWeb) {
+            let parsed;
+            try {
+              parsed = JSON.parse(currentUser.faceWeb);
+            } catch (e) {
+              throw new Error("Data wajah tidak valid. Silakan hubungi admin.");
+            }
+
+            if (!Array.isArray(parsed) || parsed.length !== 128) {
+              throw new Error("Format wajah lama tidak didukung. Silakan daftar ulang wajah Anda.");
+            }
+
+            const savedDesc = new Float32Array(parsed);
+            const faceMatcher = new faceapi.FaceMatcher(
+              new faceapi.LabeledFaceDescriptors(currentUser.id, [savedDesc]),
+              0.6,
+            );
+            const match = faceMatcher.findBestMatch(detection.descriptor);
+
+            if (match.label === "unknown")
+              throw new Error("Wajah Tidak Cocok!");
+
+            if (!navigator.geolocation) {
+              overlay.style.display = "none";
+              Swal.fire("Error", "Browser Anda tidak mendukung fitur lokasi GPS.", "error");
+              return;
+            }
+
+            const sendAbsen = (pos) => {
+              const canvas = document.createElement("canvas");
+              canvas.width = 600;
+              canvas.height = 800;
+              canvas.getContext("2d").drawImage(img, 0, 0, 600, 800);
+              const base64Photo = canvas.toDataURL("image/jpeg", 0.7).split(",")[1];
+              const tugasVal = document.getElementById("absen-tugas").value;
+              const latLong = pos ? `${pos.coords.latitude}, ${pos.coords.longitude}` : "GPS_OFF";
+
+              google.script.run
+                .withSuccessHandler((res) => {
+                  overlay.style.display = "none";
+                  if (res.code === 200) {
+                    Swal.fire("Berhasil!", res.message, "success").then(() => loadDashboardData());
+                  } else {
+                    Swal.fire("Gagal", res.message, "error");
+                  }
+                })
+                .submitAbsenWeb({
+                  api_token: "sdit-palu",
+                  client_id: currentUser.clientId,
+                  action: "absen",
+                  id_karyawan: currentUser.id,
+                  tipe_absen: currentTipeAbsen,
+                  lat_long: latLong,
+                  foto_base64: base64Photo,
+                  tugas: tugasVal,
+                });
+            };
+
+            // Tahap 1: Coba GPS Akurasi Tinggi
+            navigator.geolocation.getCurrentPosition(
+              (pos) => sendAbsen(pos),
+              (err) => {
+                console.warn("High accuracy GPS failed, trying network location...", err);
+                // Tahap 2: Coba Akurasi Rendah (Cell/WiFi - Lebih Cepat & Hemat Baterai)
+                navigator.geolocation.getCurrentPosition(
+                  (pos) => sendAbsen(pos),
+                  (err2) => {
+                    // Tahap 3: Coba IP Geolocation (Non-GPS) sebagai cadangan terakhir
+                    fetch('https://ipapi.co/json/')
+                      .then(response => response.json())
+                      .then(data => {
+                        if (data.latitude && data.longitude) {
+                          sendAbsen({ coords: { latitude: data.latitude, longitude: data.longitude, accuracy: 'IP' } });
+                        } else {
+                          throw new Error("Invalid IP Data");
+                        }
+                      })
+                      .catch(() => {
+                        overlay.style.display = "none";
+                        Swal.fire({
+                          title: "GPS Gagal",
+                          text: "Gagal mendapatkan lokasi. Tetap absen tanpa verifikasi jarak (GPS)?",
+                          icon: "warning",
+                          showCancelButton: true,
+                          confirmButtonText: "Ya, Absen Tanpa GPS",
+                          cancelButtonText: "Batal",
+                          confirmButtonColor: "#005147",
+                        }).then((result) => {
+                          if (result.isConfirmed) {
+                            overlay.style.display = "flex";
+                            sendAbsen(null); // Kirim tanpa koordinat
+                          }
+                        });
+                      });
+                  },
+                  { enableHighAccuracy: false, timeout: 5000 }
+                );
+              },
+              { enableHighAccuracy: true, timeout: 8000 }
+            );
+          } else {
+            if (confirm("Wajah belum terdaftar. Daftarkan sekarang?")) {
+              const descriptor = JSON.stringify(
+                Array.from(detection.descriptor),
+              );
+              google.script.run
+                .withSuccessHandler((res) => {
+                  overlay.style.display = "none";
+                  if (res.success) {
+                    currentUser.faceWeb = descriptor;
+                    localStorage.setItem(
+                      "sdit_user",
+                      JSON.stringify(currentUser),
+                    );
+                    Swal.fire(
+                      "Berhasil!",
+                      "Wajah terdaftar. Silakan absen ulang.",
+                      "success",
+                    );
+                  }
+                })
+                .registerFaceWeb(
+                  currentUser.clientId,
+                  currentUser.id,
+                  descriptor,
+                );
+            } else {
+              overlay.style.display = "none";
+            }
+          }
+        } catch (err) {
+          overlay.style.display = "none";
+          Swal.fire("Error", err.message, "error");
+        }
+      });
+    }
+  });
+
+  function startReRegisterFace() {
+    if (confirm("Daftarkan ulang wajah Anda untuk absensi web?")) {
+      currentUser.faceWeb = "";
+      localStorage.setItem("sdit_user", JSON.stringify(currentUser));
+      Swal.fire(
+        "Info",
+        "Silakan lakukan absensi untuk mendaftarkan wajah baru.",
+        "info",
+      );
+    }
+  }
+
+  window.startReRegisterFace = startReRegisterFace;
+
+  // ============================================
+  // LEAVE SUBMISSION
+  // ============================================
+
+  function handleLeaveSubmit(btn) {
+    const type = document.getElementById("leave-type").value;
+    const range = document.getElementById("leave-range").value;
+    const reason = document.getElementById("leave-reason").value;
+    const task = document.getElementById("leave-task").value;
+    const fileInput = document.getElementById("leave-file");
+
+    if (!range || !reason) {
+      Swal.fire(
+        "Peringatan",
+        "Rentang tanggal dan alasan wajib diisi!",
+        "warning",
+      );
+      return;
+    }
+
+    btn.disabled = true;
+    btn.innerText = "Mengirim...";
+
+    const send = (base64) => {
+      google.script.run
+        .withSuccessHandler((res) => {
+          btn.disabled = false;
+          btn.innerText = "Kirim Permohonan";
+          if (res.code === 200 || res.success) {
+            Swal.fire("Berhasil!", "Permohonan izin terkirim.", "success");
+            switchView("history");
+          } else {
+            Swal.fire("Gagal", res.message, "error");
+          }
+        })
+        .handleAjukanIzin({
+          client_id: currentUser.clientId,
+          api_token: "sdit-palu",
+          action: "ajukan_izin",
+          id_karyawan: currentUser.id,
+          tipe_izin: type,
+          rentang_tanggal: range,
+          alasan: reason,
+          tugas: task,
+          foto_base64: base64,
+        });
+    };
+
+    if (fileInput.files.length > 0) {
+      const r = new FileReader();
+      r.onload = () => send(r.result.split(",")[1]);
+      r.readAsDataURL(fileInput.files[0]);
+    } else {
+      send("");
+    }
+  }
+
+  window.handleLeaveSubmit = handleLeaveSubmit;
+
+  // ============================================
+  // MEMBER MODAL
+  // ============================================
+
+  function showMemberModal(member = null) {
+    const modal = document.getElementById("member-modal");
+    const shiftSelect = document.getElementById("member-shift");
+
+    if (!modal || !shiftSelect) return;
+
+    shiftSelect.innerHTML =
+      '<option value="">Standar Kantor</option>' +
+      allShifts
+        .map((s) => `<option value="${s.id}">${s.nama} (${s.id})</option>`)
+        .join("");
+
+    if (member) {
+      document.getElementById("member-modal-title").innerText = "Edit Anggota";
+      document.getElementById("member-id").value = member.id;
+      document.getElementById("member-id").disabled = true;
+      document.getElementById("member-nama").value = member.nama;
+      document.getElementById("member-divisi").value = member.bagian || "";
+      document.getElementById("member-wa").value = member.no_hp || "";
+      document.getElementById("member-old-id").value = member.id;
+      document.getElementById("member-shift").value =
+        member.id_shift_default || "";
+    } else {
+      document.getElementById("member-modal-title").innerText =
+        "Tambah Anggota";
+      document.getElementById("member-id").value = "";
+      document.getElementById("member-id").disabled = false;
+      document.getElementById("member-nama").value = "";
+      document.getElementById("member-divisi").value = "";
+      document.getElementById("member-wa").value = "";
+      document.getElementById("member-old-id").value = "";
+      document.getElementById("member-shift").value = "";
+    }
+
+    modal.style.display = "flex";
+  }
+
+  window.showMemberModal = showMemberModal;
+
+  function closeMemberModal() {
+    const modal = document.getElementById("member-modal");
+    if (modal) modal.style.display = "none";
+  }
+
+  window.closeMemberModal = closeMemberModal;
+
+  function saveMember() {
+    const oldId = document.getElementById("member-old-id").value;
+    const payload = {
+      client_id: currentUser.clientId,
+      action: oldId ? "update_karyawan" : "add_karyawan",
+      id_karyawan: oldId || document.getElementById("member-id").value,
+      id_karyawan_baru: document.getElementById("member-id").value,
+      nama: document.getElementById("member-nama").value,
+      nama_karyawan_baru: document.getElementById("member-nama").value,
+      divisi: document.getElementById("member-divisi").value,
+      divisi_baru: document.getElementById("member-divisi").value,
+      no_hp: document.getElementById("member-wa").value,
+      id_shift: document.getElementById("member-shift").value,
+    };
+
+    google.script.run
+      .withSuccessHandler((res) => {
+        if (res.code === 200) {
+          closeMemberModal();
+          Swal.fire("Berhasil", "Data anggota tersimpan.", "success");
+          loadMembersData();
+        } else {
+          Swal.fire("Gagal", res.message, "error");
+        }
+      })
+      .handleWebApiProxy(payload);
+  }
+
+  window.saveMember = saveMember;
+
+  function handleDeleteMember(id) {
+    Swal.fire({
+      title: "Konfirmasi",
+      text: "Hapus anggota ini?",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "Ya, Hapus",
+      cancelButtonText: "Batal",
+    }).then((result) => {
+      if (result.isConfirmed) {
+        google.script.run
+          .withSuccessHandler(() => {
+            Swal.fire("Berhasil", "Anggota dihapus.", "success");
+            loadMembersData();
+          })
+          .handleDeleteKaryawan({
+            client_id: currentUser.clientId,
+            target_id: id,
+          });
+      }
+    });
+  }
+
+  window.handleDeleteMember = handleDeleteMember;
+
+  function handleResetDevice(id) {
+    Swal.fire({
+      title: "Konfirmasi",
+      text: "Reset device ID anggota ini?",
+      icon: "question",
+      showCancelButton: true,
+      confirmButtonText: "Ya, Reset",
+      cancelButtonText: "Batal",
+    }).then((result) => {
+      if (result.isConfirmed) {
+        google.script.run
+          .withSuccessHandler(() => {
+            Swal.fire("Berhasil", "Device direset.", "success");
+            loadMembersData();
+          })
+          .handleResetDevice({
+            client_id: currentUser.clientId,
+            target_id_karyawan: id,
+          });
+      }
+    });
+  }
+
+  window.handleResetDevice = handleResetDevice;
+
+  // ============================================
+  // HELPERS
+  // ============================================
+
+  function formatDate(val) {
+    if (!val) return "-";
+    try {
+      return new Date(val).toLocaleDateString("id-ID", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+      });
+    } catch (e) {
+      return String(val);
+    }
+  }
+
+  function formatTime(val) {
+    if (!val) return "-";
+    try {
+      return new Date(val).toLocaleTimeString("id-ID", {
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+    } catch (e) {
+      return String(val);
+    }
+  }
+
+  function showOverlay(msg) {
+    const overlay = document.getElementById("processing-overlay");
+    const text = document.getElementById("processing-text");
+    if (overlay) overlay.style.display = "flex";
+    if (text) text.innerText = msg;
+  }
+
+  function hideOverlay() {
+    const overlay = document.getElementById("processing-overlay");
+    if (overlay) overlay.style.display = "none";
+  }
+
+  // ============================================
+  // MOBILE RESPONSIVE ENHANCEMENTS
+  // ============================================
+
+  function optimizeTablesForMobile() {
+    if (window.innerWidth <= 768) {
+      document.querySelectorAll("table").forEach((table) => {
+        if (
+          !table.classList.contains("plotting-table") &&
+          !table.classList.contains("mobile-card-table")
+        ) {
+          table.classList.add("mobile-card-table");
+        }
+      });
+    }
+  }
+
+  function detectMobile() {
+    const isMobile = window.innerWidth <= 768;
+    document.body.classList.toggle("is-mobile", isMobile);
+
+    if (isMobile) {
+      optimizeTablesForMobile();
+    }
+  }
+
+  function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+      const later = () => {
+        clearTimeout(timeout);
+        func(...args);
+      };
+      clearTimeout(timeout);
+      timeout = setTimeout(later, wait);
+    };
+  }
+
+  // Prevent zoom on double-tap (iOS)
+  let lastTouchEnd = 0;
+  document.addEventListener(
+    "touchend",
+    function (event) {
+      const now = Date.now();
+      if (now - lastTouchEnd <= 300) {
+        event.preventDefault();
+      }
+      lastTouchEnd = now;
+    },
+    false,
+  );
+
+  // ============================================
+  // EVENT LISTENERS
+  // ============================================
+
+  document.addEventListener("DOMContentLoaded", function () {
+    console.log("DOM Content Loaded - Setting up event listeners");
+
+    // Admin trigger
+    const loginIdInput = document.getElementById("login-id");
+    const passGroup = document.getElementById("admin-password-group");
+
+    if (loginIdInput && passGroup) {
+      loginIdInput.addEventListener("input", function (e) {
+        if (e.target.value.toUpperCase() === "ADMIN") {
+          passGroup.style.display = "block";
+          isAdminMode = true;
+          console.log("Admin mode activated");
+        } else {
+          passGroup.style.display = "none";
+          isAdminMode = false;
+        }
+      });
+    }
+
+    // Enter key support for login
+    const loginInputs = document.querySelectorAll("#login-screen input");
+    loginInputs.forEach((input) => {
+      input.addEventListener("keypress", function (e) {
+        if (e.key === "Enter") {
+          const loginBtn = document.querySelector("#login-screen .btn-primary");
+          if (loginBtn) handleLogin(loginBtn);
+        }
+      });
+    });
+
+    // Check for saved session
+    const saved = localStorage.getItem("sdit_user");
+    if (saved) {
+      try {
+        currentUser = JSON.parse(saved);
+        setupUIForUser();
+      } catch (e) {
+        console.error("Failed to parse saved user:", e);
+        localStorage.removeItem("sdit_user");
+      }
+    }
+
+    // Mobile detection
+    detectMobile();
+    window.addEventListener("resize", debounce(detectMobile, 250));
+
+    // Smooth scroll
+    if ("scrollBehavior" in document.documentElement.style) {
+      document.documentElement.style.scrollBehavior = "smooth";
+    }
+
+    // Initialize Lucide icons
+    if (typeof lucide !== "undefined") {
+      lucide.createIcons();
+    }
+  });
+
+  console.log("=== SCRIPTS.HTML FULLY LOADED ===");
+  console.log("handleLogin available:", typeof handleLogin);
+  console.log("window.handleLogin available:", typeof window.handleLogin);
 </script>

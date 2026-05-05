@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:developer' as d;
+import 'package:http/http.dart' as http;
 import 'dart:io';
 import 'package:flutter/services.dart';
 import 'package:geolocator/geolocator.dart';
@@ -98,34 +99,60 @@ class AttendanceService extends ApiClient {
       final androidInfo = await _deviceInfo.androidInfo;
       final deviceId = androidInfo.id;
 
-      // 3. LOKASI & VALIDASI GPS
-      final isEnabled = await Geolocator.isLocationServiceEnabled();
-      if (!isEnabled) throw Exception('Harap aktifkan GPS terlebih dahulu.');
+      // 3. LOKASI & VALIDASI GPS (Multi-Stage Fallback)
+      String latLong = "GPS_OFF";
+      try {
+        LocationPermission permission = await Geolocator.checkPermission();
+        if (permission == LocationPermission.denied) {
+          permission = await Geolocator.requestPermission();
+        }
 
-      var permission = await Geolocator.checkPermission();
-      if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
-      }
-      
-      if (permission == LocationPermission.denied) {
-        throw Exception('Izin lokasi ditolak. Aplikasi butuh akses GPS untuk validasi posisi.');
-      }
-      
-      if (permission == LocationPermission.deniedForever) {
-        throw Exception('Izin lokasi ditolak permanen. Harap aktifkan di pengaturan HP.');
-      }
+        if (permission != LocationPermission.denied &&
+            permission != LocationPermission.deniedForever) {
+          Position? position;
+          try {
+            // Tahap 1: Akurasi Tinggi (GPS Satelit)
+            position = await Geolocator.getCurrentPosition(
+              locationSettings: const LocationSettings(
+                accuracy: LocationAccuracy.high,
+                timeLimit: Duration(seconds: 8),
+              ),
+            );
+          } catch (_) {
+            try {
+              // Tahap 2: Akurasi Rendah (WiFi / Cell Tower)
+              position = await Geolocator.getCurrentPosition(
+                locationSettings: const LocationSettings(
+                  accuracy: LocationAccuracy.low,
+                  timeLimit: Duration(seconds: 5),
+                ),
+              );
+            } catch (_) {
+              // Tahap 3: Non-GPS (IP Geolocation)
+              try {
+                final ipRes = await http
+                    .get(Uri.parse('https://ipapi.co/json/'))
+                    .timeout(const Duration(seconds: 5));
+                if (ipRes.statusCode == 200) {
+                  final ipData = jsonDecode(ipRes.body);
+                  latLong = "${ipData['latitude']}, ${ipData['longitude']} (IP)";
+                }
+              } catch (_) {}
+            }
+          }
 
-      final position = await Geolocator.getCurrentPosition(
-        locationSettings: const LocationSettings(
-          accuracy: LocationAccuracy.best,
-        ),
-      );
-
-      // Proteksi Tambahan Fake GPS bawaan Android (Geolocator)
-      if (position.isMocked) {
-          throw Exception(
-          'Lokasi Palsu Terdeteksi: Anda terindikasi menggunakan Fake GPS. Absensi ditolak.',
-        );
+          if (position != null) {
+            if (position.isMocked) {
+              throw Exception(
+                'Lokasi Palsu Terdeteksi: Anda terindikasi menggunakan Fake GPS. Absensi ditolak.',
+              );
+            }
+            latLong = '${position.latitude}, ${position.longitude}';
+          }
+        }
+      } catch (e) {
+        if (e.toString().contains('Lokasi Palsu')) rethrow;
+        d.log("GPS/Location failed, using fallback: $e");
       }
 
       // 4. IZIN KAMERA
@@ -229,7 +256,7 @@ class AttendanceService extends ApiClient {
         'nama': namaAnggota,
         'device_id': deviceId,
         'tipe_absen': tipeAbsen,
-        'lat_long': '${position.latitude}, ${position.longitude}',
+        'lat_long': latLong,
         'biometric_passed': biometricPassed,
         'foto_base64': base64Image,
       };
