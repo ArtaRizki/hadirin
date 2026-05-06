@@ -13,7 +13,7 @@ const SUPER_ADMIN_PASSWORD = "HADIRIN_MASTER_2026_AHHH";
 
 function doGet(e) {
   var template = HtmlService.createTemplateFromFile("Index");
-  template.msg = (e && e.parameter && e.parameter.msg) ? e.parameter.msg : "";
+  template.msg = e && e.parameter && e.parameter.msg ? e.parameter.msg : "";
   return template
     .evaluate()
     .setTitle("SDIT AL-FAHMI PALU Dashboard v3.7")
@@ -44,7 +44,9 @@ function loginWeb(clientId, id, pin) {
       .trim()
       .toUpperCase();
 
-    console.log("[LOGIN] Attempting login for Client: " + lookupId + ", User: " + id);
+    console.log(
+      "[LOGIN] Attempting login for Client: " + lookupId + ", User: " + id,
+    );
 
     var config = allConfigs[lookupId];
     if (!config)
@@ -205,7 +207,8 @@ function doPost(e) {
 
     const skipCheck = ["register_klien", "verify_super_admin"];
     if (skipCheck.indexOf(payload.action) === -1) {
-      var config = getSemuaConfig()[String(payload.client_id || "").toUpperCase()];
+      var config =
+        getSemuaConfig()[String(payload.client_id || "").toUpperCase()];
       if (!config || !config.spreadsheetId)
         return responseJSON(404, "error", "Kode Instansi tidak ditemukan.");
     }
@@ -522,7 +525,9 @@ function handleAbsensi(payload) {
   if (payload.lat_long && payload.lat_long.indexOf(",") !== -1) {
     try {
       var configSheet = ss.getSheetByName("Config_Kantor");
-      var kantorLat = 0, kantorLng = 0, radiusMeter = config.radius || 100;
+      var kantorLat = 0,
+        kantorLng = 0,
+        radiusMeter = config.radius || 100;
 
       if (configSheet) {
         var kantor = configSheet.getRange("A2:D2").getValues()[0];
@@ -538,11 +543,24 @@ function handleAbsensi(payload) {
 
         var jarak = hitungJarakMeter(kantorLat, kantorLng, userLat, userLng);
         if (jarak > radiusMeter) {
-          var jarakTeks = jarak >= 1000 ? (jarak / 1000).toFixed(2) + " km" : Math.round(jarak) + " m";
-          var radiusTeks = radiusMeter >= 1000 ? (radiusMeter / 1000).toFixed(2) + " km" : Math.round(radiusMeter) + " m";
-          
-          return responseJSON(403, "error",
-            "Anda berada di luar area kantor (" + jarakTeks + " dari titik). Radius absen: " + radiusTeks + ".");
+          var jarakTeks =
+            jarak >= 1000
+              ? (jarak / 1000).toFixed(2) + " km"
+              : Math.round(jarak) + " m";
+          var radiusTeks =
+            radiusMeter >= 1000
+              ? (radiusMeter / 1000).toFixed(2) + " km"
+              : Math.round(radiusMeter) + " m";
+
+          return responseJSON(
+            403,
+            "error",
+            "Anda berada di luar area kantor (" +
+              jarakTeks +
+              " dari titik). Radius absen: " +
+              radiusTeks +
+              ".",
+          );
         }
       }
     } catch (e) {
@@ -551,36 +569,38 @@ function handleAbsensi(payload) {
   }
 
   // ============================================================
-  // VALIDASI 2: CEK DUPLIKAT — Tidak boleh absen 2x tipe sama
+  // VALIDASI 2: CEK JAM HP — Cegah manipulasi waktu manual
   // ============================================================
   var now = new Date();
+  if (payload.client_timestamp) {
+    var serverTime = now.getTime();
+    var diffMinutes = Math.abs(serverTime - payload.client_timestamp) / (1000 * 60);
+    if (diffMinutes > 5) {
+      return responseJSON(403, "error", 
+        "Jam HP Anda tidak akurat (selisih " + Math.round(diffMinutes) + " menit). " +
+        "Harap setel 'Tanggal & Waktu Otomatis' di pengaturan HP Anda.");
+    }
+  }
+
+  // ============================================================
+  // VALIDASI 3: CEK DUPLIKAT — Tidak boleh absen 2x tipe sama
+  // ============================================================
   var todayStr = Utilities.formatDate(now, "GMT+8", "yyyy-MM-dd");
   var logSheet = ss.getSheetByName("Log_Absensi");
-  var logData = logSheet.getDataRange().getValues();
+  var logData = logSheet.getDataRange().getDisplayValues(); // Gunakan DisplayValues agar aman dari timezone shift
 
   for (var i = logData.length - 1; i >= 1; i--) {
-    var val = logData[i][0];
-    var tglLog = "";
-    if (val instanceof Date) {
-      tglLog = Utilities.formatDate(val, "GMT+8", "yyyy-MM-dd");
-    } else {
-      tglLog = String(val).split(" ")[0]; // Asumsi "yyyy-MM-dd HH:mm:ss"
-    }
-
-    if (tglLog === todayStr) {
-      if (String(logData[i][1]).trim().toLowerCase() === String(payload.id_karyawan).trim().toLowerCase()
-        && String(logData[i][2]).trim().toLowerCase() === String(payload.tipe_absen).trim().toLowerCase()) {
-
-        var waktuLog = "";
-        if (val instanceof Date) {
-          waktuLog = Utilities.formatDate(val, "GMT+8", "HH:mm");
-        } else {
-          waktuLog = String(val).split(" ")[1] ? String(val).split(" ")[1].substring(0, 5) : "";
-        }
-
-        return responseJSON(409, "error",
-          "Anda sudah melakukan absen " + payload.tipe_absen + " hari ini pada pukul " + waktuLog + " WITA.");
-      }
+    var rowWaktu = logData[i][0]; // "yyyy-MM-dd HH:mm:ss"
+    var rowDate = rowWaktu.split(" ")[0];
+    
+    if (String(logData[i][1]) === String(payload.id_karyawan) && 
+        rowDate === todayStr && 
+        logData[i][2] === payload.tipe_absen && 
+        logData[i][6] === "Disetujui") {
+      
+      var waktuOnly = rowWaktu.split(" ")[1] ? rowWaktu.split(" ")[1].substring(0, 5) : "";
+      return responseJSON(400, "error", 
+        "Anda sudah melakukan absen " + payload.tipe_absen + " hari ini pada pukul " + waktuOnly + " WITA.");
     }
   }
 
@@ -588,8 +608,8 @@ function handleAbsensi(payload) {
   // STATUS TERLAMBAT
   // ============================================================
   var status =
-    parseInt(Utilities.formatDate(now, "GMT+8", "HH")) >=
-      config.batasJam && payload.tipe_absen === "Masuk"
+    parseInt(Utilities.formatDate(now, "GMT+8", "HH")) >= config.batasJam &&
+    payload.tipe_absen === "Masuk"
       ? "Terlambat"
       : "Tepat Waktu";
 
@@ -638,11 +658,14 @@ function handleAbsensi(payload) {
 // ============================================================
 function hitungJarakMeter(lat1, lon1, lat2, lon2) {
   var R = 6371000; // Radius bumi dalam meter
-  var dLat = (lat2 - lat1) * Math.PI / 180;
-  var dLon = (lon2 - lon1) * Math.PI / 180;
-  var a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  var dLat = ((lat2 - lat1) * Math.PI) / 180;
+  var dLon = ((lon2 - lon1) * Math.PI) / 180;
+  var a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
   var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   return R * c;
 }
@@ -1078,14 +1101,11 @@ function handleCekStatusHariIni(payload) {
   var logs = SpreadsheetApp.openById(config.spreadsheetId)
     .getSheetByName("Log_Absensi")
     .getDataRange()
-    .getValues();
+    .getDisplayValues();
   var today = Utilities.formatDate(new Date(), "GMT+8", "yyyy-MM-dd");
   for (var i = logs.length - 1; i >= 1; i--) {
-    var rowDate = Utilities.formatDate(
-      new Date(logs[i][0]),
-      "GMT+8",
-      "yyyy-MM-dd",
-    );
+    var rowWaktu = logs[i][0];
+    var rowDate = rowWaktu.split(" ")[0];
     if (
       String(logs[i][1]) === String(payload.id_karyawan) &&
       rowDate === today &&
@@ -1101,12 +1121,12 @@ function handleGetHistory(payload) {
   var logs = SpreadsheetApp.openById(config.spreadsheetId)
     .getSheetByName("Log_Absensi")
     .getDataRange()
-    .getValues();
+    .getDisplayValues();
   var results = [];
   for (var i = 1; i < logs.length; i++) {
     if (String(logs[i][1]) === String(payload.id_karyawan)) {
       results.push({
-        waktu: logs[i][0],
+        waktu: logs[i][0], // Sudah string "yyyy-MM-dd HH:mm:ss"
         tipe: logs[i][2],
         lat_long: logs[i][3],
         foto: logs[i][4],
@@ -1123,7 +1143,7 @@ function handleGetLeaveHistory(payload) {
   var logs = SpreadsheetApp.openById(config.spreadsheetId)
     .getSheetByName("Log_Absensi")
     .getDataRange()
-    .getValues();
+    .getDisplayValues();
   var employees = SpreadsheetApp.openById(config.spreadsheetId)
     .getSheetByName("Master_Karyawan")
     .getDataRange()
@@ -1168,7 +1188,7 @@ function handleGetMonthlyReport(payload) {
   var logs = SpreadsheetApp.openById(config.spreadsheetId)
     .getSheetByName("Log_Absensi")
     .getDataRange()
-    .getValues();
+    .getDisplayValues();
   var employees = SpreadsheetApp.openById(config.spreadsheetId)
     .getSheetByName("Master_Karyawan")
     .getDataRange()
@@ -1180,16 +1200,18 @@ function handleGetMonthlyReport(payload) {
   var results = [];
   for (var i = 1; i < logs.length; i++) {
     if (!logs[i][0]) continue;
-    var d = new Date(logs[i][0]);
-    var logBulan =
-      (d.getMonth() + 1).toString().padStart(2, "0") + "-" + d.getFullYear();
+    
+    // Format logs[i][0] adalah "yyyy-MM-dd HH:mm:ss"
+    var parts = logs[i][0].split(" ")[0].split("-"); // [yyyy, MM, dd]
+    var logBulan = parts[1] + "-" + parts[0]; // MM-yyyy
+    
     if (logBulan === payload.bulan_tahun) {
       if (
         payload.id_karyawan_target === "SEMUA" ||
         String(logs[i][1]) === payload.id_karyawan_target
       ) {
         results.push({
-          waktu: Utilities.formatDate(d, "GMT+8", "yyyy-MM-dd HH:mm:ss"),
+          waktu: logs[i][0],
           id_karyawan: logs[i][1],
           nama: namaMap[logs[i][1]] || "-",
           tipe: logs[i][2],
@@ -1464,7 +1486,8 @@ function handleGetBriefing(payload) {
 }
 function handleUpdateAnggota(payload) {
   try {
-    var config = getSemuaConfig()[String(payload.client_id || "").toUpperCase()];
+    var config =
+      getSemuaConfig()[String(payload.client_id || "").toUpperCase()];
     var sheet = SpreadsheetApp.openById(config.spreadsheetId).getSheetByName(
       "Master_Karyawan",
     );
@@ -1541,7 +1564,10 @@ function handleGetBriefingReport_internal(payload) {
   var sheet = ss.getSheetByName("Log_Briefing");
   if (!sheet) return { status: "success", message: [] };
   var data = sheet.getDataRange().getDisplayValues();
-  var employees = ss.getSheetByName("Master_Karyawan").getDataRange().getValues();
+  var employees = ss
+    .getSheetByName("Master_Karyawan")
+    .getDataRange()
+    .getValues();
   var namaMap = {};
   for (var j = 1; j < employees.length; j++) {
     namaMap[String(employees[j][0])] = String(employees[j][1]);
@@ -1550,12 +1576,15 @@ function handleGetBriefingReport_internal(payload) {
   for (var i = 1; i < data.length; i++) {
     if (!data[i][0]) continue;
     var d = new Date(data[i][0]);
-    var logBulan = (d.getMonth() + 1).toString().padStart(2, "0") + "-" + d.getFullYear();
+    var logBulan =
+      (d.getMonth() + 1).toString().padStart(2, "0") + "-" + d.getFullYear();
     if (logBulan === payload.bulan_tahun || !payload.bulan_tahun) {
       results.push({
-        waktu: data[i][0], id_karyawan: data[i][1],
+        waktu: data[i][0],
+        id_karyawan: data[i][1],
         nama: namaMap[data[i][1]] || data[i][1],
-        status: data[i][2], catatan: data[i][4] || "-",
+        status: data[i][2],
+        catatan: data[i][4] || "-",
       });
     }
   }
@@ -1568,7 +1597,10 @@ function handleGetPengajianReport(payload) {
   var sheet = ss.getSheetByName("Log_Ngaji_Guru");
   if (!sheet) return { status: "success", message: [] };
   var data = sheet.getDataRange().getDisplayValues();
-  var employees = ss.getSheetByName("Master_Karyawan").getDataRange().getValues();
+  var employees = ss
+    .getSheetByName("Master_Karyawan")
+    .getDataRange()
+    .getValues();
   var namaMap = {};
   for (var j = 1; j < employees.length; j++) {
     namaMap[String(employees[j][0])] = String(employees[j][1]);
@@ -1577,12 +1609,16 @@ function handleGetPengajianReport(payload) {
   for (var i = 1; i < data.length; i++) {
     if (!data[i][0]) continue;
     var d = new Date(data[i][0]);
-    var logBulan = (d.getMonth() + 1).toString().padStart(2, "0") + "-" + d.getFullYear();
+    var logBulan =
+      (d.getMonth() + 1).toString().padStart(2, "0") + "-" + d.getFullYear();
     if (logBulan === payload.bulan_tahun || !payload.bulan_tahun) {
       results.push({
-        waktu: data[i][0], id_guru: data[i][1],
+        waktu: data[i][0],
+        id_guru: data[i][1],
         nama_guru: namaMap[data[i][1]] || data[i][1],
-        kelompok: data[i][2], lokasi: data[i][3], materi: data[i][4] || "-",
+        kelompok: data[i][2],
+        lokasi: data[i][3],
+        materi: data[i][4] || "-",
       });
     }
   }
@@ -1595,7 +1631,10 @@ function handleGetKegiatanReport(payload) {
   var sheet = ss.getSheetByName("Absen_Kegiatan");
   if (!sheet) return { status: "success", message: [] };
   var data = sheet.getDataRange().getDisplayValues();
-  var employees = ss.getSheetByName("Master_Karyawan").getDataRange().getValues();
+  var employees = ss
+    .getSheetByName("Master_Karyawan")
+    .getDataRange()
+    .getValues();
   var namaMap = {};
   for (var j = 1; j < employees.length; j++) {
     namaMap[String(employees[j][0])] = String(employees[j][1]);
@@ -1604,11 +1643,14 @@ function handleGetKegiatanReport(payload) {
   for (var i = 1; i < data.length; i++) {
     if (!data[i][0]) continue;
     var d = new Date(data[i][0]);
-    var logBulan = (d.getMonth() + 1).toString().padStart(2, "0") + "-" + d.getFullYear();
+    var logBulan =
+      (d.getMonth() + 1).toString().padStart(2, "0") + "-" + d.getFullYear();
     if (logBulan === payload.bulan_tahun || !payload.bulan_tahun) {
       results.push({
-        waktu: data[i][0], id_kegiatan: data[i][1],
-        nama_kegiatan: data[i][1], id_karyawan: data[i][2],
+        waktu: data[i][0],
+        id_kegiatan: data[i][1],
+        nama_kegiatan: data[i][1],
+        id_karyawan: data[i][2],
         nama: namaMap[data[i][2]] || data[i][2],
         status: data[i][3] || "Hadir",
       });
@@ -1630,7 +1672,6 @@ function handleGetFeedbackWeb(clientId) {
   }
   return { status: "success", message: results.reverse() };
 }
-
 
 function handleSubmitFeedback(payload) {
   var config = getSemuaConfig()[String(payload.client_id || "").toUpperCase()];
@@ -1671,7 +1712,10 @@ function handleGetBriefingReport(payload) {
   var sheet = ss.getSheetByName("Log_Briefing");
   if (!sheet) return responseJSON(200, "success", []);
   var data = sheet.getDataRange().getDisplayValues();
-  var employees = ss.getSheetByName("Master_Karyawan").getDataRange().getValues();
+  var employees = ss
+    .getSheetByName("Master_Karyawan")
+    .getDataRange()
+    .getValues();
   var namaMap = {};
   for (var j = 1; j < employees.length; j++) {
     namaMap[String(employees[j][0])] = String(employees[j][1]);
@@ -1680,7 +1724,8 @@ function handleGetBriefingReport(payload) {
   for (var i = 1; i < data.length; i++) {
     if (!data[i][0]) continue;
     var d = new Date(data[i][0]);
-    var logBulan = (d.getMonth() + 1).toString().padStart(2, "0") + "-" + d.getFullYear();
+    var logBulan =
+      (d.getMonth() + 1).toString().padStart(2, "0") + "-" + d.getFullYear();
     if (logBulan === payload.bulan_tahun || !payload.bulan_tahun) {
       results.push({
         waktu: data[i][0],
@@ -1700,7 +1745,10 @@ function handleGetPengajianReport(payload) {
   var sheet = ss.getSheetByName("Log_Ngaji_Guru");
   if (!sheet) return responseJSON(200, "success", []);
   var data = sheet.getDataRange().getDisplayValues();
-  var employees = ss.getSheetByName("Master_Karyawan").getDataRange().getValues();
+  var employees = ss
+    .getSheetByName("Master_Karyawan")
+    .getDataRange()
+    .getValues();
   var namaMap = {};
   for (var j = 1; j < employees.length; j++) {
     namaMap[String(employees[j][0])] = String(employees[j][1]);
@@ -1709,7 +1757,8 @@ function handleGetPengajianReport(payload) {
   for (var i = 1; i < data.length; i++) {
     if (!data[i][0]) continue;
     var d = new Date(data[i][0]);
-    var logBulan = (d.getMonth() + 1).toString().padStart(2, "0") + "-" + d.getFullYear();
+    var logBulan =
+      (d.getMonth() + 1).toString().padStart(2, "0") + "-" + d.getFullYear();
     if (logBulan === payload.bulan_tahun || !payload.bulan_tahun) {
       results.push({
         waktu: data[i][0],
@@ -1730,7 +1779,10 @@ function handleGetKegiatanReport(payload) {
   var sheet = ss.getSheetByName("Absen_Kegiatan");
   if (!sheet) return responseJSON(200, "success", []);
   var data = sheet.getDataRange().getDisplayValues();
-  var employees = ss.getSheetByName("Master_Karyawan").getDataRange().getValues();
+  var employees = ss
+    .getSheetByName("Master_Karyawan")
+    .getDataRange()
+    .getValues();
   var namaMap = {};
   for (var j = 1; j < employees.length; j++) {
     namaMap[String(employees[j][0])] = String(employees[j][1]);
@@ -1747,7 +1799,8 @@ function handleGetKegiatanReport(payload) {
   for (var i = 1; i < data.length; i++) {
     if (!data[i][0]) continue;
     var d = new Date(data[i][0]);
-    var logBulan = (d.getMonth() + 1).toString().padStart(2, "0") + "-" + d.getFullYear();
+    var logBulan =
+      (d.getMonth() + 1).toString().padStart(2, "0") + "-" + d.getFullYear();
     if (logBulan === payload.bulan_tahun || !payload.bulan_tahun) {
       results.push({
         waktu: data[i][0],
@@ -1772,7 +1825,8 @@ function handleGetAyatPilihan(payload) {
   var sheet = ss.getSheetByName("App_Settings");
   if (!sheet) return responseJSON(200, "success", { ayat: "", sumber: "" });
   var data = sheet.getDataRange().getValues();
-  var ayat = "", sumber = "";
+  var ayat = "",
+    sumber = "";
   for (var i = 1; i < data.length; i++) {
     if (data[i][0] === "ayat_pilihan") ayat = String(data[i][1]);
     if (data[i][0] === "sumber_ayat") sumber = String(data[i][1]);
@@ -1789,7 +1843,8 @@ function handleUpdateAyatPilihan(payload) {
     sheet.appendRow(["key", "value"]);
   }
   var data = sheet.getDataRange().getValues();
-  var foundAyat = false, foundSumber = false;
+  var foundAyat = false,
+    foundSumber = false;
   for (var i = 1; i < data.length; i++) {
     if (data[i][0] === "ayat_pilihan") {
       sheet.getRange(i + 1, 2).setValue(payload.ayat);
@@ -1813,7 +1868,10 @@ function handleGetEnhancedStats(payload) {
   var config = getSemuaConfig()[String(payload.client_id || "").toUpperCase()];
   var ss = SpreadsheetApp.openById(config.spreadsheetId);
   var logs = ss.getSheetByName("Log_Absensi").getDataRange().getValues();
-  var employees = ss.getSheetByName("Master_Karyawan").getDataRange().getValues();
+  var employees = ss
+    .getSheetByName("Master_Karyawan")
+    .getDataRange()
+    .getValues();
 
   // Build jabatan map from Master_Karyawan col C (bagian)
   var jabatanMap = {}; // id -> bagian
@@ -1831,7 +1889,9 @@ function handleGetEnhancedStats(payload) {
 
   // Per-jabatan hadir hari ini
   var hadirByJabatan = {};
-  var totalHadir = 0, totalTerlambat = 0, totalIzin = 0;
+  var totalHadir = 0,
+    totalTerlambat = 0,
+    totalIzin = 0;
 
   for (var i = 1; i < logs.length; i++) {
     if (!logs[i][0]) continue;
@@ -1863,7 +1923,8 @@ function handleGetEnhancedStats(payload) {
   }
 
   // Trend 7 hari
-  var trendLabels = [], trendValues = [];
+  var trendLabels = [],
+    trendValues = [];
   for (var d = 6; d >= 0; d--) {
     var date = new Date();
     date.setDate(date.getDate() - d);
@@ -1874,13 +1935,18 @@ function handleGetEnhancedStats(payload) {
       if (!logs[k][0]) continue;
       var rD = new Date(logs[k][0]);
       rD.setHours(0, 0, 0, 0);
-      if (rD.getTime() === date.getTime() && (logs[k][6] === "Tepat Waktu" || logs[k][6] === "Terlambat")) count++;
+      if (
+        rD.getTime() === date.getTime() &&
+        (logs[k][6] === "Tepat Waktu" || logs[k][6] === "Terlambat")
+      )
+        count++;
     }
     trendValues.push(count);
   }
 
   // Statistik registrasi: Wajah & HP
-  var totalWajah = 0, totalHP = 0;
+  var totalWajah = 0,
+    totalHP = 0;
   for (var k = 1; k < employees.length; k++) {
     if (employees[k][3] && String(employees[k][3]).trim() !== "") totalHP++;
     if (employees[k][4] && String(employees[k][4]).trim() !== "") totalWajah++;
@@ -1902,39 +1968,59 @@ function handleGetEnhancedStats(payload) {
 function handleGetEmployeeStats(payload) {
   var config = getSemuaConfig()[String(payload.client_id || "").toUpperCase()];
   var logs = SpreadsheetApp.openById(config.spreadsheetId)
-    .getSheetByName("Log_Absensi").getDataRange().getValues();
+    .getSheetByName("Log_Absensi")
+    .getDataRange()
+    .getValues();
 
   var now = new Date();
   var currentMonth = now.getMonth();
   var currentYear = now.getFullYear();
 
-  var totalHadir = 0, totalTerlambat = 0, totalIzin = 0, totalMasuk = 0;
-  var streak = 0, tempStreak = 0;
+  var totalHadir = 0,
+    totalTerlambat = 0,
+    totalIzin = 0,
+    totalMasuk = 0;
+  var streak = 0,
+    tempStreak = 0;
   var lastDate = null;
 
   for (var i = 1; i < logs.length; i++) {
     if (!logs[i][0]) continue;
     if (String(logs[i][1]) !== String(payload.id_karyawan)) continue;
     var d = new Date(logs[i][0]);
-    if (d.getMonth() !== currentMonth || d.getFullYear() !== currentYear) continue;
+    if (d.getMonth() !== currentMonth || d.getFullYear() !== currentYear)
+      continue;
     if (logs[i][2] !== "Masuk") continue;
     totalMasuk++;
     var status = logs[i][6];
-    if (status === "Tepat Waktu") { totalHadir++; }
-    if (status === "Terlambat") { totalTerlambat++; totalHadir++; }
+    if (status === "Tepat Waktu") {
+      totalHadir++;
+    }
+    if (status === "Terlambat") {
+      totalTerlambat++;
+      totalHadir++;
+    }
     if (["Izin", "Sakit", "Cuti"].indexOf(status) !== -1) totalIzin++;
   }
 
   // Count streak (berturut-turut hadir, dari log terakhir mundur)
   var sortedLogs = [];
   for (var s = 1; s < logs.length; s++) {
-    if (String(logs[s][1]) === String(payload.id_karyawan) && logs[s][2] === "Masuk") {
+    if (
+      String(logs[s][1]) === String(payload.id_karyawan) &&
+      logs[s][2] === "Masuk"
+    ) {
       sortedLogs.push({ date: new Date(logs[s][0]), status: logs[s][6] });
     }
   }
-  sortedLogs.sort(function (a, b) { return b.date - a.date; });
+  sortedLogs.sort(function (a, b) {
+    return b.date - a.date;
+  });
   for (var x = 0; x < sortedLogs.length; x++) {
-    if (sortedLogs[x].status === "Tepat Waktu" || sortedLogs[x].status === "Terlambat") {
+    if (
+      sortedLogs[x].status === "Tepat Waktu" ||
+      sortedLogs[x].status === "Terlambat"
+    ) {
       streak++;
     } else {
       break;
@@ -1949,7 +2035,8 @@ function handleGetEmployeeStats(payload) {
     if (dayOfWeek !== 0 && dayOfWeek !== 6) workingDays++;
   }
 
-  var percentage = workingDays > 0 ? Math.round((totalHadir / workingDays) * 100) : 0;
+  var percentage =
+    workingDays > 0 ? Math.round((totalHadir / workingDays) * 100) : 0;
 
   return responseJSON(200, "success", {
     hadir: totalHadir,
@@ -1976,11 +2063,19 @@ function handleUploadProfilePhoto(payload) {
   if (payload.foto_base64 && payload.foto_base64.length > 0) {
     try {
       var folder = DriveApp.getFolderById(config.folderDriveId);
-      var fileName = "Profile_" + payload.id_karyawan + "_" + new Date().getTime() + ".jpg";
-      var blob = Utilities.newBlob(Utilities.base64Decode(payload.foto_base64), "image/jpeg", fileName);
+      var fileName =
+        "Profile_" + payload.id_karyawan + "_" + new Date().getTime() + ".jpg";
+      var blob = Utilities.newBlob(
+        Utilities.base64Decode(payload.foto_base64),
+        "image/jpeg",
+        fileName,
+      );
       var file = folder.createFile(blob);
       // Set file agar bisa diakses siapa saja (untuk tampil di Image.network)
-      file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+      file.setSharing(
+        DriveApp.Access.ANYONE_WITH_LINK,
+        DriveApp.Permission.VIEW,
+      );
       fileId = file.getId();
       fotoUrl = "https://drive.google.com/uc?export=view&id=" + fileId;
     } catch (e) {
@@ -1989,14 +2084,19 @@ function handleUploadProfilePhoto(payload) {
   }
 
   for (var i = 1; i < data.length; i++) {
-    if (String(data[i][0]).trim().toLowerCase() === String(payload.id_karyawan).trim().toLowerCase()) {
+    if (
+      String(data[i][0]).trim().toLowerCase() ===
+      String(payload.id_karyawan).trim().toLowerCase()
+    ) {
       // Hapus foto lama jika ada
       var oldUrl = String(data[i][7] || "");
       if (oldUrl && oldUrl !== "") {
         try {
           var idMatch = oldUrl.match(/[-\w]{25,}/);
           if (idMatch) DriveApp.getFileById(idMatch[0]).setTrashed(true);
-        } catch (e) { /* ignore */ }
+        } catch (e) {
+          /* ignore */
+        }
       }
       sheet.getRange(i + 1, 8).setValue(fotoUrl); // Kolom H = foto profil
       return responseJSON(200, "success", { url: fotoUrl });
