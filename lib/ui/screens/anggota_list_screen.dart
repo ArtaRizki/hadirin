@@ -72,146 +72,6 @@ class _AnggotaListScreenState extends State<AnggotaListScreen> {
     }
   }
 
-  void _showActionSheet(Map<String, dynamic> emp) {
-    final auth = context.read<AuthProvider>();
-    final isSuperAdmin = emp['nama'].toString().toLowerCase().contains("admin") ||
-        emp['bagian'].toString().toLowerCase().contains("pemilik");
-
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        padding: const EdgeInsets.all(24),
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 40,
-              height: 4,
-              margin: const EdgeInsets.only(bottom: 24),
-              decoration: BoxDecoration(
-                color: Colors.grey.shade200,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            Row(
-              children: [
-                CircleAvatar(
-                  radius: 28,
-                  backgroundColor: isSuperAdmin ? Colors.amber.withOpacity(0.1) : context.primaryColor.withOpacity(0.1),
-                  child: Text(
-                    emp['nama'].toString().substring(0, 1).toUpperCase(),
-                    style: TextStyle(color: isSuperAdmin ? Colors.amber.shade800 : context.primaryColor, fontWeight: FontWeight.bold, fontSize: 20),
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        emp['nama'] ?? "-",
-                        style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 18, color: Color(0xFF0F172A)),
-                      ),
-                      Text("ID: ${emp['id']}", style: TextStyle(color: Colors.grey.shade600, fontSize: 13, fontWeight: FontWeight.w500)),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 32),
-            if (emp['no_hp'] != null && emp['no_hp'].toString().isNotEmpty && emp['no_hp'].toString() != "null")
-              _buildActionItem(
-                icon: Icons.phone_rounded,
-                label: "Hubungi via WhatsApp",
-                color: const Color(0xFF16A34A),
-                onTap: () {
-                  Navigator.pop(context);
-                  UrlHelper.launchWhatsApp(
-                    phone: emp['no_hp'].toString(),
-                    message: "Halo ${emp['nama']}, saya dari Admin ingin menghubungi Anda.",
-                  );
-                },
-              ),
-            _buildActionItem(
-              icon: Icons.edit_note_rounded,
-              label: "Edit Data Anggota",
-              color: Colors.blue.shade600,
-              onTap: () {
-                Navigator.pop(context);
-                _showEditDialog(emp);
-              },
-            ),
-            _buildActionItem(
-              icon: Icons.phonelink_erase_rounded,
-              label: "Reset Device ID",
-              color: Colors.orange.shade700,
-              onTap: () {
-                Navigator.pop(context);
-                _confirmResetDevice(emp);
-              },
-            ),
-            const Divider(height: 32),
-            _buildActionItem(
-              icon: Icons.delete_outline_rounded,
-              label: "Hapus Anggota",
-              color: Colors.red.shade600,
-              isDestructive: true,
-              onTap: () {
-                Navigator.pop(context);
-                _confirmDelete(emp);
-              },
-            ),
-            const SizedBox(height: 16),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildActionItem({
-    required IconData icon,
-    required String label,
-    required Color color,
-    required VoidCallback onTap,
-    bool isDestructive = false,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: color.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(icon, color: color, size: 22),
-            ),
-            const SizedBox(width: 16),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w700,
-                color: isDestructive ? color : const Color(0xFF0F172A),
-              ),
-            ),
-            const Spacer(),
-            Icon(Icons.chevron_right_rounded, color: Colors.grey.shade400, size: 20),
-          ],
-        ),
-      ),
-    );
-  }
-
   void _showEditDialog(Map<String, dynamic> emp) {
     final namaController = TextEditingController(text: emp['nama']);
     final divisiController = TextEditingController(text: emp['bagian']);
@@ -222,24 +82,32 @@ class _AnggotaListScreenState extends State<AnggotaListScreen> {
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-          title: const Text("Edit Anggota", style: TextStyle(fontWeight: FontWeight.w900, letterSpacing: -0.5)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: const Text("Edit Anggota", style: TextStyle(fontWeight: FontWeight.bold)),
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                _buildPopupField(controller: namaController, label: "Nama Lengkap", icon: Icons.person_outline),
-                const SizedBox(height: 16),
-                _buildPopupField(controller: divisiController, label: "Bagian / Divisi", icon: Icons.work_outline),
-                const SizedBox(height: 16),
-                _buildPopupField(controller: phoneController, label: "No. WhatsApp", icon: Icons.phone_android, keyboardType: TextInputType.phone),
+                TextField(
+                  controller: namaController,
+                  decoration: const InputDecoration(labelText: "Nama Lengkap"),
+                ),
+                TextField(
+                  controller: divisiController,
+                  decoration: const InputDecoration(labelText: "Bagian / Divisi"),
+                ),
+                TextField(
+                  controller: phoneController,
+                  decoration: const InputDecoration(labelText: "No. WhatsApp"),
+                  keyboardType: TextInputType.phone,
+                ),
               ],
             ),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: Text("Batal", style: TextStyle(color: Colors.grey.shade600, fontWeight: FontWeight.w700)),
+              child: const Text("Batal"),
             ),
             ElevatedButton(
               onPressed: isSaving
@@ -259,21 +127,23 @@ class _AnggotaListScreenState extends State<AnggotaListScreen> {
                         Navigator.pop(context);
                         if (result['success']) {
                           _fetchEmployees();
-                          _showSuccessSnackBar("Data berhasil diperbarui");
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text("Data berhasil diperbarui")),
+                          );
                         } else {
-                          _showErrorSnackBar(result['message']);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text(result['message'])),
+                          );
                         }
                       }
                     },
               style: ElevatedButton.styleFrom(
                 backgroundColor: context.primaryColor,
                 foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
               ),
               child: isSaving
                   ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                  : const Text("Simpan", style: TextStyle(fontWeight: FontWeight.bold)),
+                  : const Text("Simpan"),
             ),
           ],
         ),
@@ -281,125 +151,42 @@ class _AnggotaListScreenState extends State<AnggotaListScreen> {
     );
   }
 
-  Widget _buildPopupField({
-    required TextEditingController controller,
-    required String label,
-    required IconData icon,
-    TextInputType keyboardType = TextInputType.text,
-  }) {
-    return TextField(
-      controller: controller,
-      keyboardType: keyboardType,
-      decoration: InputDecoration(
-        labelText: label,
-        prefixIcon: Icon(icon, size: 20, color: context.primaryColor),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade200)),
-        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade200)),
-        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: context.primaryColor, width: 1.5)),
-        filled: true,
-        fillColor: Colors.grey.shade50,
-      ),
-    );
-  }
-
-  void _confirmResetDevice(Map<String, dynamic> emp) {
-    showDialog(
-      context: context,
-      builder: (context) {
-        bool isProcessing = false;
-        return StatefulBuilder(
-          builder: (context, setDialogState) => AlertDialog(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-            title: const Text("Reset Perangkat?"),
-            content: Text("Hapus pendaftaran HP untuk ${emp['nama']}? User harus login ulang untuk mendaftarkan HP baru."),
-            actions: [
-              TextButton(onPressed: () => Navigator.pop(context), child: const Text("Batal")),
-              ElevatedButton(
-                onPressed: isProcessing
-                    ? null
-                    : () async {
-                        setDialogState(() => isProcessing = true);
-                        final auth = context.read<AuthProvider>();
-                        final result = await _adminService.resetDeviceID(auth.clientId ?? "", emp['id']);
-                        if (mounted) {
-                          setDialogState(() => isProcessing = false);
-                          Navigator.pop(context);
-                          if (result['code'] == 200) {
-                            _fetchEmployees();
-                            _showSuccessSnackBar("Device ID berhasil di-reset");
-                          } else {
-                            _showErrorSnackBar(result['message']);
-                          }
-                        }
-                      },
-                style: ElevatedButton.styleFrom(backgroundColor: Colors.orange.shade700, foregroundColor: Colors.white),
-                child: isProcessing ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)) : const Text("Reset HP"),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
   void _confirmDelete(Map<String, dynamic> emp) {
     showDialog(
       context: context,
-      builder: (context) {
-        bool isDeleting = false;
-        return StatefulBuilder(
-          builder: (context, setDialogState) => AlertDialog(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-            title: const Text("Hapus Anggota?"),
-            content: Text("Apakah Anda yakin ingin menghapus ${emp['nama']}? Data absensi tetap ada namun akun ini tidak bisa login lagi."),
-            actions: [
-              TextButton(onPressed: () => Navigator.pop(context), child: const Text("Batal")),
-              ElevatedButton(
-                onPressed: isDeleting
-                    ? null
-                    : () async {
-                        setDialogState(() => isDeleting = true);
-                        final auth = context.read<AuthProvider>();
-                        final result = await _adminService.deleteAnggota(clientId: auth.clientId ?? "", idAnggota: emp['id']);
-                        if (mounted) {
-                          setDialogState(() => isDeleting = false);
-                          Navigator.pop(context);
-                          if (result['success']) {
-                            _fetchEmployees();
-                            _showSuccessSnackBar("Anggota berhasil dihapus");
-                          } else {
-                            _showErrorSnackBar(result['message']);
-                          }
-                        }
-                      },
-                style: ElevatedButton.styleFrom(backgroundColor: Colors.red.shade600, foregroundColor: Colors.white),
-                child: isDeleting ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)) : const Text("Hapus"),
-              ),
-            ],
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text("Hapus Anggota?"),
+        content: Text("Apakah Anda yakin ingin menghapus ${emp['nama']}? Data absensi tetap ada namun akun ini tidak bisa login lagi."),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Batal"),
           ),
-        );
-      },
-    );
-  }
-
-  void _showSuccessSnackBar(String msg) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(children: [const Icon(Icons.check_circle, color: Colors.white), const SizedBox(width: 10), Text(msg)]),
-        backgroundColor: const Color(0xFF16A34A),
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      ),
-    );
-  }
-
-  void _showErrorSnackBar(String msg) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(children: [const Icon(Icons.error, color: Colors.white), const SizedBox(width: 10), Text(msg)]),
-        backgroundColor: Colors.red.shade600,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          TextButton(
+            onPressed: () async {
+              final auth = context.read<AuthProvider>();
+              final result = await _adminService.deleteAnggota(
+                clientId: auth.clientId ?? "",
+                idAnggota: emp['id'],
+              );
+              if (mounted) {
+                Navigator.pop(context);
+                if (result['success']) {
+                  _fetchEmployees();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text("Anggota berhasil dihapus")),
+                  );
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text(result['message'])),
+                  );
+                }
+              }
+            },
+            child: const Text("Hapus", style: TextStyle(color: Colors.red)),
+          ),
+        ],
       ),
     );
   }
@@ -768,16 +555,53 @@ class _AnggotaListScreenState extends State<AnggotaListScreen> {
                                               ),
                                             ),
                                             Padding(
-                                              padding: const EdgeInsets.only(left: 8.0),
-                                              child: IconButton(
-                                                onPressed: () => _showActionSheet(emp),
-                                                icon: const Icon(
-                                                  Icons.more_vert_rounded,
-                                                  color: Color(0xFF64748B),
-                                                  size: 24,
-                                                ),
-                                                constraints: const BoxConstraints(),
-                                                padding: const EdgeInsets.all(8),
+                                              padding: const EdgeInsets.only(
+                                                  left: 8.0),
+                                              child: Column(
+                                                children: [
+                                                  if (emp['no_hp'] != null &&
+                                                      emp['no_hp']
+                                                          .toString()
+                                                          .isNotEmpty &&
+                                                      emp['no_hp'].toString() !=
+                                                          "null")
+                                                    IconButton(
+                                                      onPressed: () =>
+                                                          UrlHelper.launchWhatsApp(
+                                                        phone:
+                                                            emp['no_hp'].toString(),
+                                                        message:
+                                                            "Halo ${emp['nama']}, saya dari Admin Siparjo ingin menghubungi Anda.",
+                                                      ),
+                                                      icon: const Icon(
+                                                        Icons.phone,
+                                                        color: Color(0xFF25D366),
+                                                        size: 24,
+                                                      ),
+                                                      constraints: const BoxConstraints(),
+                                                      padding: const EdgeInsets.all(8),
+                                                    ),
+                                                  IconButton(
+                                                    onPressed: () => _showEditDialog(emp),
+                                                    icon: const Icon(
+                                                      Icons.edit_note_rounded,
+                                                      color: Colors.blue,
+                                                      size: 24,
+                                                    ),
+                                                    constraints: const BoxConstraints(),
+                                                    padding: const EdgeInsets.all(8),
+                                                  ),
+                                                  IconButton(
+                                                    onPressed: () => _confirmDelete(emp),
+                                                    icon: const Icon(
+                                                      Icons.delete_outline_rounded,
+                                                      color: Colors.red,
+                                                      size: 24,
+                                                    ),
+                                                    constraints: const BoxConstraints(),
+                                                    padding: const EdgeInsets.all(8),
+                                                  ),
+                                                ],
                                               ),
                                             ),
                                           ],

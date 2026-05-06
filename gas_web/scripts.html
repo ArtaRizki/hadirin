@@ -7,10 +7,6 @@
   let currentUser = null;
   let chartInstance = null;
   let isAdminMode = false;
-  let currentSchedule = null;
-  let officeConfig = null;
-  let rawTodayData = [];
-  let allShifts = [];
 
   // ============================================
   // POLYFILLS
@@ -413,56 +409,35 @@
       '<tr><td colspan="6" style="text-align: center; padding: 40px;">Mengambil data anggota...</td></tr>';
 
     google.script.run
-      .withSuccessHandler(function (shiftRes) {
-        allShifts = shiftRes.shifts || [];
-
-        google.script.run
-          .withSuccessHandler(function (response) {
-            tbody.innerHTML = "";
-            const members = response.message || response;
-
-            members.forEach((m) => {
-              const row = document.createElement("tr");
-              const shiftOptions = allShifts
-                .map(
-                  (s) =>
-                    `<option value="${s.id}" ${m.id_shift_default === s.id ? "selected" : ""}>${s.nama} (${s.id})</option>`,
-                )
-                .join("");
-
-              row.innerHTML = `
-                <td data-label="ID" style="font-weight: 700;">${m.id}</td>
-                <td data-label="Nama" style="font-weight: 600;">${m.nama}</td>
-                <td data-label="Bagian"><span class="badge-tipe">${m.bagian || "-"}</span></td>
-                <td data-label="Enrollment">
-                   <div style="display: flex; align-items: center; gap: 6px; font-size: 0.8rem; font-weight: 600; color: ${m.sudah_enroll ? "#10B981" : "#EF4444"}">
-                     <i data-lucide="${m.sudah_enroll ? "smartphone" : "alert-circle"}" style="width: 14px;"></i>
-                     ${m.sudah_enroll ? "Terdaftar" : "Belum Enroll"}
-                   </div>
-                </td>
-                <td data-label="Shift">
-                  <select class="glass-input" style="padding: 4px 8px; font-size: 0.8rem;" onchange="updateMemberShift('${m.id}', this.value)">
-                    <option value="">Standar Kantor</option>
-                    ${shiftOptions}
-                  </select>
-                </td>
-                <td data-label="Aksi">
-                  <div style="display: flex; gap: 8px;">
-                    <button class="btn" style="padding: 8px; color: var(--primary); background: rgba(124, 58, 237, 0.05);" onclick='showMemberModal(${JSON.stringify(m)})'>
-                      <i data-lucide="edit-3" style="width: 14px;"></i>
-                    </button>
-                    <button class="btn" onclick="handleResetDevice('${m.id}')" title="Reset Device"><i data-lucide="refresh-cw" style="width: 16px;"></i></button>
-                    <button class="btn" onclick="handleDeleteMember('${m.id}')" style="color:#EF4444;" title="Hapus"><i data-lucide="trash-2" style="width: 16px;"></i></button>
-                  </div>
-                </td>
-              `;
-              tbody.appendChild(row);
-            });
-
-            lucide.createIcons();
-            optimizeTablesForMobile();
-          })
-          .handleGetAllAnggota({ client_id: currentUser.clientId });
+      .withSuccessHandler(function(response) {
+        tbody.innerHTML = '';
+        const members = response.message || response; // Handle different return shapes
+        
+        members.forEach(m => {
+          const row = document.createElement('tr');
+          row.innerHTML = `
+            <td style="font-weight: 700;">${m.id}</td>
+            <td style="font-weight: 600;">${m.nama}</td>
+            <td><span class="badge-tipe">${m.bagian}</span></td>
+            <td>
+               <div style="display: flex; align-items: center; gap: 6px; font-size: 0.8rem; font-weight: 600; color: ${m.sudah_enroll ? '#10B981' : '#EF4444'}">
+                 <i data-lucide="${m.sudah_enroll ? 'smartphone' : 'alert-circle'}" style="width: 14px;"></i>
+                 ${m.sudah_enroll ? 'Terdaftar' : 'Belum Enroll'}
+               </div>
+            </td>
+            <td style="display: flex; gap: 8px;">
+              <button class="btn" style="padding: 8px; color: var(--primary); background: rgba(124, 58, 237, 0.05);" onclick='showMemberModal(${JSON.stringify(m)})'>
+                <i data-lucide="edit-3" style="width: 14px;"></i>
+              </button>
+              <button class="btn" style="padding: 8px; color: #ef4444; background: rgba(239, 68, 68, 0.05);" onclick="handleDeleteMember('${m.id}', '${m.nama}')">
+                <i data-lucide="trash-2" style="width: 14px;"></i>
+              </button>
+              <button class="btn" style="padding: 8px 12px; font-size: 0.7rem; background: #F8FAFC;" onclick="handleResetDevice('${m.id}')">Reset</button>
+            </td>
+          `;
+          tbody.appendChild(row);
+        });
+        lucide.createIcons();
       })
       .getShiftList(currentUser.clientId);
   }
@@ -681,45 +656,16 @@
       .getShiftSettings(currentUser.clientId, year, month);
   }
 
-  function renderPlottingCalendar(year, month, plotting) {
-    const head = document.getElementById("shift-calendar-head");
-    const body = document.getElementById("shift-calendar-body");
-    if (!head || !body) return;
-
-    const daysInMonth = new Date(year, month, 0).getDate();
-
-    let headHtml = '<tr><th class="sticky-col">Anggota</th>';
-    for (let d = 1; d <= daysInMonth; d++) headHtml += `<th>${d}</th>`;
-    headHtml += "</tr>";
-    head.innerHTML = headHtml;
-
-    google.script.run
-      .withSuccessHandler((members) => {
-        body.innerHTML = "";
-        members.forEach((m) => {
-          let rowHtml = `<tr data-id="${m.id}"><td class="sticky-col"><strong>${m.nama}</strong><br><small>${m.id}</small></td>`;
-          for (let d = 1; d <= daysInMonth; d++) {
-            const dateStr = `${year}-${month.toString().padLeft(2, "0")}-${d.toString().padLeft(2, "0")}`;
-            const key = `${dateStr}_${m.id}`;
-            const currentShift = plotting[key] || "";
-            rowHtml += `<td>
-              <select class="shift-select" data-key="${key}" data-date="${dateStr}" data-emp="${m.id}">
-                <option value="">-</option>
-                <option value="LIBUR" ${currentShift === "LIBUR" ? "selected" : ""}>OFF</option>
-                ${allShifts.map((s) => `<option value="${s.id}" ${currentShift === s.id ? "selected" : ""}>${s.id}</option>`).join("")}
-              </select>
-            </td>`;
-          }
-          rowHtml += "</tr>";
-          body.insertAdjacentHTML("beforeend", rowHtml);
-        });
-      })
-      .handleGetAllAnggota({ client_id: currentUser.clientId });
-  }
-
-  function renderShiftList(shifts) {
-    const body = document.getElementById("shift-list-body");
-    if (!body) return;
+  // MEMBER MODAL LOGIC
+  function showMemberModal(member = null) {
+    const modal = document.getElementById('member-modal');
+    const title = document.getElementById('member-modal-title');
+    const idInput = document.getElementById('member-id');
+    const namaInput = document.getElementById('member-nama');
+    const divisiInput = document.getElementById('member-divisi');
+    const waInput = document.getElementById('member-wa');
+    const oldIdInput = document.getElementById('member-old-id');
+    const btnSave = document.getElementById('btn-save-member');
 
     body.innerHTML = "";
     shifts.forEach((s) => {
