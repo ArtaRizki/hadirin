@@ -574,11 +574,17 @@ function handleAbsensi(payload) {
   var now = new Date();
   if (payload.client_timestamp) {
     var serverTime = now.getTime();
-    var diffMinutes = Math.abs(serverTime - payload.client_timestamp) / (1000 * 60);
+    var diffMinutes =
+      Math.abs(serverTime - payload.client_timestamp) / (1000 * 60);
     if (diffMinutes > 5) {
-      return responseJSON(403, "error", 
-        "Jam HP Anda tidak akurat (selisih " + Math.round(diffMinutes) + " menit). " +
-        "Harap setel 'Tanggal & Waktu Otomatis' di pengaturan HP Anda.");
+      return responseJSON(
+        403,
+        "error",
+        "Jam HP Anda tidak akurat (selisih " +
+          Math.round(diffMinutes) +
+          " menit). " +
+          "Harap setel 'Tanggal & Waktu Otomatis' di pengaturan HP Anda.",
+      );
     }
   }
 
@@ -592,15 +598,25 @@ function handleAbsensi(payload) {
   for (var i = logData.length - 1; i >= 1; i--) {
     var rowWaktu = logData[i][0]; // "yyyy-MM-dd HH:mm:ss"
     var rowDate = rowWaktu.split(" ")[0];
-    
-    if (String(logData[i][1]) === String(payload.id_karyawan) && 
-        rowDate === todayStr && 
-        logData[i][2] === payload.tipe_absen && 
-        logData[i][6] === "Disetujui") {
-      
-      var waktuOnly = rowWaktu.split(" ")[1] ? rowWaktu.split(" ")[1].substring(0, 5) : "";
-      return responseJSON(400, "error", 
-        "Anda sudah melakukan absen " + payload.tipe_absen + " hari ini pada pukul " + waktuOnly + " WITA.");
+
+    if (
+      String(logData[i][1]) === String(payload.id_karyawan) &&
+      rowDate === todayStr &&
+      logData[i][2] === payload.tipe_absen &&
+      logData[i][6] === "Disetujui"
+    ) {
+      var waktuOnly = rowWaktu.split(" ")[1]
+        ? rowWaktu.split(" ")[1].substring(0, 5)
+        : "";
+      return responseJSON(
+        400,
+        "error",
+        "Anda sudah melakukan absen " +
+          payload.tipe_absen +
+          " hari ini pada pukul " +
+          waktuOnly +
+          " WITA.",
+      );
     }
   }
 
@@ -1200,11 +1216,11 @@ function handleGetMonthlyReport(payload) {
   var results = [];
   for (var i = 1; i < logs.length; i++) {
     if (!logs[i][0]) continue;
-    
+
     // Format logs[i][0] adalah "yyyy-MM-dd HH:mm:ss"
     var parts = logs[i][0].split(" ")[0].split("-"); // [yyyy, MM, dd]
     var logBulan = parts[1] + "-" + parts[0]; // MM-yyyy
-    
+
     if (logBulan === payload.bulan_tahun) {
       if (
         payload.id_karyawan_target === "SEMUA" ||

@@ -1,3 +1,5 @@
+<?php
+
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\AttendanceController;
 use App\Http\Controllers\Api\TenantController;
