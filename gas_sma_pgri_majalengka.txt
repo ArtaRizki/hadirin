@@ -60,35 +60,8 @@ function handleAbsensi(payload) {
     var config = getSemuaConfig()[payload.client_id];
     var ss = SpreadsheetApp.openById(config.spreadsheetId);
     
-    // Default Schedule (Tanpa Shift)
-    var configData = ss.getSheetByName("Config_Kantor").getRange("A2:I2").getValues()[0];
-    var jamMasuk = configData[4] || "04:00";
-    var batasMasuk = configData[5] || "07:00";
-    var jamPulang = configData[6] || "13:00";
-    var interval = parseInt(configData[7]) || 30;
-    var maxTier = parseInt(configData[8]) || 0;
-
     var now = new Date();
-    var currentMinutes = (parseInt(Utilities.formatDate(now, "GMT+7", "HH")) * 60) + parseInt(Utilities.formatDate(now, "GMT+7", "mm"));
-
     var status = "Tepat Waktu";
-    if (payload.tipe_absen === "Masuk") {
-        var limitMasuk = toMinutes(batasMasuk);
-        if (currentMinutes > limitMasuk) {
-            var diff = currentMinutes - limitMasuk;
-            var tier = Math.ceil(diff / interval);
-            if (maxTier > 0 && tier > maxTier) tier = maxTier;
-            status = "TL" + tier;
-        }
-    } else if (payload.tipe_absen === "Pulang") {
-        var limitPulang = toMinutes(jamPulang);
-        if (currentMinutes < limitPulang) {
-            var diff = limitPulang - currentMinutes;
-            var tier = Math.ceil(diff / interval);
-            if (maxTier > 0 && tier > maxTier) tier = maxTier;
-            status = "PSW" + tier;
-        }
-    }
 
     var fotoUrl = "No Photo";
     if (payload.foto_base64 && payload.foto_base64.length > 0) {
@@ -113,7 +86,7 @@ function handleAbsensi(payload) {
         status
     ]);
 
-    return responseJSON(200, "success", "Berhasil (" + status + ").");
+    return responseJSON(200, "success", "Berhasil.");
 }
 
 function handleRegisterInstansi(payload) {
@@ -137,8 +110,8 @@ function handleRegisterInstansi(payload) {
 function handleUpdateJamKerja(payload) {
     var config = getSemuaConfig()[payload.client_id];
     if (!config) return responseJSON(404, "error", "Instansi tidak ditemukan.");
-    SpreadsheetApp.openById(config.spreadsheetId).getSheetByName("Config_Kantor").getRange("E2:I2").setValues([
-        [payload.jam_masuk_mulai, payload.batas_jam_masuk, payload.jam_pulang_mulai, payload.tl_interval || 30, payload.max_tier || 0]
+    SpreadsheetApp.openById(config.spreadsheetId).getSheetByName("Config_Kantor").getRange("E2:G2").setValues([
+        [payload.jam_masuk_mulai, payload.batas_jam_masuk, payload.jam_pulang_mulai]
     ]);
     return responseJSON(200, "success", "Jam kerja diperbarui.");
 }
@@ -146,7 +119,7 @@ function handleUpdateJamKerja(payload) {
 function handleGetOfficeConfig(payload) {
     var config = getSemuaConfig()[payload.client_id];
     if (!config) return responseJSON(404, "error", "Instansi tidak ditemukan.");
-    var data = SpreadsheetApp.openById(config.spreadsheetId).getSheetByName("Config_Kantor").getRange("A2:I2").getValues();
+    var data = SpreadsheetApp.openById(config.spreadsheetId).getSheetByName("Config_Kantor").getRange("A2:G2").getValues();
     return responseJSON(200, "success", {
         nama: data[0][0],
         lat: data[0][1],
@@ -154,9 +127,7 @@ function handleGetOfficeConfig(payload) {
         radius: data[0][3] || config.radius,
         jam_masuk_mulai: formatTime(data[0][4], "04:00"),
         batas_jam_masuk: formatTime(data[0][5], "07:00"),
-        jam_pulang_mulai: formatTime(data[0][6], "13:00"),
-        tl_interval: data[0][7] || 30,
-        max_tier: data[0][8] || 0
+        jam_pulang_mulai: formatTime(data[0][6], "13:00")
     });
 }
 

@@ -28,11 +28,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
   late Animation<double> _pulseAnimation;
   StreamSubscription<Position>? _positionStream;
 
-  // Variabel Jam Kerja Dinamis (Default sesuai req)
-  String _jamMasukMulai = "04:00";
-  String _batasJamMasuk = "07:00";
-  String _jamPulangMulai = "13:00";
-  bool _isConfigLoaded = false;
+  bool _hasNotifiedProximity = false;
 
   @override
   void initState() {
@@ -48,38 +44,10 @@ class _AttendanceScreenState extends State<AttendanceScreen>
       CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
     );
 
-    // Mulai pantau lokasi & fetch config jam
-    _fetchOfficeConfig();
+    // Mulai pantau lokasi
     _startProximityListener();
   }
 
-  Future<void> _fetchOfficeConfig() async {
-    try {
-      final auth = context.read<AuthProvider>();
-      final config = await AdminService().getOfficeConfig(auth.clientId ?? "");
-      if (config != null && mounted) {
-        setState(() {
-          _jamMasukMulai = config['jam_masuk_mulai'].toString();
-          _batasJamMasuk = config['batas_jam_masuk'].toString();
-          _jamPulangMulai = config['jam_pulang_mulai'].toString();
-          _isConfigLoaded = true;
-        });
-      }
-    } catch (e) {
-      debugPrint("Gagal fetch config jam: $e");
-    }
-  }
-
-  bool _hasNotifiedProximity = false;
-
-  int _timeToMinutes(String s) {
-    try {
-      final parts = s.split(':');
-      return (int.parse(parts[0]) * 60) + int.parse(parts[1]);
-    } catch (e) {
-      return 0;
-    }
-  }
 
   void _startProximityListener() async {
     try {
@@ -93,7 +61,6 @@ class _AttendanceScreenState extends State<AttendanceScreen>
         return;
 
       final auth = context.read<AuthProvider>();
-      if (!auth.isLoggedIn || !auth.isAnggota) return;
 
       final config = await AdminService().getOfficeConfig(auth.clientId ?? "");
       if (config == null) return;
@@ -166,32 +133,6 @@ class _AttendanceScreenState extends State<AttendanceScreen>
   // =================================================================
   void _konfirmasiAbsen(String tipeAbsen) async {
     if (_isLoading) return;
-
-    final now = DateTime.now();
-    final currentMinutes = (now.hour * 60) + now.minute;
-
-    // --- VALIDASI JAM OPERASIONAL (TIME-FENCING DINAMIS) ---
-    if (tipeAbsen == "Masuk") {
-      final startMin = _timeToMinutes(_jamMasukMulai);
-      final endMin = _timeToMinutes(_jamPulangMulai);
-
-      if (currentMinutes < startMin || currentMinutes >= endMin) {
-        _showSnackBar(
-          "Gagal! Absen Masuk hanya tersedia pukul $_jamMasukMulai - $_jamPulangMulai.",
-          isError: true,
-        );
-        return;
-      }
-    } else {
-      final pulangMin = _timeToMinutes(_jamPulangMulai);
-      if (currentMinutes < pulangMin) {
-        _showSnackBar(
-          "Belum saatnya pulang! Absen Pulang dibuka mulai pukul $_jamPulangMulai.",
-          isError: true,
-        );
-        return;
-      }
-    }
 
     setState(() => _isLoading = true);
     final auth = context.read<AuthProvider>();
@@ -621,27 +562,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                               ),
                             ],
                           ),
-                          if (_isConfigLoaded) ...[
-                            const SizedBox(height: 12),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 6,
-                              ),
-                              decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.15),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Text(
-                                "Masuk: $_jamMasukMulai | Batas: $_batasJamMasuk | Pulang: $_jamPulangMulai",
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                          ],
+
                         ],
                       ),
                     ),

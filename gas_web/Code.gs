@@ -128,7 +128,7 @@ function getDashboardStats(clientId, id) {
     var config = allConfigs[lookupId];
     var ss = SpreadsheetApp.openById(config.spreadsheetId);
     var data = ss.getSheetByName('Log_Absensi').getDataRange().getValues();
-    var schedule = getEffectiveSchedule(ss, config);
+
     var today = new Date();
     today.setHours(0,0,0,0);
     
@@ -143,8 +143,7 @@ function getDashboardStats(clientId, id) {
 
         rowDate.setHours(0,0,0,0);
         if (rowDate.getTime() === today.getTime()) {
-            if (rowStatus === "Tepat Waktu" || rowStatus.startsWith("TL") || rowStatus.startsWith("PSW")) stats.present++;
-            if (rowStatus.startsWith("TL")) stats.late++;
+            if (rowStatus === "Tepat Waktu") stats.present++;
             if (["Izin", "Sakit", "Cuti"].indexOf(rowStatus) !== -1 || rowStatus.toLowerCase().indexOf("izin") !== -1 || rowStatus === "Menunggu Approval") stats.leave++;
         }
     }
@@ -162,7 +161,7 @@ function getDashboardStats(clientId, id) {
         var rDate = new Date(logW);
         rDate.setHours(0,0,0,0);
         var s = String(data[j][6]);
-        if (rDate.getTime() === date.getTime() && (s === "Tepat Waktu" || s.startsWith("TL") || s.startsWith("PSW"))) count++;
+        if (rDate.getTime() === date.getTime() && s === "Tepat Waktu") count++;
       }
       stats.trendValues.push(count);
     }
@@ -282,67 +281,14 @@ function getSemuaConfig() {
     } catch (e) { return {}; }
 }
 
-function getEffectiveSchedule(ss, config) {
-    var now = new Date();
-    var todayStr = Utilities.formatDate(now, "GMT+7", "yyyy-MM-dd");
-    
-    // 1. Cek Jadwal_Khusus
-    var sheetJadwal = ss.getSheetByName("Jadwal_Khusus");
-    if (!sheetJadwal) {
-        // Buat jika tidak ada
-        sheetJadwal = ss.insertSheet("Jadwal_Khusus");
-        sheetJadwal.appendRow(["Tanggal", "Jam_Masuk", "Jam_Pulang", "Keterangan"]);
-        sheetJadwal.getRange("A1:D1").setFontWeight("bold").setBackground("#f3f3f3");
-    }
-    
-    var dataJadwal = sheetJadwal.getDataRange().getValues();
-    for (var i = 1; i < dataJadwal.length; i++) {
-        var tglCell = dataJadwal[i][0];
-        if (!tglCell) continue;
-        var tglStr = (tglCell instanceof Date) ? Utilities.formatDate(tglCell, "GMT+7", "yyyy-MM-dd") : String(tglCell);
-        if (tglStr === todayStr) {
-            return {
-                masuk: dataJadwal[i][1],
-                pulang: dataJadwal[i][2],
-                is_khusus: true,
-                keterangan: dataJadwal[i][3]
-            };
-        }
-    }
-    
-    // 2. Fallback ke Config_Kantor
-    var configData = ss.getSheetByName("Config_Kantor").getRange("A2:G2").getValues()[0];
-    return {
-        masuk: (configData[5] !== "" && configData[5] !== undefined) ? configData[5] : config.batasJam,
-        pulang: (configData[6] !== "" && configData[6] !== undefined) ? configData[6] : "17:00",
-        is_khusus: false
-    };
-}
+
 
 function handleAbsensi(payload) {
     var config = getSemuaConfig()[payload.client_id];
     var ss = SpreadsheetApp.openById(config.spreadsheetId);
-    var schedule = getEffectiveSchedule(ss, config);
     
     var now = new Date();
-    var currentMinutes = (parseInt(Utilities.formatDate(now, "GMT+7", "HH")) * 60) + parseInt(Utilities.formatDate(now, "GMT+7", "mm"));
-    
     var status = "Tepat Waktu";
-    if (payload.tipe_absen === "Masuk") {
-        var limitMasuk = toMinutes(schedule.masuk);
-        if (currentMinutes > limitMasuk) {
-            var diff = currentMinutes - limitMasuk;
-            var tier = Math.ceil(diff / 30);
-            status = "TL" + (tier > 4 ? 4 : tier);
-        }
-    } else if (payload.tipe_absen === "Pulang") {
-        var limitPulang = toMinutes(schedule.pulang);
-        if (currentMinutes < limitPulang) {
-            var diff = limitPulang - currentMinutes;
-            var tier = Math.ceil(diff / 30);
-            status = "PSW" + (tier > 4 ? 4 : tier);
-        }
-    }
 
     var fotoUrl = "No Photo";
     if (payload.foto_base64 && payload.foto_base64.length > 0) {
@@ -365,7 +311,7 @@ function handleAbsensi(payload) {
       status
     ]);
     
-    return responseJSON(200, "success", "Absen " + payload.tipe_absen + " Berhasil (" + status + ")");
+    return responseJSON(200, "success", "Absen " + payload.tipe_absen + " Berhasil.");
 }
 
 function handleGetAllAnggota(payload) {
@@ -420,6 +366,7 @@ function handleUpdateJamKerja(payload) {
     SpreadsheetApp.openById(config.spreadsheetId).getSheetByName("Config_Kantor").getRange("E2:G2").setValues([[payload.jam_masuk_mulai, payload.batas_jam_masuk, payload.jam_pulang_mulai]]);
     return responseJSON(200, "success", "Jam kerja diperbarui.");
 }
+
 
 function handleUpdateLokasi(payload) {
     var config = getSemuaConfig()[payload.client_id];
