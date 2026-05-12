@@ -1,0 +1,125 @@
+/* ================================================================
+   Hadirin Premium Style - FIXED VERSION
+   ================================================================ */
+
+:root {
+    --hadirin-primary: #005147;
+    --hadirin-primary-dark: #003d36;
+    --hadirin-primary-light: rgba(0, 81, 71, 0.1);
+    --hadirin-gradient: linear-gradient(135deg, #005147 0%, #007d6e 100%);
+    --hadirin-radius: 18px;
+    --hadirin-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+/* === GLOBAL FIX === */
+body {
+    font-family: 'Inter', sans-serif !important;
+    background-color: #f8fafc !important;
+}
+
+/* Fix dashboard heading visibility */
+.fi-header-heading {
+    color: #0f172a !important; /* Navy dark color */
+    font-weight: 800 !important;
+    letter-spacing: -0.025em !important;
+}
+
+.fi-header-subheading {
+    color: #64748b !important;
+}
+
+/* === SIDEBAR FIX === */
+.fi-sidebar {
+    background-color: white !important;
+    border-right: 1px solid #e2e8f0 !important;
+}
+
+.fi-sidebar-header {
+    background-color: #005147 !important; /* Make header dark to contrast with white logo */
+}
+
+.fi-brand-name {
+    color: white !important;
+    font-weight: 800 !important;
+    letter-spacing: -0.05em !important;
+}
+
+.fi-sidebar-item-button {
+    color: #475569 !important; /* Darker gray for readability */
+    border-radius: 12px !important;
+    margin: 2px 8px !important;
+    transition: all 0.2s ease !important;
+}
+
+.fi-sidebar-item-button:hover {
+    background-color: var(--hadirin-primary-light) !important;
+    color: var(--hadirin-primary) !important;
+}
+
+.fi-sidebar-item-button.fi-active {
+    background-color: var(--hadirin-primary) !important;
+    color: white !important;
+}
+
+.fi-sidebar-item-button.fi-active svg {
+    color: white !important;
+}
+
+/* === CARDS & WIDGETS === */
+.fi-section, .fi-wi-stats-overview-stat, .fi-ta-ctn {
+    background-color: white !important;
+    border-radius: var(--hadirin-radius) !important;
+    border: 1px solid #e2e8f0 !important;
+    box-shadow: var(--hadirin-shadow) !important;
+    overflow: hidden !important;
+}
+
+/* Widget stats border-left styling */
+.fi-wi-stats-overview-stat {
+    border-left: 4px solid var(--hadirin-primary) !important;
+}
+
+.fi-wi-stats-overview-stat-label {
+    color: #64748b !important;
+    font-weight: 600 !important;
+    text-transform: uppercase !important;
+    font-size: 0.75rem !important;
+}
+
+.fi-wi-stats-overview-stat-value {
+    color: #0f172a !important;
+    font-weight: 800 !important;
+    font-size: 1.75rem !important;
+}
+
+/* === TABLES === */
+.fi-ta-header-cell {
+    background-color: #f1f5f9 !important;
+    color: #475569 !important;
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
+    font-size: 0.7rem !important;
+}
+
+.fi-ta-cell {
+    color: #1e293b !important;
+}
+
+/* === BUTTONS === */
+.fi-btn-color-primary {
+    background: var(--hadirin-gradient) !important;
+    border-radius: 10px !important;
+    font-weight: 700 !important;
+    box-shadow: 0 4px 6px -1px rgba(0, 81, 71, 0.2) !important;
+}
+
+.fi-btn-color-primary:hover {
+    box-shadow: 0 10px 15px -3px rgba(0, 81, 71, 0.3) !important;
+    transform: translateY(-1px);
+}
+
+/* === LOGIN PAGE === */
+.fi-simple-page {
+    border-radius: 24px !important;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.1) !important;
+}

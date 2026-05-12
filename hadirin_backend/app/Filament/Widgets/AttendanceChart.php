@@ -8,6 +8,11 @@ use Illuminate\Support\Facades\DB;
 
 class AttendanceChart extends ChartWidget
 {
+    public static function canView(): bool
+    {
+        return \Filament\Facades\Filament::getCurrentPanel()?->getId() === 'admin';
+    }
+
     protected static ?string $heading = 'Tren Kehadiran (7 Hari Terakhir)';
 
     protected function getData(): array

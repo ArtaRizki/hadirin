@@ -19,14 +19,13 @@ use Illuminate\Session\Middleware\AuthenticateSession;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 
-class AdminPanelProvider extends PanelProvider
+class AppPanelProvider extends PanelProvider
 {
     public function panel(Panel $panel): Panel
     {
         return $panel
-            ->default()
-            ->id('admin')
-            ->path('admin')
+            ->id('app')
+            ->path('app')
             ->login()
             ->colors([
                 'primary'  => Color::hex('#005147'),
@@ -37,13 +36,9 @@ class AdminPanelProvider extends PanelProvider
                 'danger'   => Color::Rose,
             ])
             ->font('Inter', provider: \Filament\FontProviders\GoogleFontProvider::class)
-            ->brandName('Hadirin Admin')
+            ->brandName('Hadirin')
             ->favicon(null)
-            ->sidebarCollapsibleOnDesktop()
-            ->navigationGroups([
-                'Manajemen Data',
-                'Konfigurasi',
-            ])
+            ->topNavigation()
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\\Filament\\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\\Filament\\Pages')
             ->pages([
@@ -51,8 +46,7 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\\Filament\\Widgets')
             ->widgets([
-                \App\Filament\Widgets\StatsOverview::class,
-                \App\Filament\Widgets\AttendanceChart::class,
+                \App\Filament\Widgets\AttendanceOverview::class,
             ])
             ->renderHook(
                 PanelsRenderHook::HEAD_END,

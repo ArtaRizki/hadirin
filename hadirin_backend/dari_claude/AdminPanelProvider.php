@@ -4,13 +4,12 @@ namespace App\Providers\Filament;
 
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\DisableBladeIconComponents;
-use Filament\Http\Middleware\DispatchServingFilamentEvent;
+use Filament\Http\Middleware\DispatchServedEvent;
 use Filament\Pages;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
-use Filament\View\PanelsRenderHook;
-use Illuminate\Support\Facades\Blade;
+use Filament\Support\Enums\ThemeMode;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
@@ -24,7 +23,6 @@ class AdminPanelProvider extends PanelProvider
     public function panel(Panel $panel): Panel
     {
         return $panel
-            ->default()
             ->id('admin')
             ->path('admin')
             ->login()
@@ -37,6 +35,7 @@ class AdminPanelProvider extends PanelProvider
                 'danger'   => Color::Rose,
             ])
             ->font('Inter', provider: \Filament\FontProviders\GoogleFontProvider::class)
+            ->defaultThemeMode(ThemeMode::Light)
             ->brandName('Hadirin Admin')
             ->favicon(null)
             ->sidebarCollapsibleOnDesktop()
@@ -54,10 +53,7 @@ class AdminPanelProvider extends PanelProvider
                 \App\Filament\Widgets\StatsOverview::class,
                 \App\Filament\Widgets\AttendanceChart::class,
             ])
-            ->renderHook(
-                PanelsRenderHook::HEAD_END,
-                fn (): string => Blade::render('<link rel="stylesheet" href="' . asset('css/filament-custom.css') . '">'),
-            )
+            ->stylesheet(asset('css/filament-custom.css'))
             ->middleware([
                 EncryptCookies::class,
                 AddQueuedCookiesToResponse::class,
@@ -67,7 +63,7 @@ class AdminPanelProvider extends PanelProvider
                 VerifyCsrfToken::class,
                 SubstituteBindings::class,
                 DisableBladeIconComponents::class,
-                DispatchServingFilamentEvent::class,
+                DispatchServedEvent::class,
             ])
             ->authMiddleware([
                 Authenticate::class,

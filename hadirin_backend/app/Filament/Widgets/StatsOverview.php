@@ -10,8 +10,17 @@ use Filament\Widgets\StatsOverviewWidget\Stat;
 
 class StatsOverview extends BaseWidget
 {
+    public static function canView(): bool
+    {
+        return \Filament\Facades\Filament::getCurrentPanel()?->getId() === 'admin';
+    }
+
     protected function getStats(): array
     {
+        if (\Filament\Facades\Filament::getCurrentPanel()?->getId() !== 'admin') {
+            return [];
+        }
+
         return [
             Stat::make('Total Anggota', User::count())
                 ->description('Semua instansi')

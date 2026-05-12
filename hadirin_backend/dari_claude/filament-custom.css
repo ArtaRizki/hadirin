@@ -1,0 +1,510 @@
+/* ================================================================
+   filament-custom.css
+   Letakkan di: public/css/filament-custom.css
+   Daftarkan via ->stylesheet(asset('css/filament-custom.css'))
+   di AdminPanelProvider & AppPanelProvider
+   ================================================================ */
+
+/* ---------------------------------------------------------------
+   DESIGN TOKENS (sesuai HTML asli)
+   --primary: #005147
+   --primary-gradient: linear-gradient(135deg, #005147 0%, #007d6e 100%)
+   --bg-light: #f8fafc
+   --radius-lg: 28px
+   --radius-md: 18px
+   --shadow-soft: 0 10px 25px -5px rgba(0,0,0,0.05)
+--------------------------------------------------------------- */
+
+/* === GLOBAL FONT & BACKGROUND === */
+:root {
+    --hadirin-primary: #005147;
+    --hadirin-primary-dark: #003d36;
+    --hadirin-gradient: linear-gradient(135deg, #005147 0%, #007d6e 100%);
+    --hadirin-shadow-color: rgba(0, 81, 71, 0.15);
+    --hadirin-radius-lg: 28px;
+    --hadirin-radius-md: 18px;
+    --hadirin-shadow-soft: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+}
+
+body,
+html {
+    font-family: "Inter", ui-sans-serif, system-ui, sans-serif !important;
+    -webkit-font-smoothing: antialiased;
+    background-color: #f8fafc !important;
+}
+
+/* === SIDEBAR === */
+.fi-sidebar {
+    background: white !important;
+    border-right: 1px solid rgba(0, 81, 71, 0.08) !important;
+    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.04) !important;
+}
+
+.fi-sidebar-header {
+    border-bottom: 1px solid rgba(0, 81, 71, 0.08) !important;
+    padding: 20px 24px !important;
+}
+
+/* Brand name di sidebar */
+.fi-brand-name {
+    font-weight: 900 !important;
+    font-size: 1.35rem !important;
+    letter-spacing: -0.8px !important;
+    background: var(--hadirin-gradient) !important;
+    -webkit-background-clip: text !important;
+    -webkit-text-fill-color: transparent !important;
+    background-clip: text !important;
+}
+
+/* Sidebar nav item */
+.fi-sidebar-item-button {
+    border-radius: var(--hadirin-radius-md) !important;
+    font-weight: 600 !important;
+    margin-bottom: 2px !important;
+    transition: all 0.2s ease !important;
+    color: #64748b !important;
+}
+
+.fi-sidebar-item-button:hover {
+    background: rgba(0, 81, 71, 0.06) !important;
+    color: var(--hadirin-primary) !important;
+}
+
+.fi-sidebar-item-button.fi-active,
+.fi-sidebar-item-button[aria-current="page"],
+.fi-sidebar-item-button.active {
+    background: rgba(0, 81, 71, 0.1) !important;
+    color: var(--hadirin-primary) !important;
+    font-weight: 700 !important;
+}
+
+.fi-sidebar-item-button.fi-active svg,
+.fi-sidebar-item-button[aria-current="page"] svg {
+    color: var(--hadirin-primary) !important;
+}
+
+/* === TOPBAR / NAVBAR === */
+.fi-topbar,
+.fi-topbar nav {
+    background: white !important;
+    border-bottom: 1px solid rgba(0, 81, 71, 0.08) !important;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04) !important;
+}
+
+/* === MAIN CONTENT AREA === */
+.fi-main {
+    background-color: #f8fafc !important;
+}
+
+.fi-body {
+    background-color: #f8fafc !important;
+}
+
+/* === CARDS / SECTIONS === */
+.fi-section,
+.fi-ta-ctn,
+.fi-fo-section {
+    background: white !important;
+    border-radius: var(--hadirin-radius-lg) !important;
+    border: 1px solid rgba(226, 232, 240, 0.8) !important;
+    box-shadow: var(--hadirin-shadow-soft) !important;
+    overflow: hidden !important;
+}
+
+/* Section header */
+.fi-section-header {
+    border-bottom: 1px solid rgba(226, 232, 240, 0.6) !important;
+    padding: 20px 24px !important;
+}
+
+.fi-section-header-heading {
+    font-weight: 800 !important;
+    letter-spacing: -0.3px !important;
+    color: #0f172a !important;
+}
+
+/* === WIDGET STATS CARD === */
+.fi-wi-stats-overview-stat {
+    background: white !important;
+    border-radius: var(--hadirin-radius-lg) !important;
+    border: 1px solid rgba(226, 232, 240, 0.8) !important;
+    box-shadow: var(--hadirin-shadow-soft) !important;
+    border-left: 5px solid var(--hadirin-primary) !important;
+    padding: 24px !important;
+    transition: transform 0.2s ease, box-shadow 0.2s ease !important;
+}
+
+.fi-wi-stats-overview-stat:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.1) !important;
+}
+
+.fi-wi-stats-overview-stat-label {
+    font-size: 0.75rem !important;
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.6px !important;
+    color: #64748b !important;
+}
+
+.fi-wi-stats-overview-stat-value {
+    font-size: 1.9rem !important;
+    font-weight: 900 !important;
+    letter-spacing: -1px !important;
+    color: #0f172a !important;
+}
+
+.fi-wi-stats-overview-stat-description {
+    font-size: 0.82rem !important;
+    font-weight: 500 !important;
+    color: #94a3b8 !important;
+}
+
+/* Warna override berdasarkan color prop */
+.fi-color-success .fi-wi-stats-overview-stat {
+    border-left-color: #10b981 !important;
+}
+
+.fi-color-warning .fi-wi-stats-overview-stat {
+    border-left-color: #f59e0b !important;
+}
+
+.fi-color-danger .fi-wi-stats-overview-stat {
+    border-left-color: #ef4444 !important;
+}
+
+/* === CHART WIDGET === */
+.fi-wi-chart {
+    background: white !important;
+    border-radius: var(--hadirin-radius-lg) !important;
+    border: 1px solid rgba(226, 232, 240, 0.8) !important;
+    box-shadow: var(--hadirin-shadow-soft) !important;
+}
+
+.fi-wi-chart-heading {
+    font-weight: 800 !important;
+    font-size: 1rem !important;
+    letter-spacing: -0.3px !important;
+    color: #0f172a !important;
+}
+
+/* === TABLE === */
+.fi-ta-ctn {
+    border-radius: var(--hadirin-radius-lg) !important;
+    overflow: hidden !important;
+}
+
+.fi-ta-header-ctn {
+    background: white !important;
+    border-bottom: 1px solid rgba(226, 232, 240, 0.6) !important;
+    padding: 16px 20px !important;
+}
+
+.fi-ta-table {
+    border-collapse: separate !important;
+    border-spacing: 0 !important;
+}
+
+.fi-ta-header-cell {
+    background: #f8fafc !important;
+    font-size: 0.72rem !important;
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.7px !important;
+    color: #94a3b8 !important;
+    padding: 14px 16px !important;
+    border-bottom: 1px solid rgba(226, 232, 240, 0.8) !important;
+}
+
+.fi-ta-cell {
+    padding: 14px 16px !important;
+    font-size: 0.9rem !important;
+    font-weight: 500 !important;
+    color: #334155 !important;
+    border-bottom: 1px solid rgba(241, 245, 249, 1) !important;
+    vertical-align: middle !important;
+}
+
+.fi-ta-row:last-child .fi-ta-cell {
+    border-bottom: none !important;
+}
+
+.fi-ta-row:hover .fi-ta-cell {
+    background: rgba(0, 81, 71, 0.02) !important;
+}
+
+/* === BADGES === */
+.fi-badge {
+    border-radius: 10px !important;
+    font-size: 0.72rem !important;
+    font-weight: 700 !important;
+    padding: 5px 12px !important;
+    letter-spacing: 0.3px !important;
+}
+
+.fi-color-success .fi-badge,
+.fi-badge.fi-color-success {
+    background: rgba(16, 185, 129, 0.12) !important;
+    color: #059669 !important;
+}
+
+.fi-color-warning .fi-badge,
+.fi-badge.fi-color-warning {
+    background: rgba(245, 158, 11, 0.12) !important;
+    color: #d97706 !important;
+}
+
+.fi-color-danger .fi-badge,
+.fi-badge.fi-color-danger {
+    background: rgba(239, 68, 68, 0.12) !important;
+    color: #dc2626 !important;
+}
+
+.fi-color-info .fi-badge,
+.fi-badge.fi-color-info {
+    background: rgba(14, 165, 233, 0.12) !important;
+    color: #0284c7 !important;
+}
+
+/* === BUTTONS === */
+.fi-btn {
+    border-radius: var(--hadirin-radius-md) !important;
+    font-weight: 700 !important;
+    font-size: 0.875rem !important;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    letter-spacing: -0.1px !important;
+}
+
+/* Primary button */
+.fi-btn-color-primary.fi-btn-size-md,
+.fi-btn.fi-color-primary {
+    background: var(--hadirin-gradient) !important;
+    border: none !important;
+    color: white !important;
+    box-shadow: 0 8px 20px -5px var(--hadirin-shadow-color) !important;
+}
+
+.fi-btn-color-primary.fi-btn-size-md:hover,
+.fi-btn.fi-color-primary:hover {
+    transform: translateY(-1px) !important;
+    box-shadow: 0 14px 28px -5px var(--hadirin-shadow-color) !important;
+}
+
+.fi-btn-color-primary.fi-btn-size-md:active,
+.fi-btn.fi-color-primary:active {
+    transform: translateY(0) !important;
+}
+
+/* Gray/secondary button */
+.fi-btn-color-gray {
+    background: #f1f5f9 !important;
+    color: #475569 !important;
+    border: 1.5px solid #e2e8f0 !important;
+}
+
+.fi-btn-color-gray:hover {
+    background: #e2e8f0 !important;
+    border-color: #cbd5e1 !important;
+}
+
+/* Danger button */
+.fi-btn-color-danger {
+    background: rgba(239, 68, 68, 0.1) !important;
+    color: #dc2626 !important;
+    border: 1.5px solid rgba(239, 68, 68, 0.2) !important;
+}
+
+.fi-btn-color-danger:hover {
+    background: #ef4444 !important;
+    color: white !important;
+}
+
+/* === FORM INPUTS === */
+.fi-fo-field-wrp input,
+.fi-fo-field-wrp select,
+.fi-fo-field-wrp textarea,
+.fi-input,
+.fi-select-input {
+    border-radius: var(--hadirin-radius-md) !important;
+    border: 1.5px solid #e2e8f0 !important;
+    font-family: "Inter", sans-serif !important;
+    font-weight: 500 !important;
+    font-size: 0.9rem !important;
+    padding: 12px 16px !important;
+    transition: all 0.25s ease !important;
+    color: #0f172a !important;
+    background: white !important;
+}
+
+.fi-fo-field-wrp input:focus,
+.fi-fo-field-wrp select:focus,
+.fi-fo-field-wrp textarea:focus,
+.fi-input:focus,
+.fi-select-input:focus {
+    border-color: var(--hadirin-primary) !important;
+    box-shadow: 0 0 0 4px rgba(0, 81, 71, 0.1) !important;
+    outline: none !important;
+}
+
+/* Label form */
+.fi-fo-field-wrp-label,
+.fi-fo-field-wrp > label {
+    font-size: 0.8rem !important;
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+    color: #64748b !important;
+    margin-bottom: 6px !important;
+}
+
+/* === MODAL / DIALOG === */
+.fi-modal-window {
+    border-radius: var(--hadirin-radius-lg) !important;
+    box-shadow: 0 30px 60px rgba(0, 0, 0, 0.15) !important;
+    overflow: hidden !important;
+}
+
+.fi-modal-header {
+    border-bottom: 1px solid rgba(226, 232, 240, 0.6) !important;
+    padding: 24px !important;
+}
+
+.fi-modal-heading {
+    font-weight: 800 !important;
+    letter-spacing: -0.4px !important;
+    color: #0f172a !important;
+}
+
+/* === PAGINATION === */
+.fi-pagination {
+    padding: 16px 20px !important;
+    border-top: 1px solid rgba(226, 232, 240, 0.6) !important;
+}
+
+.fi-pagination-item button {
+    border-radius: 10px !important;
+    font-weight: 600 !important;
+}
+
+.fi-pagination-item button[aria-current="page"],
+.fi-pagination-item button.active {
+    background: var(--hadirin-gradient) !important;
+    color: white !important;
+    border: none !important;
+}
+
+/* === DROPDOWN / ACTION MENU === */
+.fi-dropdown-panel {
+    border-radius: var(--hadirin-radius-md) !important;
+    border: 1px solid rgba(226, 232, 240, 0.8) !important;
+    box-shadow: 0 16px 32px -8px rgba(0, 0, 0, 0.12) !important;
+    overflow: hidden !important;
+}
+
+.fi-dropdown-item {
+    border-radius: 10px !important;
+    font-weight: 600 !important;
+    font-size: 0.875rem !important;
+    margin: 2px 4px !important;
+}
+
+.fi-dropdown-item:hover {
+    background: rgba(0, 81, 71, 0.06) !important;
+    color: var(--hadirin-primary) !important;
+}
+
+/* === NOTIFICATIONS / FLASH === */
+.fi-notifications {
+    border-radius: var(--hadirin-radius-md) !important;
+}
+
+.fi-notification {
+    border-radius: var(--hadirin-radius-md) !important;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12) !important;
+    border: 1px solid rgba(226, 232, 240, 0.5) !important;
+    font-weight: 600 !important;
+}
+
+/* === LOGIN PAGE === */
+.fi-simple-main {
+    background: #f8fafc !important;
+}
+
+.fi-simple-page {
+    background: white !important;
+    border-radius: var(--hadirin-radius-lg) !important;
+    border: 1px solid rgba(255, 255, 255, 0.6) !important;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.08) !important;
+    padding: 40px !important;
+}
+
+.fi-simple-logo {
+    margin-bottom: 8px !important;
+}
+
+.fi-simple-logo .fi-brand-name {
+    font-size: 2rem !important;
+    font-weight: 900 !important;
+    letter-spacing: -1.2px !important;
+    background: var(--hadirin-gradient) !important;
+    -webkit-background-clip: text !important;
+    -webkit-text-fill-color: transparent !important;
+    background-clip: text !important;
+}
+
+/* === SEARCH INPUT DI TABLE === */
+.fi-ta-search-field input {
+    border-radius: var(--hadirin-radius-md) !important;
+    border: 1.5px solid #e2e8f0 !important;
+    font-weight: 500 !important;
+    background: #f8fafc !important;
+    transition: all 0.25s ease !important;
+}
+
+.fi-ta-search-field input:focus {
+    border-color: var(--hadirin-primary) !important;
+    box-shadow: 0 0 0 4px rgba(0, 81, 71, 0.1) !important;
+    background: white !important;
+}
+
+/* === PAGE HEADER === */
+.fi-header {
+    margin-bottom: 24px !important;
+}
+
+.fi-page-header-heading {
+    font-weight: 900 !important;
+    letter-spacing: -0.8px !important;
+    color: #0f172a !important;
+    font-size: 1.6rem !important;
+}
+
+.fi-page-header-subheading {
+    color: #64748b !important;
+    font-weight: 500 !important;
+}
+
+/* === BREADCRUMBS === */
+.fi-breadcrumbs-item-label {
+    font-weight: 600 !important;
+    font-size: 0.85rem !important;
+}
+
+/* === SCROLLBAR (webkit) === */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: rgba(0, 81, 71, 0.2);
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 81, 71, 0.4);
+}
