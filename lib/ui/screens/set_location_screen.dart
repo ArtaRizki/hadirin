@@ -83,8 +83,10 @@ class _SetLocationScreenState extends State<SetLocationScreen> {
     if (remoteConfig != null && mounted) {
       setState(() {
         _pickedLocation = LatLng(
-          double.tryParse(remoteConfig['lat'].toString()) ?? _pickedLocation.latitude,
-          double.tryParse(remoteConfig['lng'].toString()) ?? _pickedLocation.longitude,
+          double.tryParse(remoteConfig['lat'].toString()) ??
+              _pickedLocation.latitude,
+          double.tryParse(remoteConfig['lng'].toString()) ??
+              _pickedLocation.longitude,
         );
         _radius = double.tryParse(remoteConfig['radius'].toString()) ?? _radius;
         _isMapReady = true;
