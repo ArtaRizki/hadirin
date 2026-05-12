@@ -290,6 +290,26 @@
                 style="background: rgba(124, 58, 237, 0.03)" />
             </div>
 
+            <!-- LIVE LOCATION STATUS -->
+            <div id="location-status-badge" onclick="startLocationTracking()" style="
+                  display: none;
+                  align-items: center;
+                  gap: 8px;
+                  padding: 12px;
+                  background: rgba(16, 185, 129, 0.05);
+                  border: 1px solid rgba(16, 185, 129, 0.1);
+                  border-radius: 12px;
+                  margin-bottom: 20px;
+                  font-size: 0.8rem;
+                  color: #059669;
+                  font-weight: 600;
+                  cursor: pointer;
+                ">
+              <div id="loc-dot" style="width: 8px; height: 8px; border-radius: 50%; background: #10b981; animation: pulse 2s infinite"></div>
+              <span id="location-status-text">Mendeteksi Lokasi...</span>
+              <i data-lucide="refresh-cw" style="width: 14px; margin-left: auto; opacity: 0.5;"></i>
+            </div>
+
             <div class="member-actions">
               <button class="btn-absen" onclick="handleWebAbsen('Masuk')">
                 <i data-lucide="camera"></i>
@@ -1037,6 +1057,23 @@
     font-weight: 600;
     cursor: pointer;
     outline: none;
+  }
+
+  @keyframes pulse {
+    0% {
+      transform: scale(0.95);
+      box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+    }
+
+    70% {
+      transform: scale(1);
+      box-shadow: 0 0 0 6px rgba(16, 185, 129, 0);
+    }
+
+    100% {
+      transform: scale(0.95);
+      box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+    }
   }
 </style>
 

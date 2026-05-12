@@ -9,6 +9,21 @@
   let isAdminMode = false;
   let currentSchedule = null;
   let officeConfig = null;
+  let locWatchId = null;
+
+  function calculateDistance(lat1, lon1, lat2, lon2) {
+    const R = 6371000;
+    const dLat = ((lat2 - lat1) * Math.PI) / 180;
+    const dLon = ((lon2 - lon1) * Math.PI) / 180;
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+  }
   let rawTodayData = [];
   let allShifts = [];
 
@@ -287,6 +302,7 @@
         if (response.schedule) {
           currentSchedule = response.schedule;
           officeConfig = response.office;
+          startLocationTracking();
         }
       })
       .withFailureHandler(function (err) {
@@ -294,6 +310,71 @@
       })
       .getDashboardStats(currentUser.clientId, currentUser.id);
   }
+
+  // ============================================
+  // LOCATION TRACKING
+  // ============================================
+
+  function startLocationTracking() {
+    const badge = document.getElementById("location-status-badge");
+    const text = document.getElementById("location-status-text");
+    const dot = document.getElementById("loc-dot");
+
+    if (!badge || !text || !dot) return;
+    badge.style.display = "flex";
+    text.innerText = "Mendeteksi Lokasi...";
+
+    const updateUI = (lat, lng, accuracy) => {
+      let distText = "";
+      if (officeConfig && officeConfig.lat && officeConfig.lng) {
+        const dist = calculateDistance(
+          lat,
+          lng,
+          parseFloat(officeConfig.lat),
+          parseFloat(officeConfig.lng),
+        );
+        distText =
+          dist > 1000
+            ? ` (${(dist / 1000).toFixed(2)} km dari kantor)`
+            : ` (${Math.round(dist)} m dari kantor)`;
+
+        if (dist <= (officeConfig.radius || 100)) {
+          badge.style.background = "rgba(16, 185, 129, 0.05)";
+          badge.style.color = "#059669";
+          dot.style.background = "#10b981";
+        } else {
+          badge.style.background = "rgba(239, 68, 68, 0.05)";
+          badge.style.color = "#ef4444";
+          dot.style.background = "#ef4444";
+        }
+      }
+      text.innerText = `Lokasi: ${accuracy}${distText}`;
+      lucide.createIcons();
+    };
+
+    // Try GPS first
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => updateUI(pos.coords.latitude, pos.coords.longitude, "GPS"),
+        (err) => {
+          // Fallback to IP
+          fetch("https://ipapi.co/json/")
+            .then((res) => res.json())
+            .then((data) => {
+              if (data.latitude && data.longitude) {
+                updateUI(data.latitude, data.longitude, "IP (Kurang Akurat)");
+              }
+            })
+            .catch(() => {
+              text.innerText = "Gagal Mendapatkan Lokasi";
+            });
+        },
+        { enableHighAccuracy: true, timeout: 5000 },
+      );
+    }
+  }
+
+  window.startLocationTracking = startLocationTracking;
 
   function renderTrendChart(labels, values) {
     const ctx = document.getElementById("attendanceChart");
