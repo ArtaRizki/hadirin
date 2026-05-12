@@ -1190,6 +1190,7 @@
                   lat_long: latLong,
                   foto_base64: base64Photo,
                   tugas: tugasVal,
+                  client_timestamp: new Date().getTime(),
                 });
             };
 
@@ -1483,7 +1484,13 @@
   function formatDate(val) {
     if (!val) return "-";
     try {
-      return new Date(val).toLocaleDateString("id-ID", {
+      // Fix for string date from GAS to be treated as local time
+      let dateStr = String(val);
+      if (dateStr.includes(" ") && !dateStr.includes("T")) {
+        dateStr = dateStr.replace(" ", "T");
+      }
+      const d = new Date(dateStr);
+      return d.toLocaleDateString("id-ID", {
         day: "2-digit",
         month: "short",
         year: "numeric",
@@ -1496,7 +1503,12 @@
   function formatTime(val) {
     if (!val) return "-";
     try {
-      return new Date(val).toLocaleTimeString("id-ID", {
+      let dateStr = String(val);
+      if (dateStr.includes(" ") && !dateStr.includes("T")) {
+        dateStr = dateStr.replace(" ", "T");
+      }
+      const d = new Date(dateStr);
+      return d.toLocaleTimeString("id-ID", {
         hour: "2-digit",
         minute: "2-digit",
       });

@@ -304,6 +304,9 @@ class AttendanceService extends ApiClient {
       throw Exception('Gagal terhubung ke server.');
     } catch (e) {
       d.log('==== ERROR GET HISTORY ==== $e');
+      if (e.toString().contains('SocketException') || e.toString().contains('Failed host lookup')) {
+        throw Exception('Tidak ada koneksi internet. Pastikan perangkat Anda terhubung ke jaringan.');
+      }
       throw Exception('Gagal mengambil riwayat: $e');
     }
   }
