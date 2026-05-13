@@ -585,12 +585,14 @@ function handleAbsensi(payload) {
       var v1 = JSON.parse(payload.face_embedding);
       var v2 = JSON.parse(storedEmbedding);
       
-      // Cek apakah embedding isinya cuma nol (vektor rusak)
+      // Cek apakah embedding isinya cuma nol atau terlalu lemah (blank/gelap)
       var sum1 = v1.reduce((a, b) => a + Math.abs(b), 0);
       var sum2 = v2.reduce((a, b) => a + Math.abs(b), 0);
       
-      if (sum1 < 0.0001 || sum2 < 0.0001) {
-        return responseJSON(403, "error", "Data pola wajah tidak valid (Zero Vector). Silakan hubungi admin untuk reset data wajah.");
+      console.log("Verifikasi Wajah ID: " + payload.id_karyawan + " | Sum HP: " + sum1.toFixed(4) + " | Sum Master: " + sum2.toFixed(4));
+
+      if (sum1 < 0.1 || sum2 < 0.1) {
+        return responseJSON(403, "error", "Kualitas gambar buruk atau pola wajah tidak valid. Harap gunakan foto yang terang dan jelas.");
       }
 
       var jarak = hitungJarakEuclidean(v1, v2);
@@ -816,6 +818,17 @@ function handleRegisterFace(payload) {
 
   for (var i = 1; i < data.length; i++) {
     if (String(data[i][0]).trim().toLowerCase() === targetId) {
+      // Validasi: Jangan biarkan daftar jika embedding kosong/blank
+      try {
+        var v = JSON.parse(payload.face_embedding);
+        var s = v.reduce((a, b) => a + Math.abs(b), 0);
+        if (s < 0.1) {
+          return responseJSON(400, "error", "Foto tidak valid (Blank/Gelap). Harap gunakan foto wajah yang jelas.");
+        }
+      } catch(e) {
+        return responseJSON(400, "error", "Data wajah tidak valid");
+      }
+
       sheet.getRange(i + 1, 5).setValue(payload.face_embedding); // Kolom E
       return responseJSON(200, "success", "Wajah Berhasil Didaftarkan");
     }
