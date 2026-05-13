@@ -164,6 +164,14 @@ class AttendanceService extends ApiClient {
         );
       }
 
+      // CEK ZERO VECTOR: Jika isinya nol semua, berarti model AI gagal atau wajah tidak terdeteksi benar.
+      double sum = wajahHariIni.fold(0, (prev, element) => prev + element.abs());
+      if (sum < 0.0001) {
+        throw Exception(
+          'Pola wajah tidak valid. Harap bersihkan kamera dan pastikan cahaya cukup.',
+        );
+      }
+
       d.log('Mengambil wajah master dari server...');
       final wajahMaster = await _faceService.getWajahMasterDariServer(
         idAnggota,
@@ -179,18 +187,9 @@ class AttendanceService extends ApiClient {
       d.log('Jarak Kemiripan Wajah: $jarak');
 
       // ================================================================
-      // THRESHOLD KEMIRIPAN WAJAH (Nilai: 1.0)
+      // THRESHOLD KEMIRIPAN WAJAH (Nilai: 0.6)
       // ================================================================
-      // Nilai ini didapat dari hasil eksperimen/benchmarking menggunakan model TFLite (vggface2.tflite).
-      // Data benchmark internal terhadap dua embedding yang sudah di-L2-normalize menunjukkan:
-      // - Wajah SAMA     : rata-rata jarak Euclidean 0.42 (Maks: 0.78)
-      // - Wajah BERBEDA  : rata-rata jarak Euclidean 1.31 (Min: 1.05)
-      // Titik optimal (Threshold) dipilih 1.0 untuk menekan:
-      //   * False Accept Rate (salah kenal orang) menjadi ~2%
-      //   * False Reject Rate (gagal kenal diri sendiri) menjadi ~3%
-      // JANGAN MAINKAN angka ini (misalnya jadi 1.5) karena sistem bisa di-bypass dengan foto orang lain.
-      // ================================================================
-      if (jarak > 0.7) {
+      if (jarak > 0.6) {
         throw Exception(
           'Wajah tidak cocok! (Jarak: ${jarak.toStringAsFixed(2)}). Pastikan Anda absen sendiri.',
         );

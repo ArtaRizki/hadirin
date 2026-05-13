@@ -563,31 +563,47 @@ function handleAbsensi(payload) {
   }
 
   // --- VERIFIKASI WAJAH DI BACKEND ---
-  if (payload.face_embedding) {
-    var masterData = ss.getSheetByName("Master_Karyawan").getDataRange().getValues();
-    var storedEmbedding = "";
-    for (var i = 1; i < masterData.length; i++) {
-      if (String(masterData[i][0]) === String(payload.id_karyawan)) {
-        storedEmbedding = masterData[i][4]; // Kolom E
-        break;
-      }
+  var masterData = ss.getSheetByName("Master_Karyawan").getDataRange().getValues();
+  var storedEmbedding = "";
+  for (var i = 1; i < masterData.length; i++) {
+    if (String(masterData[i][0]) === String(payload.id_karyawan)) {
+      storedEmbedding = masterData[i][4]; // Kolom E
+      break;
     }
-    
-    if (storedEmbedding && storedEmbedding.length > 20) {
-      try {
-        var v1 = JSON.parse(payload.face_embedding);
-        var v2 = JSON.parse(storedEmbedding);
-        var jarak = hitungJarakEuclidean(v1, v2);
-        console.log("Verifikasi Wajah ID: " + payload.id_karyawan + " | Jarak: " + jarak);
-        
-        // Threshold diperketat ke 0.7
-        if (jarak > 0.7) {
-          return responseJSON(403, "error", "Wajah tidak cocok! (Jarak: " + jarak.toFixed(2) + "). Harap gunakan wajah sendiri.");
-        }
-      } catch(e) {
-        console.error("Gagal verifikasi wajah: " + e.message);
-      }
+  }
+
+  var isWajahTerdaftar = (storedEmbedding && String(storedEmbedding).length > 50);
+
+  if (isWajahTerdaftar) {
+    if (!payload.face_embedding) {
+      return responseJSON(403, "error", "Data wajah tidak terdeteksi. Harap gunakan aplikasi versi terbaru.");
     }
+
+    try {
+      var v1 = JSON.parse(payload.face_embedding);
+      var v2 = JSON.parse(storedEmbedding);
+      
+      // Cek apakah embedding isinya cuma nol (vektor rusak)
+      var sum1 = v1.reduce((a, b) => a + Math.abs(b), 0);
+      var sum2 = v2.reduce((a, b) => a + Math.abs(b), 0);
+      
+      if (sum1 < 0.0001 || sum2 < 0.0001) {
+        return responseJSON(403, "error", "Data pola wajah tidak valid (Zero Vector). Silakan hubungi admin untuk reset data wajah.");
+      }
+
+      var jarak = hitungJarakEuclidean(v1, v2);
+      console.log("Verifikasi Wajah ID: " + payload.id_karyawan + " | Jarak: " + jarak.toFixed(4));
+      
+      // Threshold diperketat ke 0.6 untuk keamanan maksimal
+      if (jarak > 0.6) {
+        return responseJSON(403, "error", "Wajah tidak cocok! (Jarak: " + jarak.toFixed(2) + "). Harap gunakan wajah sendiri.");
+      }
+    } catch(e) {
+      return responseJSON(500, "error", "Gagal memproses verifikasi wajah: " + e.message);
+    }
+  } else {
+    // Opsional: Jika ingin mewajibkan daftar wajah dulu baru bisa absen
+    // return responseJSON(403, "error", "Anda belum mendaftarkan wajah.");
   }
 
   var configData = ss.getSheetByName("Config_Kantor").getRange("A2:I2").getValues()[0];
