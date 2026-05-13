@@ -381,6 +381,8 @@ function doPost(e) {
 
     // Sanitasi Action
     var action = String(payload.action || "").trim().toLowerCase();
+    console.log("== [API REQUEST] Action: " + action + " | ID: " + payload.id_karyawan + " ==");
+
 
     const skipCheck = ["register_klien", "verify_super_admin"];
     if (skipCheck.indexOf(action) === -1) {
