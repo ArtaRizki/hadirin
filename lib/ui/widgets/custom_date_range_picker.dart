@@ -284,7 +284,7 @@ class _CustomDateRangePickerSheetState
                   Container(
                     padding: const EdgeInsets.all(9),
                     decoration: BoxDecoration(
-                      color: context.primaryColor.withOpacity(0.1),
+                      color: context.primaryColor.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Icon(
@@ -378,7 +378,7 @@ class _CustomDateRangePickerSheetState
                   boxShadow: _startDate != null
                       ? [
                           BoxShadow(
-                            color: context.primaryColor.withOpacity(0.25),
+                            color: context.primaryColor.withValues(alpha: 0.25),
                             blurRadius: 12,
                             offset: const Offset(0, 4),
                           ),
@@ -426,7 +426,7 @@ class _CustomDateRangePickerSheetState
                     borderRadius: BorderRadius.circular(20),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.05),
+                        color: Colors.black.withValues(alpha: 0.05),
                         blurRadius: 16,
                         offset: const Offset(0, 4),
                       ),
@@ -632,7 +632,7 @@ class _CustomDateRangePickerSheetState
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: context.primaryColor.withOpacity(0.35),
+                          color: context.primaryColor.withValues(alpha: 0.35),
                           blurRadius: 8,
                           offset: const Offset(0, 3),
                         ),
@@ -687,7 +687,7 @@ class _RangeStrip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = context.primaryColor.withOpacity(0.1);
+    final color = context.primaryColor.withValues(alpha: 0.1);
     return ClipRect(
       child: Align(
         alignment: Alignment.center,

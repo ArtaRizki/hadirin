@@ -86,14 +86,14 @@ class AttendanceHistoryList extends StatelessWidget {
 
     String statusLabel = status;
     Color statusColor = const Color(0xFF16A34A);
-    Color statusBg = const Color(0xFF16A34A).withOpacity(0.08);
+    Color statusBg = const Color(0xFF16A34A).withValues(alpha: 0.08);
 
     if (isCuti) {
       statusColor = log['status'] == 'Disetujui'
           ? const Color(0xFF16A34A)
           : Colors.orange.shade700;
       statusBg = log['status'] == 'Disetujui'
-          ? const Color(0xFF16A34A).withOpacity(0.08)
+          ? const Color(0xFF16A34A).withValues(alpha: 0.08)
           : Colors.orange.shade50;
     }
 
@@ -105,7 +105,7 @@ class AttendanceHistoryList extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 10,
             offset: const Offset(0, 3),
           ),
@@ -116,7 +116,7 @@ class AttendanceHistoryList extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: accentColor.withOpacity(0.1),
+              color: accentColor.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(

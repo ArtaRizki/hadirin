@@ -5,7 +5,7 @@ import 'package:primkopasindo_labojon/core/theme/fluid_theme.dart';
 import 'package:primkopasindo_labojon/core/utils/url_helper.dart';
 import 'package:primkopasindo_labojon/ui/widgets/skeleton_loader.dart';
 import 'package:provider/provider.dart';
-import 'package:intl/intl.dart';
+
 
 class ApprovalScreen extends StatefulWidget {
   const ApprovalScreen({super.key});
@@ -438,7 +438,7 @@ class _ApprovalScreenState extends State<ApprovalScreen> {
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
+                      color: Colors.black.withValues(alpha: 0.05),
                       blurRadius: 10,
                       offset: const Offset(0, 4),
                     ),
@@ -485,7 +485,7 @@ class _ApprovalScreenState extends State<ApprovalScreen> {
                       height: 230,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: context.primaryColor.withOpacity(0.06),
+                        color: context.primaryColor.withValues(alpha: 0.06),
                       ),
                     ),
                   ),
@@ -497,7 +497,7 @@ class _ApprovalScreenState extends State<ApprovalScreen> {
                       height: 200,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: const Color(0xFF7C3AED).withOpacity(0.05),
+                        color: const Color(0xFF7C3AED).withValues(alpha: 0.05),
                       ),
                     ),
                   ),
@@ -529,7 +529,7 @@ class _ApprovalScreenState extends State<ApprovalScreen> {
                                   borderRadius: BorderRadius.circular(20),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: Colors.black.withOpacity(0.04),
+                                      color: Colors.black.withValues(alpha: 0.04),
                                       blurRadius: 12,
                                       offset: const Offset(0, 4),
                                     ),
@@ -547,7 +547,7 @@ class _ApprovalScreenState extends State<ApprovalScreen> {
                                           CircleAvatar(
                                             radius: 20,
                                             backgroundColor: badgeColor
-                                                .withOpacity(0.1),
+                                                .withValues(alpha: 0.1),
                                             child: Text(
                                               (item['nama'] ?? "A")
                                                   .substring(0, 1)
@@ -604,8 +604,8 @@ class _ApprovalScreenState extends State<ApprovalScreen> {
                                               vertical: 5,
                                             ),
                                             decoration: BoxDecoration(
-                                              color: badgeColor.withOpacity(
-                                                0.1,
+                                              color: badgeColor.withValues(
+                                                alpha: 0.1,
                                               ),
                                               borderRadius:
                                                   BorderRadius.circular(8),
@@ -710,7 +710,7 @@ class _ApprovalScreenState extends State<ApprovalScreen> {
                                             ),
                                             style: IconButton.styleFrom(
                                               backgroundColor: Colors.red
-                                                  .withOpacity(0.1),
+                                                  .withValues(alpha: 0.1),
                                               shape: RoundedRectangleBorder(
                                                 borderRadius:
                                                     BorderRadius.circular(12),

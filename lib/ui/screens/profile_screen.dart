@@ -13,14 +13,14 @@ import 'package:provider/provider.dart';
 import 'package:primkopasindo_labojon/core/theme/fluid_theme.dart';
 import 'package:intl/intl.dart';
 import 'package:intl/date_symbol_data_local.dart';
-import 'package:hadirin/ui/widgets/skeleton_loader.dart';
-import 'package:hadirin/core/utils/url_helper.dart';
-import 'package:hadirin/ui/screens/leave_request_screen.dart';
-import 'package:hadirin/ui/screens/anggota_list_screen.dart';
-import 'package:hadirin/ui/widgets/attendance_history_list.dart';
-import 'package:hadirin/ui/screens/leave_history_screen.dart';
-import 'package:hadirin/ui/screens/set_worktime_screen.dart';
-import 'package:hadirin/ui/screens/admin_shift_screen.dart';
+import 'package:primkopasindo_labojon/ui/widgets/skeleton_loader.dart';
+import 'package:primkopasindo_labojon/core/utils/url_helper.dart';
+import 'package:primkopasindo_labojon/ui/screens/leave_request_screen.dart';
+import 'package:primkopasindo_labojon/ui/screens/anggota_list_screen.dart';
+import 'package:primkopasindo_labojon/ui/widgets/attendance_history_list.dart';
+import 'package:primkopasindo_labojon/ui/screens/leave_history_screen.dart';
+import 'package:primkopasindo_labojon/ui/screens/set_worktime_screen.dart';
+import 'package:primkopasindo_labojon/ui/screens/admin_shift_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -134,10 +134,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
-  String _formatTanggalIndo(DateTime dt) =>
-      DateFormat('EEEE, d MMMM yyyy', 'id_ID').format(dt);
 
-  String _formatJam(DateTime dt) => DateFormat('HH:mm').format(dt);
 
   void _tampilkanFoto(
     BuildContext context,
@@ -620,14 +617,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(16),
-        splashColor: accentColor.withOpacity(0.1),
+        splashColor: accentColor.withValues(alpha: 0.1),
         child: Container(
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: accentColor.withOpacity(0.15)),
+            border: Border.all(color: accentColor.withValues(alpha: 0.15)),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.04),
+                color: Colors.black.withValues(alpha: 0.04),
                 blurRadius: 10,
                 offset: const Offset(0, 4),
               ),
@@ -640,7 +637,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: accentColor.withOpacity(0.1),
+                  color: accentColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: isLoading
@@ -700,7 +697,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.06),
+                    color: Colors.black.withValues(alpha: 0.06),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
                   ),
@@ -752,7 +749,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   borderRadius: BorderRadius.circular(20),
                   boxShadow: [
                     BoxShadow(
-                      color: auth.themeColor.withOpacity(0.28),
+                      color: auth.themeColor.withValues(alpha: 0.28),
                       blurRadius: 20,
                       offset: const Offset(0, 8),
                     ),
@@ -764,7 +761,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       tag: 'profile-avatar',
                       child: CircleAvatar(
                         radius: 30,
-                        backgroundColor: Colors.white.withOpacity(0.2),
+                        backgroundColor: Colors.white.withValues(alpha: 0.2),
                         child: Icon(
                           auth.isAdmin
                               ? Icons.admin_panel_settings_rounded
@@ -791,7 +788,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           Text(
                             "ID: ${auth.idAnggota ?? '-'}",
                             style: TextStyle(
-                              color: Colors.white.withOpacity(0.7),
+                              color: Colors.white.withValues(alpha: 0.7),
                               fontSize: 12,
                             ),
                           ),
@@ -803,7 +800,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 vertical: 4,
                               ),
                               decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.2),
+                                color: Colors.white.withValues(alpha: 0.2),
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: const Text(
@@ -872,7 +869,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       child: Container(
                         padding: const EdgeInsets.all(10),
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.15),
+                          color: Colors.white.withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Icon(
@@ -1053,12 +1050,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                       decoration: BoxDecoration(
                         color: _selectedDateRange != null
-                            ? context.primaryColor.withOpacity(0.08)
+                            ? context.primaryColor.withValues(alpha: 0.08)
                             : Colors.white,
                         borderRadius: BorderRadius.circular(10),
                         border: Border.all(
                           color: _selectedDateRange != null
-                              ? context.primaryColor.withOpacity(0.3)
+                              ? context.primaryColor.withValues(alpha: 0.3)
                               : Colors.grey.shade200,
                         ),
                       ),
@@ -1101,10 +1098,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     vertical: 10,
                   ),
                   decoration: BoxDecoration(
-                    color: context.primaryColor.withOpacity(0.07),
+                    color: context.primaryColor.withValues(alpha: 0.07),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color: context.primaryColor.withOpacity(0.2),
+                      color: context.primaryColor.withValues(alpha: 0.2),
                     ),
                   ),
                   child: Row(
@@ -1173,7 +1170,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             boxShadow: isSelected
                                 ? [
                                     BoxShadow(
-                                      color: auth.themeColor.withOpacity(0.25),
+                                      color: auth.themeColor.withValues(alpha: 0.25),
                                       blurRadius: 8,
                                       offset: const Offset(0, 3),
                                     ),
@@ -1303,10 +1300,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: color.withOpacity(0.1)),
+          border: Border.all(color: color.withValues(alpha: 0.1)),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.03),
+              color: Colors.black.withValues(alpha: 0.03),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),

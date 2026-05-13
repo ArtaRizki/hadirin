@@ -5,7 +5,9 @@ import 'package:primkopasindo_labojon/core/providers/auth_provider.dart';
 import 'package:primkopasindo_labojon/core/theme/fluid_theme.dart';
 
 class AddAnggotaScreen extends StatefulWidget {
-  const AddAnggotaScreen({super.key});
+  final Map<String, dynamic>? initialData;
+
+  const AddAnggotaScreen({super.key, this.initialData});
 
   @override
   State<AddAnggotaScreen> createState() => _AddAnggotaScreenState();
@@ -24,8 +26,17 @@ class _AddAnggotaScreenState extends State<AddAnggotaScreen> {
   @override
   void initState() {
     super.initState();
+    if (widget.initialData != null) {
+      _idController.text = widget.initialData!['id']?.toString() ?? "";
+      _namaController.text = widget.initialData!['nama']?.toString() ?? "";
+      _bagianController.text = widget.initialData!['bagian']?.toString() ?? "";
+      _hpController.text = widget.initialData!['no_hp']?.toString() ?? "";
+      _selectedShiftId = widget.initialData!['id_shift_default']?.toString();
+    }
     _loadShifts();
   }
+
+  bool get _isEditMode => widget.initialData != null;
 
   Future<void> _loadShifts() async {
     final auth = context.read<AuthProvider>();
@@ -58,16 +69,26 @@ class _AddAnggotaScreenState extends State<AddAnggotaScreen> {
       }
     }
 
-    final result = await AdminService().tambahAnggota(
-      clientId: clientId,
-      idAnggotaBaru: _idController.text.trim(),
-      namaAnggotaBaru: _namaController.text.trim(),
-      bagian: _bagianController.text.trim().isEmpty
-          ? "-"
-          : _bagianController.text.trim(),
-      noHp: phone,
-      defaultShift: _selectedShiftId,
-    );
+    final result = _isEditMode
+        ? await AdminService().updateAnggota(
+            clientId: clientId,
+            idAnggotaTarget: widget.initialData!['id'].toString(),
+            namaBaru: _namaController.text.trim(),
+            bagianBaru: _bagianController.text.trim().isEmpty
+                ? "-"
+                : _bagianController.text.trim(),
+            noHpBaru: phone,
+          )
+        : await AdminService().tambahAnggota(
+            clientId: clientId,
+            idAnggotaBaru: _idController.text.trim(),
+            namaAnggotaBaru: _namaController.text.trim(),
+            bagian: _bagianController.text.trim().isEmpty
+                ? "-"
+                : _bagianController.text.trim(),
+            noHp: phone,
+            defaultShift: _selectedShiftId,
+          );
 
     setState(() => _isLoading = false);
 
@@ -125,7 +146,7 @@ class _AddAnggotaScreenState extends State<AddAnggotaScreen> {
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.06),
+                    color: Colors.black.withValues(alpha: 0.06),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
                   ),
@@ -139,8 +160,8 @@ class _AddAnggotaScreenState extends State<AddAnggotaScreen> {
             ),
           ),
         ),
-        title: const Text(
-          "Tambah Anggota",
+        title: Text(
+          _isEditMode ? "Edit Anggota" : "Tambah Anggota",
           style: TextStyle(
             color: Color(0xFF0F172A),
             fontWeight: FontWeight.w800,
@@ -160,7 +181,7 @@ class _AddAnggotaScreenState extends State<AddAnggotaScreen> {
                 height: 200,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: context.primaryColor.withOpacity(0.06),
+                  color: context.primaryColor.withValues(alpha: 0.06),
                 ),
               ),
             ),
@@ -173,7 +194,7 @@ class _AddAnggotaScreenState extends State<AddAnggotaScreen> {
                 height: 250,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: const Color(0xFF7C3AED).withOpacity(0.05),
+                  color: const Color(0xFF7C3AED).withValues(alpha: 0.05),
                 ),
               ),
             ),
@@ -183,8 +204,8 @@ class _AddAnggotaScreenState extends State<AddAnggotaScreen> {
                 padding: const EdgeInsets.fromLTRB(24, 24, 24, 40),
                 children: [
                   // HEADER SECTION
-                  const Text(
-                    "Informasi Anggota",
+                  Text(
+                    _isEditMode ? "Ubah Data Anggota" : "Informasi Anggota",
                     style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.w900,
@@ -194,7 +215,9 @@ class _AddAnggotaScreenState extends State<AddAnggotaScreen> {
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    "Masukkan detail data diri anggota baru ke dalam sistem Instansi Anda.",
+                    _isEditMode
+                        ? "Perbarui detail informasi anggota ini di sistem Instansi Anda."
+                        : "Masukkan detail data diri anggota baru ke dalam sistem Instansi Anda.",
                     style: TextStyle(
                       color: Colors.grey.shade600,
                       fontSize: 13,
@@ -208,6 +231,7 @@ class _AddAnggotaScreenState extends State<AddAnggotaScreen> {
                     controller: _idController,
                     label: "ID Anggota",
                     hint: "Contoh: AGT-001",
+                    enabled: !_isEditMode,
                     icon: Icons.badge_rounded,
                   ),
                   const SizedBox(height: 20),
@@ -236,56 +260,57 @@ class _AddAnggotaScreenState extends State<AddAnggotaScreen> {
                   ),
                   const SizedBox(height: 20),
 
-                  // SHIFT SELECTION (OPTIONAL)
-                  const Text(
-                    "Shift Default (Opsional)",
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w700,
-                      color: Color(0xFF0F172A),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.03),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child: DropdownButtonFormField<String>(
-                      value: _selectedShiftId,
-                      decoration: InputDecoration(
-                        hintText: "Pilih Nanti (Default S1)",
-                        prefixIcon: Icon(Icons.calendar_today_rounded,
-                            color: context.primaryColor),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(16),
-                          borderSide: BorderSide.none,
-                        ),
-                        filled: true,
-                        fillColor: Colors.white,
+                  if (!_isEditMode) ...[
+                    const Text(
+                      "Shift Default (Opsional)",
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF0F172A),
                       ),
-                      items: [
-                        const DropdownMenuItem(
-                          value: null,
-                          child: Text("Pilih Nanti (Default S1)"),
-                        ),
-                        ..._listShifts.map((s) => DropdownMenuItem(
-                              value: s['id'].toString(),
-                              child: Text("${s['nama']} (${s['id']})"),
-                            )),
-                      ],
-                      onChanged: (val) {
-                        setState(() => _selectedShiftId = val);
-                      },
                     ),
-                  ),
+                    const SizedBox(height: 10),
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.03),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: DropdownButtonFormField<String>(
+                        initialValue: _selectedShiftId,
+                        decoration: InputDecoration(
+                          hintText: "Pilih Nanti (Default S1)",
+                          prefixIcon: Icon(Icons.calendar_today_rounded,
+                              color: context.primaryColor),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(16),
+                            borderSide: BorderSide.none,
+                          ),
+                          filled: true,
+                          fillColor: Colors.white,
+                        ),
+                        items: [
+                          const DropdownMenuItem(
+                            value: null,
+                            child: Text("Pilih Nanti (Default S1)"),
+                          ),
+                          ..._listShifts.map((s) => DropdownMenuItem(
+                                value: s['id'].toString(),
+                                child: Text("${s['nama']} (${s['id']})"),
+                              )),
+                        ],
+                        onChanged: (val) {
+                          setState(() => _selectedShiftId = val);
+                        },
+                      ),
+                    ),
+                  ],
 
                   const SizedBox(height: 48),
 
@@ -299,7 +324,7 @@ class _AddAnggotaScreenState extends State<AddAnggotaScreen> {
                         backgroundColor: context.primaryColor,
                         foregroundColor: Colors.white,
                         elevation: 4,
-                        shadowColor: context.primaryColor.withOpacity(0.4),
+                        shadowColor: context.primaryColor.withValues(alpha: 0.4),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(16),
                         ),
@@ -313,8 +338,10 @@ class _AddAnggotaScreenState extends State<AddAnggotaScreen> {
                                 strokeWidth: 2.5,
                               ),
                             )
-                          : const Text(
-                              "Simpan Data Anggota",
+                          : Text(
+                              _isEditMode
+                                  ? "Simpan Perubahan"
+                                  : "Simpan Data Anggota",
                               style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
@@ -339,14 +366,15 @@ class _AddAnggotaScreenState extends State<AddAnggotaScreen> {
     required String hint,
     required IconData icon,
     TextInputType keyboardType = TextInputType.text,
+    bool enabled = true,
   }) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: enabled ? Colors.white : Colors.grey.shade100,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withValues(alpha: 0.03),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -355,6 +383,7 @@ class _AddAnggotaScreenState extends State<AddAnggotaScreen> {
       child: TextField(
         controller: controller,
         keyboardType: keyboardType,
+        enabled: enabled,
         decoration: InputDecoration(
           labelText: label,
           hintText: hint,
@@ -369,7 +398,7 @@ class _AddAnggotaScreenState extends State<AddAnggotaScreen> {
             borderSide: BorderSide(color: context.primaryColor, width: 1.5),
           ),
           filled: true,
-          fillColor: Colors.white,
+          fillColor: enabled ? Colors.white : Colors.grey.shade100,
         ),
       ),
     );

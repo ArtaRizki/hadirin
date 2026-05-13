@@ -161,7 +161,7 @@ class _AdminRegisterScreenState extends State<AdminRegisterScreen> {
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.06),
+                    color: Colors.black.withValues(alpha: 0.06),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
                   ),
@@ -215,7 +215,7 @@ class _AdminRegisterScreenState extends State<AdminRegisterScreen> {
                 height: 200,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: context.primaryColor.withOpacity(0.06),
+                  color: context.primaryColor.withValues(alpha: 0.06),
                 ),
               ),
             ),
@@ -228,7 +228,7 @@ class _AdminRegisterScreenState extends State<AdminRegisterScreen> {
                 height: 250,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: const Color(0xFF7C3AED).withOpacity(0.05),
+                  color: const Color(0xFF7C3AED).withValues(alpha: 0.05),
                 ),
               ),
             ),
@@ -274,7 +274,7 @@ class _AdminRegisterScreenState extends State<AdminRegisterScreen> {
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.03),
+                color: Colors.black.withValues(alpha: 0.03),
                 blurRadius: 10,
                 offset: const Offset(0, 4),
               ),
@@ -310,7 +310,7 @@ class _AdminRegisterScreenState extends State<AdminRegisterScreen> {
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.03),
+                color: Colors.black.withValues(alpha: 0.03),
                 blurRadius: 10,
                 offset: const Offset(0, 4),
               ),
@@ -371,15 +371,15 @@ class _AdminRegisterScreenState extends State<AdminRegisterScreen> {
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
               color: _isLocationPicked
-                  ? context.primaryColor.withOpacity(0.3)
+                  ? context.primaryColor.withValues(alpha: 0.3)
                   : Colors.grey.shade200,
               width: 1.5,
             ),
             boxShadow: [
               BoxShadow(
                 color: _isLocationPicked
-                    ? context.primaryColor.withOpacity(0.08)
-                    : Colors.black.withOpacity(0.03),
+                    ? context.primaryColor.withValues(alpha: 0.08)
+                    : Colors.black.withValues(alpha: 0.03),
                 blurRadius: 15,
                 offset: const Offset(0, 8),
               ),
@@ -395,7 +395,7 @@ class _AdminRegisterScreenState extends State<AdminRegisterScreen> {
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
                       color: _isLocationPicked
-                          ? context.primaryColor.withOpacity(0.1)
+                          ? context.primaryColor.withValues(alpha: 0.1)
                           : Colors.grey.shade100,
                       borderRadius: BorderRadius.circular(10),
                     ),
@@ -509,13 +509,13 @@ class _AdminRegisterScreenState extends State<AdminRegisterScreen> {
                   style: OutlinedButton.styleFrom(
                     foregroundColor: context.primaryColor,
                     side: BorderSide(
-                      color: context.primaryColor.withOpacity(0.5),
+                      color: context.primaryColor.withValues(alpha: 0.5),
                       width: 1.5,
                     ),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(14),
                     ),
-                    backgroundColor: context.primaryColor.withOpacity(0.05),
+                    backgroundColor: context.primaryColor.withValues(alpha: 0.05),
                   ),
                 ),
               ),
@@ -535,7 +535,7 @@ class _AdminRegisterScreenState extends State<AdminRegisterScreen> {
               backgroundColor: context.primaryColor,
               foregroundColor: Colors.white,
               elevation: 4,
-              shadowColor: context.primaryColor.withOpacity(0.4),
+              shadowColor: context.primaryColor.withValues(alpha: 0.4),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(16),
               ),
@@ -573,7 +573,7 @@ class _AdminRegisterScreenState extends State<AdminRegisterScreen> {
           borderRadius: BorderRadius.circular(24),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withValues(alpha: 0.05),
               blurRadius: 24,
               offset: const Offset(0, 10),
             ),
@@ -585,7 +585,7 @@ class _AdminRegisterScreenState extends State<AdminRegisterScreen> {
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: const Color(0xFF16A34A).withOpacity(0.1),
+                color: const Color(0xFF16A34A).withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               child: Icon(
@@ -620,10 +620,10 @@ class _AdminRegisterScreenState extends State<AdminRegisterScreen> {
             Container(
               padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
               decoration: BoxDecoration(
-                color: context.primaryColor.withOpacity(0.08),
+                color: context.primaryColor.withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
-                  color: context.primaryColor.withOpacity(0.3),
+                  color: context.primaryColor.withValues(alpha: 0.3),
                 ),
               ),
               child: Row(
@@ -644,7 +644,7 @@ class _AdminRegisterScreenState extends State<AdminRegisterScreen> {
                       borderRadius: BorderRadius.circular(10),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
+                          color: Colors.black.withValues(alpha: 0.05),
                           blurRadius: 4,
                           offset: const Offset(0, 2),
                         ),

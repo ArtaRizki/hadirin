@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:hadirin/core/providers/auth_provider.dart';
-import 'package:hadirin/core/service/admin_service.dart';
-import 'package:hadirin/core/theme/fluid_theme.dart';
-import 'package:hadirin/ui/widgets/skeleton_loader.dart';
+import 'package:primkopasindo_labojon/core/providers/auth_provider.dart';
+import 'package:primkopasindo_labojon/core/service/admin_service.dart';
+import 'package:primkopasindo_labojon/core/theme/fluid_theme.dart';
+import 'package:primkopasindo_labojon/ui/widgets/skeleton_loader.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
@@ -180,7 +180,7 @@ class _TodayAttendanceScreenState extends State<TodayAttendanceScreen>
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.06),
+                    color: Colors.black.withValues(alpha: 0.06),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
                   ),
@@ -270,7 +270,7 @@ class _TodayAttendanceScreenState extends State<TodayAttendanceScreen>
                 borderRadius: BorderRadius.circular(14),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.04),
+                    color: Colors.black.withValues(alpha: 0.04),
                     blurRadius: 8,
                     offset: const Offset(0, 3),
                   ),
@@ -314,7 +314,7 @@ class _TodayAttendanceScreenState extends State<TodayAttendanceScreen>
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.04),
+                    color: Colors.black.withValues(alpha: 0.04),
                     blurRadius: 6,
                   ),
                 ],
@@ -388,9 +388,9 @@ class _TodayAttendanceScreenState extends State<TodayAttendanceScreen>
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
         decoration: BoxDecoration(
-          color: color.withOpacity(0.08),
+          color: color.withValues(alpha: 0.08),
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: color.withOpacity(0.2)),
+          border: Border.all(color: color.withValues(alpha: 0.2)),
         ),
         child: Column(
           children: [
@@ -407,7 +407,7 @@ class _TodayAttendanceScreenState extends State<TodayAttendanceScreen>
             Text(
               label,
               style: TextStyle(
-                color: color.withOpacity(0.8),
+                color: color.withValues(alpha: 0.8),
                 fontSize: 10,
                 fontWeight: FontWeight.w600,
               ),
@@ -436,7 +436,7 @@ class _TodayAttendanceScreenState extends State<TodayAttendanceScreen>
         borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -451,7 +451,7 @@ class _TodayAttendanceScreenState extends State<TodayAttendanceScreen>
               width: 44,
               height: 44,
               decoration: BoxDecoration(
-                color: statusColor.withOpacity(0.1),
+                color: statusColor.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               child: Center(
@@ -516,9 +516,9 @@ class _TodayAttendanceScreenState extends State<TodayAttendanceScreen>
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
               decoration: BoxDecoration(
-                color: statusColor.withOpacity(0.1),
+                color: statusColor.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: statusColor.withOpacity(0.3)),
+                border: Border.all(color: statusColor.withValues(alpha: 0.3)),
               ),
               child: Text(
                 _badgeLabel(statusAbsen),
@@ -543,7 +543,7 @@ class _TodayAttendanceScreenState extends State<TodayAttendanceScreen>
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.08),
+        color: color.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Row(

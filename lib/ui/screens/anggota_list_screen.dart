@@ -4,6 +4,7 @@ import 'package:primkopasindo_labojon/core/service/admin_service.dart';
 import 'package:primkopasindo_labojon/core/theme/fluid_theme.dart';
 import 'package:primkopasindo_labojon/ui/widgets/skeleton_loader.dart';
 import 'package:provider/provider.dart';
+import 'package:primkopasindo_labojon/ui/screens/add_anggota_screen.dart';
 import 'package:primkopasindo_labojon/core/utils/url_helper.dart';
 
 class AnggotaListScreen extends StatefulWidget {
@@ -113,7 +114,31 @@ class _AnggotaListScreenState extends State<AnggotaListScreen> {
               leading: Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: Colors.blue.withOpacity(0.1),
+                  color: Colors.indigo.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(Icons.edit_note_rounded, color: Colors.indigo),
+              ),
+              title: const Text(
+                "Edit Profil",
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              subtitle: const Text("Ubah Nama, Bagian, atau No. HP"),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => AddAnggotaScreen(initialData: emp),
+                  ),
+                ).then((_) => _fetchEmployees());
+              },
+            ),
+            ListTile(
+              leading: Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: Colors.blue.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: const Icon(Icons.history_rounded, color: Colors.blue),
@@ -134,7 +159,7 @@ class _AnggotaListScreenState extends State<AnggotaListScreen> {
               leading: Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: Colors.orange.withOpacity(0.1),
+                  color: Colors.orange.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: const Icon(
@@ -176,6 +201,67 @@ class _AnggotaListScreenState extends State<AnggotaListScreen> {
                   if (mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(content: Text(res['message'] ?? "Berhasil")),
+                    );
+                    _fetchEmployees();
+                  }
+                }
+              },
+            ),
+            const Divider(height: 32),
+            ListTile(
+              leading: Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: Colors.red.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(Icons.delete_forever_rounded, color: Colors.red),
+              ),
+              title: const Text(
+                "Hapus Anggota",
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.red,
+                ),
+              ),
+              subtitle: const Text("Data absen & akun akan dihapus permanen"),
+              onTap: () async {
+                Navigator.pop(context);
+                final confirm = await showDialog<bool>(
+                  context: context,
+                  builder: (c) => AlertDialog(
+                    title: const Text("Hapus Anggota?"),
+                    content: Text(
+                      "Apakah Anda yakin ingin menghapus ${emp['nama']}? Tindakan ini tidak dapat dibatalkan.",
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(c, false),
+                        child: const Text("Batal"),
+                      ),
+                      TextButton(
+                        onPressed: () => Navigator.pop(c, true),
+                        style: TextButton.styleFrom(foregroundColor: Colors.red),
+                        child: const Text("Hapus Permanen"),
+                      ),
+                    ],
+                  ),
+                );
+
+                if (confirm == true) {
+                  setState(() => _isLoading = true);
+                  final res = await _adminService.hapusAnggota(
+                    clientId: clientId,
+                    idAnggotaTarget: emp['id'].toString(),
+                  );
+                  setState(() => _isLoading = false);
+
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(res['message'] ?? "Anggota berhasil dihapus"),
+                        backgroundColor: res['success'] ? Colors.green : Colors.red,
+                      ),
                     );
                     _fetchEmployees();
                   }
@@ -269,7 +355,7 @@ class _AnggotaListScreenState extends State<AnggotaListScreen> {
   }) {
     final color = isRegistered ? const Color(0xFF16A34A) : Colors.red.shade600;
     final bgColor = isRegistered
-        ? const Color(0xFF16A34A).withOpacity(0.08)
+        ? const Color(0xFF16A34A).withValues(alpha: 0.08)
         : Colors.red.shade50;
 
     return Container(
@@ -277,7 +363,7 @@ class _AnggotaListScreenState extends State<AnggotaListScreen> {
       decoration: BoxDecoration(
         color: bgColor,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withOpacity(0.3)),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -321,7 +407,7 @@ class _AnggotaListScreenState extends State<AnggotaListScreen> {
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.06),
+                    color: Colors.black.withValues(alpha: 0.06),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
                   ),
@@ -356,7 +442,7 @@ class _AnggotaListScreenState extends State<AnggotaListScreen> {
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
+                      color: Colors.black.withValues(alpha: 0.05),
                       blurRadius: 10,
                       offset: const Offset(0, 4),
                     ),
@@ -403,7 +489,7 @@ class _AnggotaListScreenState extends State<AnggotaListScreen> {
                       height: 230,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: context.primaryColor.withOpacity(0.04),
+                        color: context.primaryColor.withValues(alpha: 0.04),
                       ),
                     ),
                   ),
@@ -415,7 +501,7 @@ class _AnggotaListScreenState extends State<AnggotaListScreen> {
                       height: 200,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: const Color(0xFF7C3AED).withOpacity(0.03),
+                        color: const Color(0xFF7C3AED).withValues(alpha: 0.03),
                       ),
                     ),
                   ),
@@ -507,7 +593,7 @@ class _AnggotaListScreenState extends State<AnggotaListScreen> {
                                     borderRadius: BorderRadius.circular(20),
                                     boxShadow: [
                                       BoxShadow(
-                                        color: Colors.black.withOpacity(0.04),
+                                        color: Colors.black.withValues(alpha: 0.04),
                                         blurRadius: 10,
                                         offset: const Offset(0, 4),
                                       ),
@@ -521,8 +607,8 @@ class _AnggotaListScreenState extends State<AnggotaListScreen> {
                                       CircleAvatar(
                                         radius: 24,
                                         backgroundColor: isSuperAdmin
-                                            ? Colors.amber.withOpacity(0.15)
-                                            : context.primaryColor.withOpacity(
+                                            ? Colors.amber.withValues(alpha: 0.15)
+                                            : context.primaryColor.withValues(alpha: 
                                                 0.1,
                                               ),
                                         child: isSuperAdmin
@@ -649,16 +735,7 @@ class _AnggotaListScreenState extends State<AnggotaListScreen> {
                                                   ),
                                                 ),
                                               ),
-                                            ),
-                                        ],
-                                      ),
-                                    ),
-                                    if (emp['no_hp'] != null &&
-                                        emp['no_hp'].toString().isNotEmpty &&
-                                        emp['no_hp'].toString() != "null")
-                                      Padding(
-                                        padding: const EdgeInsets.only(
-                                          left: 8.0,
+                                          ],
                                         ),
                                       ),
                                       Column(
@@ -671,11 +748,10 @@ class _AnggotaListScreenState extends State<AnggotaListScreen> {
                                             IconButton(
                                               onPressed: () =>
                                                   UrlHelper.launchWhatsApp(
-                                                    phone: emp['no_hp']
-                                                        .toString(),
-                                                    message:
-                                                        "Halo ${emp['nama']}, saya dari Admin Hadir.in ingin menghubungi Anda.",
-                                                  ),
+                                                phone: emp['no_hp'].toString(),
+                                                message:
+                                                    "Halo ${emp['nama']}, saya dari Admin Primkopasindo Labojon ingin menghubungi Anda.",
+                                              ),
                                               icon: const Icon(
                                                 Icons.phone,
                                                 color: Color(0xFF25D366),
@@ -684,7 +760,7 @@ class _AnggotaListScreenState extends State<AnggotaListScreen> {
                                               style: IconButton.styleFrom(
                                                 backgroundColor: const Color(
                                                   0xFF25D366,
-                                                ).withOpacity(0.1),
+                                                ).withValues(alpha: 0.1),
                                                 shape: RoundedRectangleBorder(
                                                   borderRadius:
                                                       BorderRadius.circular(12),
@@ -702,7 +778,7 @@ class _AnggotaListScreenState extends State<AnggotaListScreen> {
                                             ),
                                             style: IconButton.styleFrom(
                                               backgroundColor: Colors.blueGrey
-                                                  .withOpacity(0.1),
+                                                  .withValues(alpha: 0.1),
                                               shape: RoundedRectangleBorder(
                                                 borderRadius:
                                                     BorderRadius.circular(12),

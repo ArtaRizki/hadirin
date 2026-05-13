@@ -79,20 +79,16 @@ class _LoginScreenState extends State<LoginScreen> {
 
         // Logika penentuan role:
         // Admin jika ID diawali INST-/ADM-/ADMIN- ATAU Divisi/Nama mengandung kata ADMIN/PEMILIK
-        bool isIdAdmin = inputId.toUpperCase().startsWith("INST-") || 
-                         inputId.toUpperCase().startsWith("ADM-") ||
-                         inputId.toUpperCase().startsWith("ADMIN-");
-        
-        bool isRoleAdmin = divisi.contains("ADMIN") || 
-                          divisi.contains("PEMILIK") ||
-                          nama.toUpperCase().contains("ADMIN") ||
-                          nama.toUpperCase().contains("PEMILIK");
+        bool isIdAdmin =
+            inputId.toUpperCase().startsWith("INST-") ||
+            inputId.toUpperCase().startsWith("ADM-") ||
+            inputId.toUpperCase().startsWith("ADMIN-");
 
         bool isRoleAdmin =
             divisi.contains("ADMIN") ||
             divisi.contains("PEMILIK") ||
-            nama.contains("ADMIN") ||
-            nama.contains("PEMILIK");
+            nama.toUpperCase().contains("ADMIN") ||
+            nama.toUpperCase().contains("PEMILIK");
 
         LoginRole assignedRole = (isIdAdmin || isRoleAdmin)
             ? LoginRole.admin
@@ -170,7 +166,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 height: 250,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: context.primaryColor.withOpacity(0.06),
+                  color: context.primaryColor.withValues(alpha: 0.06),
                 ),
               ),
             ),
@@ -183,7 +179,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 height: 200,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: const Color(0xFF7C3AED).withOpacity(0.05),
+                  color: const Color(0xFF7C3AED).withValues(alpha: 0.05),
                 ),
               ),
             ),
@@ -205,7 +201,9 @@ class _LoginScreenState extends State<LoginScreen> {
                           child: Container(
                             padding: const EdgeInsets.all(16),
                             decoration: BoxDecoration(
-                              color: context.primaryColor.withOpacity(0.1),
+                              color: context.primaryColor.withValues(
+                                alpha: 0.1,
+                              ),
                               shape: BoxShape.circle,
                             ),
                             child: Icon(
@@ -228,7 +226,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         const Text(
                           "Primkopasindo Labojon",
                           style: TextStyle(
-                            fontSize: 42,
+                            fontSize: 32,
                             fontWeight: FontWeight.w900,
                             color: Color(0xFF0F172A),
                             letterSpacing: -1,
@@ -251,7 +249,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             borderRadius: BorderRadius.circular(16),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.03),
+                                color: Colors.black.withValues(alpha: 0.03),
                                 blurRadius: 10,
                                 offset: const Offset(0, 4),
                               ),
@@ -295,7 +293,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             borderRadius: BorderRadius.circular(16),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.03),
+                                color: Colors.black.withValues(alpha: 0.03),
                                 blurRadius: 10,
                                 offset: const Offset(0, 4),
                               ),
@@ -342,8 +340,8 @@ class _LoginScreenState extends State<LoginScreen> {
                               backgroundColor: context.primaryColor,
                               foregroundColor: Colors.white,
                               elevation: 4,
-                              shadowColor: context.primaryColor.withOpacity(
-                                0.4,
+                              shadowColor: context.primaryColor.withValues(
+                                alpha: 0.4,
                               ),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(16),

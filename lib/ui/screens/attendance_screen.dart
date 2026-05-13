@@ -1,13 +1,13 @@
 import 'dart:async';
-import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:primkopasindo_labojon/core/providers/auth_provider.dart';
 import 'package:primkopasindo_labojon/core/service/attendance_service.dart';
 import 'package:primkopasindo_labojon/core/service/admin_service.dart';
 import 'package:primkopasindo_labojon/core/service/notification_service.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:hadirin/ui/screens/profile_screen.dart';
-import 'package:hadirin/ui/screens/today_attendance_screen.dart';
+import 'package:primkopasindo_labojon/ui/screens/profile_screen.dart';
+import 'package:primkopasindo_labojon/ui/screens/today_attendance_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:primkopasindo_labojon/core/theme/fluid_theme.dart';
 import 'package:intl/intl.dart';
@@ -32,11 +32,11 @@ class _AttendanceScreenState extends State<AttendanceScreen>
 
   // Variabel Jam Kerja Dinamis (Default sesuai req)
   String _jamMasukMulai = "04:00";
-  String _batasJamMasuk = "07:00";
   String _jamPulangMulai = "13:00";
   String _shiftName = "Normal";
   bool _isOff = false;
   bool _isConfigLoaded = false;
+  bool _hasNotifiedProximity = false;
 
   @override
   void initState() {
@@ -66,7 +66,6 @@ class _AttendanceScreenState extends State<AttendanceScreen>
       if (config != null && mounted) {
         setState(() {
           _jamMasukMulai = config['jam_masuk_mulai']?.toString() == "null" ? "-" : (config['jam_masuk_mulai']?.toString() ?? "-");
-          _batasJamMasuk = config['batas_jam_masuk']?.toString() == "null" ? "-" : (config['batas_jam_masuk']?.toString() ?? "-");
           _jamPulangMulai = config['jam_pulang_mulai']?.toString() == "null" ? "-" : (config['jam_pulang_mulai']?.toString() ?? "-");
           _shiftName = config['shift_name'] ?? "Normal";
           _isOff = config['is_off'] ?? false;
@@ -198,23 +197,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
       }
     } else {
       // LOGIKA PULANG
-      bool canPulang = false;
-      if (isOvernight) {
-        // Untuk shift malam, absen pulang biasanya setelah tengah malam
-        // Tapi kita beri toleransi jika ingin pulang lebih awal di malam yang sama
-        // atau memang sudah melewati tengah malam
-        // Sederhananya: Jika sudah lewat jam buka shift, dia boleh pulang 
-        // tapi sistem absen akan mencatat apakah ini terlalu awal atau tidak.
-        // Namun untuk Time-Fencing: kita batasi agar tidak bisa absen pulang 
-        // di luar jam shift.
-        canPulang = (currentMinutes >= startMin || currentMinutes < endMin);
-        
-        // Opsional: Jika ingin lebih ketat (pulang baru boleh setelah jam masuk kerja)
-        // final workMin = _timeToMinutes(_batasJamMasuk); // Jam masuk resmi
-        // canPulang = (currentMinutes >= workMin || currentMinutes < endMin);
-      } else {
-        canPulang = (currentMinutes >= startMin && currentMinutes < 23 * 60 + 59);
-      }
+
 
       // Khusus Pulang: Biasanya hanya dicek apakah sudah melewati jam pulang mulai
       // Di sini kita pakai logika sederhana agar user bisa klik tombolnya dulu.
@@ -377,7 +360,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                 height: 230,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: context.primaryColor.withOpacity(0.09),
+                  color: context.primaryColor.withValues(alpha: 0.09),
                 ),
               ),
             ),
@@ -389,7 +372,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                 height: 200,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: const Color(0xFF7C3AED).withOpacity(0.06),
+                  color: const Color(0xFF7C3AED).withValues(alpha: 0.06),
                 ),
               ),
             ),
@@ -434,7 +417,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                                             BoxShadow(
                                               color: const Color(
                                                 0xFF16A34A,
-                                              ).withOpacity(0.4),
+                                              ).withValues(alpha: 0.4),
                                               blurRadius: 6,
                                               spreadRadius: 2,
                                             ),
@@ -486,7 +469,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                                 gradient: LinearGradient(
                                   colors: [
                                     context.primaryColor,
-                                    context.primaryColor.withOpacity(0.5),
+                                    context.primaryColor.withValues(alpha: 0.5),
                                   ],
                                 ),
                               ),
@@ -527,7 +510,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                               borderRadius: BorderRadius.circular(16),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.orange.withOpacity(0.3),
+                                  color: Colors.orange.withValues(alpha: 0.3),
                                   blurRadius: 12,
                                   offset: const Offset(0, 4),
                                 ),
@@ -538,7 +521,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                                 Container(
                                   padding: const EdgeInsets.all(8),
                                   decoration: BoxDecoration(
-                                    color: Colors.white.withOpacity(0.2),
+                                    color: Colors.white.withValues(alpha: 0.2),
                                     shape: BoxShape.circle,
                                   ),
                                   child: Icon(
@@ -596,7 +579,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                         borderRadius: BorderRadius.circular(28),
                         boxShadow: [
                           BoxShadow(
-                            color: context.primaryColor.withOpacity(0.32),
+                            color: context.primaryColor.withValues(alpha: 0.32),
                             blurRadius: 32,
                             offset: const Offset(0, 16),
                           ),
@@ -629,7 +612,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                                   style: TextStyle(
                                     fontSize: 26,
                                     fontWeight: FontWeight.w700,
-                                    color: Colors.white.withOpacity(0.45),
+                                    color: Colors.white.withValues(alpha: 0.45),
                                     fontFeatures: const [
                                       FontFeature.tabularFigures(),
                                     ],
@@ -639,7 +622,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                             ],
                           ),
                           const SizedBox(height: 18),
-                          Divider(color: Colors.white.withOpacity(0.2)),
+                          Divider(color: Colors.white.withValues(alpha: 0.2)),
                           const SizedBox(height: 16),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.center,
@@ -647,7 +630,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                               Icon(
                                 Icons.calendar_today_rounded,
                                 size: 14,
-                                color: Colors.white.withOpacity(0.65),
+                                color: Colors.white.withValues(alpha: 0.65),
                               ),
                               const SizedBox(width: 8),
                               Text(
@@ -656,7 +639,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                                   'id_ID',
                                 ).format(_currentTime),
                                 style: TextStyle(
-                                  color: Colors.white.withOpacity(0.75),
+                                  color: Colors.white.withValues(alpha: 0.75),
                                   fontSize: 14,
                                   fontWeight: FontWeight.w600,
                                 ),
@@ -671,7 +654,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                                 vertical: 6,
                               ),
                               decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.15),
+                                color: Colors.white.withValues(alpha: 0.15),
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Column(
@@ -688,7 +671,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                                   Text(
                                     "Masuk: $_jamMasukMulai | Pulang: $_jamPulangMulai",
                                     style: TextStyle(
-                                      color: Colors.white.withOpacity(0.9),
+                                      color: Colors.white.withValues(alpha: 0.9),
                                       fontSize: 11,
                                       fontWeight: FontWeight.w500,
                                     ),
@@ -759,7 +742,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                             borderRadius: BorderRadius.circular(18),
                             boxShadow: [
                               BoxShadow(
-                                color: context.primaryColor.withOpacity(0.35),
+                                color: context.primaryColor.withValues(alpha: 0.35),
                                 blurRadius: 20,
                                 offset: const Offset(0, 8),
                               ),
@@ -823,7 +806,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                             borderRadius: BorderRadius.circular(20),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.04),
+                                color: Colors.black.withValues(alpha: 0.04),
                                 blurRadius: 10,
                                 offset: const Offset(0, 4),
                               ),
@@ -834,7 +817,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                               Container(
                                 padding: const EdgeInsets.all(10),
                                 decoration: BoxDecoration(
-                                  color: context.primaryColor.withOpacity(0.1),
+                                  color: context.primaryColor.withValues(alpha: 0.1),
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: Icon(
@@ -889,5 +872,11 @@ class _AttendanceScreenState extends State<AttendanceScreen>
         ),
       ),
     );
+  }
+
+  int _timeToMinutes(String time) {
+    if (time == "-" || !time.contains(":")) return 0;
+    final parts = time.split(':');
+    return int.parse(parts[0]) * 60 + int.parse(parts[1]);
   }
 }

@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:hadirin/core/providers/auth_provider.dart';
+import 'package:primkopasindo_labojon/core/providers/auth_provider.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'dart:ui';
-import 'package:hadirin/core/theme/fluid_theme.dart';
-import 'package:hadirin/ui/screens/set_worktime_screen.dart';
-import 'package:hadirin/core/service/admin_service.dart';
-import 'package:hadirin/ui/widgets/custom_date_range_picker.dart';
+import 'package:primkopasindo_labojon/core/theme/fluid_theme.dart';
+import 'package:primkopasindo_labojon/ui/screens/set_worktime_screen.dart';
+import 'package:primkopasindo_labojon/core/service/admin_service.dart';
+import 'package:primkopasindo_labojon/ui/widgets/custom_date_range_picker.dart';
 
 class AdminShiftScreen extends StatefulWidget {
   const AdminShiftScreen({super.key});
@@ -105,7 +105,7 @@ class _AdminShiftScreenState extends State<AdminShiftScreen>
 
     return PopScope(
       canPop: !hasDirty,
-      onPopInvoked: (didPop) {
+      onPopInvokedWithResult: (didPop, result) {
         if (didPop) return;
         _showDiscardDialog();
       },
@@ -187,14 +187,14 @@ class _AdminShiftScreenState extends State<AdminShiftScreen>
       ),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [primaryColor, primaryColor.withOpacity(0.8)],
+          colors: [primaryColor, primaryColor.withValues(alpha: 0.8)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: const BorderRadius.vertical(bottom: Radius.circular(32)),
         boxShadow: [
           BoxShadow(
-            color: primaryColor.withOpacity(0.3),
+            color: primaryColor.withValues(alpha: 0.3),
             blurRadius: 20,
             offset: const Offset(0, 10),
           ),
@@ -236,7 +236,7 @@ class _AdminShiftScreenState extends State<AdminShiftScreen>
             margin: const EdgeInsets.symmetric(horizontal: 24),
             height: 42,
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.15),
+              color: Colors.white.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(16),
             ),
             child: TabBar(
@@ -274,12 +274,12 @@ class _AdminShiftScreenState extends State<AdminShiftScreen>
             padding: const EdgeInsets.all(16),
             margin: const EdgeInsets.fromLTRB(24, 16, 24, 8),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.6),
+              color: Colors.white.withValues(alpha: 0.6),
               borderRadius: BorderRadius.circular(24),
-              border: Border.all(color: context.primaryColor.withOpacity(0.15)),
+              border: Border.all(color: context.primaryColor.withValues(alpha: 0.15)),
               boxShadow: [
                 BoxShadow(
-                  color: context.primaryColor.withOpacity(0.05),
+                  color: context.primaryColor.withValues(alpha: 0.05),
                   blurRadius: 20,
                   offset: const Offset(0, 8),
                 ),
@@ -290,7 +290,7 @@ class _AdminShiftScreenState extends State<AdminShiftScreen>
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: context.primaryColor.withOpacity(0.1),
+                    color: context.primaryColor.withValues(alpha: 0.1),
                     shape: BoxShape.circle,
                   ),
                   child: Icon(
@@ -368,7 +368,7 @@ class _AdminShiftScreenState extends State<AdminShiftScreen>
                   borderRadius: BorderRadius.circular(24),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.04),
+                      color: Colors.black.withValues(alpha: 0.04),
                       blurRadius: 10,
                       offset: const Offset(0, 4),
                     ),
@@ -382,7 +382,7 @@ class _AdminShiftScreenState extends State<AdminShiftScreen>
                   leading: Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: _getShiftColor(s['id']).withOpacity(0.1),
+                      color: _getShiftColor(s['id']).withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(16),
                     ),
                     child: Icon(
@@ -463,7 +463,7 @@ class _AdminShiftScreenState extends State<AdminShiftScreen>
                   },
                   icon: const Icon(Icons.calendar_month_rounded, size: 20),
                   style: IconButton.styleFrom(
-                    backgroundColor: context.primaryColor.withOpacity(0.1),
+                    backgroundColor: context.primaryColor.withValues(alpha: 0.1),
                     foregroundColor: context.primaryColor,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16),
@@ -519,7 +519,7 @@ class _AdminShiftScreenState extends State<AdminShiftScreen>
                           boxShadow: isSelected
                               ? [
                                   BoxShadow(
-                                    color: context.primaryColor.withOpacity(
+                                    color: context.primaryColor.withValues(alpha: 
                                       0.3,
                                     ),
                                     blurRadius: 10,
@@ -604,7 +604,7 @@ class _AdminShiftScreenState extends State<AdminShiftScreen>
                                 height: 3,
                                 decoration: BoxDecoration(
                                   color: isSelected
-                                      ? Colors.white.withOpacity(0.3)
+                                      ? Colors.white.withValues(alpha: 0.3)
                                       : Colors.grey.shade100,
                                   borderRadius: BorderRadius.circular(2),
                                 ),
@@ -644,12 +644,12 @@ class _AdminShiftScreenState extends State<AdminShiftScreen>
               color: Colors.white,
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
-                color: context.primaryColor.withOpacity(0.15),
+                color: context.primaryColor.withValues(alpha: 0.15),
                 width: 1.5,
               ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.04),
+                  color: Colors.black.withValues(alpha: 0.04),
                   blurRadius: 10,
                   offset: const Offset(0, 4),
                 ),
@@ -781,7 +781,7 @@ class _AdminShiftScreenState extends State<AdminShiftScreen>
                               borderRadius: BorderRadius.circular(20),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.black.withOpacity(0.04),
+                                  color: Colors.black.withValues(alpha: 0.04),
                                   blurRadius: 15,
                                   offset: const Offset(0, 6),
                                 ),
@@ -795,7 +795,7 @@ class _AdminShiftScreenState extends State<AdminShiftScreen>
                                     CircleAvatar(
                                       radius: 13,
                                       backgroundColor: context.primaryColor
-                                          .withOpacity(0.1),
+                                          .withValues(alpha: 0.1),
                                       child: Text(
                                         emp['nama'][0],
                                         style: TextStyle(
@@ -846,7 +846,7 @@ class _AdminShiftScreenState extends State<AdminShiftScreen>
                                           boxShadow: [
                                             BoxShadow(
                                               color: context.primaryColor
-                                                  .withOpacity(0.3),
+                                                  .withValues(alpha: 0.3),
                                               blurRadius: 8,
                                               offset: const Offset(0, 4),
                                             ),
@@ -929,7 +929,7 @@ class _AdminShiftScreenState extends State<AdminShiftScreen>
                     if (_isRefreshing)
                       Positioned.fill(
                         child: Container(
-                          color: Colors.white.withOpacity(0.5),
+                          color: Colors.white.withValues(alpha: 0.5),
                           child: const Center(
                             child: CircularProgressIndicator(),
                           ),
@@ -974,9 +974,9 @@ class _AdminShiftScreenState extends State<AdminShiftScreen>
       margin: const EdgeInsets.only(right: 12),
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.08),
+        color: color.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withOpacity(0.15)),
+        border: Border.all(color: color.withValues(alpha: 0.15)),
       ),
       child: Row(
         children: [
@@ -1039,7 +1039,7 @@ class _AdminShiftScreenState extends State<AdminShiftScreen>
           boxShadow: isSelected
               ? [
                   BoxShadow(
-                    color: color.withOpacity(0.3),
+                    color: color.withValues(alpha: 0.3),
                     blurRadius: 8,
                     offset: const Offset(0, 4),
                   ),
@@ -1170,7 +1170,7 @@ class _AdminShiftScreenState extends State<AdminShiftScreen>
                   leading: Container(
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
-                      color: color.withOpacity(0.1),
+                      color: color.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Icon(
@@ -1237,7 +1237,6 @@ class _AdminShiftScreenState extends State<AdminShiftScreen>
 
   void _saveBatchPlotting() async {
     // 1. REVIEW CHANGES DIALOG
-    final dateStr = DateFormat('yyyy-MM-dd').format(_selectedDate);
     final bool? confirm = await showDialog<bool>(
       context: context,
       builder: (context) {
@@ -1281,7 +1280,7 @@ class _AdminShiftScreenState extends State<AdminShiftScreen>
                         contentPadding: EdgeInsets.zero,
                         leading: CircleAvatar(
                           radius: 12,
-                          backgroundColor: color.withOpacity(0.1),
+                          backgroundColor: color.withValues(alpha: 0.1),
                           child: Text(
                             emp['nama'][0],
                             style: TextStyle(color: color, fontSize: 10),
@@ -1446,7 +1445,7 @@ class _AdminShiftScreenState extends State<AdminShiftScreen>
                   child: Container(
                     height: 350,
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.9),
+                      color: Colors.white.withValues(alpha: 0.9),
                       borderRadius: const BorderRadius.vertical(
                         top: Radius.circular(32),
                       ),
@@ -1696,7 +1695,7 @@ class _AdminShiftScreenState extends State<AdminShiftScreen>
                 style: ElevatedButton.styleFrom(
                   backgroundColor: context.primaryColor,
                   foregroundColor: Colors.white,
-                  disabledBackgroundColor: context.primaryColor.withOpacity(
+                  disabledBackgroundColor: context.primaryColor.withValues(alpha: 
                     0.6,
                   ),
                   shape: RoundedRectangleBorder(
