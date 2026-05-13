@@ -540,6 +540,15 @@ function handleAbsensi(payload) {
 
   if (schedule.is_off) return responseJSON(403, "error", "Hari ini LIBUR.");
 
+  // --- VALIDASI JAM HP (Cegah Manipulasi Waktu) ---
+  if (payload.client_timestamp) {
+    var serverTime = now.getTime();
+    var diffMinutes = Math.abs(serverTime - payload.client_timestamp) / (1000 * 60);
+    if (diffMinutes > 5) {
+      return responseJSON(403, "error", "Jam HP Anda tidak akurat (selisih " + Math.round(diffMinutes) + " menit). Harap setel 'Tanggal & Waktu Otomatis' di pengaturan HP Anda.");
+    }
+  }
+
   // --- VERIFIKASI WAJAH DI BACKEND ---
   if (payload.face_embedding) {
     var masterData = ss.getSheetByName("Master_Karyawan").getDataRange().getValues();
