@@ -190,7 +190,7 @@ class AttendanceService extends ApiClient {
       //   * False Reject Rate (gagal kenal diri sendiri) menjadi ~3%
       // JANGAN MAINKAN angka ini (misalnya jadi 1.5) karena sistem bisa di-bypass dengan foto orang lain.
       // ================================================================
-      if (jarak > 0.8) {
+      if (jarak > 0.7) {
         throw Exception(
           'Wajah tidak cocok! (Jarak: ${jarak.toStringAsFixed(2)}). Pastikan Anda absen sendiri.',
         );

@@ -549,6 +549,19 @@ function handleAbsensi(payload) {
     }
   }
 
+  // --- VALIDASI DUPLIKAT (Cegah Absen 2x) ---
+  var todayStr = Utilities.formatDate(now, "GMT+7", "yyyy-MM-dd");
+  var logSheet = ss.getSheetByName("Log_Absensi");
+  var logData = logSheet.getDataRange().getDisplayValues();
+  for (var i = logData.length - 1; i >= 1; i--) {
+    var rowDate = logData[i][0].split(" ")[0];
+    if (String(logData[i][1]) === String(payload.id_karyawan) && 
+        rowDate === todayStr && 
+        logData[i][2] === payload.tipe_absen) {
+      return responseJSON(400, "error", "Anda sudah melakukan absen " + payload.tipe_absen + " hari ini.");
+    }
+  }
+
   // --- VERIFIKASI WAJAH DI BACKEND ---
   if (payload.face_embedding) {
     var masterData = ss.getSheetByName("Master_Karyawan").getDataRange().getValues();
@@ -565,8 +578,11 @@ function handleAbsensi(payload) {
         var v1 = JSON.parse(payload.face_embedding);
         var v2 = JSON.parse(storedEmbedding);
         var jarak = hitungJarakEuclidean(v1, v2);
-        if (jarak > 0.8) {
-          return responseJSON(403, "error", "Wajah tidak cocok! (Jarak: " + jarak.toFixed(2) + "). Harap absen dengan wajah sendiri.");
+        console.log("Verifikasi Wajah ID: " + payload.id_karyawan + " | Jarak: " + jarak);
+        
+        // Threshold diperketat ke 0.7
+        if (jarak > 0.7) {
+          return responseJSON(403, "error", "Wajah tidak cocok! (Jarak: " + jarak.toFixed(2) + "). Harap gunakan wajah sendiri.");
         }
       } catch(e) {
         console.error("Gagal verifikasi wajah: " + e.message);
