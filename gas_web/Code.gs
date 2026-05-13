@@ -540,6 +540,31 @@ function handleAbsensi(payload) {
 
   if (schedule.is_off) return responseJSON(403, "error", "Hari ini LIBUR.");
 
+  // --- VERIFIKASI WAJAH DI BACKEND ---
+  if (payload.face_embedding) {
+    var masterData = ss.getSheetByName("Master_Karyawan").getDataRange().getValues();
+    var storedEmbedding = "";
+    for (var i = 1; i < masterData.length; i++) {
+      if (String(masterData[i][0]) === String(payload.id_karyawan)) {
+        storedEmbedding = masterData[i][4]; // Kolom E
+        break;
+      }
+    }
+    
+    if (storedEmbedding && storedEmbedding.length > 20) {
+      try {
+        var v1 = JSON.parse(payload.face_embedding);
+        var v2 = JSON.parse(storedEmbedding);
+        var jarak = hitungJarakEuclidean(v1, v2);
+        if (jarak > 0.8) {
+          return responseJSON(403, "error", "Wajah tidak cocok! (Jarak: " + jarak.toFixed(2) + "). Harap absen dengan wajah sendiri.");
+        }
+      } catch(e) {
+        console.error("Gagal verifikasi wajah: " + e.message);
+      }
+    }
+  }
+
   var configData = ss.getSheetByName("Config_Kantor").getRange("A2:I2").getValues()[0];
   var interval = parseInt(configData[7]) || 30;
   var maxTier = parseInt(configData[8]) || 0;
@@ -947,4 +972,14 @@ function updateDefaultShift(clientId, id, shiftId) {
   var data = sheet.getDataRange().getValues();
   for (var i = 1; i < data.length; i++) if (String(data[i][0]) === String(id)) { sheet.getRange(i + 1, 7).setValue(shiftId); return { success: true }; }
   return { success: false };
+}
+
+function hitungJarakEuclidean(v1, v2) {
+  if (v1.length !== v2.length) return 999;
+  var sum = 0;
+  for (var i = 0; i < v1.length; i++) {
+    var diff = v1[i] - v2[i];
+    sum += diff * diff;
+  }
+  return Math.sqrt(sum);
 }
