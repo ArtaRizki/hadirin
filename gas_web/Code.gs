@@ -716,16 +716,24 @@ function handleEnrollDevice(payload) {
 
   for (var i = 1; i < data.length; i++) {
     if (String(data[i][0]).trim().toLowerCase() === targetId) {
-      if (data[i][3] === "" || data[i][3] === payload.device_id) {
-        if (data[i][3] === "") ss.getSheetByName("Master_Karyawan").getRange(i + 1, 4).setValue(payload.device_id);
+      var role = String(data[i][2] || "Anggota").toUpperCase();
+      var isAdmin = (role === "ADMIN");
+
+      // Jika ADMIN, bypass pengecekan device_id (bisa login di mana saja)
+      if (isAdmin || data[i][3] === "" || data[i][3] === payload.device_id) {
+        if (!isAdmin && data[i][3] === "") {
+          ss.getSheetByName("Master_Karyawan").getRange(i + 1, 4).setValue(payload.device_id);
+        }
         return responseJSON(200, "success", {
           nama_karyawan: data[i][1],
           client_id: payload.client_id,
           divisi: data[i][2],
           no_hp: data[i][5] || "",
           admin_phone: data[1][5] || "",
-          wajah_terdaftar: !!(data[i][4] && String(data[i][4]).length > 20) // Anggap terdaftar jika > 20 karakter (embedding)
+          wajah_terdaftar: !!(data[i][4] && String(data[i][4]).length > 20)
         });
+      } else {
+        return responseJSON(403, "error", "ID ini sudah terdaftar di device lain.");
       }
     }
   }
