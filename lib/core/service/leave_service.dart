@@ -2,8 +2,8 @@ import 'dart:convert';
 import 'dart:developer' as d;
 import 'dart:io';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
-import 'package:hadirin/core/config/app_config.dart';
-import 'package:hadirin/core/service/api_client.dart';
+import 'package:primkopasindo_labojon/core/config/app_config.dart';
+import 'package:primkopasindo_labojon/core/service/api_client.dart';
 
 /// Tanggung jawab: Pengajuan izin/cuti/sakit oleh Anggota
 /// dan persetujuan/penolakan izin oleh admin.

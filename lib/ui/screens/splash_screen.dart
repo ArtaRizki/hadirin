@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:hadirin/core/providers/auth_provider.dart';
-import 'package:hadirin/core/theme/fluid_theme.dart';
+import 'package:primkopasindo_labojon/core/providers/auth_provider.dart';
+import 'package:primkopasindo_labojon/core/theme/fluid_theme.dart';
 import 'package:provider/provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 
@@ -153,7 +153,7 @@ class _SplashScreenState extends State<SplashScreen>
 
                   // NAMA BRAND
                   const Text(
-                    "Hadir.in",
+                    "Primkopasindo Labojon",
                     style: TextStyle(
                       fontSize: 36,
                       fontWeight: FontWeight.w900,
@@ -163,7 +163,7 @@ class _SplashScreenState extends State<SplashScreen>
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    "Sistem Absensi & HRIS Terintegrasi",
+                    "Absensi Digital Anggota & Karyawan",
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w500,

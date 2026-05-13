@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:hadirin/core/providers/auth_provider.dart';
-import 'package:hadirin/core/service/leave_service.dart';
-import 'package:hadirin/core/theme/fluid_theme.dart';
-import 'package:hadirin/core/utils/url_helper.dart';
-import 'package:hadirin/ui/widgets/skeleton_loader.dart';
+import 'package:primkopasindo_labojon/core/providers/auth_provider.dart';
+import 'package:primkopasindo_labojon/core/service/leave_service.dart';
+import 'package:primkopasindo_labojon/core/theme/fluid_theme.dart';
+import 'package:primkopasindo_labojon/core/utils/url_helper.dart';
+import 'package:primkopasindo_labojon/ui/widgets/skeleton_loader.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 
@@ -591,7 +591,7 @@ class _ApprovalScreenState extends State<ApprovalScreen> {
                                                     phone: item['no_hp']
                                                         .toString(),
                                                     message:
-                                                        "Halo ${item['nama']}, ini Admin Hadir.in mengenai pengajuan ${item['tipe']} Anda.",
+                                                        "Halo ${item['nama']}, ini Admin Primkopasindo Labojon mengenai pengajuan ${item['tipe']} Anda.",
                                                   ),
                                               icon: const Icon(
                                                 Icons.phone,

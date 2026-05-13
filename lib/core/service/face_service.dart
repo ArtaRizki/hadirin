@@ -3,13 +3,13 @@ import 'dart:developer' as d;
 import 'dart:math';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:hadirin/core/config/app_config.dart';
-import 'package:hadirin/core/service/api_client.dart';
+import 'package:primkopasindo_labojon/core/config/app_config.dart';
+import 'package:primkopasindo_labojon/core/service/api_client.dart';
 
 /// Tanggung jawab: Pendaftaran wajah, pengambilan embedding,
 /// verifikasi kemiripan wajah via TFLite native & server.
 class FaceService extends ApiClient {
-  static const _platform = MethodChannel('com.mobile.hadirin/face_recognition');
+  static const _platform = MethodChannel('com.primkopasindo.labojon/face_recognition');
   final _picker = ImagePicker();
 
   // =================================================================

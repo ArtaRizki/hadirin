@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:hadirin/core/theme/fluid_theme.dart';
-import 'package:hadirin/ui/widgets/skeleton_loader.dart';
+import 'package:primkopasindo_labojon/core/theme/fluid_theme.dart';
+import 'package:primkopasindo_labojon/ui/widgets/skeleton_loader.dart';
 
 class AttendanceHistoryList extends StatelessWidget {
   final List<dynamic> history;

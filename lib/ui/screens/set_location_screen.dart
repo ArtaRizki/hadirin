@@ -3,15 +3,15 @@ import 'dart:convert';
 import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
-import 'package:hadirin/core/service/admin_service.dart';
+import 'package:primkopasindo_labojon/core/service/admin_service.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:hadirin/core/theme/fluid_theme.dart';
+import 'package:primkopasindo_labojon/core/theme/fluid_theme.dart';
 import 'package:provider/provider.dart';
-import 'package:hadirin/core/providers/auth_provider.dart';
+import 'package:primkopasindo_labojon/core/providers/auth_provider.dart';
 
 class SetLocationScreen extends StatefulWidget {
   final bool isSelectionMode;
@@ -139,7 +139,7 @@ class _SetLocationScreenState extends State<SetLocationScreen> {
       );
       final response = await http.get(
         url,
-        headers: {'User-Agent': 'com.mobile.hadirin'},
+        headers: {'User-Agent': 'com.primkopasindo.labojon'},
       );
       if (response.statusCode == 200 && mounted) {
         setState(() => _searchResults = json.decode(response.body) as List);
@@ -280,7 +280,7 @@ class _SetLocationScreenState extends State<SetLocationScreen> {
                       urlTemplate:
                           'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png',
                       subdomains: const ['a', 'b', 'c', 'd'],
-                      userAgentPackageName: 'com.mobile.hadirin',
+                      userAgentPackageName: 'com.primkopasindo.labojon',
                       maxZoom: 19,
                     ),
                     CircleLayer(

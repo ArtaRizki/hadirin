@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:hadirin/core/providers/auth_provider.dart';
-import 'package:hadirin/core/service/admin_service.dart';
+import 'package:primkopasindo_labojon/core/providers/auth_provider.dart';
+import 'package:primkopasindo_labojon/core/service/admin_service.dart';
 import 'package:provider/provider.dart';
-import 'package:hadirin/core/theme/fluid_theme.dart';
-import 'package:hadirin/ui/screens/admin_register_screen.dart';
-import 'package:hadirin/ui/screens/attendance_screen.dart';
+import 'package:primkopasindo_labojon/core/theme/fluid_theme.dart';
+import 'package:primkopasindo_labojon/ui/screens/admin_register_screen.dart';
+import 'package:primkopasindo_labojon/ui/screens/attendance_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -33,7 +33,7 @@ class _LoginScreenState extends State<LoginScreen> {
       if (superResult['success']) {
         await context.read<AuthProvider>().login(
           "SUPER_ADMIN",
-          "Owner Hadir.in",
+          "Owner Primkopasindo Labojon",
           LoginRole.superAdmin,
           "MASTER",
         );
@@ -75,18 +75,22 @@ class _LoginScreenState extends State<LoginScreen> {
         final dataAnggota = result['message'];
         final clientIdDariServer = dataAnggota['client_id'];
         final divisi = (dataAnggota['divisi'] ?? "").toString().toUpperCase();
-        final nama = (dataAnggota['nama_karyawan'] ?? "").toString().toUpperCase();
+        final nama = (dataAnggota['nama_karyawan'] ?? "")
+            .toString()
+            .toUpperCase();
 
-        // Logika penentuan role: 
+        // Logika penentuan role:
         // Admin jika ID diawali INST-/ADM-/ADMIN- ATAU Divisi/Nama mengandung kata ADMIN/PEMILIK
-        bool isIdAdmin = inputId.toUpperCase().startsWith("INST-") || 
-                         inputId.toUpperCase().startsWith("ADM-") ||
-                         inputId.toUpperCase().startsWith("ADMIN-");
-        
-        bool isRoleAdmin = divisi.contains("ADMIN") || 
-                          divisi.contains("PEMILIK") ||
-                          nama.contains("ADMIN") ||
-                          nama.contains("PEMILIK");
+        bool isIdAdmin =
+            inputId.toUpperCase().startsWith("INST-") ||
+            inputId.toUpperCase().startsWith("ADM-") ||
+            inputId.toUpperCase().startsWith("ADMIN-");
+
+        bool isRoleAdmin =
+            divisi.contains("ADMIN") ||
+            divisi.contains("PEMILIK") ||
+            nama.contains("ADMIN") ||
+            nama.contains("PEMILIK");
 
         LoginRole assignedRole = (isIdAdmin || isRoleAdmin)
             ? LoginRole.admin
@@ -109,15 +113,19 @@ class _LoginScreenState extends State<LoginScreen> {
         );
       } else {
         String serverMsg = result['message'].toString();
-        if (serverMsg.contains("Kode Instansi") && inputKodeInstansi.contains("MASTER")) {
-          serverMsg += "\n\nPetunjuk: Kosongkan kotak pertama untuk login Super Admin.";
+        if (serverMsg.contains("Kode Instansi") &&
+            inputKodeInstansi.contains("MASTER")) {
+          serverMsg +=
+              "\n\nPetunjuk: Kosongkan kotak pertama untuk login Super Admin.";
         }
         _showError(serverMsg);
       }
     } catch (e) {
       String errorMsg = e.toString().replaceAll('Exception: ', '');
-      if (errorMsg.contains("Kode Instansi") && inputKodeInstansi.contains("MASTER")) {
-        errorMsg += "\n\nPetunjuk: Kosongkan kotak pertama untuk login Super Admin.";
+      if (errorMsg.contains("Kode Instansi") &&
+          inputKodeInstansi.contains("MASTER")) {
+        errorMsg +=
+            "\n\nPetunjuk: Kosongkan kotak pertama untuk login Super Admin.";
       }
       _showError("Gagal terhubung ke server: $errorMsg");
     } finally {
@@ -215,7 +223,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                         ),
                         const Text(
-                          "Hadir.in",
+                          "Primkopasindo Labojon",
                           style: TextStyle(
                             fontSize: 42,
                             fontWeight: FontWeight.w900,

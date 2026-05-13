@@ -6,7 +6,7 @@ plugins {
 }
 
 android {
-    namespace = "com.mobile.hadirin"
+    namespace = "com.primkopasindo.labojon"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -26,7 +26,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.mobile.hadirin"
+        applicationId = "com.primkopasindo.labojon"
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode

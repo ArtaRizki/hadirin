@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:hadirin/core/service/admin_service.dart';
+import 'package:primkopasindo_labojon/core/service/admin_service.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:hadirin/core/providers/auth_provider.dart';
-import 'package:hadirin/ui/screens/login_screen.dart';
+import 'package:primkopasindo_labojon/core/providers/auth_provider.dart';
+import 'package:primkopasindo_labojon/ui/screens/login_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:hadirin/core/theme/fluid_theme.dart';
-import 'package:hadirin/ui/screens/set_location_screen.dart';
+import 'package:primkopasindo_labojon/core/theme/fluid_theme.dart';
+import 'package:primkopasindo_labojon/ui/screens/set_location_screen.dart';
 
 class AdminRegisterScreen extends StatefulWidget {
   const AdminRegisterScreen({super.key});
@@ -258,7 +258,7 @@ class _AdminRegisterScreenState extends State<AdminRegisterScreen> {
         ),
         const SizedBox(height: 6),
         Text(
-          "Masukkan nama instansi / kantor yang akan didaftarkan ke dalam sistem Hadir.in.",
+          "Masukkan nama instansi / kantor yang akan didaftarkan ke dalam sistem Primkopasindo Labojon.",
           style: TextStyle(
             color: Colors.grey.shade600,
             fontSize: 13,

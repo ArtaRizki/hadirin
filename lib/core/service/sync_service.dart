@@ -1,8 +1,8 @@
 import 'dart:convert';
-import 'package:hadirin/core/providers/auth_provider.dart';
-import 'package:hadirin/core/service/admin_service.dart';
-import 'package:hadirin/core/service/attendance_service.dart';
-import 'package:hadirin/core/service/notification_service.dart';
+import 'package:primkopasindo_labojon/core/providers/auth_provider.dart';
+import 'package:primkopasindo_labojon/core/service/admin_service.dart';
+import 'package:primkopasindo_labojon/core/service/attendance_service.dart';
+import 'package:primkopasindo_labojon/core/service/notification_service.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 

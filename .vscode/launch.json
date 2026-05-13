@@ -38,6 +38,15 @@
                 "--dart-define=GAS_ENDPOINT=https://script.google.com/macros/s/AKfycby7JOsxqE9BndQq5Vf45WrtEBnMyO1GYRQYgSSfdA4giOP117le8OWJAGPNkw8y_zl20w/exec",
                 "--dart-define=API_TOKEN=SUPER_SECRET_SMAPGRIMAJALENGKA_8xZ2"
             ]
+        },
+        {
+            "name": "LABOJON",
+            "request": "launch",
+            "type": "dart",
+            "args": [
+                "--dart-define=GAS_ENDPOINT=https://script.google.com/macros/s/AKfycbzKcTu27OdGesb3j1jrcxOApbCHdUSao_TCw_Fpah10-mfTZYfR8e0aUXQA9HEDuq2sXA/exec",
+                "--dart-define=API_TOKEN=LABOJON"
+            ]
         }
     ]
 }

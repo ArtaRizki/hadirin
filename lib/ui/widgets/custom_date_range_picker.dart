@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:hadirin/core/theme/fluid_theme.dart';
+import 'package:primkopasindo_labojon/core/theme/fluid_theme.dart';
 import 'package:intl/intl.dart';
 
 // =================================================================
-// CUSTOM DATE RANGE PICKER — Hadir.in Design System
+// CUSTOM DATE RANGE PICKER — Primkopasindo Labojon Design System
 // Usage: lihat di bawah file ini
 // =================================================================
 
@@ -743,7 +743,7 @@ class _NavButton extends StatelessWidget {
 // =================================================================
 //
 // 1. Import file ini:
-//    import 'package:hadirin/ui/widgets/custom_date_range_picker.dart';
+//    import 'package:primkopasindo_labojon/ui/widgets/custom_date_range_picker.dart';
 //
 // 2. Ganti method _pickDateRange() dengan versi ini:
 //

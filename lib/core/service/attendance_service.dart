@@ -9,13 +9,13 @@ import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:safe_device/safe_device.dart';
-import 'package:hadirin/core/config/app_config.dart';
-import 'package:hadirin/core/service/api_client.dart';
-import 'package:hadirin/core/service/face_service.dart';
+import 'package:primkopasindo_labojon/core/config/app_config.dart';
+import 'package:primkopasindo_labojon/core/service/api_client.dart';
+import 'package:primkopasindo_labojon/core/service/face_service.dart';
 
 /// Tanggung jawab: Absen masuk/pulang & riwayat absensi karyawan.
 class AttendanceService extends ApiClient {
-  static const _platform = MethodChannel('com.mobile.hadirin/face_recognition');
+  static const _platform = MethodChannel('com.primkopasindo.labojon/face_recognition');
 
   final _auth = LocalAuthentication();
   final _picker = ImagePicker();

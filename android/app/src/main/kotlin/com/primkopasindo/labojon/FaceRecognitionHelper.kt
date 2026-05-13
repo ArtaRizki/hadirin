@@ -1,4 +1,4 @@
-package com.mobile.hadirin // Sesuaikan
+package com.primkopasindo.labojon // Sesuaikan
 
 import android.content.Context
 import android.graphics.Bitmap

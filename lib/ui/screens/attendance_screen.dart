@@ -1,13 +1,13 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:hadirin/core/providers/auth_provider.dart';
-import 'package:hadirin/core/service/attendance_service.dart';
-import 'package:hadirin/core/service/admin_service.dart';
-import 'package:hadirin/core/service/notification_service.dart';
+import 'package:primkopasindo_labojon/core/providers/auth_provider.dart';
+import 'package:primkopasindo_labojon/core/service/attendance_service.dart';
+import 'package:primkopasindo_labojon/core/service/admin_service.dart';
+import 'package:primkopasindo_labojon/core/service/notification_service.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:hadirin/ui/screens/profile_screen.dart';
+import 'package:primkopasindo_labojon/ui/screens/profile_screen.dart';
 import 'package:provider/provider.dart';
-import 'package:hadirin/core/theme/fluid_theme.dart';
+import 'package:primkopasindo_labojon/core/theme/fluid_theme.dart';
 import 'package:intl/intl.dart';
 
 class AttendanceScreen extends StatefulWidget {

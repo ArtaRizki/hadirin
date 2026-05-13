@@ -1,8 +1,8 @@
 import 'dart:convert';
 import 'dart:developer' as d;
 import 'package:device_info_plus/device_info_plus.dart';
-import 'package:hadirin/core/config/app_config.dart';
-import 'package:hadirin/core/service/api_client.dart';
+import 'package:primkopasindo_labojon/core/config/app_config.dart';
+import 'package:primkopasindo_labojon/core/service/api_client.dart';
 
 /// Tanggung jawab: Semua operasi yang hanya bisa dilakukan admin Instansi —
 /// kelola anggota, lokasi kantor, perangkat, laporan, dan registrasi klien.
