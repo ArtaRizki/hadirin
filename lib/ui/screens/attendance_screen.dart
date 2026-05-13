@@ -54,6 +54,11 @@ class _AttendanceScreenState extends State<AttendanceScreen>
 
     // Mulai pantau lokasi
     _startProximityListener();
+
+    // Ambil konfigurasi kantor saat layar dibuka
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _fetchOfficeConfig();
+    });
   }
 
   Future<void> _fetchOfficeConfig() async {

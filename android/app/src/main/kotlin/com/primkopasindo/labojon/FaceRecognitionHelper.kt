@@ -2,6 +2,10 @@ package com.primkopasindo.labojon // Sesuaikan
 
 import android.content.Context
 import android.graphics.Bitmap
+import android.graphics.Rect
+import com.google.mlkit.vision.common.InputImage
+import com.google.mlkit.vision.face.FaceDetection
+import com.google.mlkit.vision.face.FaceDetectorOptions
 import org.tensorflow.lite.Interpreter
 import java.io.FileInputStream
 import java.nio.ByteBuffer
@@ -9,6 +13,7 @@ import java.nio.ByteOrder
 import java.nio.MappedByteBuffer
 import java.nio.channels.FileChannel
 import kotlin.math.sqrt
+import kotlin.math.max
 
 class FaceRecognitionHelper(context: Context) {
 
@@ -48,6 +53,15 @@ class FaceRecognitionHelper(context: Context) {
         const val SIMILARITY_THRESHOLD = 1.0f
     }
 
+    // Inisialisasi Google ML Kit Face Detector
+    private val faceDetector = FaceDetection.getClient(
+        FaceDetectorOptions.Builder()
+            .setPerformanceMode(FaceDetectorOptions.PERFORMANCE_MODE_FAST)
+            .setLandmarkMode(FaceDetectorOptions.LANDMARK_MODE_NONE)
+            .setClassificationMode(FaceDetectorOptions.CLASSIFICATION_MODE_NONE)
+            .build()
+    )
+
     init {
         val model = loadModelFile(context, MODEL_FILENAME)
         val options = Interpreter.Options().apply {
@@ -67,19 +81,62 @@ class FaceRecognitionHelper(context: Context) {
     }
 
     // ================================================================
-    // FUNGSI UTAMA: Ambil embedding wajah dari Bitmap
-    //
-    // Output sudah di-L2-normalize → wajib untuk hasil threshold
-    // yang konsisten. Jangan hapus normalisasi ini.
+    // FUNGSI UTAMA (ASYNC): Deteksi & Potong Wajah, lalu ambil embedding
     // ================================================================
-    fun getFaceEmbedding(bitmap: Bitmap?): FloatArray {
-        if (bitmap == null) {
-            throw IllegalArgumentException("Bitmap null — foto gagal dibaca dari penyimpanan.")
-        }
+    fun getFaceEmbeddingAsync(bitmap: Bitmap, callback: (FloatArray?, String?) -> Unit) {
+        val image = InputImage.fromBitmap(bitmap, 0)
 
-        // Resize ke ukuran yang dibutuhkan model
-        // Buat variabel terpisah agar bitmap asli tidak ikut di-recycle
-        val resizedBitmap = Bitmap.createScaledBitmap(bitmap, inputImageSize, inputImageSize, true)
+        faceDetector.process(image)
+            .addOnSuccessListener { faces ->
+                if (faces.isEmpty()) {
+                    callback(null, "Tidak ada wajah yang terdeteksi di foto.")
+                    return@addOnSuccessListener
+                }
+
+                // Ambil wajah pertama/terbesar
+                val face = faces[0]
+                val boundingBox = face.boundingBox
+
+                // Pastikan bounding box berada dalam batas gambar
+                val rect = Rect(
+                    max(0, boundingBox.left),
+                    max(0, boundingBox.top),
+                    minOf(bitmap.width, boundingBox.right),
+                    minOf(bitmap.height, boundingBox.bottom)
+                )
+
+                if (rect.width() <= 0 || rect.height() <= 0) {
+                    callback(null, "Gagal memotong area wajah.")
+                    return@addOnSuccessListener
+                }
+
+                // Crop gambar hanya pada area wajah
+                val croppedBitmap = Bitmap.createBitmap(
+                    bitmap, rect.left, rect.top, rect.width(), rect.height()
+                )
+
+                // Ekstrak pola wajah dari gambar yang sudah di-crop
+                try {
+                    val embedding = extractFeatures(croppedBitmap)
+                    callback(embedding, null)
+                } catch (e: Exception) {
+                    callback(null, "Gagal mengekstrak pola wajah: \${e.message}")
+                } finally {
+                    croppedBitmap.recycle()
+                }
+            }
+            .addOnFailureListener { e ->
+                callback(null, "Error pendeteksi wajah: \${e.message}")
+            }
+    }
+
+    // ================================================================
+    // EKSTRAKSI FITUR DARI WAJAH YANG SUDAH DI-CROP
+    // Output sudah di-L2-normalize
+    // ================================================================
+    private fun extractFeatures(faceBitmap: Bitmap): FloatArray {
+        // Resize ke ukuran yang dibutuhkan model (224x224)
+        val resizedBitmap = Bitmap.createScaledBitmap(faceBitmap, inputImageSize, inputImageSize, true)
 
         return try {
             val inputBuffer = preprocessBitmap(resizedBitmap)
@@ -87,13 +144,9 @@ class FaceRecognitionHelper(context: Context) {
             interpreter?.run(inputBuffer, output)
 
             // ⚠️  L2 Normalisasi WAJIB dilakukan sebelum hitung jarak Euclidean.
-            //     Tanpa ini, embedding dari dua gambar yang pencahayaannya berbeda
-            //     bisa menghasilkan jarak yang tidak konsisten meski orangnya sama.
             l2Normalize(output[0])
         } finally {
-            // Bebaskan memori bitmap hasil resize agar tidak bocor (memory leak)
-            // Hanya recycle jika berbeda objek dari bitmap asli
-            if (resizedBitmap != bitmap) {
+            if (resizedBitmap != faceBitmap) {
                 resizedBitmap.recycle()
             }
         }
@@ -116,13 +169,15 @@ class FaceRecognitionHelper(context: Context) {
         bitmap.getPixels(pixels, 0, bitmap.width, 0, 0, bitmap.width, bitmap.height)
 
         for (pixelValue in pixels) {
-            val r = (pixelValue shr 16) and 0xFF
-            val g = (pixelValue shr 8) and 0xFF
-            val b = pixelValue and 0xFF
+            val r = ((pixelValue shr 16) and 0xFF).toFloat()
+            val g = ((pixelValue shr 8) and 0xFF).toFloat()
+            val b = (pixelValue and 0xFF).toFloat()
 
-            byteBuffer.putFloat((r - 127.5f) / 128.0f)
-            byteBuffer.putFloat((g - 127.5f) / 128.0f)
-            byteBuffer.putFloat((b - 127.5f) / 128.0f)
+            // Standard VGGFace2 preprocessing: mean subtraction, no division.
+            // Memperbaiki masalah di mana nilai terlalu kecil membuat model TFLite menghasilkan vektor kosong/sama.
+            byteBuffer.putFloat(r - 91.4953f)
+            byteBuffer.putFloat(g - 103.8827f)
+            byteBuffer.putFloat(b - 131.0912f)
         }
 
         return byteBuffer
@@ -151,7 +206,7 @@ class FaceRecognitionHelper(context: Context) {
     // ================================================================
     fun euclideanDistance(embedding1: FloatArray, embedding2: FloatArray): Float {
         require(embedding1.size == embedding2.size) {
-            "Ukuran embedding berbeda: ${embedding1.size} vs ${embedding2.size}"
+            "Ukuran embedding berbeda: \${embedding1.size} vs \${embedding2.size}"
         }
         var sum = 0f
         for (i in embedding1.indices) {
@@ -164,6 +219,7 @@ class FaceRecognitionHelper(context: Context) {
     fun close() {
         interpreter?.close()
         interpreter = null
+        faceDetector.close()
     }
 
     // ================================================================
