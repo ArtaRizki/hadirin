@@ -594,8 +594,8 @@ function handleAbsensi(payload) {
       var jarak = hitungJarakEuclidean(v1, v2);
       console.log("Verifikasi Wajah ID: " + payload.id_karyawan + " | Jarak: " + jarak.toFixed(4));
       
-      // Threshold diperketat ke 0.6 untuk keamanan maksimal
-      if (jarak > 0.6) {
+      // Threshold diperketat ekstrem ke 0.4 karena data embedding sparse
+      if (jarak > 0.4) {
         return responseJSON(403, "error", "Wajah tidak cocok! (Jarak: " + jarak.toFixed(2) + "). Harap gunakan wajah sendiri.");
       }
     } catch(e) {

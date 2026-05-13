@@ -187,9 +187,9 @@ class AttendanceService extends ApiClient {
       d.log('Jarak Kemiripan Wajah: $jarak');
 
       // ================================================================
-      // THRESHOLD KEMIRIPAN WAJAH (Nilai: 0.6)
+      // THRESHOLD KEMIRIPAN WAJAH (Nilai: 0.4)
       // ================================================================
-      if (jarak > 0.6) {
+      if (jarak > 0.4) {
         throw Exception(
           'Wajah tidak cocok! (Jarak: ${jarak.toStringAsFixed(2)}). Pastikan Anda absen sendiri.',
         );
