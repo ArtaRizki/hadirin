@@ -83,8 +83,10 @@ class _SetLocationScreenState extends State<SetLocationScreen> {
     if (remoteConfig != null && mounted) {
       setState(() {
         _pickedLocation = LatLng(
-          double.tryParse(remoteConfig['lat'].toString()) ?? _pickedLocation.latitude,
-          double.tryParse(remoteConfig['lng'].toString()) ?? _pickedLocation.longitude,
+          double.tryParse(remoteConfig['lat'].toString()) ??
+              _pickedLocation.latitude,
+          double.tryParse(remoteConfig['lng'].toString()) ??
+              _pickedLocation.longitude,
         );
         _radius = double.tryParse(remoteConfig['radius'].toString()) ?? _radius;
         _isMapReady = true;
@@ -146,9 +148,7 @@ class _SetLocationScreenState extends State<SetLocationScreen> {
       }
     } catch (e) {
       log("Search error: $e");
-    } finally {
-
-    }
+    } finally {}
   }
 
   void _onLocationSelected(double lat, double lon, String displayName) {
@@ -665,7 +665,9 @@ class _SetLocationScreenState extends State<SetLocationScreen> {
                     data: SliderTheme.of(context).copyWith(
                       trackHeight: 4,
                       activeTrackColor: context.primaryColor,
-                      inactiveTrackColor: context.primaryColor.withValues(alpha: 0.1),
+                      inactiveTrackColor: context.primaryColor.withValues(
+                        alpha: 0.1,
+                      ),
                       thumbColor: context.primaryColor,
                       overlayColor: context.primaryColor.withValues(alpha: 0.2),
                       thumbShape: const RoundSliderThumbShape(
@@ -692,7 +694,9 @@ class _SetLocationScreenState extends State<SetLocationScreen> {
                           borderRadius: BorderRadius.circular(18),
                         ),
                         elevation: 4,
-                        shadowColor: context.primaryColor.withValues(alpha: 0.3),
+                        shadowColor: context.primaryColor.withValues(
+                          alpha: 0.3,
+                        ),
                       ),
                       onPressed: _isSaving ? null : _simpanLokasi,
                       child: _isSaving

@@ -595,12 +595,12 @@ function handleAbsensi(payload) {
         return responseJSON(403, "error", "Kualitas gambar buruk atau pola wajah tidak valid. Harap gunakan foto yang terang dan jelas.");
       }
 
-      var jarak = hitungJarakEuclidean(v1, v2);
-      console.log("Verifikasi Wajah ID: " + payload.id_karyawan + " | Jarak: " + jarak.toFixed(4));
+      var kemiripan = hitungKemiripanCosine(v1, v2);
+      console.log("Verifikasi Wajah ID: " + payload.id_karyawan + " | Kemiripan: " + kemiripan.toFixed(4));
       
-      // Threshold diperketat ekstrem ke 0.4 karena data embedding sparse
-      if (jarak > 0.4) {
-        return responseJSON(403, "error", "Wajah tidak cocok! (Jarak: " + jarak.toFixed(2) + "). Harap gunakan wajah sendiri.");
+      // Threshold diperketat ke 0.8 dengan Cosine Similarity
+      if (kemiripan < 0.8) {
+        return responseJSON(403, "error", "Wajah tidak cocok! (Kemiripan: " + kemiripan.toFixed(2) + "). Harap gunakan wajah sendiri.");
       }
     } catch(e) {
       return responseJSON(500, "error", "Gagal memproses verifikasi wajah: " + e.message);
@@ -1030,12 +1030,16 @@ function updateDefaultShift(clientId, id, shiftId) {
   return { success: false };
 }
 
-function hitungJarakEuclidean(v1, v2) {
-  if (v1.length !== v2.length) return 999;
-  var sum = 0;
+function hitungKemiripanCosine(v1, v2) {
+  if (v1.length !== v2.length) return 0;
+  var dotProduct = 0;
+  var norm1 = 0;
+  var norm2 = 0;
   for (var i = 0; i < v1.length; i++) {
-    var diff = v1[i] - v2[i];
-    sum += diff * diff;
+    dotProduct += v1[i] * v2[i];
+    norm1 += v1[i] * v1[i];
+    norm2 += v2[i] * v2[i];
   }
-  return Math.sqrt(sum);
+  if (norm1 === 0 || norm2 === 0) return 0;
+  return dotProduct / (Math.sqrt(norm1) * Math.sqrt(norm2));
 }

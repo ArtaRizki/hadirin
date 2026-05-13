@@ -43,12 +43,7 @@
             "name": "LABOJON",
             "request": "launch",
             "type": "dart",
-            "program": "lib/main.dart",
-            "flutterMode": "release",
             "args": [
-                "--no-tree-shake-icons",
-                "--obfuscate",
-                "--split-debug-info=./debug-info",
                 "--dart-define=GAS_ENDPOINT=https://script.google.com/macros/s/AKfycbzKcTu27OdGesb3j1jrcxOApbCHdUSao_TCw_Fpah10-mfTZYfR8e0aUXQA9HEDuq2sXA/exec",
                 "--dart-define=API_TOKEN=LABOJON"
             ]

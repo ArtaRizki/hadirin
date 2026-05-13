@@ -183,15 +183,15 @@ class AttendanceService extends ApiClient {
         );
       }
 
-      final jarak = _faceService.hitungKemiripan(wajahHariIni, wajahMaster);
-      d.log('Jarak Kemiripan Wajah: $jarak');
+      final kemiripan = _faceService.hitungKemiripan(wajahHariIni, wajahMaster);
+      d.log('Nilai Kemiripan Wajah: $kemiripan');
 
       // ================================================================
-      // THRESHOLD KEMIRIPAN WAJAH (Nilai: 0.4)
+      // THRESHOLD KEMIRIPAN WAJAH (Nilai: 0.8)
       // ================================================================
-      if (jarak > 0.4) {
+      if (kemiripan < 0.8) {
         throw Exception(
-          'Wajah tidak cocok! (Jarak: ${jarak.toStringAsFixed(2)}). Pastikan Anda absen sendiri.',
+          'Wajah tidak cocok! (Kemiripan: ${kemiripan.toStringAsFixed(2)}). Pastikan Anda absen sendiri.',
         );
       }
 

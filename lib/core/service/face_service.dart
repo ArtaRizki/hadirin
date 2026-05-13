@@ -105,19 +105,22 @@ class FaceService extends ApiClient {
   }
 
   // =================================================================
-  // HITUNG JARAK EUCLIDEAN ANTARA DUA EMBEDDING
+  // HITUNG KEMIRIPAN (COSINE SIMILARITY) ANTARA DUA EMBEDDING
   //
-  // Threshold: 1.0 (dari benchmark MobileFaceNet pada dataset internal).
-  // < 1.0 = wajah sama, > 1.0 = wajah berbeda.
-  // Jangan ubah nilai ini tanpa pengujian ulang.
+  // Menggunakan Cosine Similarity agar invarian terhadap magnitudo vektor.
+  // Nilai 1.0 berarti sangat mirip, -1.0 berarti berlawanan.
   // =================================================================
   double hitungKemiripan(List<double> wajah1, List<double> wajah2) {
-    if (wajah1.length != wajah2.length) return 999.0;
-    double sum = 0.0;
+    if (wajah1.length != wajah2.length) return 0.0;
+    double dotProduct = 0.0;
+    double norm1 = 0.0;
+    double norm2 = 0.0;
     for (int i = 0; i < wajah1.length; i++) {
-      final diff = wajah1[i] - wajah2[i];
-      sum += diff * diff;
+      dotProduct += wajah1[i] * wajah2[i];
+      norm1 += wajah1[i] * wajah1[i];
+      norm2 += wajah2[i] * wajah2[i];
     }
-    return sqrt(sum);
+    if (norm1 == 0 || norm2 == 0) return 0.0;
+    return dotProduct / (sqrt(norm1) * sqrt(norm2));
   }
 }
