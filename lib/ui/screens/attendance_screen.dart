@@ -1,11 +1,13 @@
 import 'dart:async';
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:primkopasindo_labojon/core/providers/auth_provider.dart';
 import 'package:primkopasindo_labojon/core/service/attendance_service.dart';
 import 'package:primkopasindo_labojon/core/service/admin_service.dart';
 import 'package:primkopasindo_labojon/core/service/notification_service.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:primkopasindo_labojon/ui/screens/profile_screen.dart';
+import 'package:hadirin/ui/screens/profile_screen.dart';
+import 'package:hadirin/ui/screens/today_attendance_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:primkopasindo_labojon/core/theme/fluid_theme.dart';
 import 'package:intl/intl.dart';
@@ -28,7 +30,13 @@ class _AttendanceScreenState extends State<AttendanceScreen>
   late Animation<double> _pulseAnimation;
   StreamSubscription<Position>? _positionStream;
 
-  bool _hasNotifiedProximity = false;
+  // Variabel Jam Kerja Dinamis (Default sesuai req)
+  String _jamMasukMulai = "04:00";
+  String _batasJamMasuk = "07:00";
+  String _jamPulangMulai = "13:00";
+  String _shiftName = "Normal";
+  bool _isOff = false;
+  bool _isConfigLoaded = false;
 
   @override
   void initState() {
@@ -48,6 +56,31 @@ class _AttendanceScreenState extends State<AttendanceScreen>
     _startProximityListener();
   }
 
+  Future<void> _fetchOfficeConfig() async {
+    try {
+      final auth = context.read<AuthProvider>();
+      final config = await AdminService().getOfficeConfig(
+        auth.clientId ?? "",
+        idKaryawan: auth.idAnggota,
+      );
+      if (config != null && mounted) {
+        setState(() {
+          _jamMasukMulai = config['jam_masuk_mulai']?.toString() == "null" ? "-" : (config['jam_masuk_mulai']?.toString() ?? "-");
+          _batasJamMasuk = config['batas_jam_masuk']?.toString() == "null" ? "-" : (config['batas_jam_masuk']?.toString() ?? "-");
+          _jamPulangMulai = config['jam_pulang_mulai']?.toString() == "null" ? "-" : (config['jam_pulang_mulai']?.toString() ?? "-");
+          _shiftName = config['shift_name'] ?? "Normal";
+          _isOff = config['is_off'] ?? false;
+          _isConfigLoaded = true;
+          
+          if (config.containsKey('wajah_terdaftar')) {
+            auth.setFaceRegistered(config['wajah_terdaftar'] == true);
+          }
+        });
+      }
+    } catch (e) {
+      debugPrint("Gagal fetch config jam: $e");
+    }
+  }
 
   void _startProximityListener() async {
     try {
@@ -62,7 +95,10 @@ class _AttendanceScreenState extends State<AttendanceScreen>
 
       final auth = context.read<AuthProvider>();
 
-      final config = await AdminService().getOfficeConfig(auth.clientId ?? "");
+      final config = await AdminService().getOfficeConfig(
+        auth.clientId ?? "",
+        idKaryawan: auth.idAnggota,
+      );
       if (config == null) return;
 
       double offLat = double.parse(config['lat'].toString());
@@ -133,6 +169,63 @@ class _AttendanceScreenState extends State<AttendanceScreen>
   // =================================================================
   void _konfirmasiAbsen(String tipeAbsen) async {
     if (_isLoading) return;
+
+    final now = DateTime.now();
+    final currentMinutes = (now.hour * 60) + now.minute;
+
+    final startMin = _timeToMinutes(_jamMasukMulai);
+    final endMin = _timeToMinutes(_jamPulangMulai);
+    final isOvernight = startMin > endMin;
+
+    // --- VALIDASI JAM OPERASIONAL (TIME-FENCING DINAMIS) ---
+    if (tipeAbsen == "Masuk") {
+      bool isValid = false;
+      if (isOvernight) {
+        // Shift Malam: Misal 17:00 - 05:00
+        // Valid jika jam >= 17:00 ATAU jam < 05:00
+        isValid = (currentMinutes >= startMin || currentMinutes < endMin);
+      } else {
+        // Shift Normal: Misal 08:00 - 16:00
+        isValid = (currentMinutes >= startMin && currentMinutes < endMin);
+      }
+
+      if (!isValid) {
+        _showSnackBar(
+          "Gagal! Absen Masuk hanya tersedia pukul $_jamMasukMulai - $_jamPulangMulai.",
+          isError: true,
+        );
+        return;
+      }
+    } else {
+      // LOGIKA PULANG
+      bool canPulang = false;
+      if (isOvernight) {
+        // Untuk shift malam, absen pulang biasanya setelah tengah malam
+        // Tapi kita beri toleransi jika ingin pulang lebih awal di malam yang sama
+        // atau memang sudah melewati tengah malam
+        // Sederhananya: Jika sudah lewat jam buka shift, dia boleh pulang 
+        // tapi sistem absen akan mencatat apakah ini terlalu awal atau tidak.
+        // Namun untuk Time-Fencing: kita batasi agar tidak bisa absen pulang 
+        // di luar jam shift.
+        canPulang = (currentMinutes >= startMin || currentMinutes < endMin);
+        
+        // Opsional: Jika ingin lebih ketat (pulang baru boleh setelah jam masuk kerja)
+        // final workMin = _timeToMinutes(_batasJamMasuk); // Jam masuk resmi
+        // canPulang = (currentMinutes >= workMin || currentMinutes < endMin);
+      } else {
+        canPulang = (currentMinutes >= startMin && currentMinutes < 23 * 60 + 59);
+      }
+
+      // Khusus Pulang: Biasanya hanya dicek apakah sudah melewati jam pulang mulai
+      // Di sini kita pakai logika sederhana agar user bisa klik tombolnya dulu.
+      if (currentMinutes < endMin && !isOvernight) {
+        _showSnackBar(
+          "Belum saatnya pulang! Absen Pulang dibuka mulai pukul $_jamPulangMulai.",
+          isError: true,
+        );
+        return;
+      }
+    }
 
     setState(() => _isLoading = true);
     final auth = context.read<AuthProvider>();
@@ -301,13 +394,21 @@ class _AttendanceScreenState extends State<AttendanceScreen>
               ),
             ),
 
-            SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 24.0,
-                  vertical: 20.0,
-                ),
-                child: Column(
+            RefreshIndicator(
+              onRefresh: _fetchOfficeConfig,
+              color: context.primaryColor,
+              child: CustomScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                slivers: [
+                  SliverFillRemaining(
+                    hasScrollBody: false,
+                    child: SafeArea(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 24.0,
+                          vertical: 20.0,
+                        ),
+                        child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // HEADER PROFILE
@@ -562,7 +663,40 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                               ),
                             ],
                           ),
-
+                          if (_isConfigLoaded) ...[
+                            const SizedBox(height: 12),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 6,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.15),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Column(
+                                children: [
+                                  Text(
+                                    "Shift: $_shiftName",
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w900,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    "Masuk: $_jamMasukMulai | Pulang: $_jamPulangMulai",
+                                    style: TextStyle(
+                                      color: Colors.white.withOpacity(0.9),
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
                         ],
                       ),
                     ),
@@ -575,6 +709,43 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                         child: CircularProgressIndicator(
                           color: context.primaryColor,
                           strokeWidth: 3,
+                        ),
+                      )
+                    else if (_isOff)
+                      // OFF STATE UI
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(24),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(24),
+                          border: Border.all(color: Colors.orange.shade100),
+                        ),
+                        child: Column(
+                          children: [
+                            Icon(
+                              Icons.beach_access_rounded,
+                              size: 48,
+                              color: Colors.orange.shade400,
+                            ),
+                            const SizedBox(height: 16),
+                            const Text(
+                              "Selamat Beristirahat!✨",
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w900,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              "Hari ini jadwal Anda LIBUR / OFF. Tidak perlu melakukan absensi.",
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: Colors.grey.shade600,
+                                fontSize: 13,
+                              ),
+                            ),
+                          ],
                         ),
                       )
                     else ...[
@@ -633,9 +804,85 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                         ),
                       ),
                     ],
+
+                    // --- ADMIN SHORTCUT: ABSENSI HARI INI ---
+                    if (auth.isAdmin) ...[
+                      const SizedBox(height: 20),
+                      GestureDetector(
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const TodayAttendanceScreen(),
+                          ),
+                        ),
+                        child: Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(20),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(20),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.04),
+                                blurRadius: 10,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(10),
+                                decoration: BoxDecoration(
+                                  color: context.primaryColor.withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Icon(
+                                  Icons.assessment_rounded,
+                                  color: context.primaryColor,
+                                  size: 24,
+                                ),
+                              ),
+                              const SizedBox(width: 16),
+                              const Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      "Absensi Hari Ini",
+                                      style: TextStyle(
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.w800,
+                                        color: Color(0xFF0F172A),
+                                      ),
+                                    ),
+                                    Text(
+                                      "Pantau kehadiran anggota hari ini",
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: Colors.grey,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Icon(
+                                Icons.chevron_right_rounded,
+                                color: Colors.grey.shade400,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+
                     const SizedBox(height: 24),
                   ],
                 ),
+              ),
+            ),
+                  ),
+                ],
               ),
             ),
           ],

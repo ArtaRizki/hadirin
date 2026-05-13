@@ -73,18 +73,20 @@ class _LoginScreenState extends State<LoginScreen> {
 
       if (result['success']) {
         final dataAnggota = result['message'];
-        final clientIdDariServer = dataAnggota['client_id'];
+        final clientIdDariServer = (dataAnggota['client_id'] ?? "").toString();
         final divisi = (dataAnggota['divisi'] ?? "").toString().toUpperCase();
-        final nama = (dataAnggota['nama_karyawan'] ?? "")
-            .toString()
-            .toUpperCase();
+        final nama = (dataAnggota['nama_karyawan'] ?? "ANGGOTA").toString();
 
         // Logika penentuan role:
         // Admin jika ID diawali INST-/ADM-/ADMIN- ATAU Divisi/Nama mengandung kata ADMIN/PEMILIK
-        bool isIdAdmin =
-            inputId.toUpperCase().startsWith("INST-") ||
-            inputId.toUpperCase().startsWith("ADM-") ||
-            inputId.toUpperCase().startsWith("ADMIN-");
+        bool isIdAdmin = inputId.toUpperCase().startsWith("INST-") || 
+                         inputId.toUpperCase().startsWith("ADM-") ||
+                         inputId.toUpperCase().startsWith("ADMIN-");
+        
+        bool isRoleAdmin = divisi.contains("ADMIN") || 
+                          divisi.contains("PEMILIK") ||
+                          nama.toUpperCase().contains("ADMIN") ||
+                          nama.toUpperCase().contains("PEMILIK");
 
         bool isRoleAdmin =
             divisi.contains("ADMIN") ||
@@ -98,11 +100,12 @@ class _LoginScreenState extends State<LoginScreen> {
 
         await context.read<AuthProvider>().login(
           inputId,
-          dataAnggota['nama_karyawan'],
+          nama,
           assignedRole,
           clientIdDariServer,
           userPhone: (dataAnggota['no_hp'] ?? "").toString(),
           adminPhone: (dataAnggota['admin_phone'] ?? "").toString(),
+          isFaceRegistered: dataAnggota['wajah_terdaftar'] == true,
         );
 
         if (!mounted) return;

@@ -18,6 +18,25 @@ class _AddAnggotaScreenState extends State<AddAnggotaScreen> {
   final _hpController = TextEditingController(); // NEW
   bool _isLoading = false;
 
+  List<dynamic> _listShifts = [];
+  String? _selectedShiftId;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadShifts();
+  }
+
+  Future<void> _loadShifts() async {
+    final auth = context.read<AuthProvider>();
+    final result = await AdminService().getShiftList(auth.clientId ?? "");
+    if (result['success']) {
+      setState(() {
+        _listShifts = result['data']['shifts'];
+      });
+    }
+  }
+
   void _simpanAnggota() async {
     if (_idController.text.isEmpty || _namaController.text.isEmpty) {
       _showSnackBar("ID dan Nama Anggota wajib diisi!", isError: true);
@@ -46,7 +65,8 @@ class _AddAnggotaScreenState extends State<AddAnggotaScreen> {
       bagian: _bagianController.text.trim().isEmpty
           ? "-"
           : _bagianController.text.trim(),
-      noHp: phone, // UPDATED
+      noHp: phone,
+      defaultShift: _selectedShiftId,
     );
 
     setState(() => _isLoading = false);
@@ -213,6 +233,58 @@ class _AddAnggotaScreenState extends State<AddAnggotaScreen> {
                     hint: "Contoh: 08123456789",
                     icon: Icons.phone_android_rounded,
                     keyboardType: TextInputType.phone,
+                  ),
+                  const SizedBox(height: 20),
+
+                  // SHIFT SELECTION (OPTIONAL)
+                  const Text(
+                    "Shift Default (Opsional)",
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF0F172A),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.03),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: DropdownButtonFormField<String>(
+                      value: _selectedShiftId,
+                      decoration: InputDecoration(
+                        hintText: "Pilih Nanti (Default S1)",
+                        prefixIcon: Icon(Icons.calendar_today_rounded,
+                            color: context.primaryColor),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          borderSide: BorderSide.none,
+                        ),
+                        filled: true,
+                        fillColor: Colors.white,
+                      ),
+                      items: [
+                        const DropdownMenuItem(
+                          value: null,
+                          child: Text("Pilih Nanti (Default S1)"),
+                        ),
+                        ..._listShifts.map((s) => DropdownMenuItem(
+                              value: s['id'].toString(),
+                              child: Text("${s['nama']} (${s['id']})"),
+                            )),
+                      ],
+                      onChanged: (val) {
+                        setState(() => _selectedShiftId = val);
+                      },
+                    ),
                   ),
 
                   const SizedBox(height: 48),
