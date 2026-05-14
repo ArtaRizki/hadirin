@@ -23,6 +23,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
     with SingleTickerProviderStateMixin {
   bool _isLoading = false;
   final AttendanceService _attendanceService = AttendanceService();
+  final GlobalKey<RefreshIndicatorState> _refreshIndicatorKey = GlobalKey<RefreshIndicatorState>();
 
   late Timer _timer;
   DateTime _currentTime = DateTime.now();
@@ -55,9 +56,9 @@ class _AttendanceScreenState extends State<AttendanceScreen>
     // Mulai pantau lokasi
     _startProximityListener();
 
-    // Ambil konfigurasi kantor saat layar dibuka
+    // Ambil konfigurasi kantor saat layar dibuka dengan visual refresh
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _fetchOfficeConfig();
+      _refreshIndicatorKey.currentState?.show();
     });
   }
 
@@ -383,6 +384,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
             ),
 
             RefreshIndicator(
+              key: _refreshIndicatorKey,
               onRefresh: _fetchOfficeConfig,
               color: context.primaryColor,
               child: CustomScrollView(

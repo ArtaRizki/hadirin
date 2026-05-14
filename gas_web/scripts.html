@@ -177,10 +177,35 @@
     setTimeout(() => err.style.display = 'none', 4000);
   }
 
+  function showProcessing(msg) {
+    const overlay = document.getElementById('processing-overlay');
+    const statusText = document.getElementById('processing-text');
+    if (statusText) statusText.innerText = msg || "Memuat...";
+    if (overlay) overlay.style.display = 'flex';
+  }
+
+  function hideProcessing() {
+    const overlay = document.getElementById('processing-overlay');
+    if (overlay) overlay.style.display = 'none';
+  }
+
+  function getDistanceFromLatLonInM(lat1, lon1, lat2, lon2) {
+    const R = 6371e3; // Radius bumi dalam meter
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+  }
+
   // DATA FETCHING: DASHBOARD
   function loadDashboardData() {
+    showProcessing("Memuat Data Dashboard...");
     google.script.run
       .withSuccessHandler(function (response) {
+        hideProcessing();
         if (response.error) {
           console.error("Dashboard Error:", response.error);
           return;
@@ -814,16 +839,13 @@
     const file = e.target.files[0];
     if (!file) return;
 
-    const overlay = document.getElementById('processing-overlay');
-    const statusText = document.getElementById('processing-text');
-    overlay.style.display = 'flex';
+    showProcessing("Memuat AI...");
 
     try {
-      statusText.innerText = "Memuat AI...";
       await initFaceAI();
-      statusText.innerText = "Membaca Foto...";
+      document.getElementById('processing-text').innerText = "Membaca Foto...";
       const img = await faceapi.bufferToImage(file);
-      statusText.innerText = "Memverifikasi Wajah...";
+      document.getElementById('processing-text').innerText = "Memverifikasi Wajah...";
       const detection = await faceapi.detectSingleFace(img, new faceapi.TinyFaceDetectorOptions({ inputSize: 224 }))
         .withFaceLandmarks().withFaceDescriptor();
 
@@ -836,37 +858,67 @@
 
         if (match.label === 'unknown') throw new Error("Wajah Tidak Cocok!");
 
-        statusText.innerText = "Mengambil Lokasi...";
+        document.getElementById('processing-text').innerText = "Mengambil Lokasi...";
         navigator.geolocation.getCurrentPosition(async (pos) => {
+          const lat = pos.coords.latitude;
+          const lng = pos.coords.longitude;
+          
+          if (officeConfig && officeConfig.lat && officeConfig.lng) {
+            const dist = getDistanceFromLatLonInM(lat, lng, officeConfig.lat, officeConfig.lng);
+            if (dist > (officeConfig.radius || 100)) {
+              hideProcessing();
+              Swal.fire('Di Luar Jangkauan', `Anda berada ${Math.round(dist)}m dari kantor. Maksimal ${officeConfig.radius || 100}m.`, 'error');
+              return;
+            }
+          }
+
           const canvas = document.createElement('canvas');
           canvas.width = 600; canvas.height = 800;
           canvas.getContext('2d').drawImage(img, 0, 0, 600, 800);
           const base64Photo = canvas.toDataURL('image/jpeg', 0.7).split(',')[1];
 
-          statusText.innerText = "Mengirim Absen...";
+          document.getElementById('processing-text').innerText = "Mengirim Absen...";
           google.script.run.withSuccessHandler(res => {
-            overlay.style.display = 'none';
+            hideProcessing();
             if (res.code === 200) Swal.fire('Berhasil!', res.message, 'success').then(() => loadDashboardData());
             else Swal.fire('Gagal', res.message, 'error');
+          }).withFailureHandler(err => {
+            hideProcessing();
+            Swal.fire('Gagal', err.toString(), 'error');
           }).submitAbsenWeb({
-            api_token: 'SUPER_SECRET_UMKM001_8xZ2',
+            api_token: 'LABOJON',
             client_id: currentUser.clientId,
             action: 'absen',
             id_karyawan: currentUser.id,
             tipe_absen: currentTipeAbsen,
-            lat_long: `${pos.coords.latitude}, ${pos.coords.longitude}`,
-            foto_base64: base64Photo
+            lat_long: `${lat}, ${lng}`,
+            foto_base64: base64Photo,
+            face_embedding: JSON.stringify(Array.from(detection.descriptor)),
+            client_timestamp: Date.now()
           });
-        });
+        }, (err) => {
+          hideProcessing();
+          Swal.fire('Error Lokasi', 'Gagal mendapatkan lokasi. Pastikan GPS aktif dan diizinkan.', 'error');
+        }, { enableHighAccuracy: true });
       } else {
         if (confirm("Daftarkan wajah ini?")) {
           const descriptor = JSON.stringify(Array.from(detection.descriptor));
+          showProcessing("Mendaftarkan Wajah...");
           google.script.run.withSuccessHandler(res => {
-            overlay.style.display = 'none';
+            hideProcessing();
             if (res.success) { currentUser.faceWeb = descriptor; localStorage.setItem('hadirin_user', JSON.stringify(currentUser)); alert("Berhasil! Silakan absen ulang."); }
+            else { Swal.fire('Gagal', res.message, 'error'); }
+          }).withFailureHandler(err => {
+            hideProcessing();
+            Swal.fire('Gagal', err.toString(), 'error');
           }).registerFaceWeb(currentUser.clientId, currentUser.id, descriptor);
-        } else overlay.style.display = 'none';
+        } else {
+          hideProcessing();
+        }
       }
-    } catch (err) { overlay.style.display = 'none'; alert(err.message); }
+    } catch (err) { 
+      hideProcessing(); 
+      Swal.fire('Error', err.message, 'error'); 
+    }
   });
 </script>
