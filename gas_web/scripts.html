@@ -877,6 +877,19 @@
 
       if (currentUser.faceWeb && currentUser.faceWeb.length > 20) {
         const savedDesc = new Float32Array(JSON.parse(currentUser.faceWeb));
+        
+        // VALIDASI DIMENSI: Mencegah error euclideanDistance mismatch
+        if (savedDesc.length !== detection.descriptor.length) {
+          hideProcessing();
+          Swal.fire({
+            icon: 'error',
+            title: 'Versi Wajah Tidak Cocok',
+            text: 'Data wajah tersimpan menggunakan versi lama atau perangkat berbeda. Silakan daftarkan ulang wajah Anda untuk Web.',
+            confirmButtonText: 'Daftar Ulang',
+          }).then(() => startReRegisterFace());
+          return;
+        }
+
         const faceMatcher = new faceapi.FaceMatcher(new faceapi.LabeledFaceDescriptors(currentUser.id, [savedDesc]), 0.6);
         const match = faceMatcher.findBestMatch(detection.descriptor);
 

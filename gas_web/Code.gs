@@ -79,7 +79,7 @@ function loginWeb(clientId, id, pin) {
             nama: rowNama,
             role: rowRole,
             clientId: clientId,
-            faceWeb: data[i][4] || "", // Kolom E (Index 4) untuk Embedding Web
+            faceWeb: data[i][7] || "", // Kolom H (Index 7) untuk Embedding Web (Mencegah konflik dimensi dengan Mobile)
           },
         };
       }
@@ -107,7 +107,7 @@ function registerFaceWeb(clientId, id, descriptor) {
     var searchId = id.trim().toLowerCase();
     for (var i = 1; i < data.length; i++) {
       if (String(data[i][0]).trim().toLowerCase() === searchId) {
-        sheet.getRange(i + 1, 5).setValue(descriptor); // Simpan di Kolom E (Status)
+        sheet.getRange(i + 1, 8).setValue(descriptor); // Simpan di Kolom H (Index 7)
         return {
           success: true,
           message: "Pola wajah web berhasil didaftarkan!",
@@ -125,6 +125,7 @@ function registerFaceWeb(clientId, id, descriptor) {
  */
 function submitAbsenWeb(payload) {
   try {
+    payload.is_web = true; // Tandai bahwa ini dari dashboard web
     var result = handleAbsensi(payload);
     var jsonStr = result.getContent();
     return JSON.parse(jsonStr);
@@ -569,7 +570,7 @@ function handleAbsensi(payload) {
   var storedEmbedding = "";
   for (var i = 1; i < masterData.length; i++) {
     if (String(masterData[i][0]) === String(payload.id_karyawan)) {
-      storedEmbedding = masterData[i][4]; // Kolom E
+      storedEmbedding = payload.is_web ? masterData[i][7] : masterData[i][4]; // Kolom H untuk Web, Kolom E untuk Mobile
       break;
     }
   }
@@ -677,6 +678,7 @@ function handleGetAllAnggota(payload) {
         bagian: String(data[i][2] || "-"),
         sudah_enroll: data[i][3] !== "",
         wajah_terdaftar: !!(data[i][4] && String(data[i][4]).length > 20),
+        wajah_web_terdaftar: !!(data[i][7] && String(data[i][7]).length > 20),
         id_shift_default: String(data[i][6] || "S1"),
         no_hp: String(data[i][5] || "")
       });
@@ -843,7 +845,7 @@ function handleGetFace(payload) {
 
   for (var i = 1; i < data.length; i++) {
     if (String(data[i][0]).trim().toLowerCase() === targetId) {
-      var faceData = data[i][4];
+      var faceData = payload.is_web ? data[i][7] : data[i][4];
       if (!faceData || faceData === "") return responseJSON(404, "error", "Face not registered");
       return responseJSON(200, "success", faceData);
     }
