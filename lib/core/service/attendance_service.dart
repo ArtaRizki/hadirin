@@ -11,6 +11,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:safe_device/safe_device.dart';
 import 'package:primkopasindo_labojon/core/config/app_config.dart';
 import 'package:primkopasindo_labojon/core/service/api_client.dart';
+import 'package:primkopasindo_labojon/core/service/admin_service.dart';
 import 'package:primkopasindo_labojon/core/service/face_service.dart';
 
 /// Tanggung jawab: Absen masuk/pulang & riwayat absensi karyawan.
@@ -123,9 +124,36 @@ class AttendanceService extends ApiClient {
 
       // Proteksi Tambahan Fake GPS bawaan Android (Geolocator)
       if (position.isMocked) {
-          throw Exception(
+        throw Exception(
           'Lokasi Palsu Terdeteksi: Anda terindikasi menggunakan Fake GPS. Absensi ditolak.',
         );
+      }
+
+      // VALIDASI RADIUS KANTOR
+      final adminService = AdminService();
+      final officeConfig = await adminService.getOfficeConfig(clientId);
+      if (officeConfig != null) {
+        final officeLat = double.tryParse(officeConfig['lat']?.toString() ?? '') ?? 0.0;
+        final officeLng = double.tryParse(officeConfig['lng']?.toString() ?? '') ?? 0.0;
+        final officeRadius = double.tryParse(officeConfig['radius']?.toString() ?? '100') ?? 100.0;
+
+        final distance = Geolocator.distanceBetween(
+          position.latitude,
+          position.longitude,
+          officeLat,
+          officeLng,
+        );
+
+        d.log('Jarak ke kantor: ${distance.toStringAsFixed(1)} meter (radius: $officeRadius m)');
+
+        if (distance > officeRadius) {
+          final distText = distance < 1000
+              ? '${distance.toStringAsFixed(0)} meter'
+              : '${(distance / 1000).toStringAsFixed(2)} km';
+          throw Exception(
+            'Di Luar Area Kantor: Anda berada $distText dari kantor. Absen hanya bisa dilakukan dalam radius ${officeRadius.toStringAsFixed(0)} meter.',
+          );
+        }
       }
 
       // 4. IZIN KAMERA
