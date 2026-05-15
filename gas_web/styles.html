@@ -366,7 +366,26 @@
 
     #sidebar .logo,
     #sidebar .nav-item span,
+    #sidebar .user-info > div:first-child {
+      display: none;
+    }
+
     #sidebar .user-info {
+      display: flex !important;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    #sidebar #btn-re-register-face {
+      width: 44px !important;
+      height: 44px !important;
+      padding: 0 !important;
+      border-radius: 14px !important;
+      justify-content: center;
+    }
+
+    #sidebar #btn-re-register-face span,
+    #sidebar .btn span {
       display: none;
     }
 

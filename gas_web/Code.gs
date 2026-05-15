@@ -1,4 +1,4 @@
-/**
+﻿/**
  * HADIRIN UNIFIED BACKEND - v3.5 (Mobile API + Web Dashboard - Full Parity)
  *
  * Tanggung Jawab:
@@ -24,7 +24,7 @@ function doGet(e) {
   var template = HtmlService.createTemplateFromFile("Index");
   return template
     .evaluate()
-    .setTitle("Hadir.in Dashboard v3.5")
+    .setTitle("LABOJON Dashboard v3.5")
     .addMetaTag("viewport", "width=device-width, initial-scale=1")
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
 }
