@@ -884,7 +884,52 @@
     }
 
     currentTipeAbsen = tipe;
-    document.getElementById('camera-input').click();
+
+    // VALIDASI LOKASI GPS
+    if (!navigator.geolocation) {
+      Swal.fire('Browser Tidak Support', 'Browser Anda tidak mendukung GPS. Harap gunakan Chrome/Firefox versi terbaru.', 'error');
+      return;
+    }
+
+    const offLat = officeConfig ? parseFloat(officeConfig.lat) : -7.1544892;
+    const offLng = officeConfig ? parseFloat(officeConfig.lng) : 111.879935;
+    const offRadius = officeConfig ? parseFloat(officeConfig.radius) : 100;
+
+    Swal.fire({
+      title: 'Memeriksa Lokasi...',
+      html: 'Memastikan Anda berada di area kantor.',
+      allowOutsideClick: false,
+      didOpen: () => { Swal.showLoading(); }
+    });
+
+    navigator.geolocation.getCurrentPosition(
+      function (position) {
+        const userLat = position.coords.latitude;
+        const userLng = position.coords.longitude;
+        const distance = getDistanceFromLatLonInM(userLat, userLng, offLat, offLng);
+        const distanceText = distance < 1000 ? Math.round(distance) + ' meter' : (distance / 1000).toFixed(2) + ' km';
+
+        if (distance > offRadius) {
+          Swal.fire({
+            icon: 'error',
+            title: 'Di Luar Area Kantor',
+            html: `Anda berada <b>${distanceText}</b> dari kantor.<br>Absen hanya bisa dilakukan dalam radius <b>${offRadius} meter</b>.`,
+            confirmButtonColor: '#005147'
+          });
+        } else {
+          Swal.close();
+          document.getElementById('camera-input').click();
+        }
+      },
+      function (error) {
+        let msg = 'Tidak dapat mengakses GPS.';
+        if (error.code === 1) msg = 'Izin lokasi ditolak. Harap izinkan akses lokasi di browser Anda.';
+        else if (error.code === 2) msg = 'Lokasi tidak tersedia. Pastikan GPS aktif.';
+        else if (error.code === 3) msg = 'Timeout saat mengambil lokasi. Coba lagi.';
+        Swal.fire('GPS Error', msg, 'error');
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+    );
   }
 
   document.getElementById('camera-input').addEventListener('change', async function (e) {
