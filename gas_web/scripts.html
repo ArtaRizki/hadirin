@@ -119,6 +119,12 @@
     document.getElementById('user-name').innerText = currentUser.nama;
     document.getElementById('user-id-display').innerHTML = "ID: " + currentUser.id + " <br><small style='color:var(--primary); font-weight:700;'>v3.5 Diagnostic Mode</small>";
 
+    // Isi juga nama di mobile-header
+    const mobileNameEl = document.getElementById('mobile-user-name');
+    const mobileIdEl = document.getElementById('mobile-user-id');
+    if (mobileNameEl) mobileNameEl.innerText = currentUser.nama;
+    if (mobileIdEl) mobileIdEl.innerText = "ID: " + currentUser.id;
+
     const role = (currentUser && currentUser.role) ? currentUser.role.toLowerCase() : "";
     const isAdmin = role === 'admin' || role === 'superadmin' || role === 'super admin';
 

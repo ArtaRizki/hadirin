@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html>
 
 <head>
@@ -70,7 +70,11 @@
     <!-- MOBILE HEADER -->
     <header class="mobile-header">
       <div class="logo" style="font-size: 1.2rem; margin-bottom: 0;">LABOJON</div>
-      <button class="btn mobile-logout-btn" onclick="handleLogout()" style="padding: 8px 14px; font-size: 0.75rem; color: #ef4444; background: rgba(239, 68, 68, 0.08); border-radius: 10px; display: flex; align-items: center; gap: 6px;">
+      <div style="flex: 1; padding: 0 12px; overflow: hidden;">
+        <div id="mobile-user-name" style="font-weight: 800; font-size: 0.85rem; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"></div>
+        <div id="mobile-user-id" style="font-size: 0.7rem; color: var(--text-muted); font-weight: 600;"></div>
+      </div>
+      <button class="btn mobile-logout-btn" onclick="handleLogout()" style="padding: 8px 14px; font-size: 0.75rem; color: #ef4444; background: rgba(239, 68, 68, 0.08); border-radius: 10px; display: flex; align-items: center; gap: 6px; flex-shrink: 0;">
         <i data-lucide="log-out" style="width: 16px; height: 16px;"></i> Keluar
       </button>
     </header>
