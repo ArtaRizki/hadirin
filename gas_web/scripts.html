@@ -33,6 +33,15 @@
     }
   });
 
+  // SIDEBAR TOGGLE
+  function toggleSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    const openBtn = document.getElementById('sidebar-open-btn');
+    const isCollapsed = sidebar.classList.toggle('sidebar-collapsed');
+    if (openBtn) openBtn.style.display = isCollapsed ? 'flex' : 'none';
+    lucide.createIcons();
+  }
+
   // ROUTING
   function switchView(viewId) {
     // Update Sidebar (Desktop)

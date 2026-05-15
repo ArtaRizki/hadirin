@@ -81,7 +81,13 @@
 
     <!-- SIDEBAR -->
     <aside id="sidebar" class="glass">
-      <div class="logo" style="font-size: 1.5rem; margin-bottom: 40px; text-align: left;">LABOJON</div>
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 40px;">
+        <div class="logo" style="font-size: 1.5rem; margin-bottom: 0;">LABOJON</div>
+        <button id="sidebar-collapse-btn" onclick="toggleSidebar()" title="Sembunyikan sidebar"
+          style="background: none; border: none; cursor: pointer; padding: 6px; border-radius: 10px; color: var(--text-muted); display: flex; align-items: center; justify-content: center; transition: all 0.2s;">
+          <i data-lucide="panel-left-close" style="width: 20px; height: 20px;"></i>
+        </button>
+      </div>
 
       <nav style="flex: 1;">
         <a class="nav-item active" onclick="switchView('dashboard')">
@@ -150,6 +156,12 @@
         </button>
       </div>
     </aside>
+
+    <!-- FLOATING TOGGLE BUTTON (tampil saat sidebar disembunyikan) -->
+    <button id="sidebar-open-btn" onclick="toggleSidebar()" title="Tampilkan sidebar"
+      style="display: none; position: fixed; top: 16px; left: 16px; z-index: 999; width: 42px; height: 42px; border-radius: 12px; background: var(--primary-gradient); color: white; border: none; cursor: pointer; align-items: center; justify-content: center; box-shadow: 0 4px 15px var(--shadow-color);">
+      <i data-lucide="panel-left-open" style="width: 20px; height: 20px;"></i>
+    </button>
 
     <!-- MAIN CONTENT -->
     <main id="main-content">
