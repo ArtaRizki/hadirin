@@ -606,8 +606,8 @@ function handleAbsensi(payload) {
       return responseJSON(500, "error", "Gagal memproses verifikasi wajah: " + e.message);
     }
   } else {
-    // Opsional: Jika ingin mewajibkan daftar wajah dulu baru bisa absen
-    // return responseJSON(403, "error", "Anda belum mendaftarkan wajah.");
+    // WAJIB: User harus daftar wajah dulu sebelum bisa absen
+    return responseJSON(403, "error", "Anda belum mendaftarkan wajah. Silakan daftarkan wajah terlebih dahulu melalui tombol 'Update Wajah Web' di menu profil.");
   }
 
   var configData = ss.getSheetByName("Config_Kantor").getRange("A2:I2").getValues()[0];

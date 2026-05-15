@@ -70,6 +70,9 @@
     <!-- MOBILE HEADER -->
     <header class="mobile-header">
       <div class="logo" style="font-size: 1.2rem; margin-bottom: 0;">Hadir.in</div>
+      <button class="btn mobile-logout-btn" onclick="handleLogout()" style="padding: 8px 14px; font-size: 0.75rem; color: #ef4444; background: rgba(239, 68, 68, 0.08); border-radius: 10px; display: flex; align-items: center; gap: 6px;">
+        <i data-lucide="log-out" style="width: 16px; height: 16px;"></i> Keluar
+      </button>
     </header>
 
     <!-- SIDEBAR -->
@@ -516,6 +519,11 @@
           <span>Izin</span>
         </a>
       </div>
+      <!-- Member-only: Daftar Wajah button -->
+      <a class="bottom-nav-item" id="m-nav-face" onclick="startReRegisterFace()" style="display: none;">
+        <i data-lucide="scan-face"></i>
+        <span>Daftar Wajah</span>
+      </a>
     </nav>
   </div>
 

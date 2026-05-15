@@ -127,11 +127,13 @@
       document.getElementById('member-action-section').style.display = 'none';
       if (document.getElementById('admin-mobile-nav')) document.getElementById('admin-mobile-nav').style.display = 'contents';
       document.getElementById('btn-re-register-face').style.display = 'none';
+      if (document.getElementById('m-nav-face')) document.getElementById('m-nav-face').style.display = 'none';
     } else {
       document.getElementById('admin-section').style.display = 'none';
       document.getElementById('member-action-section').style.display = 'block';
       if (document.getElementById('admin-mobile-nav')) document.getElementById('admin-mobile-nav').style.display = 'none';
       document.getElementById('btn-re-register-face').style.display = 'flex';
+      if (document.getElementById('m-nav-face')) document.getElementById('m-nav-face').style.display = 'flex';
     }
 
     const now = new Date();
@@ -769,6 +771,12 @@
   // FACE RECOGNITION LOGIC (WEB)
   let currentTipeAbsen = "Masuk";
   let isFaceModelLoaded = false;
+  let isReRegisterMode = false;
+
+  function startReRegisterFace() {
+    isReRegisterMode = true;
+    document.getElementById('camera-input').click();
+  }
 
   async function initFaceAI() {
     if (isFaceModelLoaded) return;
@@ -785,6 +793,22 @@
   async function handleWebAbsen(tipe) {
     if (!currentSchedule) { alert("Memuat data jadwal..."); return; }
     if (currentSchedule.is_off) { Swal.fire('Libur', 'Hari ini Anda LIBUR. Tidak perlu absen.', 'info'); return; }
+
+    // WAJIB: Cek apakah wajah sudah terdaftar
+    if (!currentUser.faceWeb || currentUser.faceWeb.length <= 20) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Wajah Belum Terdaftar',
+        html: 'Anda <b>harus mendaftarkan wajah</b> terlebih dahulu sebelum bisa absen.<br><br>Gunakan tombol <b>"Daftar Wajah"</b> di bawah layar.',
+        confirmButtonText: 'Daftar Sekarang',
+        confirmButtonColor: '#7C3AED',
+        showCancelButton: true,
+        cancelButtonText: 'Nanti'
+      }).then((result) => {
+        if (result.isConfirmed) startReRegisterFace();
+      });
+      return;
+    }
 
     const now = new Date();
     const currentMins = now.getHours() * 60 + now.getMinutes();
@@ -900,21 +924,33 @@
           hideProcessing();
           Swal.fire('Error Lokasi', 'Gagal mendapatkan lokasi. Pastikan GPS aktif dan diizinkan.', 'error');
         }, { enableHighAccuracy: true });
-      } else {
-        if (confirm("Daftarkan wajah ini?")) {
-          const descriptor = JSON.stringify(Array.from(detection.descriptor));
-          showProcessing("Mendaftarkan Wajah...");
-          google.script.run.withSuccessHandler(res => {
-            hideProcessing();
-            if (res.success) { currentUser.faceWeb = descriptor; localStorage.setItem('hadirin_user', JSON.stringify(currentUser)); alert("Berhasil! Silakan absen ulang."); }
-            else { Swal.fire('Gagal', res.message, 'error'); }
-          }).withFailureHandler(err => {
-            hideProcessing();
-            Swal.fire('Gagal', err.toString(), 'error');
-          }).registerFaceWeb(currentUser.clientId, currentUser.id, descriptor);
-        } else {
+      } else if (isReRegisterMode) {
+        // Mode re-register/daftar wajah: simpan wajah baru
+        const descriptor = JSON.stringify(Array.from(detection.descriptor));
+        showProcessing("Mendaftarkan Wajah...");
+        google.script.run.withSuccessHandler(res => {
           hideProcessing();
-        }
+          if (res.success) { 
+            currentUser.faceWeb = descriptor; 
+            localStorage.setItem('hadirin_user', JSON.stringify(currentUser)); 
+            Swal.fire('Berhasil!', 'Wajah berhasil didaftarkan. Sekarang Anda bisa melakukan absensi.', 'success'); 
+          }
+          else { Swal.fire('Gagal', res.message, 'error'); }
+        }).withFailureHandler(err => {
+          hideProcessing();
+          Swal.fire('Gagal', err.toString(), 'error');
+        }).registerFaceWeb(currentUser.clientId, currentUser.id, descriptor);
+        isReRegisterMode = false;
+      } else {
+        // Wajah belum terdaftar DAN bukan mode register -> BLOKIR absen
+        hideProcessing();
+        Swal.fire({
+          icon: 'warning',
+          title: 'Wajah Belum Terdaftar',
+          html: 'Anda <b>harus mendaftarkan wajah</b> terlebih dahulu sebelum bisa absen.<br><br>Gunakan tombol <b>"Daftar Wajah"</b> di bawah layar.',
+          confirmButtonText: 'Mengerti',
+          confirmButtonColor: '#7C3AED'
+        });
       }
     } catch (err) { 
       hideProcessing(); 
