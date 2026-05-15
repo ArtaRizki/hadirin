@@ -169,6 +169,19 @@
     if (saved) {
       currentUser = JSON.parse(saved);
       setupUIForUser();
+
+      // Re-sync faceWeb dari server agar tidak pakai data basi dari localStorage
+      if (currentUser.clientId && currentUser.id && currentUser.id !== 'ADMIN') {
+        google.script.run
+          .withSuccessHandler(function (response) {
+            if (response.success && response.user) {
+              currentUser.faceWeb = response.user.faceWeb || "";
+              localStorage.setItem('hadirin_user', JSON.stringify(currentUser));
+              console.log("faceWeb synced from server. Length: " + (currentUser.faceWeb || "").length);
+            }
+          })
+          .loginWeb(currentUser.clientId, currentUser.id, "BYPASS_PIN");
+      }
     }
   });
 

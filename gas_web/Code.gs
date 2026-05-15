@@ -62,7 +62,9 @@ function loginWeb(clientId, id, pin) {
 
     // 3. Verifikasi di Spreadsheet Klien (Master_Karyawan)
     var ss = SpreadsheetApp.openById(config.spreadsheetId);
-    var data = ss.getSheetByName("Master_Karyawan").getDataRange().getValues();
+    var sheet = ss.getSheetByName("Master_Karyawan");
+    var lastRow = sheet.getLastRow();
+    var data = lastRow > 0 ? sheet.getRange(1, 1, lastRow, 8).getValues() : []; // Explicitly read A-H (8 columns)
 
     for (var i = 1; i < data.length; i++) {
       var rowId = String(data[i][0]).trim().toLowerCase();
@@ -78,8 +80,8 @@ function loginWeb(clientId, id, pin) {
             id: rowId,
             nama: rowNama,
             role: rowRole,
-            clientId: clientId,
-            faceWeb: data[i][7] || "", // Kolom H (Index 7) untuk Embedding Web (Mencegah konflik dimensi dengan Mobile)
+            clientId: lookupId, // Simpan dalam uppercase agar konsisten
+            faceWeb: data[i][7] || "", // Kolom H (Index 7) untuk Embedding Web
           },
         };
       }
@@ -98,25 +100,30 @@ function loginWeb(clientId, id, pin) {
  */
 function registerFaceWeb(clientId, id, descriptor) {
   try {
-    var config = getSemuaConfig()[clientId];
-    var sheet = SpreadsheetApp.openById(config.spreadsheetId).getSheetByName(
-      "Master_Karyawan",
-    );
+    var lookupId = String(clientId || "").trim().toUpperCase();
+    var config = getSemuaConfig()[lookupId];
+    if (!config) return { success: false, message: "Config tidak ditemukan untuk: " + lookupId };
+
+    var ss = SpreadsheetApp.openById(config.spreadsheetId);
+    var sheet = ss.getSheetByName("Master_Karyawan");
     var data = sheet.getDataRange().getValues();
 
-    var searchId = id.trim().toLowerCase();
+    var searchId = String(id).trim().toLowerCase();
     for (var i = 1; i < data.length; i++) {
       if (String(data[i][0]).trim().toLowerCase() === searchId) {
-        sheet.getRange(i + 1, 8).setValue(descriptor); // Simpan di Kolom H (Index 7)
+        sheet.getRange(i + 1, 8).setValue(descriptor); // Simpan di Kolom H
+        SpreadsheetApp.flush(); // Pastikan data tertulis ke sheet
+        console.log("registerFaceWeb OK | ID: " + searchId + " | Row: " + (i + 1) + " | Len: " + descriptor.length);
         return {
           success: true,
           message: "Pola wajah web berhasil didaftarkan!",
         };
       }
     }
-    return { success: false, message: "User tidak ditemukan." };
+    return { success: false, message: "User ID '" + searchId + "' tidak ditemukan di sheet." };
   } catch (e) {
-    return { success: false, message: e.toString() };
+    console.log("registerFaceWeb ERROR: " + e.toString());
+    return { success: false, message: "Server Error: " + e.toString() };
   }
 }
 
@@ -566,11 +573,14 @@ function handleAbsensi(payload) {
   }
 
   // --- VERIFIKASI WAJAH DI BACKEND ---
-  var masterData = ss.getSheetByName("Master_Karyawan").getDataRange().getValues();
+  var masterSheet = ss.getSheetByName("Master_Karyawan");
+  var lastRow = masterSheet.getLastRow();
+  var masterData = lastRow > 1 ? masterSheet.getRange(1, 1, lastRow, 8).getValues() : []; // Explicitly read A-H (8 columns)
   var storedEmbedding = "";
   for (var i = 1; i < masterData.length; i++) {
     if (String(masterData[i][0]) === String(payload.id_karyawan)) {
-      storedEmbedding = payload.is_web ? masterData[i][7] : masterData[i][4]; // Kolom H untuk Web, Kolom E untuk Mobile
+      storedEmbedding = payload.is_web ? (masterData[i][7] || "") : (masterData[i][4] || ""); // Kolom H untuk Web, Kolom E untuk Mobile
+      console.log("Face Check | ID: " + payload.id_karyawan + " | is_web: " + !!payload.is_web + " | stored_len: " + String(storedEmbedding).length);
       break;
     }
   }
