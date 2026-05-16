@@ -3,112 +3,70 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:hadirin/core/config/app_config.dart';
 
-/// Kelas dasar yang menyimpan logika HTTP bersama.
-/// Semua service mewarisi kelas ini — tidak perlu duplikasi kode.
+/// Kelas dasar yang menyimpan logika HTTP untuk Laravel Backend.
 class ApiClient {
   static const _timeout = Duration(seconds: 45);
 
   // =================================================================
-  // HTTP POST + handle redirect 302/303 khas Google Apps Script
+  // HTTP POST Standar Laravel
   // =================================================================
   Future<http.Response> sendRequest(
-    String actionName,
+    String endpoint,
     Map<String, dynamic> payload, {
     Duration? timeout,
   }) async {
     final effectiveTimeout = timeout ?? _timeout;
+    final url = '${AppConfig.baseUrl}/$endpoint';
 
-    // Sembunyikan data besar dari log agar konsol tidak lag
+    // Sembunyikan data besar dari log
     final logPayload = Map<String, dynamic>.from(payload);
-    if (logPayload.containsKey('foto_base64') &&
-        logPayload['foto_base64'].toString().isNotEmpty) {
-      logPayload['foto_base64'] = '[BASE64_IMAGE_HIDDEN]';
-    }
-    if (logPayload.containsKey('face_embedding')) {
-      logPayload['face_embedding'] = '[FACE_EMBEDDING_HIDDEN]';
-    }
+    if (logPayload.containsKey('foto_base64')) logPayload['foto_base64'] = '[IMAGE]';
+    if (logPayload.containsKey('face_embedding')) logPayload['face_embedding'] = '[EMBEDDING]';
+    if (logPayload.containsKey('face_descriptor')) logPayload['face_descriptor'] = '[DESCRIPTOR]';
 
-    d.log(
-      '==== [REQUEST: $actionName] ====\n'
-      'URL: ${AppConfig.gasEndpoint}\n'
-      'Payload: ${jsonEncode(logPayload)}',
-    );
+    d.log('==== [REQUEST: $endpoint] ====\nURL: $url\nPayload: ${jsonEncode(logPayload)}');
 
     try {
-      var response = await http
+      final response = await http
           .post(
-            Uri.parse(AppConfig.gasEndpoint),
-            headers: {'Content-Type': 'application/json'},
+            Uri.parse(url),
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json',
+              'X-Tenant-ID': payload['client_id'] ?? '', // Kirim tenant_id via Header untuk keamanan Laravel
+            },
             body: jsonEncode(payload),
           )
           .timeout(effectiveTimeout);
 
-      // Google Apps Script sering redirect sebelum balas JSON
-      if (response.statusCode == 302 || response.statusCode == 303) {
-        final redirectUrl = _extractRedirectUrl(response);
-        if (redirectUrl != null) {
-          d.log('==== [REDIRECT: $actionName] ==== Mengikuti URL baru...');
-          response = await http
-              .get(Uri.parse(redirectUrl))
-              .timeout(effectiveTimeout);
-        }
-      }
-
-      d.log(
-        '==== [RESPONSE: $actionName] ====\n'
-        'Status: ${response.statusCode}\n'
-        'Body: ${response.body}',
-      );
+      d.log('==== [RESPONSE: $endpoint] ====\nStatus: ${response.statusCode}\nBody: ${response.body}');
 
       return response;
     } catch (e) {
-      d.log('==== [HTTP ERROR: $actionName] ==== $e');
+      d.log('==== [HTTP ERROR: $endpoint] ==== $e');
       rethrow;
     }
   }
 
   // =================================================================
-  // Parse response JSON standar { code, message }
+  // Parse response JSON standar Laravel { code, message }
   // =================================================================
   Map<String, dynamic> parseResponse(String body) {
     try {
-      // Jika body mengandung error JS yang khas, lempar exception ramah
-      if (body.contains("cannot read properties of undefined") ||
-          body.contains("spreadsheetId")) {
-        throw const FormatException("KODE_INSTANSI_TIDAK_VALID");
-      }
-
       final data = jsonDecode(body) as Map<String, dynamic>;
-      if (data['code'] == 200 || data['code'] == 201) {
+      
+      // Handle Laravel Success (200, 201)
+      if (data['code'] == 200 || data['code'] == 201 || data['status'] == 'success') {
         return {'success': true, 'message': data['message']};
       }
+      
       throw Exception(data['message'] ?? 'Respons tidak valid dari server.');
-    } on FormatException catch (e) {
-      if (e.toString().contains("KODE_INSTANSI_TIDAK_VALID")) {
-        throw Exception(
-          "Kode Instansi tidak ditemukan atau belum terdaftar di sistem.",
-        );
+    } catch (e) {
+      d.log("==== PARSE ERROR ====\n$body");
+      if (body.contains('<!DOCTYPE html>')) {
+        throw Exception("Server Error (500). Silakan hubungi admin.");
       }
-      if (body.contains('Absen berhasil dicatat') || 
-          body.toLowerCase().contains('berhasil') || 
-          body.toLowerCase().contains('success') ||
-          body.contains('Data berhasil ditambahkan')) {
-        return {'success': true, 'message': 'Data berhasil disimpan.'};
-      }
-      d.log("==== FORMAT ERROR: SERVER CRASH? ====\n$body");
-      throw Exception(
-        body.length < 50 ? body : "Server sedang mengalami kendala teknis. Harap hubungi Admin.",
-      );
+      rethrow;
     }
-  }
-
-  // =================================================================
-  // Helper: ambil URL redirect dari header atau body HTML
-  // =================================================================
-  String? _extractRedirectUrl(http.Response response) {
-    var url = response.headers['location'];
-    if (url != null) return url;
-    final match = RegExp(r'HREF="([^"]+)"').firstMatch(response.body);
-    return match?.group(1)?.replaceAll('&amp;', '&');
   }
 }
