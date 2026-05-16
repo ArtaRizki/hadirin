@@ -56,6 +56,7 @@ Route::middleware(['auth'])->group(function () {
     
     // Reports
     Route::get('/reports/monthly', [ReportController::class, 'monthly'])->name('reports.monthly');
+    Route::get('/reports/export', [ReportController::class, 'export'])->name('reports.export');
     
     // Office Config
     Route::get('/office-config', [OfficeConfigController::class, 'index'])->name('office-config.index');

@@ -14,8 +14,11 @@
                 <input type="month" name="month" value="{{ $month->format('Y-m') }}" onchange="document.getElementById('monthForm').submit()" 
                     style="padding: 10px 16px; border-radius: 12px; border: 1px solid rgba(0,0,0,0.1); outline: none; font-weight: 600;" />
             </form>
-            <button class="btn btn-primary" onclick="window.print()" style="background: var(--text-main);">
-                <i data-lucide="printer"></i> Cetak Laporan
+            <a href="{{ route('reports.export', ['month' => $month->format('Y-m')]) }}" class="btn" style="background: #10b981; color: white; text-decoration: none; display: flex; align-items: center; gap: 8px;">
+                <i data-lucide="file-spreadsheet"></i> Download Excel
+            </a>
+            <button class="btn" onclick="window.print()" style="background: var(--text-main); color: white; display: flex; align-items: center; gap: 8px;">
+                <i data-lucide="printer"></i> Cetak
             </button>
         </div>
     </header>
