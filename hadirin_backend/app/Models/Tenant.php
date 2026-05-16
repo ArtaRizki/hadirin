@@ -19,4 +19,29 @@ class Tenant extends Model
     {
         return $this->hasMany(Attendance::class);
     }
+
+    public function officeConfig()
+    {
+        return $this->hasOne(OfficeConfig::class);
+    }
+
+    public function activities()
+    {
+        return $this->hasMany(Activity::class);
+    }
+
+    public function banners()
+    {
+        return $this->hasMany(Banner::class);
+    }
+
+    public function ngajiGroups()
+    {
+        return $this->hasMany(NgajiGroup::class);
+    }
+
+    public function briefings()
+    {
+        return $this->hasMany(Briefing::class);
+    }
 }

@@ -6,27 +6,22 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
+        // Ngaji logs (already has table, add location field)
         Schema::create('ngaji_logs', function (Blueprint $table) {
             $table->id();
             $table->string('tenant_id');
-            $table->foreignId('user_id')->constrained()->onDelete('cascade');
-            $table->string('group_name');
+            $table->foreignId('user_id')->constrained()->onDelete('cascade'); // guru
+            $table->foreignId('ngaji_group_id')->constrained()->onDelete('cascade');
             $table->string('location')->nullable();
-            $table->text('material_description')->nullable();
+            $table->text('materi')->nullable();
             $table->timestamps();
-            
+
             $table->foreign('tenant_id')->references('id')->on('tenants')->onDelete('cascade');
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::dropIfExists('ngaji_logs');
