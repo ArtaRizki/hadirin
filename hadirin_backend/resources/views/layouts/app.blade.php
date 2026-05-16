@@ -129,6 +129,18 @@
                     <i data-lucide="calendar-plus"></i>
                     <span>Ajukan Izin</span>
                 </a>
+                <a class="nav-item {{ request()->routeIs('quran.create') ? 'active' : '' }}" href="{{ route('quran.create') }}">
+                    <i data-lucide="book-open"></i>
+                    <span>Setoran Quran</span>
+                </a>
+                <a class="nav-item {{ request()->routeIs('ngaji.create') ? 'active' : '' }}" href="{{ route('ngaji.create') }}">
+                    <i data-lucide="users"></i>
+                    <span>Presensi Ngaji</span>
+                </a>
+                <a class="nav-item {{ request()->routeIs('briefings.personal') ? 'active' : '' }}" href="{{ route('briefings.personal') }}">
+                    <i data-lucide="mic"></i>
+                    <span>Jadwal Rapat</span>
+                </a>
                 @endif
             </nav>
 

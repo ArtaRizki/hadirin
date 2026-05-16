@@ -64,12 +64,41 @@ class AttendanceController extends Controller
             'photo' => 'required'
         ]);
 
-        // 1. Geofencing Validation (Mocked for now, assumes valid if client allows submission)
-        // In a real strict environment, calculate Haversine distance here vs OfficeConfig
+        // 1. Geofencing Validation
+        $config = \App\Models\OfficeConfig::where('tenant_id', auth()->user()->tenant_id)->first();
+        if ($config) {
+            $userLoc = explode(',', $request->lat_long);
+            $userLat = $userLoc[0];
+            $userLon = $userLoc[1];
+
+            $theta = $userLon - $config->longitude;
+            $dist = sin(deg2rad($userLat)) * sin(deg2rad($config->latitude)) +  cos(deg2rad($userLat)) * cos(deg2rad($config->latitude)) * cos(deg2rad($theta));
+            $dist = acos($dist);
+            $dist = rad2deg($dist);
+            $miles = $dist * 60 * 1.1515;
+            $distanceInMeters = $miles * 1609.344;
+
+            if ($distanceInMeters > $config->radius) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Anda berada di luar radius kantor (' . round($distanceInMeters) . 'm). Silakan mendekat ke lokasi.'
+                ], 422);
+            }
+        }
 
         // 2. Determine Status (Tepat Waktu / Terlambat) based on OfficeConfig
-        // Placeholder logic
         $status = 'Tepat Waktu';
+        $now = \Carbon\Carbon::now(); // FORCE SERVER TIME
+        
+        if ($request->type === 'Masuk') {
+            if ($config) {
+                $limit = \Carbon\Carbon::createFromFormat('H:i:s', $config->limit_checkin);
+                
+                if ($now->greaterThan($limit)) {
+                    $status = 'Terlambat';
+                }
+            }
+        }
 
         // 3. Save Image
         $imageName = time() . '_' . auth()->id() . '.jpg';

@@ -65,6 +65,14 @@ Route::middleware(['auth'])->group(function () {
 
     // Fitur Keagamaan & Rapat
     Route::get('/quran', [\App\Http\Controllers\Web\QuranController::class, 'index'])->name('quran.index');
+    Route::get('/quran/create', [\App\Http\Controllers\Web\QuranController::class, 'create'])->name('quran.create');
+    Route::post('/quran', [\App\Http\Controllers\Web\QuranController::class, 'store'])->name('quran.store');
+    
     Route::get('/ngaji', [\App\Http\Controllers\Web\NgajiController::class, 'index'])->name('ngaji.index');
+    Route::get('/ngaji/create', [\App\Http\Controllers\Web\NgajiController::class, 'create'])->name('ngaji.create');
+    Route::post('/ngaji', [\App\Http\Controllers\Web\NgajiController::class, 'store'])->name('ngaji.store');
+    
     Route::get('/briefings', [\App\Http\Controllers\Web\BriefingController::class, 'index'])->name('briefings.index');
+    Route::get('/briefings/personal', [\App\Http\Controllers\Web\BriefingController::class, 'personal'])->name('briefings.personal');
+    Route::post('/briefings/{id}/attend', [\App\Http\Controllers\Web\BriefingController::class, 'attend'])->name('briefings.attend');
 });
