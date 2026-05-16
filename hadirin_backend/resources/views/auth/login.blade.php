@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Login - Hadirin</title>
+    <title>Login - SDIT AL-FAHMI PALU</title>
     
     <!-- PWA & Mobile Meta -->
     <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -33,7 +33,12 @@
 <body>
     <div id="login-screen">
         <div class="card glass login-card">
-            <div class="logo">SISTEM HADIRIN</div>
+            <div class="logo" style="margin-bottom: 20px;">
+                <img src="{{ asset('images/logo.png') }}" style="height: 100px; width: auto; object-fit: contain;">
+                <div style="font-size: 1.5rem; font-weight: 900; background: var(--primary-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-top: 10px;">
+                    SDIT AL-FAHMI PALU
+                </div>
+            </div>
             <p style="color: var(--text-muted); margin-bottom: 30px; font-weight: 500;">
                 Silakan masukkan detail akun untuk mengakses dashboard admin.
             </p>

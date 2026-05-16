@@ -243,27 +243,82 @@
   /* STAT CARDS */
   /* ============================================ */
 
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 24px;
+    margin-bottom: 40px;
+  }
+
   .stat-card {
-    border-left: 6px solid var(--primary);
-    background: white;
+    padding: 24px;
+    border-radius: var(--radius-md);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s ease;
+  }
+
+  .stat-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 30px rgba(0,0,0,0.1);
+  }
+
+  .stat-info {
+    position: relative;
+    z-index: 2;
   }
 
   .stat-label {
-    font-size: 0.85rem;
-    font-weight: 700;
+    font-size: 0.75rem;
+    font-weight: 800;
     color: var(--text-muted);
     text-transform: uppercase;
-    letter-spacing: 0.5px;
-    display: block;
-    margin-bottom: 8px;
+    letter-spacing: 1px;
+    margin-bottom: 6px;
   }
 
   .stat-value {
-    font-size: 2.5rem;
+    font-size: 2.2rem;
     font-weight: 900;
-    letter-spacing: -1px;
-    line-height: 1;
+    letter-spacing: -1.5px;
+    color: var(--text-main);
   }
+
+  .stat-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: white;
+    box-shadow: 0 8px 16px rgba(0,0,0,0.05);
+    color: var(--primary);
+    position: relative;
+    z-index: 2;
+  }
+
+  .stat-icon i {
+    width: 24px;
+    height: 24px;
+    stroke-width: 2.5px;
+  }
+
+  /* Variants */
+  .card-hadir { border-left: 5px solid #10b981; background: linear-gradient(to right, rgba(16, 185, 129, 0.05), white); }
+  .card-hadir .stat-icon { color: #10b981; }
+  
+  .card-terlambat { border-left: 5px solid #f59e0b; background: linear-gradient(to right, rgba(245, 158, 11, 0.05), white); }
+  .card-terlambat .stat-icon { color: #f59e0b; }
+
+  .card-izin { border-left: 5px solid #3b82f6; background: linear-gradient(to right, rgba(59, 130, 246, 0.05), white); }
+  .card-izin .stat-icon { color: #3b82f6; }
+
+  .card-total { border-left: 5px solid #7c3aed; background: linear-gradient(to right, rgba(124, 58, 237, 0.05), white); }
+  .card-total .stat-icon { color: #7c3aed; }
 
   /* ============================================ */
   /* TABLES */

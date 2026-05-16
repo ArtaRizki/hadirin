@@ -48,6 +48,11 @@ Route::middleware(['auth'])->group(function () {
     
     // Activities
     Route::get('/activities', [ActivityController::class, 'index'])->name('activities.index');
+    Route::get('/activities/create', [ActivityController::class, 'create'])->name('activities.create');
+    Route::post('/activities', [ActivityController::class, 'store'])->name('activities.store');
+    Route::get('/activities/{id}/edit', [ActivityController::class, 'edit'])->name('activities.edit');
+    Route::put('/activities/{id}', [ActivityController::class, 'update'])->name('activities.update');
+    Route::delete('/activities/{id}', [ActivityController::class, 'destroy'])->name('activities.destroy');
     
     // Reports
     Route::get('/reports/monthly', [ReportController::class, 'monthly'])->name('reports.monthly');
@@ -75,4 +80,19 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/briefings', [\App\Http\Controllers\Web\BriefingController::class, 'index'])->name('briefings.index');
     Route::get('/briefings/personal', [\App\Http\Controllers\Web\BriefingController::class, 'personal'])->name('briefings.personal');
     Route::post('/briefings/{id}/attend', [\App\Http\Controllers\Web\BriefingController::class, 'attend'])->name('briefings.attend');
+
+    // Feedback
+    Route::get('/feedback', [\App\Http\Controllers\Web\FeedbackController::class, 'index'])->name('feedback.index');
+    Route::get('/feedback/create', [\App\Http\Controllers\Web\FeedbackController::class, 'create'])->name('feedback.create');
+    Route::post('/feedback', [\App\Http\Controllers\Web\FeedbackController::class, 'store'])->name('feedback.store');
+
+    // Manajemen Jabatan
+    Route::get('/positions', [\App\Http\Controllers\Web\PositionController::class, 'index'])->name('positions.index');
+    Route::post('/positions', [\App\Http\Controllers\Web\PositionController::class, 'store'])->name('positions.store');
+    Route::delete('/positions/{id}', [\App\Http\Controllers\Web\PositionController::class, 'destroy'])->name('positions.destroy');
+
+    // Kelola Ayat
+    Route::get('/verses', [\App\Http\Controllers\Web\VerseController::class, 'index'])->name('verses.index');
+    Route::post('/verses', [\App\Http\Controllers\Web\VerseController::class, 'store'])->name('verses.store');
+    Route::delete('/verses/{id}', [\App\Http\Controllers\Web\VerseController::class, 'destroy'])->name('verses.destroy');
 });

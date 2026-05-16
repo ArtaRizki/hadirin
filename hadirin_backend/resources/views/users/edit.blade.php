@@ -3,14 +3,10 @@
 @section('title', 'Edit Anggota')
 
 @section('content')
-<div class="content-view fade-in">
+<div class="content-view">
     <header style="margin-bottom: 30px">
-        <h1 style="font-size: 2.2rem; font-weight: 900; letter-spacing: -1px">
-            Edit Anggota
-        </h1>
-        <p style="color: var(--text-muted); font-weight: 500">
-            Perbarui data anggota.
-        </p>
+        <h1 style="font-size: 2.2rem; font-weight: 900; letter-spacing: -1px">Edit Data Anggota</h1>
+        <p style="color: var(--text-muted); font-weight: 500">Perbarui informasi guru atau karyawan.</p>
     </header>
 
     <div class="card glass" style="max-width: 600px;">
@@ -19,32 +15,45 @@
             @method('PUT')
             
             <div class="input-group">
-                <label>ID Anggota</label>
-                <input type="text" name="employee_id" required value="{{ old('employee_id', $user->employee_id) }}" />
-                @error('employee_id') <span style="color: red; font-size: 0.8rem;">{{ $message }}</span> @enderror
+                <label>ID Anggota / NIK (Read Only)</label>
+                <input type="text" value="{{ $user->employee_id }}" disabled style="background: #f8fafc; cursor: not-allowed;" />
             </div>
 
             <div class="input-group">
                 <label>Nama Lengkap</label>
-                <input type="text" name="name" required value="{{ old('name', $user->name) }}" />
+                <input type="text" name="name" required value="{{ $user->name }}" />
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                <div class="input-group">
+                    <label>Role</label>
+                    <select name="role" required>
+                        <option value="anggota" {{ $user->role == 'anggota' ? 'selected' : '' }}>Anggota</option>
+                        <option value="admin" {{ $user->role == 'admin' ? 'selected' : '' }}>Admin</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label>Jabatan / Divisi</label>
+                    <select name="division">
+                        <option value="">-- Pilih Jabatan --</option>
+                        @foreach($positions as $pos)
+                            <option value="{{ $pos->name }}" {{ $user->division == $pos->name ? 'selected' : '' }}>{{ $pos->name }}</option>
+                        @endforeach
+                        <option value="Lainnya" {{ !in_array($user->division, $positions->pluck('name')->toArray()) && $user->division ? 'selected' : '' }}>Lainnya</option>
+                    </select>
+                </div>
             </div>
 
             <div class="input-group">
-                <label>Role / Divisi</label>
-                <select name="role" required style="width: 100%; padding: 12px; border-radius: 12px; border: 1px solid rgba(0,0,0,0.1); outline: none;">
-                    <option value="anggota" {{ $user->role == 'anggota' ? 'selected' : '' }}>Anggota (Guru/Karyawan)</option>
-                    <option value="admin" {{ $user->role == 'admin' ? 'selected' : '' }}>Admin</option>
-                </select>
-            </div>
-
-            <div class="input-group">
-                <label>Password Baru (Opsional)</label>
-                <input type="password" name="password" placeholder="Kosongkan jika tidak ingin diubah" />
+                <label>Password (Kosongkan jika tidak diganti)</label>
+                <input type="password" name="password" placeholder="Masukkan password baru jika ingin ganti" />
             </div>
 
             <div style="display: flex; gap: 15px; margin-top: 30px;">
-                <button type="submit" class="btn btn-primary" style="flex: 1; padding: 15px;">Update Data</button>
-                <a href="{{ route('users.index') }}" class="btn" style="padding: 15px; background: rgba(0,0,0,0.05); color: var(--text-main); text-decoration: none; text-align: center;">Batal</a>
+                <button type="submit" class="btn btn-primary" style="flex: 1; padding: 15px;">
+                    <i data-lucide="save"></i> Simpan Perubahan
+                </button>
+                <a href="{{ route('users.index') }}" class="btn" style="padding: 15px; background: #f1f5f9; color: var(--text-main); text-decoration: none; text-align: center;">Batal</a>
             </div>
         </form>
     </div>

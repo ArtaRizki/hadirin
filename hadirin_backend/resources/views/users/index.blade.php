@@ -3,64 +3,93 @@
 @section('title', 'Data Anggota')
 
 @section('content')
-<div class="content-view fade-in">
-    <header style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px;">
+<div class="content-view">
+    <header style="margin-bottom: 30px; display: flex; justify-content: space-between; align-items: flex-start;">
         <div>
-            <h1 style="font-size: 2.2rem; font-weight: 900; letter-spacing: -1px">Data Anggota</h1>
-            <p style="color: var(--text-muted); font-weight: 500">Kelola daftar anggota instansi Anda.</p>
+            <h1 style="font-size: 2.2rem; font-weight: 900; color: var(--text-main); letter-spacing: -1px;">Data Anggota</h1>
+            <p style="color: var(--text-muted); font-weight: 500;">Kelola daftar guru dan karyawan sekolah.</p>
         </div>
+        <a href="{{ route('users.create') }}" class="btn btn-primary">
+            <i data-lucide="user-plus"></i> Tambah Anggota
+        </a>
     </header>
 
     <div class="card glass">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
-            <h3 style="font-weight: 800; font-size: 1.2rem">Data Anggota Aktif</h3>
-            <a href="{{ route('users.create') }}" class="btn btn-primary" style="padding: 10px 20px; font-size: 0.9rem; text-decoration: none;">
-                <i data-lucide="plus" style="width: 16px; height: 16px;"></i> Tambah Anggota
-            </a>
-        </div>
-        
         <div class="table-container">
             <table>
                 <thead>
                     <tr>
-                        <th>ID</th>
-                        <th>Nama</th>
-                        <th>Role / Divisi</th>
-                        <th>Status Perangkat</th>
+                        <th>Anggota</th>
+                        <th>Jabatan</th>
+                        <th>Role</th>
+                        <th>Status Device</th>
                         <th>Aksi</th>
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach($users as $user)
+                    @forelse($users as $u)
                     <tr>
-                        <td style="font-weight: 600;">{{ $user->employee_id }}</td>
-                        <td>{{ $user->name }}</td>
-                        <td><span class="badge-tipe">{{ strtoupper($user->role) }}</span></td>
-                        <td>
-                            @if($user->device_id)
-                                <span style="color: #10b981; font-weight: 600;"><i data-lucide="smartphone" style="width:14px; display:inline-block; vertical-align:middle;"></i> Terkunci</span>
+                        <td data-label="Anggota">
+                            <div style="display: flex; align-items: center; gap: 12px">
+                                <div style="width: 40px; height: 40px; border-radius: 12px; background: #f1f5f9; display: flex; align-items: center; justify-content: center; color: var(--primary);">
+                                    <i data-lucide="user"></i>
+                                </div>
+                                <div>
+                                    <div style="font-weight: 800; color: var(--text-main);">{{ $u->name }}</div>
+                                    <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600;">ID: {{ $u->employee_id }}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td data-label="Jabatan">
+                            <span class="badge-tipe" style="background: rgba(0, 81, 71, 0.05); color: var(--primary);">
+                                {{ $u->division ?? 'Staf' }}
+                            </span>
+                        </td>
+                        <td data-label="Role">
+                            <span class="badge-tipe {{ $u->role == 'admin' ? 'badge-warning' : 'badge-neutral' }}">
+                                {{ strtoupper($u->role) }}
+                            </span>
+                        </td>
+                        <td data-label="Status Device">
+                            @if($u->device_id)
+                                <div style="display: flex; align-items: center; gap: 6px; color: #10b981; font-weight: 700; font-size: 0.85rem;">
+                                    <i data-lucide="smartphone" style="width: 14px;"></i> Terikat
+                                </div>
                             @else
-                                <span style="color: #f59e0b; font-weight: 600;">Bebas</span>
+                                <div style="color: var(--text-muted); font-size: 0.85rem;">Belum Terikat</div>
                             @endif
                         </td>
-                        <td>
+                        <td data-label="Aksi">
                             <div style="display: flex; gap: 8px;">
-                                <a href="{{ route('users.edit', $user->id) }}" class="btn" style="padding: 6px 12px; font-size: 0.8rem; background: rgba(59, 130, 246, 0.1); color: #3b82f6; text-decoration: none;">Edit</a>
+                                <a href="{{ route('users.edit', $u->id) }}" class="btn" style="padding: 8px; background: #f1f5f9; color: #3b82f6;" title="Edit">
+                                    <i data-lucide="edit-3"></i>
+                                </a>
                                 
-                                <form action="{{ route('users.resetDevice', $user->id) }}" method="POST" style="display:inline;" onsubmit="return confirm('Reset perangkat dan wajah pengguna ini?');">
+                                @if($u->device_id)
+                                <form action="{{ route('users.resetDevice', $u->id) }}" method="POST">
                                     @csrf
-                                    <button type="submit" class="btn" style="padding: 6px 12px; font-size: 0.8rem; background: rgba(245, 158, 11, 0.1); color: #f59e0b; border: none; cursor: pointer;">Reset Device</button>
+                                    <button type="submit" class="btn" style="padding: 8px; background: #fffbeb; color: #f59e0b;" title="Reset Device" onclick="return confirm('Reset perangkat {{ $u->name }}?')">
+                                        <i data-lucide="refresh-cw"></i>
+                                    </button>
                                 </form>
+                                @endif
 
-                                <form action="{{ route('users.destroy', $user->id) }}" method="POST" style="display:inline;" onsubmit="return confirm('Yakin ingin menghapus pengguna ini secara permanen?');">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="btn" style="padding: 6px 12px; font-size: 0.8rem; background: rgba(239, 68, 68, 0.1); color: #ef4444; border: none; cursor: pointer;">Hapus</button>
+                                @if($u->id != auth()->id())
+                                <form action="{{ route('users.destroy', $u->id) }}" method="POST">
+                                    @csrf @method('DELETE')
+                                    <button type="submit" class="btn" style="padding: 8px; background: #fef2f2; color: #ef4444;" title="Hapus" onclick="return confirm('Hapus {{ $u->name }}?')">
+                                        <i data-lucide="trash-2"></i>
+                                    </button>
                                 </form>
+                                @endif
                             </div>
                         </td>
                     </tr>
-                    @endforeach
+                    @empty
+                    <tr>
+                        <td colspan="5" class="text-center">Belum ada data anggota.</td>
+                    </tr>
+                    @endforelse
                 </tbody>
             </table>
         </div>
