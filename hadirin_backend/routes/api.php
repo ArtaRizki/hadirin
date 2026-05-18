@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Route;
 // Public routes
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/tenant/register', [TenantController::class, 'register']);
+Route::post('/verify_super_admin', [AuthController::class, 'verifySuperAdmin']);
 
 // Tenant-specific routes (via middleware)
 // Nama rute disamakan dengan 'action' yang dikirimkan oleh aplikasi Flutter (menggunakan underscore)

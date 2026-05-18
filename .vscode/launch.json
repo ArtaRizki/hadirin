@@ -71,6 +71,17 @@
                 "--dart-define=APP_LOGO=assets/icons/smait.png",
                 "--dart-define=APP_NAME=SMAIT"
             ]
+        },
+        {
+            "name": "Hadir.in - Local Laravel",
+            "request": "launch",
+            "type": "dart",
+            "args": [
+                "--dart-define=GAS_ENDPOINT=http://10.0.2.2:8000/api",
+                "--dart-define=API_TOKEN=SDIT-PALU",
+                "--dart-define=APP_LOGO=assets/icons/sdit.png",
+                "--dart-define=APP_NAME=SDIT Local"
+            ]
         }
     ]
 }

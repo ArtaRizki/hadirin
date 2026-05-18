@@ -35,10 +35,14 @@ class ApiClient {
     );
 
     try {
+      final uriStr = AppConfig.gasEndpoint.contains('script.google.com')
+          ? AppConfig.gasEndpoint
+          : '${AppConfig.gasEndpoint}/$actionName';
+
       var response = await http
           .post(
-            Uri.parse(AppConfig.gasEndpoint),
-            headers: {'Content-Type': 'application/json'},
+            Uri.parse(uriStr),
+            headers: {'Content-Type': 'application/json', 'Accept': 'application/json'},
             body: jsonEncode(payload),
           )
           .timeout(effectiveTimeout);

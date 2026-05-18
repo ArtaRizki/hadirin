@@ -7,7 +7,6 @@ use Illuminate\Http\Request;
 
 use App\Models\User;
 use App\Models\Tenant;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
 
@@ -56,6 +55,24 @@ class AuthController extends Controller
                 'faceWeb' => $user->face_descriptor,
             ]
         ]);
+    }
+
+    public function verifySuperAdmin(Request $request)
+    {
+        $request->validate([
+            'password' => 'required'
+        ]);
+
+        // Matches the "super admin" hardcoded password from previous configuration
+        if ($request->password === 'HADIRIN_MASTER_2026_AHHH') {
+            return response()->json([
+                'code' => 200,
+                'status' => 'success',
+                'message' => 'Super Admin Verified'
+            ]);
+        }
+
+        return response()->json(['code' => 401, 'status' => 'error', 'message' => 'Password Super Admin salah'], 401);
     }
 
     public function enrollDevice(Request $request)
