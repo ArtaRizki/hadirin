@@ -27,14 +27,14 @@ class ApiClient {
     d.log('==== [REQUEST: $endpoint] ====\nURL: $url\nPayload: ${jsonEncode(logPayload)}');
 
     try {
-      final response = await http
+      final uriStr = AppConfig.gasEndpoint.contains('script.google.com')
+          ? AppConfig.gasEndpoint
+          : '${AppConfig.gasEndpoint}/$actionName';
+
+      var response = await http
           .post(
-            Uri.parse(url),
-            headers: {
-              'Content-Type': 'application/json',
-              'Accept': 'application/json',
-              'X-Tenant-ID': payload['client_id'] ?? '', // Kirim tenant_id via Header untuk keamanan Laravel
-            },
+            Uri.parse(uriStr),
+            headers: {'Content-Type': 'application/json', 'Accept': 'application/json'},
             body: jsonEncode(payload),
           )
           .timeout(effectiveTimeout);
