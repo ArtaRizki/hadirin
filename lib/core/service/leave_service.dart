@@ -51,6 +51,7 @@ class LeaveService extends ApiClient {
         'action': 'ajukan_izin',
         'client_id': clientId,
         'id_karyawan': idAnggota,
+        'nama': namaAnggota ?? '',
         'tipe_izin': tipeIzin,
         'rentang_tanggal': rentangTanggal,
         'alasan': alasan,

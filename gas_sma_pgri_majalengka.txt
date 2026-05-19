@@ -84,6 +84,8 @@ function handleAbsensi(payload) {
         }
     }
 
+    var namaKaryawan = getNamaKaryawan(ss, payload.id_karyawan, payload.nama);
+
     ss.getSheetByName("Log_Absensi").appendRow([
         Utilities.formatDate(now, "GMT+7", "yyyy-MM-dd HH:mm:ss"),
         payload.id_karyawan,
@@ -91,7 +93,8 @@ function handleAbsensi(payload) {
         payload.lat_long,
         fotoUrl,
         "Valid",
-        status
+        status,
+        namaKaryawan
     ]);
 
     return responseJSON(200, "success", "Berhasil.");
@@ -182,6 +185,9 @@ function handleAjukanIzin(payload) {
             fotoUrl = file.getUrl();
         } catch (e) { fotoUrl = "ERROR GDrive: " + e.message; }
     }
+
+    var namaKaryawan = getNamaKaryawan(ss, payload.id_karyawan, payload.nama);
+
     sheet.appendRow([
         Utilities.formatDate(new Date(), "GMT+7", "yyyy-MM-dd HH:mm:ss"),
         payload.id_karyawan,
@@ -190,7 +196,8 @@ function handleAjukanIzin(payload) {
         fotoUrl,
         payload.alasan,
         payload.is_admin ? "Disetujui" : "Menunggu Approval",
-        payload.tugas || ""
+        payload.tugas || "",
+        namaKaryawan
     ]);
     return responseJSON(200, "success", "Sent");
 }
@@ -361,3 +368,18 @@ function handleGetMonthlyReport(payload) {
     return responseJSON(200, "success", results);
 }
 String.prototype.padLeft = function (size, char) { var s = this; while (s.length < (size || 2)) { s = char + s; } return s; }
+
+function getNamaKaryawan(ss, idKaryawan, fallbackNama) {
+    if (!idKaryawan) return fallbackNama || "";
+    try {
+        var data = ss.getSheetByName("Master_Karyawan").getDataRange().getValues();
+        var searchId = String(idKaryawan).trim().toLowerCase();
+        for (var i = 1; i < data.length; i++) {
+            if (String(data[i][0]).trim().toLowerCase() === searchId) {
+                return data[i][1] || fallbackNama || "";
+            }
+        }
+    } catch (e) {}
+    return fallbackNama || "";
+}
+
