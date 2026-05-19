@@ -21,9 +21,9 @@ class DashboardController extends Controller
 
         // Stats for cards
         $stats = [
-            'present' => Attendance::where('tenant_id', $tenantId)->whereDate('date', $today)->where('status', 'Hadir')->count(),
-            'late' => Attendance::where('tenant_id', $tenantId)->whereDate('date', $today)->where('is_late', true)->count(),
-            'leave' => Attendance::where('tenant_id', $tenantId)->whereDate('date', $today)->whereIn('status', ['Izin', 'Sakit'])->count(),
+            'present' => Attendance::where('tenant_id', $tenantId)->whereDate('created_at', $today)->where('type', 'Masuk')->count(),
+            'late' => Attendance::where('tenant_id', $tenantId)->whereDate('created_at', $today)->where('type', 'Masuk')->where('status', 'Terlambat')->count(),
+            'leave' => Attendance::where('tenant_id', $tenantId)->whereDate('created_at', $today)->whereIn('type', ['Izin', 'Sakit', 'Cuti'])->count(),
         ];
 
         // Verse of the Day
