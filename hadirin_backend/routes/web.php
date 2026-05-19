@@ -97,3 +97,36 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/verses', [\App\Http\Controllers\Web\VerseController::class, 'store'])->name('verses.store');
     Route::delete('/verses/{id}', [\App\Http\Controllers\Web\VerseController::class, 'destroy'])->name('verses.destroy');
 });
+
+// Route Sementara untuk Migrasi Database di InfinityFree (Hapus jika sudah selesai)
+Route::get('/run-migrate', function() {
+    try {
+        if (request()->query('fresh') === '1') {
+            \Illuminate\Support\Facades\Artisan::call('migrate:fresh', ['--force' => true]);
+            return "Migration (Fresh) successful!";
+        }
+        \Illuminate\Support\Facades\Artisan::call('migrate', ['--force' => true]);
+        return "Migration successful!";
+    } catch (\Exception $e) {
+        return "Error: " . $e->getMessage();
+    }
+});
+
+Route::get('/run-seed', function() {
+    try {
+        \Illuminate\Support\Facades\Artisan::call('db:seed', ['--force' => true]);
+        return "Seeding successful!";
+    } catch (\Exception $e) {
+        return "Error: " . $e->getMessage();
+    }
+});
+
+Route::get('/run-link', function() {
+    try {
+        \Illuminate\Support\Facades\Artisan::call('storage:link');
+        return "Storage link created!";
+    } catch (\Exception $e) {
+        return "Error: " . $e->getMessage();
+    }
+});
+
