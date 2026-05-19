@@ -398,6 +398,7 @@ function handleAbsensi(payload) {
     "Valid",
     status,
     payload.tugas || "",
+    payload.nama || ""
   ]);
 
   return { code: 200, status: "success", message: "Absen " + status + "!" };
@@ -439,6 +440,7 @@ function handleAjukanIzin(payload) {
     payload.alasan,
     payload.is_admin ? "Disetujui" : "Menunggu Approval",
     payload.tugas || "",
+    payload.nama || ""
   ]);
   return { code: 200, status: "success", message: "Sent" };
 }
@@ -981,8 +983,10 @@ function getTodayAttendanceAdmin(clientId) {
           id: idKry,
           nama: namaMap[idKry] || "Tidak Dikenal",
           bagian: bagianMap[idKry] || "-",
+          tipe: String(logs[i][2] || "-"),
           masuk: Utilities.formatDate(new Date(logs[i][0]), "GMT+7", "HH:mm"),
-          status_absen: String(logs[i][6])
+          status_absen: String(logs[i][6]),
+          keterangan: String(logs[i][7] || "")
         });
       }
     }

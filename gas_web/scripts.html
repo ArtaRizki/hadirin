@@ -103,6 +103,15 @@
     document.getElementById('user-name').innerText = currentUser.nama;
     document.getElementById('user-id-display').innerHTML = "ID: " + currentUser.id + " <br><small style='color:var(--primary); font-weight:700;'>v3.5 Diagnostic Mode</small>";
 
+    // Populate mobile header user info
+    const mobileUserEl = document.getElementById('mobile-user-name');
+    const mobileIdEl = document.getElementById('mobile-user-id');
+    if (mobileUserEl) mobileUserEl.innerText = currentUser.nama;
+    if (mobileIdEl) mobileIdEl.innerText = "ID: " + currentUser.id;
+
+    // Tambahkan class is-loggedin ke body
+    document.body.classList.add('is-loggedin');
+
     // Show Admin Section if role is Admin/SuperAdmin
     const isAdmin = currentUser.role.toLowerCase() === 'admin' || currentUser.role === 'superAdmin';
     if (isAdmin) {
@@ -129,6 +138,7 @@
   function handleLogout() {
     currentUser = null;
     localStorage.removeItem('hadirin_user');
+    document.body.classList.remove('is-loggedin');
     document.getElementById('app-container').style.display = 'none';
     document.getElementById('login-screen').style.display = 'flex';
     document.getElementById('login-id').value = '';
@@ -734,6 +744,11 @@
   // STAT DETAIL MODAL
   // ============================================
   function showStatDetail(type) {
+    // Hanya admin yang bisa lihat detail stat
+    if (!currentUser) return;
+    const isAdmin = currentUser.role && (currentUser.role.toLowerCase() === 'admin' || currentUser.role === 'superAdmin');
+    if (!isAdmin) return;
+
     const modal = document.getElementById('stat-detail-modal');
     const titleEl = document.getElementById('stat-detail-title');
     const subtitleEl = document.getElementById('stat-detail-subtitle');
@@ -741,51 +756,127 @@
 
     if (!modal || !bodyEl) return;
 
+    // Konfigurasi per tipe
+    // Untuk 'present' & 'late': filter berdasarkan status_absen
+    // Untuk 'leave': filter berdasarkan field 'tipe' (Izin/Sakit/Cuti/Dinas Luar)
     const config = {
-      present: { title: '✅ Hadir Hari Ini', color: '#10B981', statuses: ['Tepat Waktu', 'Terlambat'] },
-      leave: { title: '📋 Izin / Sakit / Cuti', color: '#F59E0B', statuses: ['Izin', 'Sakit', 'Cuti', 'Dinas Luar'] },
-      late: { title: '⏰ Terlambat', color: '#EF4444', statuses: ['Terlambat'] }
+      present: {
+        title: '✅ Hadir Hari Ini',
+        subtitle: 'Karyawan yang sudah absen masuk hari ini',
+        color: '#10B981',
+        filterFn: (item) => (item.status_absen === 'Tepat Waktu' || item.status_absen === 'Terlambat') && item.tipe === 'Masuk'
+      },
+      leave: {
+        title: '📋 Izin / Sakit / Cuti',
+        subtitle: 'Karyawan yang sedang izin, sakit, atau cuti',
+        color: '#F59E0B',
+        filterFn: (item) => ['Izin', 'Sakit', 'Cuti', 'Dinas Luar'].indexOf(item.tipe) !== -1
+      },
+      late: {
+        title: '⏰ Terlambat',
+        subtitle: 'Karyawan yang absen masuk melebihi batas waktu',
+        color: '#EF4444',
+        filterFn: (item) => item.status_absen === 'Terlambat' && item.tipe === 'Masuk'
+      }
     };
 
     const cfg = config[type];
     if (!cfg) return;
 
     titleEl.innerText = cfg.title;
-    subtitleEl.innerText = 'Memuat data...';
-    bodyEl.innerHTML = '<div style="text-align: center; padding: 40px; color: var(--text-muted);">⏳ Memuat data...</div>';
+    subtitleEl.innerText = cfg.subtitle;
+    bodyEl.innerHTML = `
+      <div style="display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 40px 20px;">
+        <div style="width: 36px; height: 36px; border: 3px solid #e2e8f0; border-top-color: ${cfg.color}; border-radius: 50%; animation: spin 0.8s linear infinite;"></div>
+        <span style="color: var(--text-muted); font-size: 0.85rem; font-weight: 600;">Mengambil data dari server...</span>
+      </div>`;
     modal.classList.add('modal-active');
+    modal.style.setProperty('display', 'flex', 'important'); // Paksa tampil
     lucide.createIcons();
 
     google.script.run
       .withSuccessHandler(function (response) {
-        const data = response || [];
-        const filtered = data.filter(item => cfg.statuses.indexOf(item.status_absen || 'Belum Absen') !== -1);
+        try {
+          let data = response || [];
+          // Jika response dari server berupa string, parse menjadi JSON array
+          if (typeof data === 'string') {
+            try {
+              data = JSON.parse(data);
+            } catch (e) {
+              data = [];
+            }
+          }
 
-        subtitleEl.innerText = filtered.length + ' orang ditemukan';
+        // Deduplikasi per karyawan: ambil hanya entri 'Masuk' pertama per ID
+        // Untuk leave: deduplikasi per ID juga
+        const seen = {};
+        const filtered = [];
+        data.forEach(item => {
+          if (!cfg.filterFn(item)) return;
+          if (!seen[item.id]) {
+            seen[item.id] = true;
+            filtered.push(item);
+          }
+        });
+
+        subtitleEl.innerText = filtered.length + ' karyawan ditemukan';
 
         if (filtered.length === 0) {
-          bodyEl.innerHTML = '<div style="text-align: center; padding: 40px; color: var(--text-muted); font-weight: 600;">Tidak ada data untuk kategori ini.</div>';
+          bodyEl.innerHTML = `
+            <div style="text-align: center; padding: 50px 20px;">
+              <div style="font-size: 2.5rem; margin-bottom: 12px;">🎉</div>
+              <div style="font-weight: 700; color: var(--text-main); margin-bottom: 6px;">Tidak Ada Data</div>
+              <div style="color: var(--text-muted); font-size: 0.85rem;">Tidak ada karyawan di kategori ini untuk hari ini.</div>
+            </div>`;
           return;
         }
 
-        bodyEl.innerHTML = filtered.map(item => {
-          const ket = (type === 'present' || type === 'late')
-            ? (item.masuk ? 'Masuk: ' + item.masuk : '-')
-            : (item.status_absen || '-');
+        bodyEl.innerHTML = filtered.map((item, idx) => {
+          let badgeText = '';
+          let badgeColor = cfg.color;
+
+          if (type === 'present') {
+            badgeText = '🕐 ' + (item.masuk || '-');
+          } else if (type === 'late') {
+            badgeText = '⏰ ' + (item.masuk || '-');
+            badgeColor = '#EF4444';
+          } else if (type === 'leave') {
+            // Untuk izin: tampilkan tipe izin
+            const tipeIzin = item.tipe || '-';
+            const statusMap = {
+              'Izin': { icon: '🙋', color: '#F59E0B' },
+              'Sakit': { icon: '🤒', color: '#EF4444' },
+              'Cuti': { icon: '🌴', color: '#8B5CF6' },
+              'Dinas Luar': { icon: '🚗', color: '#3B82F6' }
+            };
+            const meta = statusMap[tipeIzin] || { icon: '📋', color: '#64748b' };
+            badgeText = meta.icon + ' ' + tipeIzin;
+            badgeColor = meta.color;
+          }
+
+          const keterangan = item.keterangan ? `<div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 3px; font-style: italic; max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${item.keterangan}</div>` : '';
 
           return `
-            <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid var(--glass-border);">
-              <div>
-                <div style="font-weight: 700; font-size: 0.95rem; color: var(--text-main);">${item.nama}</div>
-                <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 500; margin-top: 2px;">${item.bagian || ''} ${item.id ? '· ' + item.id : ''}</div>
+            <div style="display: flex; align-items: center; justify-content: space-between; padding: 14px 0; border-bottom: 1px solid rgba(0,0,0,0.05); animation: fadeIn 0.3s ease-out ${idx * 0.05}s both;">
+              <div style="display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0;">
+                <div style="width: 38px; height: 38px; border-radius: 12px; background: ${badgeColor}18; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 1rem;">${badgeText.split(' ')[0]}</div>
+                <div style="min-width: 0;">
+                  <div style="font-weight: 700; font-size: 0.9rem; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${item.nama}</div>
+                  <div style="font-size: 0.72rem; color: var(--text-muted); font-weight: 600; margin-top: 2px;">${item.bagian || '-'} · ${item.id || ''}</div>
+                  ${keterangan}
+                </div>
               </div>
-              <span style="font-size: 0.75rem; font-weight: 700; color: ${cfg.color}; background: ${cfg.color}18; padding: 4px 10px; border-radius: 8px; flex-shrink: 0; margin-left: 12px;">${ket}</span>
+              <span style="font-size: 0.75rem; font-weight: 700; color: ${badgeColor}; background: ${badgeColor}15; padding: 5px 10px; border-radius: 8px; flex-shrink: 0; margin-left: 12px; border: 1px solid ${badgeColor}25; white-space: nowrap;">${badgeText.split(' ').slice(1).join(' ') || badgeText}</span>
             </div>
           `;
         }).join('');
+        } catch(err) {
+          alert("Gagal memproses data: " + err.message);
+          bodyEl.innerHTML = `<div style="text-align: center; padding: 40px; color: #ef4444; font-weight: 600;">❌ Terjadi kesalahan sistem.</div>`;
+        }
       })
-      .withFailureHandler(function () {
-        bodyEl.innerHTML = '<div style="text-align: center; padding: 40px; color: #ef4444; font-weight: 600;">Gagal memuat data.</div>';
+      .withFailureHandler(function (err) {
+        bodyEl.innerHTML = `<div style="text-align: center; padding: 40px; color: #ef4444; font-weight: 600;">❌ Gagal memuat data.<br><small style="font-weight:400; color: var(--text-muted);">${err ? err.message : ''}</small></div>`;
         subtitleEl.innerText = '';
       })
       .getTodayAttendanceAdmin(currentUser.clientId);
@@ -793,7 +884,10 @@
 
   function closeStatDetailModal() {
     const modal = document.getElementById('stat-detail-modal');
-    if (modal) modal.classList.remove('modal-active');
+    if (modal) {
+      modal.classList.remove('modal-active');
+      modal.style.setProperty('display', 'none', 'important');
+    }
   }
 
   // Tutup modal saat klik backdrop

@@ -186,6 +186,7 @@
 
   #sidebar {
     width: 280px;
+    min-width: 280px;
     height: 100vh;
     padding: 40px 24px;
     display: flex;
@@ -194,6 +195,8 @@
     top: 0;
     border-right: 1px solid var(--glass-border);
     background: white;
+    flex-shrink: 0;
+    overflow-y: auto;
   }
 
   #main-content {
@@ -450,19 +453,17 @@
 
   .mobile-header {
     display: none;
-    padding: 0 16px;
-    height: 60px;
+    padding: 8px 16px;
+    min-height: 70px;
     background: white;
     border-bottom: 1px solid rgba(0, 81, 71, 0.08);
-    position: sticky;
-    top: 0;
+    position: relative;
     z-index: 900;
     justify-content: space-between;
     align-items: center;
     box-shadow: 0 1px 0 rgba(0,0,0,0.06), 0 4px 12px rgba(0, 81, 71, 0.08);
     width: 100%;
     box-sizing: border-box;
-    overflow: hidden;
   }
 
   /* Brand section (icon + text) */
@@ -884,6 +885,10 @@
   /* ============================================ */
 
   @media (max-width: 768px) {
+    #app-container {
+      flex-direction: column !important;
+    }
+
     /* Hide Desktop Elements */
     #sidebar {
       display: none !important;
@@ -1326,6 +1331,7 @@
   @media (min-width: 769px) and (max-width: 1024px) {
     #sidebar {
       width: 240px;
+      min-width: 240px;
       padding: 30px 20px;
     }
 
