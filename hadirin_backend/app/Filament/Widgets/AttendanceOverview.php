@@ -29,6 +29,11 @@ class AttendanceOverview extends BaseWidget
             ->whereIn('type', ['Izin', 'Sakit', 'Cuti'])
             ->first();
 
+        $checkout = Attendance::where('user_id', $userId)
+            ->whereDate('timestamp', $today)
+            ->where('type', 'Pulang')
+            ->first();
+
         return [
             Stat::make('Hadir Hari Ini', $checkin ? 'Jam ' . Carbon::parse($checkin->timestamp)->format('H:i') : 'Belum Absen')
                 ->description($checkin ? 'Status: ' . $checkin->status : 'Silakan lakukan absen masuk')
