@@ -33,7 +33,7 @@ class DashboardController extends Controller
         $adminData = [];
         if ($user->role == 'admin' || $user->role == 'superadmin') {
             $adminData = [
-                'pending_leaves' => Leave::where('tenant_id', $tenantId)->where('status', 'pending')->count(),
+                'pending_leaves' => Leave::where('tenant_id', $tenantId)->where('leave_status', 'Menunggu Approval')->count(),
                 'new_feedback' => Feedback::where('tenant_id', $tenantId)->whereDate('created_at', '>', Carbon::now()->subDays(3))->count(),
                 'recent_attendances' => Attendance::where('tenant_id', $tenantId)->with('user')->latest()->take(5)->get(),
             ];
