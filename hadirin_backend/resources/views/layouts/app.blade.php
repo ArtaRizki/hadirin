@@ -145,6 +145,13 @@
                 </div>
             @endif
 
+            @if(session('error'))
+                <div style="padding: 16px 20px; background: #fef2f2; border: 1px solid #ef4444; border-radius: 12px; color: #991b1b; font-weight: 600; margin-bottom: 20px; display: flex; align-items: center; gap: 12px;">
+                    <i data-lucide="alert-circle" style="color: #ef4444;"></i>
+                    {{ session('error') }}
+                </div>
+            @endif
+
             @yield('content')
         </main>
 
