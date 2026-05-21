@@ -9,9 +9,11 @@
             <h1 style="font-size: 2.2rem; font-weight: 900; letter-spacing: -1px">Jadwal Kegiatan</h1>
             <p style="color: var(--text-muted); font-weight: 500">Manajemen jadwal rapat, upacara, dan kegiatan lainnya.</p>
         </div>
+        @if(auth()->user()->role == 'admin' || auth()->user()->role == 'superadmin')
         <a href="{{ route('activities.create') }}" class="btn btn-primary">
             <i data-lucide="plus"></i> Tambah Kegiatan
         </a>
+        @endif
     </header>
 
     <div class="card glass">
@@ -24,7 +26,9 @@
                         <th>Tipe</th>
                         <th>Deskripsi</th>
                         <th>Status</th>
+                        @if(auth()->user()->role == 'admin' || auth()->user()->role == 'superadmin')
                         <th>Aksi</th>
+                        @endif
                     </tr>
                 </thead>
                 <tbody>
@@ -41,6 +45,7 @@
                                 <span class="badge-tipe" style="background: rgba(245, 158, 11, 0.1); color: #f59e0b;">Akan Datang</span>
                             @endif
                         </td>
+                        @if(auth()->user()->role == 'admin' || auth()->user()->role == 'superadmin')
                         <td>
                             <div style="display: flex; gap: 8px;">
                                 <a href="{{ route('activities.edit', $activity->id) }}" class="btn" style="padding: 8px; background: rgba(0,0,0,0.05); color: var(--text-main);" title="Edit"><i data-lucide="edit" style="width: 16px;"></i></a>
@@ -51,9 +56,10 @@
                                 </form>
                             </div>
                         </td>
+                        @endif
                     </tr>
                     @empty
-                    <tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 40px;">Belum ada jadwal kegiatan.</td></tr>
+                    <tr><td colspan="{{ (auth()->user()->role == 'admin' || auth()->user()->role == 'superadmin') ? '6' : '5' }}" style="text-align: center; color: var(--text-muted); padding: 40px;">Belum ada jadwal kegiatan.</td></tr>
                     @endforelse
                 </tbody>
             </table>

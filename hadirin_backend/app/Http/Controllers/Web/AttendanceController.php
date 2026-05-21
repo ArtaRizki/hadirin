@@ -79,10 +79,7 @@ class AttendanceController extends Controller
             $distanceInMeters = $miles * 1609.344;
 
             if ($distanceInMeters > $config->radius) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Anda berada di luar radius kantor (' . round($distanceInMeters) . 'm). Silakan mendekat ke lokasi.'
-                ], 422);
+                return redirect()->route('dashboard')->with('error', 'Anda berada di luar radius kantor (' . round($distanceInMeters) . 'm). Silakan mendekat ke lokasi.');
             }
         }
 

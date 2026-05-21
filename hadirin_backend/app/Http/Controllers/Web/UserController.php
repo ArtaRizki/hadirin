@@ -116,6 +116,6 @@ class UserController extends Controller
             'face_descriptor' => $request->face_descriptor
         ]);
 
-        return response()->json(['success' => true, 'message' => 'Wajah berhasil didaftarkan!']);
+        return redirect()->route('dashboard')->with('success', 'Wajah berhasil didaftarkan!');
     }
 }

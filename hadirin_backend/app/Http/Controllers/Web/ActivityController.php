@@ -17,11 +17,18 @@ class ActivityController extends Controller
 
     public function create()
     {
+        if (auth()->user()->role != 'admin' && auth()->user()->role != 'superadmin') {
+            return redirect()->route('activities.index')->with('error', 'Akses ditolak. Anda tidak memiliki izin.');
+        }
         return view('activities.create');
     }
 
     public function store(Request $request)
     {
+        if (auth()->user()->role != 'admin' && auth()->user()->role != 'superadmin') {
+            return redirect()->route('activities.index')->with('error', 'Akses ditolak. Anda tidak memiliki izin.');
+        }
+
         $request->validate([
             'name' => 'required',
             'type' => 'required',
@@ -44,12 +51,20 @@ class ActivityController extends Controller
 
     public function edit($id)
     {
+        if (auth()->user()->role != 'admin' && auth()->user()->role != 'superadmin') {
+            return redirect()->route('activities.index')->with('error', 'Akses ditolak. Anda tidak memiliki izin.');
+        }
+
         $activity = Activity::where('tenant_id', auth()->user()->tenant_id)->findOrFail($id);
         return view('activities.edit', compact('activity'));
     }
 
     public function update(Request $request, $id)
     {
+        if (auth()->user()->role != 'admin' && auth()->user()->role != 'superadmin') {
+            return redirect()->route('activities.index')->with('error', 'Akses ditolak. Anda tidak memiliki izin.');
+        }
+
         $activity = Activity::where('tenant_id', auth()->user()->tenant_id)->findOrFail($id);
         
         $request->validate([
@@ -66,6 +81,10 @@ class ActivityController extends Controller
 
     public function destroy($id)
     {
+        if (auth()->user()->role != 'admin' && auth()->user()->role != 'superadmin') {
+            return redirect()->route('activities.index')->with('error', 'Akses ditolak. Anda tidak memiliki izin.');
+        }
+
         $activity = Activity::where('tenant_id', auth()->user()->tenant_id)->findOrFail($id);
         $activity->delete();
         return redirect()->route('activities.index')->with('success', 'Kegiatan berhasil dihapus.');

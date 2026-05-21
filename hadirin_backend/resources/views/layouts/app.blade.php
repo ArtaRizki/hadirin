@@ -22,6 +22,7 @@
     <script src="https://unpkg.com/lucide@latest"></script>
 
     @yield('styles')
+    @stack('styles')
 </head>
 <body class="is-loggedin">
     <div id="app-container">
@@ -182,5 +183,6 @@
         }
     </script>
     @yield('scripts')
+    @stack('scripts')
 </body>
 </html>

@@ -29,7 +29,7 @@
                 </div>
                 <div class="input-group">
                     <label>Rentang Tanggal</label>
-                    <input type="text" name="lat_long" placeholder="Contoh: 12 Mei - 14 Mei 2026" required />
+                    <input type="text" id="date_range" name="lat_long" placeholder="Contoh: 12 Mei - 14 Mei 2026" required />
                 </div>
                 <div class="input-group">
                     <label>Alasan</label>
@@ -79,3 +79,31 @@
     </div>
 </div>
 @endsection
+
+@push('styles')
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<style>
+    .flatpickr-calendar {
+        font-family: 'Inter', sans-serif;
+        border-radius: 12px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        border: none;
+    }
+</style>
+@endpush
+
+@push('scripts')
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script src="https://npmcdn.com/flatpickr/dist/l10n/id.js"></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        flatpickr("#date_range", {
+            mode: "range",
+            dateFormat: "d M Y",
+            locale: "id",
+            minDate: "today",
+            disableMobile: "true"
+        });
+    });
+</script>
+@endpush

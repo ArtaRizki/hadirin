@@ -73,12 +73,23 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/quran', [\App\Http\Controllers\Web\QuranController::class, 'index'])->name('quran.index');
     Route::get('/quran/create', [\App\Http\Controllers\Web\QuranController::class, 'create'])->name('quran.create');
     Route::post('/quran', [\App\Http\Controllers\Web\QuranController::class, 'store'])->name('quran.store');
-    
+    Route::get('/quran/{id}/edit', [\App\Http\Controllers\Web\QuranController::class, 'edit'])->name('quran.edit');
+    Route::put('/quran/{id}', [\App\Http\Controllers\Web\QuranController::class, 'update'])->name('quran.update');
+    Route::delete('/quran/{id}', [\App\Http\Controllers\Web\QuranController::class, 'destroy'])->name('quran.destroy');
+
     Route::get('/ngaji', [\App\Http\Controllers\Web\NgajiController::class, 'index'])->name('ngaji.index');
     Route::get('/ngaji/create', [\App\Http\Controllers\Web\NgajiController::class, 'create'])->name('ngaji.create');
     Route::post('/ngaji', [\App\Http\Controllers\Web\NgajiController::class, 'store'])->name('ngaji.store');
-    
+    Route::get('/ngaji/{id}/edit', [\App\Http\Controllers\Web\NgajiController::class, 'edit'])->name('ngaji.edit');
+    Route::put('/ngaji/{id}', [\App\Http\Controllers\Web\NgajiController::class, 'update'])->name('ngaji.update');
+    Route::delete('/ngaji/{id}', [\App\Http\Controllers\Web\NgajiController::class, 'destroy'])->name('ngaji.destroy');
+
     Route::get('/briefings', [\App\Http\Controllers\Web\BriefingController::class, 'index'])->name('briefings.index');
+    Route::get('/briefings/create', [\App\Http\Controllers\Web\BriefingController::class, 'create'])->name('briefings.create');
+    Route::post('/briefings', [\App\Http\Controllers\Web\BriefingController::class, 'store'])->name('briefings.store');
+    Route::get('/briefings/{id}/edit', [\App\Http\Controllers\Web\BriefingController::class, 'edit'])->name('briefings.edit');
+    Route::put('/briefings/{id}', [\App\Http\Controllers\Web\BriefingController::class, 'update'])->name('briefings.update');
+    Route::delete('/briefings/{id}', [\App\Http\Controllers\Web\BriefingController::class, 'destroy'])->name('briefings.destroy');
     Route::get('/briefings/personal', [\App\Http\Controllers\Web\BriefingController::class, 'personal'])->name('briefings.personal');
     Route::post('/briefings/{id}/attend', [\App\Http\Controllers\Web\BriefingController::class, 'attend'])->name('briefings.attend');
 

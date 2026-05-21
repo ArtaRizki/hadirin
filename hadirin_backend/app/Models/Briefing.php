@@ -9,6 +9,7 @@ class Briefing extends Model
     protected $fillable = [
         'tenant_id',
         'title',
+        'speaker_name',
         'scheduled_date',
         'scheduled_time',
         'description',
