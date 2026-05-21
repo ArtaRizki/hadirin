@@ -27,13 +27,9 @@ class ApiClient {
     d.log('==== [REQUEST: $endpoint] ====\nURL: $url\nPayload: ${jsonEncode(logPayload)}');
 
     try {
-      final uriStr = AppConfig.gasEndpoint.contains('script.google.com')
-          ? AppConfig.gasEndpoint
-          : '${AppConfig.gasEndpoint}/$actionName';
-
       var response = await http
           .post(
-            Uri.parse(uriStr),
+            Uri.parse(url),
             headers: {'Content-Type': 'application/json', 'Accept': 'application/json'},
             body: jsonEncode(payload),
           )

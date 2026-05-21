@@ -48,8 +48,9 @@ class _SplashScreenState extends State<SplashScreen>
     await Future.delayed(const Duration(milliseconds: 1500));
 
     // 1. Meminta Izin Akses (Lokasi & Kamera)
-    if (mounted)
+    if (mounted) {
       setState(() => _statusText = "Memeriksa perizinan perangkat...");
+    }
     await _requestPermissions();
 
     // 2. Lanjut mengecek sesi login (RootNavigator yang akan memindahkan layar)

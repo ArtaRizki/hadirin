@@ -6,6 +6,7 @@ import 'package:hadirin/core/models/school_models.dart';
 import 'package:hadirin/core/providers/auth_provider.dart';
 import 'package:hadirin/core/service/school_service.dart';
 import 'package:hadirin/core/theme/fluid_theme.dart';
+import 'package:hadirin/core/utils/url_helper.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 
@@ -329,7 +330,7 @@ class _BriefingScreenState extends State<BriefingScreen>
               ],
             ),
             child: DropdownButtonFormField<String>(
-              value: _selectedStatus,
+              initialValue: _selectedStatus,
               isExpanded: true,
               decoration: InputDecoration(
                 hintText: "Pilih status kehadiran",
@@ -613,9 +614,344 @@ class _BriefingScreenState extends State<BriefingScreen>
     );
   }
 
+  void _showEditBriefing(BriefingModel b) {
+    final auth = context.read<AuthProvider>();
+    String? selectedStatus = b.statusKehadiran;
+    final catatanCtrl = TextEditingController(text: b.catatan);
+    XFile? newFoto;
+    bool isSaving = false;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setSheet) {
+          Future<void> ambilFotoSheet() async {
+            final image = await _picker.pickImage(
+              source: ImageSource.camera,
+              imageQuality: 100,
+              preferredCameraDevice: CameraDevice.front,
+            );
+            if (image != null) {
+              setSheet(() => newFoto = image);
+            }
+          }
+
+          return Container(
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
+            ),
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.of(ctx).viewInsets.bottom + 32,
+              top: 24,
+              left: 24,
+              right: 24,
+            ),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 40,
+                      height: 4,
+                      margin: const EdgeInsets.only(bottom: 20),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade300,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: context.primaryColor.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Icon(
+                          Icons.edit_note_rounded,
+                          color: context.primaryColor,
+                          size: 22,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              "Edit Kehadiran Briefing",
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w900,
+                              ),
+                            ),
+                            Text(
+                              b.tanggal ?? '',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey.shade500,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+
+                  _formLabel("Status Kehadiran"),
+                  const SizedBox(height: 8),
+                  DropdownButtonFormField<String>(
+                    value: selectedStatus,
+                    isExpanded: true,
+                    decoration: InputDecoration(
+                      filled: true,
+                      fillColor: Colors.grey.shade100,
+                      prefixIcon: Icon(
+                        Icons.how_to_reg_rounded,
+                        color: context.primaryColor,
+                      ),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: BorderSide.none,
+                      ),
+                    ),
+                    items: _statusOptions
+                        .map(
+                          (s) => DropdownMenuItem(
+                            value: s,
+                            child: Row(
+                              children: [
+                                Icon(
+                                  _statusIcon(s),
+                                  size: 18,
+                                  color: _statusColor(s),
+                                ),
+                                const SizedBox(width: 10),
+                                Text(s),
+                              ],
+                            ),
+                          ),
+                        )
+                        .toList(),
+                    onChanged: (val) => setSheet(() => selectedStatus = val),
+                  ),
+                  const SizedBox(height: 16),
+
+                  _formLabel(selectedStatus == 'Hadir' ? "Foto (Wajib)" : "Foto (Opsional)"),
+                  const SizedBox(height: 8),
+                  GestureDetector(
+                    onTap: ambilFotoSheet,
+                    child: Container(
+                      width: double.infinity,
+                      height: 180,
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade100,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: Colors.grey.shade300),
+                      ),
+                      child: newFoto != null
+                          ? ClipRRect(
+                              borderRadius: BorderRadius.circular(14),
+                              child: Image.file(File(newFoto!.path), fit: BoxFit.cover),
+                            )
+                          : (b.foto != null && b.foto!.isNotEmpty
+                              ? ClipRRect(
+                                  borderRadius: BorderRadius.circular(14),
+                                  child: Stack(
+                                    fit: StackFit.expand,
+                                    children: [
+                                      Image.network(UrlHelper.getDirectDriveUrl(b.foto!), fit: BoxFit.cover),
+                                      Container(
+                                        color: Colors.black.withOpacity(0.3),
+                                        child: const Center(
+                                          child: Icon(Icons.camera_alt_rounded, color: Colors.white, size: 32),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                )
+                              : const Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(Icons.camera_alt_rounded, color: Colors.grey, size: 32),
+                                    SizedBox(height: 8),
+                                    Text("Ambil foto baru", style: TextStyle(color: Colors.grey, fontSize: 12)),
+                                  ],
+                                )),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  _formLabel("Catatan"),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: catatanCtrl,
+                    maxLines: 3,
+                    decoration: InputDecoration(
+                      hintText: "Wajib tulis catatan",
+                      filled: true,
+                      fillColor: Colors.grey.shade100,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: BorderSide.none,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+
+                  SizedBox(
+                    width: double.infinity,
+                    height: 55,
+                    child: ElevatedButton.icon(
+                      onPressed: isSaving
+                          ? null
+                          : () async {
+                              if (selectedStatus == null) return;
+                              if (selectedStatus == 'Hadir' && newFoto == null && (b.foto == null || b.foto!.isEmpty)) {
+                                _showSnackBar("Foto wajib diambil jika status Hadir!", isError: true);
+                                return;
+                              }
+                              if (catatanCtrl.text.trim().isEmpty) {
+                                _showSnackBar("Catatan wajib diisi!", isError: true);
+                                return;
+                              }
+
+                              setSheet(() => isSaving = true);
+                              String fotoBase64 = '';
+
+                              if (newFoto != null) {
+                                final targetPath = '${newFoto!.path}_compressed.jpg';
+                                final compressedFile = await FlutterImageCompress.compressAndGetFile(
+                                  newFoto!.path,
+                                  targetPath,
+                                  quality: 30,
+                                  minWidth: 600,
+                                  minHeight: 600,
+                                  format: CompressFormat.jpeg,
+                                );
+
+                                if (compressedFile != null) {
+                                  final imageBytes = await compressedFile.readAsBytes();
+                                  fotoBase64 = base64Encode(imageBytes);
+                                  try {
+                                    File(targetPath).deleteSync();
+                                  } catch (_) {}
+                                }
+                              }
+
+                              final res = await _service.updateBriefing(
+                                clientId: auth.clientId ?? '',
+                                id: b.id!,
+                                statusKehadiran: selectedStatus!,
+                                fotoBase64: fotoBase64,
+                                catatan: catatanCtrl.text.trim(),
+                              );
+
+                              if (res['success']) {
+                                if (mounted) Navigator.pop(ctx);
+                                _showSnackBar("Absen briefing berhasil diperbarui!");
+                                _fetchRiwayat();
+                              } else {
+                                setSheet(() => isSaving = false);
+                                _showSnackBar(res['message'] ?? "Gagal memperbarui absen", isError: true);
+                              }
+                            },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: context.primaryColor,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                      ),
+                      icon: isSaving
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                            )
+                          : const Icon(Icons.check_circle_rounded),
+                      label: Text(isSaving ? "Menyimpan..." : "Perbarui"),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  void _confirmDeleteBriefing(String id) {
+    showDialog(
+      context: context,
+      builder: (ctx) {
+        bool isDeleting = false;
+        return StatefulBuilder(
+          builder: (ctx, setDialog) => AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            title: const Text("Hapus Presensi", style: TextStyle(fontWeight: FontWeight.w900)),
+            content: const Text("Apakah Anda yakin ingin menghapus presensi briefing ini?"),
+            actions: [
+              TextButton(
+                onPressed: isDeleting ? null : () => Navigator.pop(ctx),
+                child: const Text("Batal"),
+              ),
+              ElevatedButton(
+                onPressed: isDeleting
+                    ? null
+                    : () async {
+                        setDialog(() => isDeleting = true);
+                        final auth = context.read<AuthProvider>();
+                        final res = await _service.deleteBriefing(
+                          clientId: auth.clientId ?? '',
+                          id: id,
+                        );
+                        if (res['success']) {
+                          if (mounted) {
+                            Navigator.pop(ctx);
+                            _showSnackBar("Presensi briefing berhasil dihapus");
+                          }
+                          _fetchRiwayat();
+                        } else {
+                          setDialog(() => isDeleting = false);
+                          _showSnackBar(res['message'] ?? "Gagal menghapus presensi", isError: true);
+                        }
+                      },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.red,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+                child: isDeleting
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 2,
+                        ),
+                      )
+                    : const Text("Hapus"),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   Widget _buildRiwayatCard(BriefingModel b) {
     final color = _statusColor(b.statusKehadiran);
     final icon = _statusIcon(b.statusKehadiran);
+    final auth = context.read<AuthProvider>();
 
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
@@ -700,6 +1036,25 @@ class _BriefingScreenState extends State<BriefingScreen>
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
+                  if (b.foto != null && b.foto!.isNotEmpty) ...[
+                    const SizedBox(height: 6),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(10),
+                      child: Image.network(
+                        UrlHelper.getDirectDriveUrl(b.foto!),
+                        width: 120,
+                        height: 80,
+                        fit: BoxFit.cover,
+                        errorBuilder: (ctx, err, stack) => Container(
+                          width: 120,
+                          height: 80,
+                          color: Colors.grey.shade100,
+                          child: const Icon(Icons.broken_image_outlined, color: Colors.grey),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                  ],
                   Row(
                     children: [
                       Icon(
@@ -717,6 +1072,43 @@ class _BriefingScreenState extends State<BriefingScreen>
                       ),
                     ],
                   ),
+                  if (b.id != null && (auth.isAdmin || auth.idAnggota == b.idKaryawan)) ...[
+                    const SizedBox(height: 12),
+                    const Divider(height: 1),
+                    const SizedBox(height: 8),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        OutlinedButton.icon(
+                          onPressed: () => _showEditBriefing(b),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: Colors.teal.shade700,
+                            side: BorderSide(color: Colors.teal.shade200),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          ),
+                          icon: const Icon(Icons.edit_outlined, size: 16),
+                          label: const Text("Edit", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                        ),
+                        const SizedBox(width: 10),
+                        OutlinedButton.icon(
+                          onPressed: () => _confirmDeleteBriefing(b.id!),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: Colors.red.shade700,
+                            side: BorderSide(color: Colors.red.shade200),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          ),
+                          icon: const Icon(Icons.delete_outline_rounded, size: 16),
+                          label: const Text("Hapus", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                        ),
+                      ],
+                    ),
+                  ],
                 ],
               ),
             ),

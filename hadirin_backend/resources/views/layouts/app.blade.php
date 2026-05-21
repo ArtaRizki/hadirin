@@ -16,7 +16,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
 
     <!-- Hadirin CSS -->
-    <link rel="stylesheet" href="{{ asset('css/hadirin.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/hadirin.css') }}?v=1.1">
     
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -29,6 +29,13 @@
         <!-- MOBILE HEADER -->
         <header class="mobile-header">
             <div class="mobile-header-brand">
+                <button type="button" class="mobile-menu-toggle" onclick="toggleSidebar()">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="4" x2="20" y1="12" y2="12" />
+                        <line x1="4" x2="20" y1="6" y2="6" />
+                        <line x1="4" x2="20" y1="18" y2="18" />
+                    </svg>
+                </button>
                 <div class="mobile-header-icon">
                     <img src="{{ asset('images/logo.png') }}" style="width: 100%; height: 100%; object-fit: contain;">
                 </div>
@@ -36,9 +43,6 @@
                     <div class="mobile-header-name">{{ auth()->user()->tenant->name ?? 'Instansi' }}</div>
                     <div class="mobile-header-sub">SDIT AL-FAHMI PALU</div>
                 </div>
-            </div>
-            <div class="mobile-header-avatar" onclick="document.getElementById('logout-form').submit();" title="Keluar">
-                <i data-lucide="log-out" style="width:16px;height:16px;"></i>
             </div>
         </header>
 
@@ -146,6 +150,13 @@
                 </div>
             @endif
 
+            @if(session('error'))
+                <div style="padding: 16px 20px; background: #fef2f2; border: 1px solid #ef4444; border-radius: 12px; color: #991b1b; font-weight: 600; margin-bottom: 20px; display: flex; align-items: center; gap: 12px;">
+                    <i data-lucide="alert-triangle" style="color: #ef4444;"></i>
+                    {{ session('error') }}
+                </div>
+            @endif
+
             @yield('content')
         </main>
 
@@ -168,11 +179,19 @@
                 <span>Saran</span>
             </a>
         </nav>
+        
+        <!-- SIDEBAR MOBILE OVERLAY -->
+        <div id="sidebar-overlay" onclick="toggleSidebar()"></div>
     </div>
 
     <script>
         // Initialize Lucide Icons
         lucide.createIcons();
+
+        // Toggle Sidebar Drawer on Mobile
+        function toggleSidebar() {
+            document.body.classList.toggle('sidebar-open');
+        }
 
         // Modal Helpers
         function openModal(id) {

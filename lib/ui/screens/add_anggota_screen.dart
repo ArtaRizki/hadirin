@@ -293,7 +293,7 @@ class _AddAnggotaScreenState extends State<AddAnggotaScreen> {
         ],
       ),
       child: DropdownButtonFormField<String>(
-        value: _selectedJabatan,
+        initialValue: _selectedJabatan,
         isExpanded: true,
         decoration: InputDecoration(
           labelText: "Bagian / Jabatan",

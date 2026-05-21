@@ -58,4 +58,52 @@ class TenantController extends Controller
             ]
         ]);
     }
+
+    public function getAyat(Request $request)
+    {
+        $tenant = $request->tenant;
+        $verse = \App\Models\Verse::where('tenant_id', $tenant->id)->latest()->first();
+
+        if ($verse) {
+            return response()->json([
+                'code' => 200,
+                'status' => 'success',
+                'message' => [
+                    'ayat' => $verse->content,
+                    'sumber' => $verse->reference,
+                ]
+            ]);
+        }
+
+        return response()->json([
+            'code' => 200,
+            'status' => 'success',
+            'message' => [
+                'ayat' => 'Maka sesungguhnya bersama kesulitan ada kemudahan.',
+                'sumber' => 'QS. Al-Insyirah: 5',
+            ]
+        ]);
+    }
+
+    public function updateAyat(Request $request)
+    {
+        $request->validate([
+            'ayat' => 'required',
+            'sumber' => 'nullable',
+        ]);
+
+        $tenant = $request->tenant;
+
+        \App\Models\Verse::create([
+            'tenant_id' => $tenant->id,
+            'content' => $request->ayat,
+            'reference' => $request->sumber,
+        ]);
+
+        return response()->json([
+            'code' => 200,
+            'status' => 'success',
+            'message' => 'Ayat pilihan berhasil diperbarui.'
+        ]);
+    }
 }

@@ -55,9 +55,12 @@ class ExportService {
     await file.writeAsBytes(fileBytes!);
 
     // 5. Bagikan (Share) ke WhatsApp/Email
-    await Share.shareXFiles([
-      XFile(file.path),
-    ], text: 'Laporan Absensi $namaInstansi Bulan $bulan');
+    await SharePlus.instance.share(
+      ShareParams(
+        files: [XFile(file.path)],
+        text: 'Laporan Absensi $namaInstansi Bulan $bulan',
+      ),
+    );
   }
 
   // =================================================================
@@ -99,7 +102,12 @@ class ExportService {
     final file = File('${directory.path}/Rekap_Briefing_${namaInstansi}_$bulan.xlsx');
     await file.writeAsBytes(fileBytes!);
 
-    await Share.shareXFiles([XFile(file.path)], text: 'Rekap Briefing $namaInstansi Bulan $bulan');
+    await SharePlus.instance.share(
+      ShareParams(
+        files: [XFile(file.path)],
+        text: 'Rekap Briefing $namaInstansi Bulan $bulan',
+      ),
+    );
   }
 
   // =================================================================
@@ -142,7 +150,12 @@ class ExportService {
     final file = File('${directory.path}/Rekap_Pengajian_${namaInstansi}_$bulan.xlsx');
     await file.writeAsBytes(fileBytes!);
 
-    await Share.shareXFiles([XFile(file.path)], text: 'Rekap Pengajian $namaInstansi Bulan $bulan');
+    await SharePlus.instance.share(
+      ShareParams(
+        files: [XFile(file.path)],
+        text: 'Rekap Pengajian $namaInstansi Bulan $bulan',
+      ),
+    );
   }
 
   // =================================================================
@@ -184,6 +197,11 @@ class ExportService {
     final file = File('${directory.path}/Rekap_Kegiatan_${namaInstansi}_$bulan.xlsx');
     await file.writeAsBytes(fileBytes!);
 
-    await Share.shareXFiles([XFile(file.path)], text: 'Rekap Kegiatan $namaInstansi Bulan $bulan');
+    await SharePlus.instance.share(
+      ShareParams(
+        files: [XFile(file.path)],
+        text: 'Rekap Kegiatan $namaInstansi Bulan $bulan',
+      ),
+    );
   }
 }

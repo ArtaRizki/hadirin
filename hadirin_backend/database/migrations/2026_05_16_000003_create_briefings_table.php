@@ -12,6 +12,7 @@ return new class extends Migration
             $table->id();
             $table->string('tenant_id');
             $table->string('title');
+            $table->string('speaker_name')->nullable();
             $table->date('scheduled_date');
             $table->time('scheduled_time');
             $table->text('description')->nullable();
@@ -25,6 +26,8 @@ return new class extends Migration
             $table->foreignId('briefing_id')->constrained()->onDelete('cascade');
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
             $table->string('status')->default('Hadir'); // Hadir, Tidak Hadir
+            $table->string('foto')->nullable();
+            $table->text('catatan')->nullable();
             $table->timestamps();
         });
     }

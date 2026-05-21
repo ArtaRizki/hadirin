@@ -17,7 +17,7 @@ Route::get('/', function () {
 
 Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login')->middleware('guest');
 Route::post('/login', [AuthController::class, 'login']);
-Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+Route::match(['get', 'post'], '/logout', [AuthController::class, 'logout'])->name('logout');
 
 Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
@@ -134,8 +134,41 @@ Route::get('/run-seed', function() {
 
 Route::get('/run-link', function() {
     try {
+        // Try creating standard symlink first
         \Illuminate\Support\Facades\Artisan::call('storage:link');
-        return "Storage link created!";
+        return "Storage link created successfully!";
+    } catch (\Throwable $e) {
+        // Safe fallback description for shared hosting
+        return "Note: Symbolic links are restricted by your hosting provider (InfinityFree). <br><br>" .
+               "<strong>No action is required!</strong> We have updated <code>config/filesystems.php</code> to upload files directly into the web-accessible <code>public/storage</code> directory. Your application's image uploads will work perfectly without a symlink.";
+    }
+});
+
+Route::get('/run-clear', function() {
+    try {
+        \Illuminate\Support\Facades\Artisan::call('route:clear');
+        \Illuminate\Support\Facades\Artisan::call('config:clear');
+        \Illuminate\Support\Facades\Artisan::call('cache:clear');
+        \Illuminate\Support\Facades\Artisan::call('view:clear');
+        return "Cache cleared successfully!";
+    } catch (\Exception $e) {
+        return "Error: " . $e->getMessage();
+    }
+});
+
+Route::get('/fix-emails', function() {
+    try {
+        $users = \App\Models\User::all();
+        $count = 0;
+        foreach ($users as $user) {
+            $dummyEmail = strtolower($user->employee_id) . '@' . strtolower($user->tenant_id ?? 'default') . '.local';
+            if ($user->email !== $dummyEmail) {
+                $user->email = $dummyEmail;
+                $user->save();
+                $count++;
+            }
+        }
+        return "Successfully updated {$count} users' emails to unique local domains.";
     } catch (\Exception $e) {
         return "Error: " . $e->getMessage();
     }

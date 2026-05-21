@@ -58,8 +58,9 @@ class ActivityController extends Controller
         return response()->json(['code' => 200, 'status' => 'success', 'message' => 'Jadwal berhasil ditambahkan.']);
     }
 
-    public function edit(Request $request, $id)
+    public function edit(Request $request, $id = null)
     {
+        $id = $id ?? $request->input('id_kegiatan');
         $activity = Activity::findOrFail($id);
 
         if ($request->nama_kegiatan) $activity->name         = $request->nama_kegiatan;

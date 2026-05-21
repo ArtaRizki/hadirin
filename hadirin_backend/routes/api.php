@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\ActivityController;
 use App\Http\Controllers\Api\LeaveController;
 use App\Http\Controllers\Api\NgajiController;
 use App\Http\Controllers\Api\BannerController;
+use App\Http\Controllers\Api\BriefingController;
 use Illuminate\Support\Facades\Route;
 
 // Public routes
@@ -58,15 +59,24 @@ Route::middleware([\App\Http\Middleware\TenantMiddleware::class])->group(functio
     Route::post('/add_kelompok_ngaji', [NgajiController::class, 'storeGroup']);
     Route::post('/submit_laporan_ngaji', [NgajiController::class, 'storeLog']);
     Route::post('/get_laporan_ngaji', [NgajiController::class, 'getLogs']);
+    Route::post('/update_laporan_ngaji', [NgajiController::class, 'updateLog']);
+    Route::post('/delete_laporan_ngaji', [NgajiController::class, 'destroyLog']);
+    
+    // Briefings
+    Route::post('/absen_briefing', [BriefingController::class, 'storeAttendance']);
+    Route::post('/get_briefing', [BriefingController::class, 'getAttendances']);
+    Route::post('/update_briefing', [BriefingController::class, 'updateAttendance']);
+    Route::post('/delete_briefing', [BriefingController::class, 'destroyAttendance']);
     
     // Banners
     Route::post('/get_banners', [BannerController::class, 'index']);
     Route::post('/add_banner', [BannerController::class, 'store']);
-    Route::post('/edit_banner/{id}', [BannerController::class, 'update']);
-    Route::post('/delete_banner/{id}', [BannerController::class, 'destroy']);
+    Route::post('/edit_banner/{id?}', [BannerController::class, 'update']);
+    Route::post('/delete_banner/{id?}', [BannerController::class, 'destroy']);
 
     // Stats & Ayat (New Parity)
     Route::post('/get_enhanced_stats', [AttendanceController::class, 'enhancedStats']);
     Route::post('/get_employee_stats', [AttendanceController::class, 'employeeStats']);
     Route::post('/get_ayat_pilihan', [TenantController::class, 'getAyat']);
+    Route::post('/update_ayat_pilihan', [TenantController::class, 'updateAyat']);
 });

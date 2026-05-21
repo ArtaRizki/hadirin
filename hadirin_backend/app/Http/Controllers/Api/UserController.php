@@ -44,13 +44,18 @@ class UserController extends Controller
             'phone' => $request->no_hp ?? '',
             'role' => $request->id_shift ?? 'Anggota',
             'password' => Hash::make('123456'), // Default password
+            'email' => strtolower($request->id_karyawan_baru) . '@' . strtolower($tenant->id) . '.local',
         ]);
 
         return response()->json(['code' => 200, 'status' => 'success', 'message' => 'Anggota Ditambahkan.']);
     }
 
-    public function destroy(Request $request, $employeeId)
+    public function destroy(Request $request, $employeeId = null)
     {
+        $employeeId = $employeeId ?? $request->input('id_karyawan') ?? $request->input('target_id_karyawan') ?? $request->input('employee_id');
+        if (!$employeeId) {
+            return response()->json(['code' => 400, 'status' => 'error', 'message' => 'ID Karyawan required.'], 400);
+        }
         $tenant = $request->input('tenant');
         $user = User::where('tenant_id', $tenant->id)->where('employee_id', $employeeId)->firstOrFail();
         $user->delete();

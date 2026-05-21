@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class BriefingAttendance extends Model
 {
-    protected $fillable = ['briefing_id', 'user_id', 'status'];
+    protected $fillable = ['briefing_id', 'user_id', 'status', 'foto', 'catatan'];
 
     public function briefing()
     {

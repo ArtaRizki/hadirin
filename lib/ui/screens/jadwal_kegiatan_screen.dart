@@ -166,7 +166,7 @@ class _JadwalKegiatanScreenState extends State<JadwalKegiatanScreen> {
                 _inputLabel("Tipe Kegiatan"),
                 const SizedBox(height: 8),
                 DropdownButtonFormField<String>(
-                  value: selectedTipe,
+                  initialValue: selectedTipe,
                   decoration: _inputDecoration(),
                   items:
                       [
@@ -414,7 +414,7 @@ class _JadwalKegiatanScreenState extends State<JadwalKegiatanScreen> {
                 _inputLabel("Tipe Kegiatan"),
                 const SizedBox(height: 8),
                 DropdownButtonFormField<String>(
-                  value: selectedTipe,
+                  initialValue: selectedTipe,
                   decoration: _inputDecoration(),
                   items:
                       [

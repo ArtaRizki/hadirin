@@ -15,8 +15,9 @@
             @method('PUT')
             
             <div class="input-group">
-                <label>ID Anggota / NIK (Read Only)</label>
-                <input type="text" value="{{ $user->employee_id }}" disabled style="background: #f8fafc; cursor: not-allowed;" />
+                <label>ID Anggota / NIK</label>
+                <input type="text" name="employee_id" required value="{{ old('employee_id', $user->employee_id) }}" />
+                @error('employee_id') <span style="color: #ef4444; font-size: 0.8rem; font-weight: 600;">{{ $message }}</span> @enderror
             </div>
 
             <div class="input-group">
@@ -34,13 +35,7 @@
                 </div>
                 <div class="input-group">
                     <label>Jabatan / Divisi</label>
-                    <select name="division">
-                        <option value="">-- Pilih Jabatan --</option>
-                        @foreach($positions as $pos)
-                            <option value="{{ $pos->name }}" {{ $user->division == $pos->name ? 'selected' : '' }}>{{ $pos->name }}</option>
-                        @endforeach
-                        <option value="Lainnya" {{ !in_array($user->division, $positions->pluck('name')->toArray()) && $user->division ? 'selected' : '' }}>Lainnya</option>
-                    </select>
+                    <input type="text" name="division" placeholder="Contoh: Guru Kelas, TU" value="{{ old('division', $user->division) }}" />
                 </div>
             </div>
 

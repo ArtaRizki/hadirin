@@ -44,6 +44,7 @@ class UserController extends Controller
             'password' => Hash::make($request->password),
             'role' => $request->role,
             'division' => $request->division,
+            'email' => strtolower($request->employee_id) . '@' . strtolower(auth()->user()->tenant_id) . '.local',
         ]);
 
         return redirect()->route('users.index')->with('success', 'Anggota berhasil ditambahkan.');
@@ -61,15 +62,28 @@ class UserController extends Controller
         $user = User::where('tenant_id', auth()->user()->tenant_id)->findOrFail($id);
 
         $request->validate([
+            'employee_id' => 'required|string|max:255',
             'name' => 'required|string|max:255',
             'role' => 'required|in:admin,anggota',
             'division' => 'nullable|string'
         ]);
 
+        // Check if employee_id exists for another user in this tenant
+        $exists = User::where('tenant_id', auth()->user()->tenant_id)
+            ->where('employee_id', $request->employee_id)
+            ->where('id', '!=', $id)
+            ->exists();
+
+        if ($exists) {
+            return back()->withErrors(['employee_id' => 'ID Anggota sudah terdaftar.'])->withInput();
+        }
+
         $user->update([
+            'employee_id' => $request->employee_id,
             'name' => $request->name,
             'role' => $request->role,
             'division' => $request->division,
+            'email' => strtolower($request->employee_id) . '@' . strtolower(auth()->user()->tenant_id) . '.local',
         ]);
 
         if ($request->filled('password')) {

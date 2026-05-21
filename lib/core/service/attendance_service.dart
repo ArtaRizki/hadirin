@@ -162,8 +162,9 @@ class AttendanceService extends ApiClient {
 
       // 4. IZIN KAMERA
       var cameraStatus = await Permission.camera.status;
-      if (cameraStatus.isDenied)
+      if (cameraStatus.isDenied) {
         cameraStatus = await Permission.camera.request();
+      }
       if (cameraStatus.isPermanentlyDenied) {
         throw Exception(
           'Izin kamera ditolak permanen. Harap aktifkan di pengaturan HP.',
@@ -181,8 +182,9 @@ class AttendanceService extends ApiClient {
         imageQuality: 100,
         preferredCameraDevice: CameraDevice.front,
       );
-      if (image == null)
+      if (image == null) {
         throw Exception('Foto wajah wajib diambil untuk absen.');
+      }
 
       // 6. FACE RECOGNITION (delegasi ke FaceService)
       d.log('Mengekstrak vektor wajah dari foto...');
@@ -304,8 +306,11 @@ class AttendanceService extends ApiClient {
       throw Exception('Gagal terhubung ke server.');
     } catch (e) {
       d.log('==== ERROR GET HISTORY ==== $e');
-      if (e.toString().contains('SocketException') || e.toString().contains('Failed host lookup')) {
-        throw Exception('Tidak ada koneksi internet. Pastikan perangkat Anda terhubung ke jaringan.');
+      if (e.toString().contains('SocketException') ||
+          e.toString().contains('Failed host lookup')) {
+        throw Exception(
+          'Tidak ada koneksi internet. Pastikan perangkat Anda terhubung ke jaringan.',
+        );
       }
       throw Exception('Gagal mengambil riwayat: $e');
     }

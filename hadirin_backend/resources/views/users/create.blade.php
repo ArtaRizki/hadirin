@@ -33,13 +33,7 @@
                 </div>
                 <div class="input-group">
                     <label>Jabatan / Divisi</label>
-                    <select name="division">
-                        <option value="">-- Pilih Jabatan --</option>
-                        @foreach($positions as $pos)
-                            <option value="{{ $pos->name }}">{{ $pos->name }}</option>
-                        @endforeach
-                        <option value="Lainnya">Lainnya</option>
-                    </select>
+                    <input type="text" name="division" placeholder="Contoh: Guru Kelas, TU" value="{{ old('division') }}" />
                 </div>
             </div>
 

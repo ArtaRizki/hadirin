@@ -53,10 +53,38 @@ class UrlHelper {
     return phone;
   }
 
-  /// Mengonversi tautan berbagi Google Drive menjadi tautan tayangan langsung (direct view).
-  /// Mendukung format: /file/d/[ID]/view, ?id=[ID], /open?id=[ID]
+  /// Mengonversi tautan berbagi Google Drive menjadi tautan tayangan langsung (direct view),
+  /// serta mendukung penanganan path relatif dan pencocokan domain API.
   static String getDirectDriveUrl(String originalUrl) {
-    if (!originalUrl.contains("drive.google.com")) return originalUrl;
+    if (originalUrl.isEmpty) return originalUrl;
+
+    // Jika path relatif, misal: /storage/banners/... atau storage/banners/...
+    if (originalUrl.startsWith("/") || originalUrl.startsWith("storage/")) {
+      final String cleanPath = originalUrl.startsWith("/") ? originalUrl : "/$originalUrl";
+      try {
+        final uri = Uri.parse(AppConfig.baseUrl);
+        final host = "${uri.scheme}://${uri.host}${uri.hasPort ? ':${uri.port}' : ''}";
+        return "$host$cleanPath";
+      } catch (_) {
+        return originalUrl;
+      }
+    }
+
+    if (!originalUrl.contains("drive.google.com")) {
+      // Jika absolute tapi menggunakan domain localhost, 127.0.0.1, atau localtunnel (.loca.lt) yang berbeda dengan domain saat ini
+      if (originalUrl.startsWith("http://") || originalUrl.startsWith("https://")) {
+        try {
+          final currentUri = Uri.parse(AppConfig.baseUrl);
+          final currentHost = "${currentUri.scheme}://${currentUri.host}${currentUri.hasPort ? ':${currentUri.port}' : ''}";
+          
+          final origUri = Uri.parse(originalUrl);
+          if (origUri.host == "localhost" || origUri.host == "127.0.0.1" || origUri.host.contains(".loca.lt") || origUri.host != currentUri.host) {
+            return originalUrl.replaceFirst("${origUri.scheme}://${origUri.host}${origUri.hasPort ? ':${origUri.port}' : ''}", currentHost);
+          }
+        } catch (_) {}
+      }
+      return originalUrl;
+    }
 
     String? fileId;
 
@@ -70,8 +98,10 @@ class UrlHelper {
     }
     // Pola 3: ?id=[ID] atau &id=[ID]
     else if (originalUrl.contains("id=")) {
-      final uri = Uri.parse(originalUrl);
-      fileId = uri.queryParameters['id'];
+      try {
+        final uri = Uri.parse(originalUrl);
+        fileId = uri.queryParameters['id'];
+      } catch (_) {}
     }
 
     if (fileId != null && fileId.isNotEmpty) {

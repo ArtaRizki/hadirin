@@ -49,18 +49,20 @@ class BannerController extends Controller
         return response()->json(['code' => 200, 'status' => 'success', 'message' => 'Banner ditambahkan.']);
     }
 
-    public function update(Request $request, $id)
+    public function update(Request $request, $id = null)
     {
+        $id = $id ?? $request->input('id_banner') ?? $request->input('id');
         $banner = Banner::findOrFail($id);
         $banner->update([
-            'title'  => $request->judul ?? $banner->title,
-            'status' => $request->status ?? $banner->status,
+            'title'  => $request->judul ?? $request->judul_baru ?? $banner->title,
+            'status' => $request->status ?? $request->status_baru ?? $banner->status,
         ]);
         return response()->json(['code' => 200, 'status' => 'success', 'message' => 'Banner diperbarui.']);
     }
 
-    public function destroy($id)
+    public function destroy(Request $request, $id = null)
     {
+        $id = $id ?? $request->input('id_banner') ?? $request->input('id');
         Banner::findOrFail($id)->delete();
         return response()->json(['code' => 200, 'status' => 'success', 'message' => 'Banner dihapus.']);
     }

@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'dart:developer' as d;
 import 'dart:io';
+import 'dart:typed_data';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:hadirin/core/config/app_config.dart';
 import 'package:hadirin/core/service/api_client.dart';
@@ -19,6 +21,7 @@ class LeaveService extends ApiClient {
     required String alasan,
     required bool isAdmin,
     String? imagePath,
+    Uint8List? imageBytes, // NEW
     String? namaAnggota, // Optional for tracking
     String? guruPengganti, // NEW
   }) async {
@@ -26,23 +29,34 @@ class LeaveService extends ApiClient {
       String base64Image = '';
 
       // Kompresi lampiran foto/surat dokter jika ada
-      if (imagePath != null && imagePath.isNotEmpty) {
-        final targetPath = '${imagePath}_compressed_doc.jpg';
-        final compressed = await FlutterImageCompress.compressAndGetFile(
-          imagePath,
-          targetPath,
-          quality: 40,
-          minWidth: 800,
-          minHeight: 800,
-          format: CompressFormat.jpeg,
-        );
+      if (imageBytes != null) {
+        base64Image = base64Encode(imageBytes);
+      } else if (imagePath != null && imagePath.isNotEmpty) {
+        if (kIsWeb) {
+          // XFile path on Web is a blob:url. Cannot read as File.
+          // In web execution, we always pass imageBytes directly.
+        } else {
+          final targetPath = '${imagePath}_compressed_doc.jpg';
+          final compressed = await FlutterImageCompress.compressAndGetFile(
+            imagePath,
+            targetPath,
+            quality: 40,
+            minWidth: 800,
+            minHeight: 800,
+            format: CompressFormat.jpeg,
+          );
 
-        if (compressed != null) {
-          final bytes = await compressed.readAsBytes();
-          base64Image = base64Encode(bytes);
-          try {
-            File(targetPath).deleteSync();
-          } catch (_) {}
+          if (compressed != null) {
+            final bytes = await compressed.readAsBytes();
+            base64Image = base64Encode(bytes);
+            try {
+              File(targetPath).deleteSync();
+            } catch (_) {}
+          } else {
+            // Fallback if compression returns null
+            final bytes = await File(imagePath).readAsBytes();
+            base64Image = base64Encode(bytes);
+          }
         }
       }
 

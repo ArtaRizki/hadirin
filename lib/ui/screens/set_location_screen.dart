@@ -219,8 +219,9 @@ class _SetLocationScreenState extends State<SetLocationScreen> {
 
   @override
   Widget build(BuildContext context) {
-    if (!_isMapReady)
+    if (!_isMapReady) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
 
     // Deteksi keyboard aktif menggunakan viewInsets
     final double keyboardHeight = MediaQuery.of(context).viewInsets.bottom;
@@ -383,8 +384,9 @@ class _SetLocationScreenState extends State<SetLocationScreen> {
                                 : null,
                           ),
                           onChanged: (val) {
-                            if (_debounce?.isActive ?? false)
+                            if (_debounce?.isActive ?? false) {
                               _debounce!.cancel();
+                            }
                             _debounce = Timer(
                               const Duration(milliseconds: 800),
                               () => _searchAddress(val),

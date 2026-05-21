@@ -53,13 +53,14 @@ class _LaporanNgajiScreenState extends State<LaporanNgajiScreen>
     });
   }
 
-  void _showFormAbsen() {
+  void _showFormAbsen({LaporanNgajiModel? existingLog}) {
     final auth = context.read<AuthProvider>();
+    final isEdit = existingLog != null;
     List<String> kelompokOptions = ['Memuat...'];
     String? selectedKelompok;
     final lainnyaCtrl = TextEditingController();
-    final lokasiCtrl = TextEditingController();
-    final materiCtrl = TextEditingController();
+    final lokasiCtrl = TextEditingController(text: isEdit ? existingLog.lokasi : '');
+    final materiCtrl = TextEditingController(text: isEdit ? existingLog.materiKeterangan : '');
     bool isSaving = false;
     bool isLoadingKelompok = true;
 
@@ -78,6 +79,15 @@ class _LaporanNgajiScreenState extends State<LaporanNgajiScreen>
                       ? ['Lainnya']
                       : [...list, 'Lainnya'];
                   isLoadingKelompok = false;
+
+                  if (isEdit) {
+                    if (list.contains(existingLog.namaKelompok)) {
+                      selectedKelompok = existingLog.namaKelompok;
+                    } else {
+                      selectedKelompok = 'Lainnya';
+                      lainnyaCtrl.text = existingLog.namaKelompok;
+                    }
+                  }
                 });
               }
             });
@@ -129,15 +139,15 @@ class _LaporanNgajiScreenState extends State<LaporanNgajiScreen>
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text(
-                              "Absen Pengajian Pekan Ini",
-                              style: TextStyle(
+                            Text(
+                              isEdit ? "Edit Laporan Pengajian" : "Absen Pengajian Pekan Ini",
+                              style: const TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.w900,
                               ),
                             ),
                             Text(
-                              _weekLabel(DateTime.now()),
+                              isEdit ? (existingLog.tanggal ?? '') : _weekLabel(DateTime.now()),
                               style: TextStyle(
                                 fontSize: 12,
                                 color: Colors.grey.shade500,
@@ -223,11 +233,11 @@ class _LaporanNgajiScreenState extends State<LaporanNgajiScreen>
                           : () async {
                               final kelompokFinal =
                                   selectedKelompok == 'Lainnya'
-                                  ? lainnyaCtrl.text
+                                  ? lainnyaCtrl.text.trim()
                                   : selectedKelompok;
                               if (kelompokFinal == null ||
                                   kelompokFinal.isEmpty ||
-                                  lokasiCtrl.text.isEmpty) {
+                                  lokasiCtrl.text.trim().isEmpty) {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   const SnackBar(
                                     content: Text("Lengkapi data!"),
@@ -236,18 +246,31 @@ class _LaporanNgajiScreenState extends State<LaporanNgajiScreen>
                                 return;
                               }
                               setSheet(() => isSaving = true);
-                              final res = await _service.submitLaporanNgaji(
-                                clientId: auth.clientId ?? '',
-                                idGuru: auth.idAnggota ?? '',
-                                namaKelompok: kelompokFinal,
-                                lokasi: lokasiCtrl.text,
-                                materiKeterangan: materiCtrl.text,
-                              );
+                              final res = isEdit
+                                  ? await _service.updateLaporanNgaji(
+                                      clientId: auth.clientId ?? '',
+                                      id: existingLog.id!,
+                                      namaKelompok: kelompokFinal,
+                                      lokasi: lokasiCtrl.text.trim(),
+                                      materiKeterangan: materiCtrl.text,
+                                    )
+                                  : await _service.submitLaporanNgaji(
+                                      clientId: auth.clientId ?? '',
+                                      idGuru: auth.idAnggota ?? '',
+                                      namaKelompok: kelompokFinal,
+                                      lokasi: lokasiCtrl.text.trim(),
+                                      materiKeterangan: materiCtrl.text,
+                                    );
                               if (res['success']) {
                                 if (mounted) Navigator.pop(context);
                                 _fetch();
                               } else {
                                 setSheet(() => isSaving = false);
+                                if (mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(content: Text(res['message'] ?? "Gagal menyimpan")),
+                                  );
+                                }
                               }
                             },
                       style: ElevatedButton.styleFrom(
@@ -267,7 +290,7 @@ class _LaporanNgajiScreenState extends State<LaporanNgajiScreen>
                               ),
                             )
                           : const Icon(Icons.check_circle_rounded),
-                      label: Text(isSaving ? "Menyimpan..." : "Simpan Laporan"),
+                      label: Text(isSaving ? "Menyimpan..." : (isEdit ? "Perbarui Laporan" : "Simpan Laporan")),
                     ),
                   ),
                 ],
@@ -276,6 +299,74 @@ class _LaporanNgajiScreenState extends State<LaporanNgajiScreen>
           );
         },
       ),
+    );
+  }
+
+  void _confirmDelete(String id) {
+    showDialog(
+      context: context,
+      builder: (ctx) {
+        bool isDeleting = false;
+        return StatefulBuilder(
+          builder: (ctx, setDialog) => AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            title: const Text("Hapus Laporan", style: TextStyle(fontWeight: FontWeight.w900)),
+            content: const Text("Apakah Anda yakin ingin menghapus laporan pengajian ini secara permanen?"),
+            actions: [
+              TextButton(
+                onPressed: isDeleting ? null : () => Navigator.pop(ctx),
+                child: const Text("Batal"),
+              ),
+              ElevatedButton(
+                onPressed: isDeleting
+                    ? null
+                    : () async {
+                        setDialog(() => isDeleting = true);
+                        final auth = context.read<AuthProvider>();
+                        final res = await _service.deleteLaporanNgaji(
+                          clientId: auth.clientId ?? '',
+                          id: id,
+                        );
+                        if (res['success']) {
+                          if (mounted) {
+                            Navigator.pop(ctx);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text("Laporan berhasil dihapus"),
+                                backgroundColor: Colors.green,
+                              ),
+                            );
+                          }
+                          _fetch();
+                        } else {
+                          setDialog(() => isDeleting = false);
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text(res['message'] ?? "Gagal menghapus")),
+                            );
+                          }
+                        }
+                      },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.red,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+                child: isDeleting
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 2,
+                        ),
+                      )
+                    : const Text("Hapus"),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -488,6 +579,7 @@ class _LaporanNgajiScreenState extends State<LaporanNgajiScreen>
   }
 
   Widget _buildCard(LaporanNgajiModel l) {
+    final auth = context.read<AuthProvider>();
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
@@ -520,7 +612,7 @@ class _LaporanNgajiScreenState extends State<LaporanNgajiScreen>
             ),
           ),
           title: Text(
-            l.namaKelompok ?? '-',
+            l.namaKelompok.isEmpty ? '-' : l.namaKelompok,
             style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15),
           ),
           subtitle: Column(
@@ -537,7 +629,7 @@ class _LaporanNgajiScreenState extends State<LaporanNgajiScreen>
                   const SizedBox(width: 4),
                   Expanded(
                     child: Text(
-                      l.lokasi ?? '-',
+                      l.lokasi.isEmpty ? '-' : l.lokasi,
                       style: TextStyle(
                         fontSize: 12,
                         color: Colors.grey.shade500,
@@ -591,7 +683,7 @@ class _LaporanNgajiScreenState extends State<LaporanNgajiScreen>
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        l.materiKeterangan ?? '-',
+                        l.materiKeterangan.isEmpty ? '-' : l.materiKeterangan,
                         style: const TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
@@ -602,6 +694,43 @@ class _LaporanNgajiScreenState extends State<LaporanNgajiScreen>
                 ),
               ],
             ),
+            if (l.id != null && (auth.isAdmin || auth.idAnggota == l.idGuru)) ...[
+              const SizedBox(height: 16),
+              const Divider(height: 1),
+              const SizedBox(height: 12),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  OutlinedButton.icon(
+                    onPressed: () => _showFormAbsen(existingLog: l),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.teal.shade700,
+                      side: BorderSide(color: Colors.teal.shade200),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    ),
+                    icon: const Icon(Icons.edit_outlined, size: 16),
+                    label: const Text("Edit", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                  ),
+                  const SizedBox(width: 10),
+                  OutlinedButton.icon(
+                    onPressed: () => _confirmDelete(l.id!),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.red.shade700,
+                      side: BorderSide(color: Colors.red.shade200),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    ),
+                    icon: const Icon(Icons.delete_outline_rounded, size: 16),
+                    label: const Text("Hapus", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                  ),
+                ],
+              ),
+            ],
           ],
         ),
       ),

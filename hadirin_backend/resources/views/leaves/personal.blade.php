@@ -17,7 +17,7 @@
         <!-- Form Section -->
         <div class="card glass">
             <h3 style="font-weight: 800; margin-bottom: 24px;">Form Pengajuan</h3>
-            <form action="{{ route('leaves.store') }}" method="POST">
+            <form action="{{ route('leaves.store') }}" method="POST" enctype="multipart/form-data">
                 @csrf
                 <div class="input-group">
                     <label>Tipe Izin</label>
@@ -35,6 +35,20 @@
                     <label>Alasan</label>
                     <textarea name="reason" rows="4" style="width: 100%; padding: 12px; border-radius: 12px; border: 1px solid rgba(0,0,0,0.1); outline: none; font-family: inherit;" placeholder="Jelaskan alasan Anda..." required></textarea>
                 </div>
+                
+                <!-- Premium Attachment Input -->
+                <div class="input-group" style="margin-bottom: 20px;">
+                    <label style="display: block; font-weight: 700; margin-bottom: 8px; color: var(--text-main);">Lampiran / Dokumen Pendukung (Opsional)</label>
+                    <div style="position: relative; display: flex; align-items: center; justify-content: center; border: 2px dashed rgba(0,0,0,0.1); padding: 20px; border-radius: 12px; text-align: center; cursor: pointer; transition: all 0.3s ease; background: rgba(0,0,0,0.01);" onmouseover="this.style.borderColor='var(--primary)'; this.style.background='rgba(22, 163, 74, 0.02)'" onmouseout="this.style.borderColor='rgba(0,0,0,0.1)'; this.style.background='rgba(0,0,0,0.01)'">
+                        <input type="file" name="attachment" accept="image/*,application/pdf" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer;" onchange="document.getElementById('file-chosen').textContent = this.files[0] ? this.files[0].name : 'Pilih file atau seret ke sini'" />
+                        <div>
+                            <i data-lucide="upload-cloud" style="width: 32px; height: 32px; color: var(--text-muted); margin-bottom: 8px;"></i>
+                            <div id="file-chosen" style="font-size: 0.85rem; font-weight: 600; color: var(--text-main);">Pilih file (JPG, PNG, PDF)</div>
+                            <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 4px;">Maksimal 2 MB</div>
+                        </div>
+                    </div>
+                </div>
+
                 <button type="submit" class="btn btn-primary" style="width: 100%; padding: 15px; margin-top: 10px;">
                     Kirim Pengajuan
                 </button>
@@ -50,6 +64,7 @@
                         <tr>
                             <th>Tanggal</th>
                             <th>Tipe</th>
+                            <th>Lampiran</th>
                             <th>Status</th>
                         </tr>
                     </thead>
@@ -58,6 +73,15 @@
                         <tr>
                             <td>{{ $leave->lat_long }}</td>
                             <td><span class="badge-tipe">{{ $leave->type }}</span></td>
+                            <td>
+                                @if($leave->photo_url && $leave->photo_url != 'No Photo' && !str_starts_with($leave->photo_url, 'Error'))
+                                <a href="{{ $leave->photo_url }}" target="_blank" style="font-size: 0.75rem; color: var(--primary); font-weight: 700; text-decoration: none; display: flex; align-items: center; gap: 4px;">
+                                    <i data-lucide="file-text" style="width: 14px; height: 14px;"></i> Lihat
+                                </a>
+                                @else
+                                <span style="color: var(--text-muted); font-size: 0.75rem;">-</span>
+                                @endif
+                            </td>
                             <td>
                                 @php
                                     $color = '#f59e0b';
@@ -70,7 +94,7 @@
                             </td>
                         </tr>
                         @empty
-                        <tr><td colspan="3" style="text-align: center; color: var(--text-muted); padding: 40px;">Belum ada pengajuan.</td></tr>
+                        <tr><td colspan="4" style="text-align: center; color: var(--text-muted); padding: 40px;">Belum ada pengajuan.</td></tr>
                         @endforelse
                     </tbody>
                 </table>

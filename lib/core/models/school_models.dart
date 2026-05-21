@@ -48,6 +48,7 @@ class JadwalKegiatanModel {
 }
 
 class LaporanNgajiModel {
+  final String? id;
   final String idGuru;
   final String namaKelompok;
   final String lokasi;
@@ -55,6 +56,7 @@ class LaporanNgajiModel {
   final String? tanggal;
 
   LaporanNgajiModel({
+    this.id,
     required this.idGuru,
     required this.namaKelompok,
     required this.lokasi,
@@ -64,6 +66,7 @@ class LaporanNgajiModel {
 
   factory LaporanNgajiModel.fromJson(Map<String, dynamic> json) {
     return LaporanNgajiModel(
+      id: (json['id'] ?? json['ID'])?.toString(),
       idGuru: (json['id_guru'] ?? json['ID_Guru'] ?? '').toString(),
       namaKelompok: (json['kelompok'] ?? json['nama_kelompok'] ?? json['Nama_Kelompok'] ?? '').toString(),
       lokasi: (json['lokasi'] ?? json['Lokasi'] ?? '').toString(),
@@ -150,6 +153,7 @@ class JabatanModel {
 }
 
 class BriefingModel {
+  final String? id;
   final String idKaryawan;
   final String statusKehadiran;
   final String? foto;
@@ -158,6 +162,7 @@ class BriefingModel {
   final String? namaKaryawan;
 
   BriefingModel({
+    this.id,
     required this.idKaryawan,
     required this.statusKehadiran,
     this.foto,
@@ -168,6 +173,7 @@ class BriefingModel {
 
   factory BriefingModel.fromJson(Map<String, dynamic> json) {
     return BriefingModel(
+      id: (json['id'] ?? json['ID'])?.toString(),
       idKaryawan: (json['id_karyawan'] ?? json['ID_Karyawan'] ?? '').toString(),
       statusKehadiran: (json['status_kehadiran'] ?? json['Status_Kehadiran'] ?? '').toString(),
       foto: (json['foto'] ?? json['Foto'])?.toString(),

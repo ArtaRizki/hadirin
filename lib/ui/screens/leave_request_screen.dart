@@ -1,4 +1,5 @@
-import 'dart:io';
+import 'dart:typed_data';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:hadirin/core/providers/auth_provider.dart';
 import 'package:hadirin/core/service/leave_service.dart';
@@ -20,7 +21,8 @@ class _LeaveRequestScreenState extends State<LeaveRequestScreen> {
   final _alasanController = TextEditingController();
   String _tipeIzin = "Sakit"; // Default
   DateTimeRange? _selectedDates;
-  File? _suratDokter;
+  XFile? _suratDokter;
+  Uint8List? _suratDokterBytes;
   bool _isLoading = false;
 
   List<dynamic> _listGuru = [];
@@ -41,7 +43,9 @@ class _LeaveRequestScreenState extends State<LeaveRequestScreen> {
       final data = await AdminService().getAllAnggota(auth.clientId!);
       setState(() {
         _listGuru = data.where((karyawan) {
-          final divisi = (karyawan['bagian'] ?? karyawan['divisi'] ?? "").toString().toUpperCase();
+          final divisi = (karyawan['bagian'] ?? karyawan['divisi'] ?? "")
+              .toString()
+              .toUpperCase();
           return divisi.contains("GURU");
         }).toList();
         _isFetchingGuru = false;
@@ -63,15 +67,154 @@ class _LeaveRequestScreenState extends State<LeaveRequestScreen> {
     if (picked != null) setState(() => _selectedDates = picked);
   }
 
-  Future<void> _pickImage() async {
-    final picker = ImagePicker();
-    final pickedFile = await picker.pickImage(
-      source: ImageSource.camera,
-      preferredCameraDevice: CameraDevice.rear,
-    );
-    if (pickedFile != null) {
-      setState(() => _suratDokter = File(pickedFile.path));
+  Future<void> _pickImage(ImageSource source) async {
+    try {
+      final picker = ImagePicker();
+      final pickedFile = await picker.pickImage(
+        source: source,
+        preferredCameraDevice: CameraDevice.rear,
+      );
+      if (pickedFile != null) {
+        final bytes = await pickedFile.readAsBytes();
+        setState(() {
+          _suratDokter = pickedFile;
+          _suratDokterBytes = bytes;
+        });
+      }
+    } catch (e) {
+      debugPrint("Gagal mengambil gambar: $e");
+      _showSnack("Gagal mengakses kamera/galeri: $e", isError: true);
     }
+  }
+
+  void _showPickerOptions() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (BuildContext context) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      "Pilih Sumber Foto",
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF0F172A),
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: () => Navigator.pop(context),
+                      icon: const Icon(Icons.close_rounded, size: 20),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Expanded(
+                      child: InkWell(
+                        onTap: () {
+                          Navigator.pop(context);
+                          _pickImage(ImageSource.camera);
+                        },
+                        borderRadius: BorderRadius.circular(16),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          decoration: BoxDecoration(
+                            border: Border.all(color: Colors.grey.shade200),
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: Column(
+                            children: [
+                              Icon(
+                                Icons.camera_alt_rounded,
+                                color: Theme.of(context).colorScheme.primary,
+                                size: 32,
+                              ),
+                              const SizedBox(height: 8),
+                              const Text(
+                                "Kamera",
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 13,
+                                  color: Color(0xFF0F172A),
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                "Ambil foto langsung",
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: Colors.grey.shade500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: InkWell(
+                        onTap: () {
+                          Navigator.pop(context);
+                          _pickImage(ImageSource.gallery);
+                        },
+                        borderRadius: BorderRadius.circular(16),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          decoration: BoxDecoration(
+                            border: Border.all(color: Colors.grey.shade200),
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: Column(
+                            children: [
+                              Icon(
+                                Icons.photo_library_rounded,
+                                color: Theme.of(context).colorScheme.primary,
+                                size: 32,
+                              ),
+                              const SizedBox(height: 8),
+                              const Text(
+                                "Galeri / File",
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 13,
+                                  color: Color(0xFF0F172A),
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                "Unggah dari berkas",
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: Colors.grey.shade500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 
   void _submitPengajuan() async {
@@ -105,7 +248,8 @@ class _LeaveRequestScreenState extends State<LeaveRequestScreen> {
       tipeIzin: _tipeIzin,
       rentangTanggal: strTanggal,
       alasan: _alasanController.text.trim(),
-      imagePath: _suratDokter?.path,
+      imagePath: kIsWeb ? null : _suratDokter?.path,
+      imageBytes: _suratDokterBytes,
       isAdmin: auth.isAdmin,
       guruPengganti: _selectedGuruPengganti, // NEW
     );
@@ -478,7 +622,7 @@ class _LeaveRequestScreenState extends State<LeaveRequestScreen> {
                       ),
                       child: DropdownButtonHideUnderline(
                         child: DropdownButtonFormField<String>(
-                          value: _selectedGuruPengganti,
+                          initialValue: _selectedGuruPengganti,
                           hint: const Text("Pilih Guru Pengganti (Jika ada)"),
                           icon: Icon(
                             Icons.keyboard_arrow_down_rounded,
@@ -541,7 +685,7 @@ class _LeaveRequestScreenState extends State<LeaveRequestScreen> {
                     ),
                     const SizedBox(height: 8),
                     InkWell(
-                      onTap: _pickImage,
+                      onTap: _showPickerOptions,
                       borderRadius: BorderRadius.circular(16),
                       child: Container(
                         height: 140,
@@ -583,12 +727,77 @@ class _LeaveRequestScreenState extends State<LeaveRequestScreen> {
                                   ),
                                 ],
                               )
-                            : ClipRRect(
-                                borderRadius: BorderRadius.circular(14),
-                                child: Image.file(
-                                  _suratDokter!,
-                                  fit: BoxFit.cover,
-                                ),
+                            : Stack(
+                                children: [
+                                  Positioned.fill(
+                                    child: ClipRRect(
+                                      borderRadius: BorderRadius.circular(14),
+                                      child: Image.memory(
+                                        _suratDokterBytes!,
+                                        fit: BoxFit.cover,
+                                      ),
+                                    ),
+                                  ),
+                                  // Tombol hapus/batal
+                                  Positioned(
+                                    top: 8,
+                                    right: 8,
+                                    child: GestureDetector(
+                                      onTap: () {
+                                        setState(() {
+                                          _suratDokter = null;
+                                          _suratDokterBytes = null;
+                                        });
+                                      },
+                                      child: Container(
+                                        padding: const EdgeInsets.all(6),
+                                        decoration: BoxDecoration(
+                                          color: Colors.black.withOpacity(0.6),
+                                          shape: BoxShape.circle,
+                                        ),
+                                        child: const Icon(
+                                          Icons.close_rounded,
+                                          color: Colors.white,
+                                          size: 16,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  // Indikator Ganti
+                                  Positioned(
+                                    bottom: 8,
+                                    right: 8,
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 10,
+                                        vertical: 6,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: Colors.black.withOpacity(0.6),
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: const [
+                                          Icon(
+                                            Icons.sync_rounded,
+                                            color: Colors.white,
+                                            size: 12,
+                                          ),
+                                          SizedBox(width: 4),
+                                          Text(
+                                            "Ganti",
+                                            style: TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 10,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
                       ),
                     ),

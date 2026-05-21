@@ -13,7 +13,28 @@ class ExcelSeeder extends Seeder
 {
     public function run(): void
     {
-        $filePath = 'd:/INFORMATICS/FREELANCE/hadirin/sdit-palu.xlsx';
+        $filePath = base_path('sdit-palu.xlsx');
+        $hasExcel = false;
+
+        try {
+            if (file_exists($filePath)) {
+                $hasExcel = true;
+            } elseif (!ini_get('open_basedir')) {
+                $parentPath = base_path('../sdit-palu.xlsx');
+                if (file_exists($parentPath)) {
+                    $filePath = $parentPath;
+                    $hasExcel = true;
+                }
+            }
+        } catch (\Throwable $e) {
+            $hasExcel = false;
+        }
+
+        if (!$hasExcel) {
+            $this->command->warn("Excel file not found or inaccessible under open_basedir restrictions. Skipping excel seeding.");
+            return;
+        }
+
         $spreadsheet = IOFactory::load($filePath);
 
         // 1. Seed Tenant & Office Config
@@ -31,8 +52,8 @@ class ExcelSeeder extends Seeder
             ['tenant_id' => $tenant->id],
             [
                 'name' => 'Kantor Utama',
-                'latitude' => $row1[1],
-                'longitude' => $row1[2],
+                'latitude' => $row1[1] ?: -0.9115832,
+                'longitude' => $row1[2] ?: 119.8900044,
                 'radius' => (int)$row1[3],
                 'start_checkin' => $row1[4] ?: '05:00',
                 'limit_checkin' => $row1[5] ?: '07:15',

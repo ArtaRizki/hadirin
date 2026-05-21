@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Web;
 use App\Http\Controllers\Controller;
 use App\Models\Leave;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Auth;
 
 class LeaveController extends Controller
 {
@@ -16,7 +18,7 @@ class LeaveController extends Controller
 
     public function myLeaves()
     {
-        $leaves = Leave::where('user_id', auth()->id())->latest()->get();
+        $leaves = Leave::where('user_id', Auth::id())->latest()->get();
         return view('leaves.personal', compact('leaves'));
     }
 
@@ -26,14 +28,28 @@ class LeaveController extends Controller
             'type' => 'required',
             'reason' => 'required',
             'lat_long' => 'required', // Ini adalah rentang tanggal di form
+            'attachment' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
         ]);
 
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+
+        $photoUrl = '';
+        if ($request->hasFile('attachment')) {
+            $file = $request->file('attachment');
+            $empId = $user->employee_id ?: $user->id;
+            $filename = 'lampiran_' . $empId . '_' . now()->format('YmdHis') . '.' . $file->getClientOriginalExtension();
+            $path = $file->storeAs('lampiran', $filename, 'public');
+            $photoUrl = Storage::url($path);
+        }
+
         Leave::create([
-            'user_id' => auth()->id(),
-            'tenant_id' => auth()->user()->tenant_id,
+            'user_id' => $user->id,
+            'tenant_id' => $user->tenant_id,
             'type' => $request->type,
             'reason' => $request->reason,
             'lat_long' => $request->lat_long,
+            'photo_url' => $photoUrl,
             'leave_status' => 'Menunggu Approval',
         ]);
 

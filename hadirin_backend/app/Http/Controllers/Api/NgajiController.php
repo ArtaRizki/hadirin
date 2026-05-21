@@ -81,6 +81,7 @@ class NgajiController extends Controller
 
         $logs = $query->get()->map(function ($log) {
             return [
+                'id'       => $log->id,
                 'waktu'    => $log->created_at->format('Y-m-d H:i:s'),
                 'id_guru'  => $log->user->employee_id ?? '-',
                 'kelompok' => $log->group->name ?? '-',
@@ -90,5 +91,43 @@ class NgajiController extends Controller
         });
 
         return response()->json(['code' => 200, 'status' => 'success', 'message' => $logs]);
+    }
+
+    public function updateLog(Request $request)
+    {
+        $request->validate([
+            'id'            => 'required|exists:ngaji_logs,id',
+            'nama_kelompok' => 'required',
+            'lokasi'        => 'nullable',
+            'materi_keterangan' => 'nullable',
+        ]);
+
+        $tenant = $request->input('tenant');
+        $log = NgajiLog::where('tenant_id', $tenant->id)->findOrFail($request->id);
+
+        $group = NgajiGroup::where('tenant_id', $tenant->id)
+            ->where('name', $request->nama_kelompok)
+            ->first();
+
+        $log->update([
+            'ngaji_group_id' => $group ? $group->id : null,
+            'location'       => $request->lokasi,
+            'materi'         => $request->materi_keterangan,
+        ]);
+
+        return response()->json(['code' => 200, 'status' => 'success', 'message' => 'Laporan pengajian berhasil diperbarui.']);
+    }
+
+    public function destroyLog(Request $request)
+    {
+        $request->validate([
+            'id' => 'required',
+        ]);
+
+        $tenant = $request->input('tenant');
+        $log = NgajiLog::where('tenant_id', $tenant->id)->findOrFail($request->id);
+        $log->delete();
+
+        return response()->json(['code' => 200, 'status' => 'success', 'message' => 'Laporan pengajian berhasil dihapus.']);
     }
 }

@@ -39,6 +39,15 @@ class AttendanceController extends Controller
             $coords  = explode(',', $request->lat_long);
             $userLat = (float) trim($coords[0]);
             $userLng = (float) trim($coords[1] ?? 0);
+
+            if (trim($request->lat_long) === 'GPS_OFF' || strpos($request->lat_long, 'GPS_OFF') !== false || ($userLat == 0.0 && $userLng == 0.0)) {
+                return response()->json([
+                    'code'    => 403,
+                    'status'  => 'error',
+                    'message' => 'Gagal mendapatkan lokasi GPS Anda. Harap aktifkan GPS (Lokasi) pada perangkat Anda, pastikan sinyal stabil, dan berikan izin akses lokasi untuk aplikasi Hadirin.',
+                ], 403);
+            }
+
             $distance = $this->calculateDistance($config->latitude, $config->longitude, $userLat, $userLng);
             if ($distance > $config->radius) {
                 $jarakTeks  = $distance >= 1000 ? number_format($distance / 1000, 2) . ' km' : round($distance) . ' m';

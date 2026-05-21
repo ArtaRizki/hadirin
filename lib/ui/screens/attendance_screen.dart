@@ -194,8 +194,9 @@ class _AttendanceScreenState extends State<AttendanceScreen>
         permission = await Geolocator.requestPermission();
       }
       if (permission == LocationPermission.denied ||
-          permission == LocationPermission.deniedForever)
+          permission == LocationPermission.deniedForever) {
         return;
+      }
 
       final auth = context.read<AuthProvider>();
       if (!auth.isLoggedIn || !auth.isAnggota) return;
@@ -412,7 +413,9 @@ class _AttendanceScreenState extends State<AttendanceScreen>
         });
         return AlertDialog(
           backgroundColor: Colors.white,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+          ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -424,12 +427,18 @@ class _AttendanceScreenState extends State<AttendanceScreen>
               const SizedBox(height: 12),
               Text(
                 "Absen $tipeAbsen Berhasil!",
-                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w900,
+                ),
               ),
               const SizedBox(height: 8),
               if (_statStreak > 1)
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
                     color: const Color(0xFFF59E0B).withOpacity(0.12),
                     borderRadius: BorderRadius.circular(20),
@@ -458,9 +467,23 @@ class _AttendanceScreenState extends State<AttendanceScreen>
   Widget _miniStat(String label, String value, Color color) {
     return Column(
       children: [
-        Text(value, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: color)),
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w900,
+            color: color,
+          ),
+        ),
         const SizedBox(height: 2),
-        Text(label, style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: Colors.grey.shade500)),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 10,
+            fontWeight: FontWeight.w600,
+            color: Colors.grey.shade500,
+          ),
+        ),
       ],
     );
   }
@@ -629,10 +652,14 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                                 child: CircleAvatar(
                                   radius: 24,
                                   backgroundColor: Colors.white,
-                                  backgroundImage: (auth.profilePhotoUrl != null && auth.profilePhotoUrl!.isNotEmpty)
+                                  backgroundImage:
+                                      (auth.profilePhotoUrl != null &&
+                                          auth.profilePhotoUrl!.isNotEmpty)
                                       ? NetworkImage(auth.profilePhotoUrl!)
                                       : null,
-                                  child: (auth.profilePhotoUrl == null || auth.profilePhotoUrl!.isEmpty)
+                                  child:
+                                      (auth.profilePhotoUrl == null ||
+                                          auth.profilePhotoUrl!.isEmpty)
                                       ? Icon(
                                           Icons.person_rounded,
                                           color: context.primaryColor,
@@ -692,7 +719,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                                     left: 6,
                                   ),
                                   child: Text(
-                                    "${DateFormat('ss').format(_currentTime)}",
+                                    DateFormat('ss').format(_currentTime),
                                     style: TextStyle(
                                       fontSize: 22,
                                       fontWeight: FontWeight.w700,
@@ -779,7 +806,9 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                           decoration: BoxDecoration(
                             color: Colors.white,
                             borderRadius: BorderRadius.circular(20),
-                            border: Border.all(color: const Color(0xFF10B981).withOpacity(0.15)),
+                            border: Border.all(
+                              color: const Color(0xFF10B981).withOpacity(0.15),
+                            ),
                             boxShadow: [
                               BoxShadow(
                                 color: Colors.black.withOpacity(0.03),
@@ -795,10 +824,16 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                                   Container(
                                     padding: const EdgeInsets.all(6),
                                     decoration: BoxDecoration(
-                                      color: const Color(0xFF10B981).withOpacity(0.1),
+                                      color: const Color(
+                                        0xFF10B981,
+                                      ).withOpacity(0.1),
                                       borderRadius: BorderRadius.circular(8),
                                     ),
-                                    child: const Icon(Icons.auto_stories_rounded, color: Color(0xFF10B981), size: 16),
+                                    child: const Icon(
+                                      Icons.auto_stories_rounded,
+                                      color: Color(0xFF10B981),
+                                      size: 16,
+                                    ),
                                   ),
                                   const SizedBox(width: 8),
                                   Text(
@@ -873,15 +908,21 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                                           value: _statPercentage / 100,
                                           strokeWidth: 6,
                                           backgroundColor: Colors.grey.shade200,
-                                          valueColor: AlwaysStoppedAnimation<Color>(
-                                            _statPercentage >= 80 ? const Color(0xFF16A34A) :
-                                            _statPercentage >= 50 ? const Color(0xFFF59E0B) :
-                                            const Color(0xFFEF4444),
-                                          ),
+                                          valueColor:
+                                              AlwaysStoppedAnimation<Color>(
+                                                _statPercentage >= 80
+                                                    ? const Color(0xFF16A34A)
+                                                    : _statPercentage >= 50
+                                                    ? const Color(0xFFF59E0B)
+                                                    : const Color(0xFFEF4444),
+                                              ),
                                         ),
                                         Text(
                                           "$_statPercentage%",
-                                          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w900),
+                                          style: const TextStyle(
+                                            fontSize: 13,
+                                            fontWeight: FontWeight.w900,
+                                          ),
                                         ),
                                       ],
                                     ),
@@ -889,25 +930,39 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                                   const SizedBox(width: 16),
                                   Expanded(
                                     child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
                                         Row(
                                           children: [
                                             const Text(
                                               "Statistik Bulan Ini",
-                                              style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14),
+                                              style: TextStyle(
+                                                fontWeight: FontWeight.w800,
+                                                fontSize: 14,
+                                              ),
                                             ),
                                             if (_statStreak > 0) ...[
                                               const SizedBox(width: 6),
                                               Container(
-                                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                      horizontal: 6,
+                                                      vertical: 2,
+                                                    ),
                                                 decoration: BoxDecoration(
-                                                  color: const Color(0xFFF59E0B).withOpacity(0.15),
-                                                  borderRadius: BorderRadius.circular(6),
+                                                  color: const Color(
+                                                    0xFFF59E0B,
+                                                  ).withOpacity(0.15),
+                                                  borderRadius:
+                                                      BorderRadius.circular(6),
                                                 ),
                                                 child: Text(
                                                   "🔥 $_statStreak",
-                                                  style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800),
+                                                  style: const TextStyle(
+                                                    fontSize: 11,
+                                                    fontWeight: FontWeight.w800,
+                                                  ),
                                                 ),
                                               ),
                                             ],
@@ -916,11 +971,23 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                                         const SizedBox(height: 8),
                                         Row(
                                           children: [
-                                            _miniStat("Hadir", _statHadir.toString(), const Color(0xFF16A34A)),
+                                            _miniStat(
+                                              "Hadir",
+                                              _statHadir.toString(),
+                                              const Color(0xFF16A34A),
+                                            ),
                                             const SizedBox(width: 12),
-                                            _miniStat("Terlambat", _statTerlambat.toString(), const Color(0xFFF59E0B)),
+                                            _miniStat(
+                                              "Terlambat",
+                                              _statTerlambat.toString(),
+                                              const Color(0xFFF59E0B),
+                                            ),
                                             const SizedBox(width: 12),
-                                            _miniStat("Izin", _statIzin.toString(), const Color(0xFF3B82F6)),
+                                            _miniStat(
+                                              "Izin",
+                                              _statIzin.toString(),
+                                              const Color(0xFF3B82F6),
+                                            ),
                                           ],
                                         ),
                                       ],

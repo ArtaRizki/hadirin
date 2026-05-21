@@ -323,6 +323,50 @@ class SchoolService extends ApiClient {
     }
   }
 
+  Future<Map<String, dynamic>> updateLaporanNgaji({
+    required String clientId,
+    required String id,
+    required String namaKelompok,
+    required String lokasi,
+    required String materiKeterangan,
+  }) async {
+    try {
+      final payload = {
+        'api_token': AppConfig.apiToken,
+        'client_id': clientId,
+        'action': 'update_laporan_ngaji',
+        'id': id,
+        'nama_kelompok': namaKelompok,
+        'lokasi': lokasi,
+        'materi_keterangan': materiKeterangan,
+      };
+
+      final response = await sendRequest('update_laporan_ngaji', payload);
+      return parseResponse(response.body);
+    } catch (e) {
+      return {'success': false, 'message': e.toString()};
+    }
+  }
+
+  Future<Map<String, dynamic>> deleteLaporanNgaji({
+    required String clientId,
+    required String id,
+  }) async {
+    try {
+      final payload = {
+        'api_token': AppConfig.apiToken,
+        'client_id': clientId,
+        'action': 'delete_laporan_ngaji',
+        'id': id,
+      };
+
+      final response = await sendRequest('delete_laporan_ngaji', payload);
+      return parseResponse(response.body);
+    } catch (e) {
+      return {'success': false, 'message': e.toString()};
+    }
+  }
+
   // =================================================================
   // 4. PENILAIAN AL-QURAN
   // =================================================================
@@ -587,6 +631,50 @@ class SchoolService extends ApiClient {
     } catch (e) {
       d.log('==== ERROR GET BRIEFING ==== $e');
       return [];
+    }
+  }
+
+  Future<Map<String, dynamic>> updateBriefing({
+    required String clientId,
+    required String id,
+    required String statusKehadiran,
+    String fotoBase64 = '',
+    String catatan = '',
+  }) async {
+    try {
+      final payload = {
+        'api_token': AppConfig.apiToken,
+        'client_id': clientId,
+        'action': 'update_briefing',
+        'id': id,
+        'status_kehadiran': statusKehadiran,
+        'foto_base64': fotoBase64,
+        'catatan': catatan,
+      };
+
+      final response = await sendRequest('update_briefing', payload);
+      return parseResponse(response.body);
+    } catch (e) {
+      return {'success': false, 'message': e.toString()};
+    }
+  }
+
+  Future<Map<String, dynamic>> deleteBriefing({
+    required String clientId,
+    required String id,
+  }) async {
+    try {
+      final payload = {
+        'api_token': AppConfig.apiToken,
+        'client_id': clientId,
+        'action': 'delete_briefing',
+        'id': id,
+      };
+
+      final response = await sendRequest('delete_briefing', payload);
+      return parseResponse(response.body);
+    } catch (e) {
+      return {'success': false, 'message': e.toString()};
     }
   }
 }
