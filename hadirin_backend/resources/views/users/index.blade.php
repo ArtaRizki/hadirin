@@ -52,12 +52,24 @@
                         </td>
                         <td data-label="Status Device">
                             @if($u->device_id)
-                                <div style="display: flex; align-items: center; gap: 6px; color: #10b981; font-weight: 700; font-size: 0.85rem;">
+                                <div style="display: flex; align-items: center; gap: 6px; color: #10b981; font-weight: 700; font-size: 0.85rem; margin-bottom: 4px;">
                                     <i data-lucide="smartphone" style="width: 14px;"></i> Terikat
                                 </div>
                             @else
-                                <div style="color: var(--text-muted); font-size: 0.85rem;">Belum Terikat</div>
+                                <div style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 4px;">Belum Terikat</div>
                             @endif
+
+                            <div style="display: flex; gap: 4px; flex-wrap: wrap;">
+                                @if($u->face_descriptor)
+                                    <span class="badge-tipe" style="background: rgba(16, 185, 129, 0.1); color: #10b981; font-size: 0.7rem; padding: 2px 6px;">Wajah Web</span>
+                                @endif
+                                @if($u->face_embedding_mobile)
+                                    <span class="badge-tipe" style="background: rgba(59, 130, 246, 0.1); color: #3b82f6; font-size: 0.7rem; padding: 2px 6px;">Wajah Mobile</span>
+                                @endif
+                                @if(!$u->face_descriptor && !$u->face_embedding_mobile)
+                                    <span class="badge-tipe" style="background: rgba(239, 68, 68, 0.1); color: #ef4444; font-size: 0.7rem; padding: 2px 6px;">Belum Rekam Wajah</span>
+                                @endif
+                            </div>
                         </td>
                         <td data-label="Aksi">
                             <div style="display: flex; gap: 8px;">

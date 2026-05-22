@@ -26,6 +26,7 @@ class User extends Authenticatable
         'division',
         'device_id',
         'face_descriptor',
+        'face_embedding_mobile',
         'phone',
         'role',
         'profile_photo_path',

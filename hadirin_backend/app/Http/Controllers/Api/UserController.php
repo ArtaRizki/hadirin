@@ -19,7 +19,7 @@ class UserController extends Controller
                 'nama' => $u->name,
                 'bagian' => $u->division ?? '-',
                 'sudah_enroll' => $u->device_id !== null,
-                'wajah_terdaftar' => $u->face_descriptor !== null,
+                'wajah_terdaftar' => $u->face_descriptor !== null || $u->face_embedding_mobile !== null,
                 'no_hp' => $u->phone ?? '',
                 'id_shift_default' => $u->role ?? 'Anggota',
             ];
@@ -65,9 +65,10 @@ class UserController extends Controller
 
     public function registerFace(Request $request)
     {
+        // Mendukung request 'face_embedding' dari mobile
+        // ATAU 'face_descriptor' jika ada sistem lain yang pakai API ini
         $request->validate([
             'id_karyawan' => 'required',
-            'face_descriptor' => 'required',
         ]);
 
         $tenant = $request->input('tenant');
@@ -77,7 +78,13 @@ class UserController extends Controller
             return response()->json(['code' => 404, 'status' => 'error', 'message' => 'User not found.'], 404);
         }
 
-        $user->update(['face_descriptor' => $request->face_descriptor]);
+        if ($request->has('face_embedding')) {
+            $user->update(['face_embedding_mobile' => $request->face_embedding]);
+        } elseif ($request->has('face_descriptor')) {
+            $user->update(['face_descriptor' => $request->face_descriptor]);
+        } else {
+             return response()->json(['code' => 400, 'status' => 'error', 'message' => 'Face data required.'], 400);
+        }
 
         return response()->json(['code' => 200, 'status' => 'success', 'message' => 'Wajah terdaftar.']);
     }
@@ -95,7 +102,11 @@ class UserController extends Controller
             return response()->json(['code' => 404, 'status' => 'error', 'message' => 'Not found.'], 404);
         }
 
-        return response()->json(['code' => 200, 'status' => 'success', 'message' => $user->face_descriptor ?? '']);
+        // Khusus API mobile, kita prioritaskan face_embedding_mobile. 
+        // Jika null, kita kembalikan empty array agar mobile tahu belum terdaftar.
+        $faceData = $user->face_embedding_mobile ?? '';
+
+        return response()->json(['code' => 200, 'status' => 'success', 'message' => $faceData]);
     }
 
     public function resetDevice(Request $request)
