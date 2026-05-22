@@ -4,7 +4,7 @@
 
 @section('content')
 <div class="content-view fade-in">
-    <header style="margin-bottom: 40px">
+    <header style="margin-bottom: 30px">
         <h1 style="font-size: 2.2rem; font-weight: 900; letter-spacing: -1px">
             Ajukan Izin
         </h1>
@@ -13,7 +13,8 @@
         </p>
     </header>
 
-    <div style="display: grid; grid-template-columns: 1fr 1.5fr; gap: 30px;">
+    {{-- Responsive 2-col: stacks to 1-col on mobile via CSS [style*="display: grid"] rule --}}
+    <div style="display: grid; grid-template-columns: 1fr 1.5fr; gap: 24px;">
         <!-- Form Section -->
         <div class="card glass">
             <h3 style="font-weight: 800; margin-bottom: 24px;">Form Pengajuan</h3>
@@ -21,7 +22,7 @@
                 @csrf
                 <div class="input-group">
                     <label>Tipe Izin</label>
-                    <select name="type" required style="width: 100%; padding: 12px; border-radius: 12px; border: 1px solid rgba(0,0,0,0.1); outline: none;">
+                    <select name="type" required>
                         <option value="Izin">Izin</option>
                         <option value="Sakit">Sakit</option>
                         <option value="Cuti">Cuti</option>
@@ -33,14 +34,18 @@
                 </div>
                 <div class="input-group">
                     <label>Alasan</label>
-                    <textarea name="reason" rows="4" style="width: 100%; padding: 12px; border-radius: 12px; border: 1px solid rgba(0,0,0,0.1); outline: none; font-family: inherit;" placeholder="Jelaskan alasan Anda..." required></textarea>
+                    <textarea name="reason" rows="4" placeholder="Jelaskan alasan Anda..." required></textarea>
                 </div>
-                
-                <!-- Premium Attachment Input -->
-                <div class="input-group" style="margin-bottom: 20px;">
-                    <label style="display: block; font-weight: 700; margin-bottom: 8px; color: var(--text-main);">Lampiran / Dokumen Pendukung (Opsional)</label>
-                    <div style="position: relative; display: flex; align-items: center; justify-content: center; border: 2px dashed rgba(0,0,0,0.1); padding: 20px; border-radius: 12px; text-align: center; cursor: pointer; transition: all 0.3s ease; background: rgba(0,0,0,0.01);" onmouseover="this.style.borderColor='var(--primary)'; this.style.background='rgba(22, 163, 74, 0.02)'" onmouseout="this.style.borderColor='rgba(0,0,0,0.1)'; this.style.background='rgba(0,0,0,0.01)'">
-                        <input type="file" name="attachment" accept="image/*,application/pdf" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer;" onchange="document.getElementById('file-chosen').textContent = this.files[0] ? this.files[0].name : 'Pilih file atau seret ke sini'" />
+
+                <!-- Attachment -->
+                <div class="input-group">
+                    <label>Lampiran / Dokumen Pendukung (Opsional)</label>
+                    <div style="position: relative; display: flex; align-items: center; justify-content: center; border: 2px dashed rgba(0,0,0,0.1); padding: 20px; border-radius: 12px; text-align: center; cursor: pointer; transition: all 0.3s ease; background: rgba(0,0,0,0.01);"
+                        onmouseover="this.style.borderColor='var(--primary)'; this.style.background='rgba(22, 163, 74, 0.02)'"
+                        onmouseout="this.style.borderColor='rgba(0,0,0,0.1)'; this.style.background='rgba(0,0,0,0.01)'">
+                        <input type="file" name="attachment" accept="image/*,application/pdf"
+                            style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer;"
+                            onchange="document.getElementById('file-chosen').textContent = this.files[0] ? this.files[0].name : 'Pilih file atau seret ke sini'" />
                         <div>
                             <i data-lucide="upload-cloud" style="width: 32px; height: 32px; color: var(--text-muted); margin-bottom: 8px;"></i>
                             <div id="file-chosen" style="font-size: 0.85rem; font-weight: 600; color: var(--text-main);">Pilih file (JPG, PNG, PDF)</div>
@@ -49,7 +54,7 @@
                     </div>
                 </div>
 
-                <button type="submit" class="btn btn-primary" style="width: 100%; padding: 15px; margin-top: 10px;">
+                <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 10px;">
                     Kirim Pengajuan
                 </button>
             </form>
@@ -71,9 +76,9 @@
                     <tbody>
                         @forelse($leaves as $leave)
                         <tr>
-                            <td>{{ $leave->lat_long }}</td>
-                            <td><span class="badge-tipe">{{ $leave->type }}</span></td>
-                            <td>
+                            <td data-label="Tanggal">{{ $leave->lat_long }}</td>
+                            <td data-label="Tipe"><span class="badge-tipe">{{ $leave->type }}</span></td>
+                            <td data-label="Lampiran">
                                 @if($leave->photo_url && $leave->photo_url != 'No Photo' && !str_starts_with($leave->photo_url, 'Error'))
                                 <a href="{{ $leave->photo_url }}" target="_blank" style="font-size: 0.75rem; color: var(--primary); font-weight: 700; text-decoration: none; display: flex; align-items: center; gap: 4px;">
                                     <i data-lucide="file-text" style="width: 14px; height: 14px;"></i> Lihat
@@ -82,7 +87,7 @@
                                 <span style="color: var(--text-muted); font-size: 0.75rem;">-</span>
                                 @endif
                             </td>
-                            <td>
+                            <td data-label="Status">
                                 @php
                                     $color = '#f59e0b';
                                     if($leave->leave_status == 'Disetujui') $color = '#10b981';

@@ -11,7 +11,7 @@
         </div>
         @if(auth()->user()->role == 'admin' || auth()->user()->role == 'superadmin')
         <a href="{{ route('quran.create') }}" class="btn btn-primary">
-            <i data-lucide="plus"></i> Tambah Setoran
+            <i data-lucide="plus"></i> <span>Tambah Setoran</span>
         </a>
         @endif
     </header>
@@ -35,19 +35,23 @@
                 <tbody>
                     @forelse($logs as $log)
                     <tr>
-                        <td>{{ $log->created_at->format('d M Y') }}</td>
-                        <td style="font-weight: 600;">{{ $log->user->name ?? '-' }}</td>
-                        <td>{{ $log->quranMaster->name ?? '-' }}</td>
-                        <td>{{ $log->halaman_ayat ?? '-' }}</td>
-                        <td><span class="badge-tipe">{{ $log->nilai ?? '-' }}</span></td>
-                        <td style="color: var(--text-muted);">{{ $log->keterangan ?? '-' }}</td>
+                        <td data-label="Tanggal">{{ $log->created_at->format('d M Y') }}</td>
+                        <td data-label="Guru" style="font-weight: 600;">{{ $log->user->name ?? '-' }}</td>
+                        <td data-label="Materi">{{ $log->quranMaster->name ?? '-' }}</td>
+                        <td data-label="Hal/Ayat">{{ $log->halaman_ayat ?? '-' }}</td>
+                        <td data-label="Nilai"><span class="badge-tipe">{{ $log->nilai ?? '-' }}</span></td>
+                        <td data-label="Keterangan" style="color: var(--text-muted);">{{ $log->keterangan ?? '-' }}</td>
                         @if(auth()->user()->role == 'admin' || auth()->user()->role == 'superadmin')
-                        <td>
+                        <td data-label="Aksi">
                             <div style="display: flex; gap: 8px;">
-                                <a href="{{ route('quran.edit', $log->id) }}" class="btn" style="padding: 8px; background: rgba(0,0,0,0.05); color: var(--text-main);" title="Edit"><i data-lucide="edit" style="width: 16px;"></i></a>
+                                <a href="{{ route('quran.edit', $log->id) }}" class="btn" style="padding: 8px; background: rgba(0,0,0,0.05); color: var(--text-main);" title="Edit">
+                                    <i data-lucide="edit" style="width: 16px;"></i>
+                                </a>
                                 <form action="{{ route('quran.destroy', $log->id) }}" method="POST" onsubmit="return confirm('Hapus data setoran ini?')" style="display:inline;">
                                     @csrf @method('DELETE')
-                                    <button type="submit" class="btn" style="padding: 8px; background: rgba(239,68,68,0.1); color: #ef4444; border:none; cursor:pointer;" title="Hapus"><i data-lucide="trash" style="width: 16px;"></i></button>
+                                    <button type="submit" class="btn" style="padding: 8px; background: rgba(239,68,68,0.1); color: #ef4444; border:none; cursor:pointer;" title="Hapus">
+                                        <i data-lucide="trash" style="width: 16px;"></i>
+                                    </button>
                                 </form>
                             </div>
                         </td>

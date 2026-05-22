@@ -11,7 +11,7 @@
         </div>
         @if(auth()->user()->role == 'admin' || auth()->user()->role == 'superadmin')
         <a href="{{ route('ngaji.create') }}" class="btn btn-primary">
-            <i data-lucide="plus"></i> Tambah Presensi
+            <i data-lucide="plus"></i> <span>Tambah Presensi</span>
         </a>
         @endif
     </header>
@@ -34,21 +34,25 @@
                 <tbody>
                     @forelse($logs as $log)
                     <tr>
-                        <td>{{ $log->created_at->format('d M Y H:i') }}</td>
-                        <td style="font-weight: 600;">{{ $log->user->name ?? '-' }}</td>
-                        <td>{{ $log->group->group_name ?? ($log->group->name ?? '-') }}</td>
-                        <td style="color: var(--text-muted);">{{ \Illuminate\Support\Str::limit($log->materi, 40) ?? '-' }}</td>
-                        <td>
+                        <td data-label="Waktu">{{ $log->created_at->format('d M Y H:i') }}</td>
+                        <td data-label="Nama" style="font-weight: 600;">{{ $log->user->name ?? '-' }}</td>
+                        <td data-label="Kelompok">{{ $log->group->group_name ?? ($log->group->name ?? '-') }}</td>
+                        <td data-label="Materi" style="color: var(--text-muted);">{{ \Illuminate\Support\Str::limit($log->materi, 40) ?? '-' }}</td>
+                        <td data-label="Status">
                             @php $sc = $log->status == 'Hadir' ? '#10b981' : '#f59e0b'; @endphp
                             <span style="font-weight: 800; color: {{ $sc }}">{{ strtoupper($log->status ?? 'Hadir') }}</span>
                         </td>
                         @if(auth()->user()->role == 'admin' || auth()->user()->role == 'superadmin')
-                        <td>
+                        <td data-label="Aksi">
                             <div style="display: flex; gap: 8px;">
-                                <a href="{{ route('ngaji.edit', $log->id) }}" class="btn" style="padding: 8px; background: rgba(0,0,0,0.05); color: var(--text-main);" title="Edit"><i data-lucide="edit" style="width: 16px;"></i></a>
+                                <a href="{{ route('ngaji.edit', $log->id) }}" class="btn" style="padding: 8px; background: rgba(0,0,0,0.05); color: var(--text-main);" title="Edit">
+                                    <i data-lucide="edit" style="width: 16px;"></i>
+                                </a>
                                 <form action="{{ route('ngaji.destroy', $log->id) }}" method="POST" onsubmit="return confirm('Hapus data halaqah ini?')" style="display:inline;">
                                     @csrf @method('DELETE')
-                                    <button type="submit" class="btn" style="padding: 8px; background: rgba(239,68,68,0.1); color: #ef4444; border:none; cursor:pointer;" title="Hapus"><i data-lucide="trash" style="width: 16px;"></i></button>
+                                    <button type="submit" class="btn" style="padding: 8px; background: rgba(239,68,68,0.1); color: #ef4444; border:none; cursor:pointer;" title="Hapus">
+                                        <i data-lucide="trash" style="width: 16px;"></i>
+                                    </button>
                                 </form>
                             </div>
                         </td>

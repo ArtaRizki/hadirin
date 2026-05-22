@@ -9,13 +9,13 @@
         <p style="color: var(--text-muted); font-weight: 500;">Selamat datang kembali, {{ auth()->user()->name }}! Pantau ringkasan aktivitas hari ini.</p>
     </header>
 
-    <!-- Verse of the Day Section -->
+    <!-- Verse of the Day -->
     @if($verse)
-    <div class="card glass" style="margin-bottom: 30px; background: linear-gradient(135deg, rgba(0, 81, 71, 0.05) 0%, rgba(255, 255, 255, 0.8) 100%); border-left: 5px solid var(--primary);">
-        <div style="display: flex; gap: 20px; align-items: center;">
-            <div style="font-size: 2rem; color: var(--primary); opacity: 0.5;"><i data-lucide="quote"></i></div>
+    <div class="card glass" style="margin-bottom: 24px; background: linear-gradient(135deg, rgba(0, 81, 71, 0.05) 0%, rgba(255, 255, 255, 0.8) 100%); border-left: 5px solid var(--primary);">
+        <div style="display: flex; gap: 16px; align-items: center;">
+            <div style="font-size: 2rem; color: var(--primary); opacity: 0.5; flex-shrink: 0;"><i data-lucide="quote"></i></div>
             <div>
-                <p style="font-size: 1.1rem; font-style: italic; font-weight: 600; color: var(--text-main); line-height: 1.6; margin-bottom: 8px;">
+                <p style="font-size: 1rem; font-style: italic; font-weight: 600; color: var(--text-main); line-height: 1.6; margin-bottom: 8px;">
                     "{{ $verse->content }}"
                 </p>
                 <small style="font-weight: 800; color: var(--primary); text-transform: uppercase; letter-spacing: 1px;">— {{ $verse->reference }}</small>
@@ -57,7 +57,8 @@
     </div>
 
     @if(auth()->user()->role == 'admin' || auth()->user()->role == 'superadmin')
-    <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 24px; margin-top: 20px;">
+    {{-- Admin: Responsive 2-col grid → stacks on mobile via CSS [style*="display: grid"] rule --}}
+    <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 24px; margin-top: 24px;">
         <!-- Recent Attendance -->
         <div class="card glass">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
@@ -76,9 +77,9 @@
                     <tbody>
                         @forelse($adminData['recent_attendances'] as $att)
                         <tr>
-                            <td>{{ $att->created_at->format('H:i') }}</td>
-                            <td><strong>{{ $att->user->name }}</strong></td>
-                            <td>
+                            <td data-label="Waktu">{{ $att->created_at->format('H:i') }}</td>
+                            <td data-label="Nama"><strong>{{ $att->user->name }}</strong></td>
+                            <td data-label="Status">
                                 <span class="badge-tipe {{ $att->is_late ? 'badge-danger' : 'badge-success' }}">
                                     {{ $att->is_late ? 'Terlambat' : 'Tepat Waktu' }}
                                 </span>
@@ -96,16 +97,15 @@
 
         <!-- Action Needed -->
         <div style="display: flex; flex-direction: column; gap: 20px;">
-            <div class="card glass" style="background: white;">
-                <h3 style="font-size: 0.9rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; margin-bottom: 15px;">Perlu Persetujuan</h3>
+            <div class="card glass">
+                <h3 style="font-size: 0.85rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; margin-bottom: 15px;">Perlu Persetujuan</h3>
                 <div style="display: flex; align-items: center; justify-content: space-between;">
                     <div style="font-size: 2rem; font-weight: 900; color: #f59e0b;">{{ $adminData['pending_leaves'] }}</div>
                     <a href="{{ route('leaves.index') }}" class="btn" style="padding: 10px 16px; font-size: 0.8rem; background: rgba(245, 158, 11, 0.1); color: #f59e0b;">Periksa</a>
                 </div>
             </div>
-
-            <div class="card glass" style="background: white;">
-                <h3 style="font-size: 0.9rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; margin-bottom: 15px;">Masukan Baru (3 Hari Terakhir)</h3>
+            <div class="card glass">
+                <h3 style="font-size: 0.85rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; margin-bottom: 15px;">Masukan Baru (3 Hari Terakhir)</h3>
                 <div style="display: flex; align-items: center; justify-content: space-between;">
                     <div style="font-size: 2rem; font-weight: 900; color: var(--primary);">{{ $adminData['new_feedback'] }}</div>
                     <a href="{{ route('feedback.index') }}" class="btn" style="padding: 10px 16px; font-size: 0.8rem; background: rgba(0, 81, 71, 0.1); color: var(--primary);">Baca</a>
@@ -113,29 +113,30 @@
             </div>
         </div>
     </div>
+
     @else
-        <!-- User View: My History Summary or Quick Actions -->
-        <div class="card glass" style="margin-top: 20px;">
-            <h2 style="font-size: 1.2rem; font-weight: 800; margin-bottom: 20px;">Aksi Cepat</h2>
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
-                <a href="{{ route('attendances.create', ['type' => 'Masuk']) }}" class="btn btn-primary" style="padding: 20px; flex-direction: column; gap: 8px;">
-                    <i data-lucide="scan-face" style="width: 32px; height: 32px;"></i>
-                    <span>Absen Masuk</span>
-                </a>
-                <a href="{{ route('attendances.create', ['type' => 'Pulang']) }}" class="btn" style="padding: 20px; flex-direction: column; gap: 8px; background: linear-gradient(135deg, #7c3aed, #6d28d9); color: white;">
-                    <i data-lucide="log-out" style="width: 32px; height: 32px;"></i>
-                    <span>Absen Pulang</span>
-                </a>
-                <a href="{{ route('leaves.personal') }}" class="btn" style="padding: 20px; flex-direction: column; gap: 8px; background: white; border: 1.5px solid #e2e8f0; color: var(--text-main);">
-                    <i data-lucide="calendar-plus" style="width: 32px; height: 32px; color: var(--primary);"></i>
-                    <span>Ajukan Izin</span>
-                </a>
-                <a href="{{ route('attendances.history') }}" class="btn" style="padding: 20px; flex-direction: column; gap: 8px; background: white; border: 1.5px solid #e2e8f0; color: var(--text-main);">
-                    <i data-lucide="history" style="width: 32px; height: 32px; color: #3b82f6;"></i>
-                    <span>Riwayat Saya</span>
-                </a>
-            </div>
+    <!-- User: Quick Actions -->
+    <div class="card glass" style="margin-top: 24px;">
+        <h2 style="font-size: 1.2rem; font-weight: 800; margin-bottom: 20px;">Aksi Cepat</h2>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 14px;">
+            <a href="{{ route('attendances.create', ['type' => 'Masuk']) }}" class="btn btn-primary" style="padding: 20px; flex-direction: column; gap: 8px;">
+                <i data-lucide="scan-face" style="width: 32px; height: 32px;"></i>
+                <span>Absen Masuk</span>
+            </a>
+            <a href="{{ route('attendances.create', ['type' => 'Pulang']) }}" class="btn" style="padding: 20px; flex-direction: column; gap: 8px; background: linear-gradient(135deg, #7c3aed, #6d28d9); color: white;">
+                <i data-lucide="log-out" style="width: 32px; height: 32px;"></i>
+                <span>Absen Pulang</span>
+            </a>
+            <a href="{{ route('leaves.personal') }}" class="btn" style="padding: 20px; flex-direction: column; gap: 8px; background: white; border: 1.5px solid #e2e8f0; color: var(--text-main);">
+                <i data-lucide="calendar-plus" style="width: 32px; height: 32px; color: var(--primary);"></i>
+                <span>Ajukan Izin</span>
+            </a>
+            <a href="{{ route('attendances.history') }}" class="btn" style="padding: 20px; flex-direction: column; gap: 8px; background: white; border: 1.5px solid #e2e8f0; color: var(--text-main);">
+                <i data-lucide="history" style="width: 32px; height: 32px; color: #3b82f6;"></i>
+                <span>Riwayat Saya</span>
+            </a>
         </div>
+    </div>
     @endif
 </div>
 @endsection

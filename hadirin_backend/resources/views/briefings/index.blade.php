@@ -11,7 +11,7 @@
         </div>
         @if(auth()->user()->role == 'admin' || auth()->user()->role == 'superadmin')
         <a href="{{ route('briefings.create') }}" class="btn btn-primary">
-            <i data-lucide="plus"></i> Tambah Briefing
+            <i data-lucide="plus"></i> <span>Tambah Briefing</span>
         </a>
         @endif
     </header>
@@ -34,18 +34,22 @@
                 <tbody>
                     @forelse($briefings as $briefing)
                     <tr>
-                        <td>{{ \Carbon\Carbon::parse($briefing->scheduled_date)->format('d M Y') }}</td>
-                        <td>{{ $briefing->scheduled_time ?? '-' }}</td>
-                        <td style="font-weight: 600;">{{ $briefing->title }}</td>
-                        <td>{{ $briefing->speaker_name ?? '-' }}</td>
-                        <td>{{ $briefing->attendances_count }} Peserta</td>
+                        <td data-label="Tanggal">{{ \Carbon\Carbon::parse($briefing->scheduled_date)->format('d M Y') }}</td>
+                        <td data-label="Waktu">{{ $briefing->scheduled_time ?? '-' }}</td>
+                        <td data-label="Judul" style="font-weight: 600;">{{ $briefing->title }}</td>
+                        <td data-label="Pemateri">{{ $briefing->speaker_name ?? '-' }}</td>
+                        <td data-label="Hadir">{{ $briefing->attendances_count }} Peserta</td>
                         @if(auth()->user()->role == 'admin' || auth()->user()->role == 'superadmin')
-                        <td>
+                        <td data-label="Aksi">
                             <div style="display: flex; gap: 8px;">
-                                <a href="{{ route('briefings.edit', $briefing->id) }}" class="btn" style="padding: 8px; background: rgba(0,0,0,0.05); color: var(--text-main);" title="Edit"><i data-lucide="edit" style="width: 16px;"></i></a>
+                                <a href="{{ route('briefings.edit', $briefing->id) }}" class="btn" style="padding: 8px; background: rgba(0,0,0,0.05); color: var(--text-main);" title="Edit">
+                                    <i data-lucide="edit" style="width: 16px;"></i>
+                                </a>
                                 <form action="{{ route('briefings.destroy', $briefing->id) }}" method="POST" onsubmit="return confirm('Hapus briefing ini beserta seluruh data presensinya?')" style="display:inline;">
                                     @csrf @method('DELETE')
-                                    <button type="submit" class="btn" style="padding: 8px; background: rgba(239,68,68,0.1); color: #ef4444; border:none; cursor:pointer;" title="Hapus"><i data-lucide="trash" style="width: 16px;"></i></button>
+                                    <button type="submit" class="btn" style="padding: 8px; background: rgba(239,68,68,0.1); color: #ef4444; border:none; cursor:pointer;" title="Hapus">
+                                        <i data-lucide="trash" style="width: 16px;"></i>
+                                    </button>
                                 </form>
                             </div>
                         </td>

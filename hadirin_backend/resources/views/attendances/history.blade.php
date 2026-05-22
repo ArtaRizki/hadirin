@@ -27,17 +27,17 @@
                 <tbody>
                     @forelse($attendances as $absen)
                     <tr>
-                        <td>
+                        <td data-label="Waktu">
                             <strong>{{ $absen->created_at->format('d M Y') }}</strong><br>
                             <small style="color: var(--text-muted)">{{ $absen->created_at->format('H:i') }}</small>
                         </td>
-                        <td><span class="badge-tipe">{{ $absen->type }}</span></td>
-                        <td>
+                        <td data-label="Tipe"><span class="badge-tipe">{{ $absen->type }}</span></td>
+                        <td data-label="Status">
                             <span style="font-weight: 800; color: {{ $absen->status == 'Tepat Waktu' ? '#10b981' : '#f59e0b' }}">
                                 {{ strtoupper($absen->status) }}
                             </span>
                         </td>
-                        <td>
+                        <td data-label="Foto">
                             @if($absen->photo_url && $absen->photo_url != 'No Photo')
                                 <a href="{{ $absen->photo_url }}" target="_blank" style="color: var(--primary); font-weight: 600; text-decoration: none;">Lihat Foto</a>
                             @else
