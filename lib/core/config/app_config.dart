@@ -2,7 +2,7 @@ abstract class AppConfig {
   // Gunakan baseUrl untuk Laravel API
   static const baseUrl = String.fromEnvironment(
     'BASE_URL',
-    defaultValue: 'https://major-heads-begin.loca.lt/api',
+    defaultValue: 'https://sditalfahmipalu.great-site.net/api',
   );
 
   static const apiToken = String.fromEnvironment(
