@@ -16,11 +16,13 @@ Route::post('/login', [AuthController::class, 'login']);
 Route::post('/tenant/register', [TenantController::class, 'register']);
 Route::post('/verify_super_admin', [AuthController::class, 'verifySuperAdmin']);
 
-// Tenant-specific routes (via middleware)
-// Nama rute disamakan dengan 'action' yang dikirimkan oleh aplikasi Flutter (menggunakan underscore)
+// Public tenant routes (butuh client_id tapi belum butuh token)
 Route::middleware([\App\Http\Middleware\TenantMiddleware::class])->group(function () {
     Route::post('/enroll_device', [AuthController::class, 'enrollDevice']);
-    
+});
+
+// Protected tenant routes (wajib token)
+Route::middleware(['auth:sanctum', \App\Http\Middleware\TenantMiddleware::class])->group(function () {
     // Attendance
     Route::post('/absen', [AttendanceController::class, 'absen']);
     Route::post('/get_history', [AttendanceController::class, 'getHistory']);

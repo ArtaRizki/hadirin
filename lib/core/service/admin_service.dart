@@ -322,6 +322,7 @@ class AdminService extends ApiClient {
   Future<Map<String, dynamic>> enrollDevice(
     String clientId,
     String idAnggota,
+    String password,
   ) async {
     if (clientId.isEmpty) throw Exception("Kode Instansi tidak boleh kosong.");
     try {
@@ -333,6 +334,7 @@ class AdminService extends ApiClient {
         'action': 'enroll_device',
         'client_id': clientId,
         'id_karyawan': idAnggota,
+        'password': password,
         'device_id': deviceId,
       };
 

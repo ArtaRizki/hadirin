@@ -17,8 +17,10 @@ class AuthProvider extends ChangeNotifier {
   String? _userPhone; // Nomor WA karyawan
   String? _adminPhone; // Nomor WA Admin Utama
   String? _profilePhotoUrl; // URL foto profil
+  String? _token; // Bearer token Sanctum
 
   String? get idUser => _idUser;
+  String? get token => _token;
   String? get namaUser => _namaUser;
   String? get clientId => _clientId; // Akses dari UI
   LoginRole get role => _role;
@@ -73,12 +75,13 @@ class AuthProvider extends ChangeNotifier {
     _userPhone = prefs.getString('user_phone');
     _adminPhone = prefs.getString('admin_phone');
     _profilePhotoUrl = prefs.getString('profile_photo_url');
+    _token = prefs.getString('api_token_bearer');
 
     _isInitialized = true;
     notifyListeners();
   }
 
-  // 👇 FUNGSI LOGIN DITAMBAH PARAMETER clientId 👇
+  // 👇 FUNGSI LOGIN DITAMBAH PARAMETER clientId dan token 👇
   Future<void> login(
     String id,
     String nama,
@@ -87,6 +90,7 @@ class AuthProvider extends ChangeNotifier {
     String? userPhone,
     String? adminPhone,
     String? profilePhotoUrl,
+    String? token, // Tambahan token Sanctum
   }) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('id_user', id.trim());
@@ -99,6 +103,9 @@ class AuthProvider extends ChangeNotifier {
     if (profilePhotoUrl != null && profilePhotoUrl.isNotEmpty) {
       await prefs.setString('profile_photo_url', profilePhotoUrl);
     }
+    if (token != null) {
+      await prefs.setString('api_token_bearer', token); // Simpan Bearer Token
+    }
 
     _idUser = id.trim();
     _namaUser = nama.trim();
@@ -107,6 +114,7 @@ class AuthProvider extends ChangeNotifier {
     _userPhone = userPhone;
     _adminPhone = adminPhone;
     _profilePhotoUrl = profilePhotoUrl;
+    _token = token;
     _isFaceRegistered =
         prefs.getBool('is_face_registered_${id.trim()}') ?? false;
     notifyListeners();
@@ -146,6 +154,7 @@ class AuthProvider extends ChangeNotifier {
     _clientId = null;
     _role = LoginRole.none;
     _profilePhotoUrl = null;
+    _token = null;
     notifyListeners();
   }
 }

@@ -17,11 +17,14 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final _kodeInstansiController = TextEditingController();
   final _idController = TextEditingController();
+  final _passwordController = TextEditingController();
   bool _isLoading = false;
+  bool _obscurePassword = true;
 
   void _prosesLogin() async {
     final inputKodeInstansi = _kodeInstansiController.text.trim().toUpperCase();
     final inputId = _idController.text.trim();
+    final inputPassword = _passwordController.text;
 
     // ========================================================
     // FLOW 1: JALUR RAHASIA SUPER ADMIN (API VALIDATION)
@@ -63,6 +66,10 @@ class _LoginScreenState extends State<LoginScreen> {
       _showError("ID Pengguna tidak boleh kosong!");
       return;
     }
+    if (inputPassword.isEmpty && inputKodeInstansi.isNotEmpty) {
+      _showError("Password wajib diisi!");
+      return;
+    }
 
     setState(() => _isLoading = true);
 
@@ -70,6 +77,7 @@ class _LoginScreenState extends State<LoginScreen> {
       final result = await AdminService().enrollDevice(
         inputKodeInstansi,
         inputId,
+        inputPassword,
       );
 
       if (result['success']) {
@@ -117,6 +125,7 @@ class _LoginScreenState extends State<LoginScreen> {
           userPhone: (dataAnggota['no_hp'] ?? "").toString(),
           adminPhone: (dataAnggota['admin_phone'] ?? "").toString(),
           profilePhotoUrl: (dataAnggota['profile_photo'] ?? "").toString(),
+          token: dataAnggota['token']?.toString(),
         );
 
         if (!mounted) return;
@@ -324,6 +333,61 @@ class _LoginScreenState extends State<LoginScreen> {
                               prefixIcon: Icon(
                                 Icons.badge_rounded,
                                 color: context.primaryColor,
+                              ),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(16),
+                                borderSide: BorderSide.none,
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(16),
+                                borderSide: BorderSide(
+                                  color: context.primaryColor,
+                                  width: 1.5,
+                                ),
+                              ),
+                              filled: true,
+                              fillColor: Colors.white,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+
+                        // FIELD 3: PASSWORD
+                        Container(
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(16),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.03),
+                                blurRadius: 10,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: TextField(
+                            controller: _passwordController,
+                            obscureText: _obscurePassword,
+                            decoration: InputDecoration(
+                              labelText: "Password",
+                              hintText: "Masukkan password Anda",
+                              labelStyle: TextStyle(
+                                color: Colors.grey.shade500,
+                              ),
+                              prefixIcon: Icon(
+                                Icons.lock_outline_rounded,
+                                color: context.primaryColor,
+                              ),
+                              suffixIcon: IconButton(
+                                icon: Icon(
+                                  _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                                  color: Colors.grey.shade400,
+                                ),
+                                onPressed: () {
+                                  setState(() {
+                                    _obscurePassword = !_obscurePassword;
+                                  });
+                                },
                               ),
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(16),

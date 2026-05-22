@@ -80,22 +80,30 @@ class AuthController extends Controller
         $request->validate([
             'client_id' => 'required',
             'id_karyawan' => 'required',
+            'password' => 'required',
             'device_id' => 'required',
         ]);
 
-        $tenant = Tenant::findOrFail(strtoupper($request->client_id));
+        $tenant = Tenant::find(strtoupper($request->client_id));
+        if (!$tenant) {
+            return response()->json(['code' => 404, 'status' => 'error', 'message' => 'Kode Instansi tidak ditemukan.'], 404);
+        }
+
         $user = User::where('tenant_id', $tenant->id)
                     ->where('employee_id', $request->id_karyawan)
                     ->first();
 
-        if (!$user) {
-            return response()->json(['code' => 404, 'status' => 'error', 'message' => 'User tidak ditemukan.'], 404);
+        if (!$user || !\Illuminate\Support\Facades\Hash::check($request->password, $user->password)) {
+            return response()->json(['code' => 401, 'status' => 'error', 'message' => 'ID Pengguna atau Password salah.'], 401);
         }
 
         if ($user->device_id === null || $user->device_id === $request->device_id) {
             if ($user->device_id === null) {
                 $user->update(['device_id' => $request->device_id]);
             }
+
+            // Create Sanctum token
+            $token = $user->createToken('user-token')->plainTextToken;
 
             return response()->json([
                 'code' => 200,
@@ -107,10 +115,11 @@ class AuthController extends Controller
                     'no_hp' => $user->phone,
                     'role_akses' => $user->role,
                     'profile_photo' => $user->profile_photo_path,
+                    'token' => $token,
                 ]
             ]);
         }
 
-        return response()->json(['code' => 403, 'status' => 'error', 'message' => 'Device ID tidak cocok.'], 403);
+        return response()->json(['code' => 403, 'status' => 'error', 'message' => 'Device ID tidak cocok. Silakan minta admin mereset device Anda.'], 403);
     }
 }

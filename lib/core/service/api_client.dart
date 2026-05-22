@@ -1,6 +1,7 @@
 import 'dart:developer' as d;
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:hadirin/core/config/app_config.dart';
 
 /// Kelas dasar yang menyimpan logika HTTP untuk Laravel Backend.
@@ -27,10 +28,22 @@ class ApiClient {
     d.log('==== [REQUEST: $endpoint] ====\nURL: $url\nPayload: ${jsonEncode(logPayload)}');
 
     try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('api_token_bearer');
+      
+      final headers = {
+        'Content-Type': 'application/json', 
+        'Accept': 'application/json'
+      };
+
+      if (token != null && token.isNotEmpty) {
+        headers['Authorization'] = 'Bearer $token';
+      }
+
       var response = await http
           .post(
             Uri.parse(url),
-            headers: {'Content-Type': 'application/json', 'Accept': 'application/json'},
+            headers: headers,
             body: jsonEncode(payload),
           )
           .timeout(effectiveTimeout);
