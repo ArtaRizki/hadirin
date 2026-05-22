@@ -82,6 +82,17 @@
                 "--dart-define=APP_LOGO=assets/icons/sdit.png",
                 "--dart-define=APP_NAME=SDIT Local"
             ]
+        },
+        {
+            "name": "Hadir.in - SDIT (Live Laravel)",
+            "request": "launch",
+            "type": "dart",
+            "args": [
+                "--dart-define=GAS_ENDPOINT=https://sditalfahmipalu.great-site.net/api",
+                "--dart-define=API_TOKEN=sdit-palu",
+                "--dart-define=APP_LOGO=assets/icons/sdit.png",
+                "--dart-define=APP_NAME=SDIT AL-FAHMI PALU"
+            ]
         }
     ]
 }
