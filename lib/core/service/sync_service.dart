@@ -4,6 +4,7 @@ import 'package:hadirin/core/service/admin_service.dart';
 import 'package:hadirin/core/service/attendance_service.dart';
 import 'package:hadirin/core/service/notification_service.dart';
 import 'package:intl/intl.dart';
+import 'dart:developer';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class SyncService {
@@ -48,7 +49,7 @@ class SyncService {
       // 4. Cek apakah ada perubahan status pada pengajuan izin/cuti
       await _checkLeaveStatusChangesFromHistory(idAnggota, history);
     } catch (e) {
-      print("Sync Error: $e");
+      log("Sync Error: $e");
     }
   }
 
@@ -101,7 +102,7 @@ class SyncService {
       );
     } catch (e) {
       // Abaikan error sync diam-diam agar tidak mengganggu UI
-      print("Sync Error: $e");
+      log("Sync Error: $e");
     }
   }
 }

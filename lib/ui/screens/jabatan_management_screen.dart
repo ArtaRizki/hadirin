@@ -51,7 +51,7 @@ class _JabatanManagementScreenState extends State<JabatanManagementScreen> {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: context.primaryColor.withOpacity(0.1),
+                  color: context.primaryColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Icon(
@@ -123,11 +123,11 @@ class _JabatanManagementScreenState extends State<JabatanManagementScreen> {
                         namaJabatan: ctrl.text.trim(),
                       );
                       if (res['success'] == true) {
-                        if (mounted) {
-                          Navigator.pop(ctx);
-                          _fetchJabatan();
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
+                        if (!ctx.mounted) return;
+                        Navigator.pop(ctx);
+                        _fetchJabatan();
+                        ScaffoldMessenger.of(ctx).showSnackBar(
+                          SnackBar(
                               content: Row(
                                 children: [
                                   const Icon(
@@ -146,19 +146,17 @@ class _JabatanManagementScreenState extends State<JabatanManagementScreen> {
                               margin: const EdgeInsets.all(16),
                             ),
                           );
-                        }
                       } else {
                         setDialog(() => isSaving = false);
-                        if (mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
+                        if (!ctx.mounted) return;
+                        ScaffoldMessenger.of(ctx).showSnackBar(
+                          SnackBar(
                               content: Text(
                                 res['message']?.toString() ?? 'Gagal menambah',
                               ),
                               backgroundColor: Colors.red.shade600,
                             ),
                           );
-                        }
                       }
                     },
               style: ElevatedButton.styleFrom(
@@ -253,11 +251,11 @@ class _JabatanManagementScreenState extends State<JabatanManagementScreen> {
                           idJabatan: jabatan.id,
                         );
                         if (res['success'] == true) {
-                          if (mounted) {
-                            Navigator.pop(ctx);
-                            _fetchJabatan();
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
+                          if (!ctx.mounted) return;
+                          Navigator.pop(ctx);
+                          _fetchJabatan();
+                          ScaffoldMessenger.of(ctx).showSnackBar(
+                            SnackBar(
                                 content: const Row(
                                   children: [
                                     Icon(
@@ -276,12 +274,11 @@ class _JabatanManagementScreenState extends State<JabatanManagementScreen> {
                                 margin: const EdgeInsets.all(16),
                               ),
                             );
-                          }
                         } else {
                           setDialog(() => isDeleting = false);
-                          if (mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
+                          if (!ctx.mounted) return;
+                          ScaffoldMessenger.of(ctx).showSnackBar(
+                            SnackBar(
                                 content: Text(
                                   res['message']?.toString() ??
                                       'Gagal menghapus',
@@ -289,7 +286,6 @@ class _JabatanManagementScreenState extends State<JabatanManagementScreen> {
                                 backgroundColor: Colors.red.shade600,
                               ),
                             );
-                          }
                         }
                       },
                 style: ElevatedButton.styleFrom(
@@ -337,7 +333,7 @@ class _JabatanManagementScreenState extends State<JabatanManagementScreen> {
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.06),
+                    color: Colors.black.withValues(alpha: 0.06),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
                   ),
@@ -430,7 +426,7 @@ class _JabatanManagementScreenState extends State<JabatanManagementScreen> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -442,7 +438,7 @@ class _JabatanManagementScreenState extends State<JabatanManagementScreen> {
           width: 44,
           height: 44,
           decoration: BoxDecoration(
-            color: const Color(0xFF6366F1).withOpacity(0.1),
+            color: const Color(0xFF6366F1).withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(12),
           ),
           child: const Icon(

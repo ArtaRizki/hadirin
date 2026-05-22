@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:developer';
 import 'package:http/http.dart' as http;
 
 const endpoint = 'https://script.google.com/macros/s/AKfycbzG4Y6KPvMjKkcuB6OmUwqXGNmcg9d0x3riZlEpFGT5R7af2IgkBVLppbYR7KCP14Xq/exec';
@@ -25,29 +26,29 @@ Future<http.Response> sendRequest(String action, Map<String, dynamic> payload) a
     }
   }
 
-  print('Action: $action');
-  print('Status: ${response.statusCode}');
-  print('Body: ${response.body}\n');
+  log('Action: $action');
+  log('Status: ${response.statusCode}');
+  log('Body: ${response.body}\n');
   return response;
 }
 
 void main() async {
-  print('--- TESTING ADMIN LOGIN ---');
+  log('--- TESTING ADMIN LOGIN ---');
   await sendRequest('get_office_config', {
     'client_id': 'INST-244385',
   });
 
-  print('--- TESTING GET ALL KARYAWAN ---');
+  log('--- TESTING GET ALL KARYAWAN ---');
   await sendRequest('get_all_karyawan', {
     'client_id': 'INST-244385',
   });
 
-  print('--- TESTING GET TODAY ATTENDANCE ---');
+  log('--- TESTING GET TODAY ATTENDANCE ---');
   await sendRequest('get_today_attendance', {
     'client_id': 'INST-244385',
   });
 
-  print('--- TESTING ENROLL DEVICE (KARYAWAN LOGIN) ---');
+  log('--- TESTING ENROLL DEVICE (KARYAWAN LOGIN) ---');
   await sendRequest('enroll_device', {
     'client_id': 'INST-244385',
     'id_karyawan': 'KRY-001',

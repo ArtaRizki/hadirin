@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:developer';
 import 'package:http/http.dart' as http;
 
 const endpoint = 'https://script.google.com/macros/s/AKfycbzG4Y6KPvMjKkcuB6OmUwqXGNmcg9d0x3riZlEpFGT5R7af2IgkBVLppbYR7KCP14Xq/exec';
@@ -28,7 +29,7 @@ Future<void> main() async {
     }
   }
 
-  print('Action: get_today_attendance');
-  print('Status: ${response.statusCode}');
-  print('Body: ${response.body}\n');
+  log('Action: get_today_attendance');
+  log('Status: ${response.statusCode}');
+  log('Body: ${response.body}\n');
 }

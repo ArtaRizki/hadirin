@@ -202,7 +202,7 @@ class _BriefingScreenState extends State<BriefingScreen>
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.06),
+                    color: Colors.black.withValues(alpha: 0.06),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
                   ),
@@ -264,7 +264,7 @@ class _BriefingScreenState extends State<BriefingScreen>
               borderRadius: BorderRadius.circular(20),
               boxShadow: [
                 BoxShadow(
-                  color: context.primaryColor.withOpacity(0.3),
+                  color: context.primaryColor.withValues(alpha: 0.3),
                   blurRadius: 16,
                   offset: const Offset(0, 6),
                 ),
@@ -275,7 +275,7 @@ class _BriefingScreenState extends State<BriefingScreen>
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
+                    color: Colors.white.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(14),
                   ),
                   child: const Icon(
@@ -301,7 +301,7 @@ class _BriefingScreenState extends State<BriefingScreen>
                       Text(
                         "Isi form di bawah untuk mencatat kehadiran briefing.",
                         style: TextStyle(
-                          color: Colors.white.withOpacity(0.8),
+                          color: Colors.white.withValues(alpha: 0.8),
                           fontSize: 12,
                         ),
                       ),
@@ -323,7 +323,7 @@ class _BriefingScreenState extends State<BriefingScreen>
               borderRadius: BorderRadius.circular(16),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.04),
+                  color: Colors.black.withValues(alpha: 0.04),
                   blurRadius: 10,
                   offset: const Offset(0, 4),
                 ),
@@ -395,13 +395,13 @@ class _BriefingScreenState extends State<BriefingScreen>
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
                   color: _foto != null
-                      ? const Color(0xFF16A34A).withOpacity(0.4)
+                      ? const Color(0xFF16A34A).withValues(alpha: 0.4)
                       : Colors.grey.shade200,
                   width: 1.5,
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.04),
+                    color: Colors.black.withValues(alpha: 0.04),
                     blurRadius: 10,
                     offset: const Offset(0, 4),
                   ),
@@ -427,7 +427,7 @@ class _BriefingScreenState extends State<BriefingScreen>
                                   end: Alignment.bottomCenter,
                                   colors: [
                                     Colors.transparent,
-                                    Colors.black.withOpacity(0.7),
+                                    Colors.black.withValues(alpha: 0.7),
                                   ],
                                 ),
                               ),
@@ -461,7 +461,7 @@ class _BriefingScreenState extends State<BriefingScreen>
                         Container(
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                            color: context.primaryColor.withOpacity(0.1),
+                            color: context.primaryColor.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(14),
                           ),
                           child: Icon(
@@ -495,7 +495,7 @@ class _BriefingScreenState extends State<BriefingScreen>
               borderRadius: BorderRadius.circular(16),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.04),
+                  color: Colors.black.withValues(alpha: 0.04),
                   blurRadius: 10,
                   offset: const Offset(0, 4),
                 ),
@@ -539,7 +539,7 @@ class _BriefingScreenState extends State<BriefingScreen>
                 backgroundColor: context.primaryColor,
                 foregroundColor: Colors.white,
                 elevation: 4,
-                shadowColor: context.primaryColor.withOpacity(0.4),
+                shadowColor: context.primaryColor.withValues(alpha: 0.4),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
                 ),
@@ -670,7 +670,7 @@ class _BriefingScreenState extends State<BriefingScreen>
                       Container(
                         padding: const EdgeInsets.all(10),
                         decoration: BoxDecoration(
-                          color: context.primaryColor.withOpacity(0.1),
+                          color: context.primaryColor.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Icon(
@@ -708,7 +708,7 @@ class _BriefingScreenState extends State<BriefingScreen>
                   _formLabel("Status Kehadiran"),
                   const SizedBox(height: 8),
                   DropdownButtonFormField<String>(
-                    value: selectedStatus,
+                    initialValue: selectedStatus,
                     isExpanded: true,
                     decoration: InputDecoration(
                       filled: true,
@@ -769,7 +769,7 @@ class _BriefingScreenState extends State<BriefingScreen>
                                     children: [
                                       Image.network(UrlHelper.getDirectDriveUrl(b.foto!), fit: BoxFit.cover),
                                       Container(
-                                        color: Colors.black.withOpacity(0.3),
+                                        color: Colors.black.withValues(alpha: 0.3),
                                         child: const Center(
                                           child: Icon(Icons.camera_alt_rounded, color: Colors.white, size: 32),
                                         ),
@@ -855,7 +855,8 @@ class _BriefingScreenState extends State<BriefingScreen>
                               );
 
                               if (res['success']) {
-                                if (mounted) Navigator.pop(ctx);
+                                if (!ctx.mounted) return;
+                                Navigator.pop(ctx);
                                 _showSnackBar("Absen briefing berhasil diperbarui!");
                                 _fetchRiwayat();
                               } else {
@@ -915,10 +916,9 @@ class _BriefingScreenState extends State<BriefingScreen>
                           id: id,
                         );
                         if (res['success']) {
-                          if (mounted) {
-                            Navigator.pop(ctx);
-                            _showSnackBar("Presensi briefing berhasil dihapus");
-                          }
+                          if (!ctx.mounted) return;
+                          Navigator.pop(ctx);
+                          _showSnackBar("Presensi briefing berhasil dihapus");
                           _fetchRiwayat();
                         } else {
                           setDialog(() => isDeleting = false);
@@ -960,7 +960,7 @@ class _BriefingScreenState extends State<BriefingScreen>
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -976,7 +976,7 @@ class _BriefingScreenState extends State<BriefingScreen>
               width: 44,
               height: 44,
               decoration: BoxDecoration(
-                color: color.withOpacity(0.1),
+                color: color.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(icon, color: color, size: 22),
@@ -1007,7 +1007,7 @@ class _BriefingScreenState extends State<BriefingScreen>
                           vertical: 4,
                         ),
                         decoration: BoxDecoration(
-                          color: color.withOpacity(0.1),
+                          color: color.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(

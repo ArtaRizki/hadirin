@@ -125,7 +125,7 @@ class _LaporanNgajiScreenState extends State<LaporanNgajiScreen>
                       Container(
                         padding: const EdgeInsets.all(10),
                         decoration: BoxDecoration(
-                          color: context.primaryColor.withOpacity(0.1),
+                          color: context.primaryColor.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Icon(
@@ -162,7 +162,7 @@ class _LaporanNgajiScreenState extends State<LaporanNgajiScreen>
                   _label("Nama Kelompok Pengajian"),
                   const SizedBox(height: 8),
                   DropdownButtonFormField<String>(
-                    value: selectedKelompok,
+                    initialValue: selectedKelompok,
                     isExpanded: true,
                     decoration: InputDecoration(
                       hintText: isLoadingKelompok
@@ -262,7 +262,8 @@ class _LaporanNgajiScreenState extends State<LaporanNgajiScreen>
                                       materiKeterangan: materiCtrl.text,
                                     );
                               if (res['success']) {
-                                if (mounted) Navigator.pop(context);
+                                if (!ctx.mounted) return;
+                                Navigator.pop(ctx);
                                 _fetch();
                               } else {
                                 setSheet(() => isSaving = false);
@@ -328,15 +329,14 @@ class _LaporanNgajiScreenState extends State<LaporanNgajiScreen>
                           id: id,
                         );
                         if (res['success']) {
-                          if (mounted) {
-                            Navigator.pop(ctx);
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text("Laporan berhasil dihapus"),
-                                backgroundColor: Colors.green,
-                              ),
-                            );
-                          }
+                          if (!ctx.mounted) return;
+                          Navigator.pop(ctx);
+                          ScaffoldMessenger.of(ctx).showSnackBar(
+                            const SnackBar(
+                              content: Text("Laporan berhasil dihapus"),
+                              backgroundColor: Colors.green,
+                            ),
+                          );
                           _fetch();
                         } else {
                           setDialog(() => isDeleting = false);
@@ -447,15 +447,14 @@ class _LaporanNgajiScreenState extends State<LaporanNgajiScreen>
                         namaKelompok: ctrl.text.trim(),
                       );
                       if (res['success']) {
-                        if (mounted) {
-                          Navigator.pop(ctx);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text("Kelompok Berhasil Ditambahkan"),
-                              backgroundColor: Colors.green,
-                            ),
-                          );
-                        }
+                        if (!ctx.mounted) return;
+                        Navigator.pop(ctx);
+                        ScaffoldMessenger.of(ctx).showSnackBar(
+                          const SnackBar(
+                            content: Text("Kelompok Berhasil Ditambahkan"),
+                            backgroundColor: Colors.green,
+                          ),
+                        );
                       } else {
                         setDialog(() => isSaving = false);
                       }
@@ -587,7 +586,7 @@ class _LaporanNgajiScreenState extends State<LaporanNgajiScreen>
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -602,7 +601,7 @@ class _LaporanNgajiScreenState extends State<LaporanNgajiScreen>
             width: 44,
             height: 44,
             decoration: BoxDecoration(
-              color: context.primaryColor.withOpacity(0.1),
+              color: context.primaryColor.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(

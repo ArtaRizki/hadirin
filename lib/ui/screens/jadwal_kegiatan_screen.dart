@@ -308,12 +308,12 @@ class _JadwalKegiatanScreenState extends State<JadwalKegiatanScreen> {
                               deskripsi: deskripsiCtrl.text.trim(),
                               idAdmin: auth.idAnggota ?? '',
                             );
-                            if (!mounted) return;
+                            if (!ctx.mounted) return;
                             setSheet(() => isSaving = false);
                             if (res['success'] == true) {
                               Navigator.pop(ctx);
                               _fetch();
-                              ScaffoldMessenger.of(context).showSnackBar(
+                              ScaffoldMessenger.of(ctx).showSnackBar(
                                 SnackBar(
                                   content: const Text(
                                     "Kegiatan berhasil ditambahkan!",
@@ -323,7 +323,7 @@ class _JadwalKegiatanScreenState extends State<JadwalKegiatanScreen> {
                                 ),
                               );
                             } else {
-                              ScaffoldMessenger.of(context).showSnackBar(
+                              ScaffoldMessenger.of(ctx).showSnackBar(
                                 SnackBar(
                                   content: Text(res['message'] ?? 'Gagal'),
                                   backgroundColor: Colors.red,
@@ -556,12 +556,12 @@ class _JadwalKegiatanScreenState extends State<JadwalKegiatanScreen> {
                               tanggalWaktu: tanggalWaktu,
                               deskripsi: deskripsiCtrl.text.trim(),
                             );
-                            if (!mounted) return;
+                            if (!ctx.mounted) return;
                             setSheet(() => isSaving = false);
                             if (res['success'] == true) {
                               Navigator.pop(ctx);
                               _fetch();
-                              ScaffoldMessenger.of(context).showSnackBar(
+                              ScaffoldMessenger.of(ctx).showSnackBar(
                                 SnackBar(
                                   content: const Text(
                                     "Kegiatan berhasil diperbarui!",
@@ -571,7 +571,7 @@ class _JadwalKegiatanScreenState extends State<JadwalKegiatanScreen> {
                                 ),
                               );
                             } else {
-                              ScaffoldMessenger.of(context).showSnackBar(
+                              ScaffoldMessenger.of(ctx).showSnackBar(
                                 SnackBar(
                                   content: Text(res['message'] ?? 'Gagal'),
                                   backgroundColor: Colors.red,
@@ -751,7 +751,7 @@ class _JadwalKegiatanScreenState extends State<JadwalKegiatanScreen> {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -768,7 +768,7 @@ class _JadwalKegiatanScreenState extends State<JadwalKegiatanScreen> {
                 width: 52,
                 height: 52,
                 decoration: BoxDecoration(
-                  color: color.withOpacity(0.1),
+                  color: color.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(14),
                 ),
                 child: Icon(_tipeIcon(k.tipe), color: color, size: 26),
@@ -862,7 +862,7 @@ class _JadwalKegiatanScreenState extends State<JadwalKegiatanScreen> {
                       vertical: 4,
                     ),
                     decoration: BoxDecoration(
-                      color: color.withOpacity(0.1),
+                      color: color.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
@@ -882,7 +882,7 @@ class _JadwalKegiatanScreenState extends State<JadwalKegiatanScreen> {
                       child: Container(
                         padding: const EdgeInsets.all(10),
                         decoration: BoxDecoration(
-                          color: context.primaryColor.withOpacity(0.08),
+                          color: context.primaryColor.withValues(alpha: 0.08),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Icon(
@@ -1066,10 +1066,10 @@ class _AdminAbsenRapatScreenState extends State<AdminAbsenRapatScreen> {
                     vertical: 12,
                   ),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF6366F1).withOpacity(0.08),
+                    color: const Color(0xFF6366F1).withValues(alpha: 0.08),
                     borderRadius: BorderRadius.circular(14),
                     border: Border.all(
-                      color: const Color(0xFF6366F1).withOpacity(0.2),
+                      color: const Color(0xFF6366F1).withValues(alpha: 0.2),
                     ),
                   ),
                   child: Row(
@@ -1103,7 +1103,7 @@ class _AdminAbsenRapatScreenState extends State<AdminAbsenRapatScreen> {
                       borderRadius: BorderRadius.circular(14),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
+                          color: Colors.black.withValues(alpha: 0.05),
                           blurRadius: 8,
                           offset: const Offset(0, 2),
                         ),
@@ -1196,7 +1196,7 @@ class _AdminAbsenRapatScreenState extends State<AdminAbsenRapatScreen> {
                                 borderRadius: BorderRadius.circular(16),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: Colors.black.withOpacity(0.04),
+                                    color: Colors.black.withValues(alpha: 0.04),
                                     blurRadius: 8,
                                     offset: const Offset(0, 3),
                                   ),
@@ -1209,7 +1209,7 @@ class _AdminAbsenRapatScreenState extends State<AdminAbsenRapatScreen> {
                                     children: [
                                       CircleAvatar(
                                         backgroundColor: context.primaryColor
-                                            .withOpacity(0.1),
+                                            .withValues(alpha: 0.1),
                                         radius: 18,
                                         child: Text(
                                           nama.isNotEmpty
@@ -1255,7 +1255,7 @@ class _AdminAbsenRapatScreenState extends State<AdminAbsenRapatScreen> {
                                           ),
                                           decoration: BoxDecoration(
                                             color: isSelected
-                                                ? color.withOpacity(0.12)
+                                                ? color.withValues(alpha: 0.12)
                                                 : Colors.grey.shade100,
                                             borderRadius: BorderRadius.circular(
                                               20,
@@ -1395,7 +1395,7 @@ class _AbsenKegiatanScreenState extends State<AbsenKegiatanScreen> {
       statusKehadiran: _selectedStatus,
     );
 
-    if (!mounted) return;
+    if (!context.mounted) return;
     setState(() => _isSaving = false);
 
     if (res['success'] == true) {
@@ -1407,6 +1407,7 @@ class _AbsenKegiatanScreenState extends State<AbsenKegiatanScreen> {
       );
       setState(() => _sudahAbsen = _selectedStatus);
 
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: const Text("Absensi berhasil dicatat!"),
@@ -1415,6 +1416,7 @@ class _AbsenKegiatanScreenState extends State<AbsenKegiatanScreen> {
         ),
       );
     } else {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(res['message'] ?? 'Gagal'),
@@ -1471,7 +1473,7 @@ class _AbsenKegiatanScreenState extends State<AbsenKegiatanScreen> {
                       borderRadius: BorderRadius.circular(20),
                       boxShadow: [
                         BoxShadow(
-                          color: context.primaryColor.withOpacity(0.3),
+                          color: context.primaryColor.withValues(alpha: 0.3),
                           blurRadius: 20,
                           offset: const Offset(0, 8),
                         ),
@@ -1486,7 +1488,7 @@ class _AbsenKegiatanScreenState extends State<AbsenKegiatanScreen> {
                             vertical: 4,
                           ),
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.2),
+                            color: Colors.white.withValues(alpha: 0.2),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Text(
@@ -1579,7 +1581,7 @@ class _AbsenKegiatanScreenState extends State<AbsenKegiatanScreen> {
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
                             color: isSelected
-                                ? color.withOpacity(0.08)
+                                ? color.withValues(alpha: 0.08)
                                 : Colors.white,
                             borderRadius: BorderRadius.circular(16),
                             border: Border.all(
@@ -1589,7 +1591,7 @@ class _AbsenKegiatanScreenState extends State<AbsenKegiatanScreen> {
                             boxShadow: isSelected
                                 ? [
                                     BoxShadow(
-                                      color: color.withOpacity(0.15),
+                                      color: color.withValues(alpha: 0.15),
                                       blurRadius: 12,
                                       offset: const Offset(0, 4),
                                     ),
@@ -1601,7 +1603,7 @@ class _AbsenKegiatanScreenState extends State<AbsenKegiatanScreen> {
                               Container(
                                 padding: const EdgeInsets.all(10),
                                 decoration: BoxDecoration(
-                                  color: color.withOpacity(0.1),
+                                  color: color.withValues(alpha: 0.1),
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: Icon(
@@ -1689,9 +1691,9 @@ class _AbsenKegiatanScreenState extends State<AbsenKegiatanScreen> {
           width: double.infinity,
           padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
-            color: color.withOpacity(0.08),
+            color: color.withValues(alpha: 0.08),
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: color.withOpacity(0.3), width: 2),
+            border: Border.all(color: color.withValues(alpha: 0.3), width: 2),
           ),
           child: Column(
             children: [

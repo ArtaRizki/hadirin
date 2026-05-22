@@ -112,7 +112,7 @@ Route::middleware(['auth'])->group(function () {
 // Route Sementara untuk Migrasi Database di InfinityFree (Hapus jika sudah selesai)
 Route::get('/run-migrate', function() {
     try {
-        if (request()->query('fresh') === '1') {
+        if (\Illuminate\Support\Facades\Request::query('fresh') === '1') {
             \Illuminate\Support\Facades\Artisan::call('migrate:fresh', ['--force' => true]);
             return "Migration (Fresh) successful!";
         }

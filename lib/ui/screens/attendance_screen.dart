@@ -198,6 +198,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
         return;
       }
 
+      if (!mounted) return;
       final auth = context.read<AuthProvider>();
       if (!auth.isLoggedIn || !auth.isAnggota) return;
 
@@ -440,7 +441,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                     vertical: 6,
                   ),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF59E0B).withOpacity(0.12),
+                    color: const Color(0xFFF59E0B).withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
@@ -533,7 +534,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                 height: 230,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: context.primaryColor.withOpacity(0.09),
+                  color: context.primaryColor.withValues(alpha: 0.09),
                 ),
               ),
             ),
@@ -545,7 +546,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                 height: 200,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: const Color(0xFF7C3AED).withOpacity(0.06),
+                  color: const Color(0xFF7C3AED).withValues(alpha: 0.06),
                 ),
               ),
             ),
@@ -593,7 +594,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                                               BoxShadow(
                                                 color: const Color(
                                                   0xFF16A34A,
-                                                ).withOpacity(0.4),
+                                                ).withValues(alpha: 0.4),
                                                 blurRadius: 6,
                                                 spreadRadius: 2,
                                               ),
@@ -645,7 +646,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                                   gradient: LinearGradient(
                                     colors: [
                                       context.primaryColor,
-                                      context.primaryColor.withOpacity(0.5),
+                                      context.primaryColor.withValues(alpha: 0.5),
                                     ],
                                   ),
                                 ),
@@ -688,7 +689,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                           borderRadius: BorderRadius.circular(28),
                           boxShadow: [
                             BoxShadow(
-                              color: context.primaryColor.withOpacity(0.32),
+                              color: context.primaryColor.withValues(alpha: 0.32),
                               blurRadius: 32,
                               offset: const Offset(0, 16),
                             ),
@@ -723,7 +724,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                                     style: TextStyle(
                                       fontSize: 22,
                                       fontWeight: FontWeight.w700,
-                                      color: Colors.white.withOpacity(0.65),
+                                      color: Colors.white.withValues(alpha: 0.65),
                                       fontFeatures: const [
                                         FontFeature.tabularFigures(),
                                       ],
@@ -733,7 +734,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                               ],
                             ),
                             const SizedBox(height: 18),
-                            Divider(color: Colors.white.withOpacity(0.2)),
+                            Divider(color: Colors.white.withValues(alpha: 0.2)),
                             const SizedBox(height: 16),
                             Row(
                               mainAxisAlignment: MainAxisAlignment.center,
@@ -741,7 +742,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                                 Icon(
                                   Icons.calendar_today_rounded,
                                   size: 14,
-                                  color: Colors.white.withOpacity(0.65),
+                                  color: Colors.white.withValues(alpha: 0.65),
                                 ),
                                 const SizedBox(width: 8),
                                 Text(
@@ -750,7 +751,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                                     'id_ID',
                                   ).format(_currentTime),
                                   style: TextStyle(
-                                    color: Colors.white.withOpacity(0.75),
+                                    color: Colors.white.withValues(alpha: 0.75),
                                     fontSize: 14,
                                     fontWeight: FontWeight.w600,
                                   ),
@@ -765,7 +766,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                                   vertical: 6,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: Colors.white.withOpacity(0.15),
+                                  color: Colors.white.withValues(alpha: 0.15),
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: Column(
@@ -782,7 +783,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                                     Text(
                                       "Masuk: $_jamMasukMulai | Batas: $_batasJamMasuk | Pulang: $_jamPulangMulai",
                                       style: TextStyle(
-                                        color: Colors.white.withOpacity(0.9),
+                                        color: Colors.white.withValues(alpha: 0.9),
                                         fontSize: 11,
                                         fontWeight: FontWeight.w500,
                                       ),
@@ -807,11 +808,11 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                             color: Colors.white,
                             borderRadius: BorderRadius.circular(20),
                             border: Border.all(
-                              color: const Color(0xFF10B981).withOpacity(0.15),
+                              color: const Color(0xFF10B981).withValues(alpha: 0.15),
                             ),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.03),
+                                color: Colors.black.withValues(alpha: 0.03),
                                 blurRadius: 10,
                                 offset: const Offset(0, 4),
                               ),
@@ -826,7 +827,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                                     decoration: BoxDecoration(
                                       color: const Color(
                                         0xFF10B981,
-                                      ).withOpacity(0.1),
+                                      ).withValues(alpha: 0.1),
                                       borderRadius: BorderRadius.circular(8),
                                     ),
                                     child: const Icon(
@@ -887,7 +888,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                             borderRadius: BorderRadius.circular(20),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.03),
+                                color: Colors.black.withValues(alpha: 0.03),
                                 blurRadius: 10,
                                 offset: const Offset(0, 4),
                               ),
@@ -953,7 +954,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                                                 decoration: BoxDecoration(
                                                   color: const Color(
                                                     0xFFF59E0B,
-                                                  ).withOpacity(0.15),
+                                                  ).withValues(alpha: 0.15),
                                                   borderRadius:
                                                       BorderRadius.circular(6),
                                                 ),
@@ -1027,7 +1028,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                               borderRadius: BorderRadius.circular(18),
                               boxShadow: [
                                 BoxShadow(
-                                  color: context.primaryColor.withOpacity(0.35),
+                                  color: context.primaryColor.withValues(alpha: 0.35),
                                   blurRadius: 20,
                                   offset: const Offset(0, 8),
                                 ),

@@ -227,12 +227,12 @@ class _BannerManagementScreenState extends State<BannerManagementScreen> {
                             judulBaru: judulCtrl.text.trim(),
                             statusBaru: selectedStatus,
                           );
-                          if (!mounted) return;
+                          if (!ctx.mounted) return;
                           setSheet(() => isSaving = false);
                           if (res['success'] == true) {
                             Navigator.pop(ctx);
                             _fetchBanners(force: true);
-                            ScaffoldMessenger.of(context).showSnackBar(
+                            ScaffoldMessenger.of(ctx).showSnackBar(
                               SnackBar(
                                 content: const Text(
                                   "Banner berhasil diperbarui",
@@ -242,7 +242,7 @@ class _BannerManagementScreenState extends State<BannerManagementScreen> {
                               ),
                             );
                           } else {
-                            ScaffoldMessenger.of(context).showSnackBar(
+                            ScaffoldMessenger.of(ctx).showSnackBar(
                               SnackBar(
                                 content: Text(
                                   res['message'] ?? 'Gagal menyimpan',

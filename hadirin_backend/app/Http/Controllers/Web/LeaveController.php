@@ -56,14 +56,14 @@ class LeaveController extends Controller
         return redirect()->route('leaves.personal')->with('success', 'Permohonan izin berhasil dikirim.');
     }
 
-    public function approve($id)
+    public function approve(string $id)
     {
         $leave = Leave::findOrFail($id);
         $leave->update(['leave_status' => 'Disetujui']);
         return back()->with('success', 'Leave approved.');
     }
 
-    public function reject($id)
+    public function reject(string $id)
     {
         $leave = Leave::findOrFail($id);
         $leave->update(['leave_status' => 'Ditolak']);

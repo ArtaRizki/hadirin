@@ -50,14 +50,14 @@ class UserController extends Controller
         return redirect()->route('users.index')->with('success', 'Anggota berhasil ditambahkan.');
     }
 
-    public function edit($id)
+    public function edit(string $id)
     {
         $user = User::where('tenant_id', auth()->user()->tenant_id)->findOrFail($id);
         $positions = Position::where('tenant_id', auth()->user()->tenant_id)->get();
         return view('users.edit', compact('user', 'positions'));
     }
 
-    public function update(Request $request, $id)
+    public function update(Request $request, string $id)
     {
         $user = User::where('tenant_id', auth()->user()->tenant_id)->findOrFail($id);
 
@@ -93,7 +93,7 @@ class UserController extends Controller
         return redirect()->route('users.index')->with('success', 'Data anggota berhasil diperbarui.');
     }
 
-    public function destroy($id)
+    public function destroy(string $id)
     {
         $user = User::where('tenant_id', auth()->user()->tenant_id)->findOrFail($id);
         
@@ -106,7 +106,7 @@ class UserController extends Controller
         return redirect()->route('users.index')->with('success', 'Anggota berhasil dihapus.');
     }
 
-    public function resetDevice($id)
+    public function resetDevice(string $id)
     {
         $user = User::where('tenant_id', auth()->user()->tenant_id)->findOrFail($id);
         $user->update(['device_id' => null]);
@@ -125,6 +125,7 @@ class UserController extends Controller
             'face_descriptor' => 'required|string'
         ]);
 
+        /** @var \App\Models\User $user */
         $user = auth()->user();
         $user->update([
             'face_descriptor' => $request->face_descriptor

@@ -72,7 +72,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: const Color(0xFF16A34A).withOpacity(0.1),
+                color: const Color(0xFF16A34A).withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               child: const Icon(Icons.check_circle_rounded, color: Color(0xFF16A34A), size: 48),
@@ -146,7 +146,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: [
-                  BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 8, offset: const Offset(0, 2)),
+                  BoxShadow(color: Colors.black.withValues(alpha: 0.06), blurRadius: 8, offset: const Offset(0, 2)),
                 ],
               ),
               child: const Icon(Icons.arrow_back_ios_new_rounded, color: Color(0xFF0F172A), size: 16),
@@ -171,9 +171,9 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF0EA5E9).withOpacity(0.08),
+                    color: const Color(0xFF0EA5E9).withValues(alpha: 0.08),
                     borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: const Color(0xFF0EA5E9).withOpacity(0.2)),
+                    border: Border.all(color: const Color(0xFF0EA5E9).withValues(alpha: 0.2)),
                   ),
                   child: Row(
                     children: [
@@ -185,7 +185,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
-                            color: const Color(0xFF0EA5E9).withOpacity(0.9),
+                            color: const Color(0xFF0EA5E9).withValues(alpha: 0.9),
                             height: 1.5,
                           ),
                         ),
@@ -212,7 +212,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                             duration: const Duration(milliseconds: 200),
                             padding: const EdgeInsets.symmetric(vertical: 14),
                             decoration: BoxDecoration(
-                              color: isSelected ? color.withOpacity(0.12) : Colors.white,
+                              color: isSelected ? color.withValues(alpha: 0.12) : Colors.white,
                               borderRadius: BorderRadius.circular(14),
                               border: Border.all(
                                 color: isSelected ? color : Colors.grey.shade200,

@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'dart:developer' as d;
 import 'dart:io';
-import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:hadirin/core/config/app_config.dart';

@@ -7,6 +7,7 @@ use App\Models\Attendance;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 
 class AttendanceController extends Controller
 {
@@ -174,7 +175,7 @@ class AttendanceController extends Controller
                     }
                 } catch (\Exception $e) {
                     // If parsing fails, default to Tepat Waktu
-                    \Log::warning('Failed to parse limit_checkin: ' . $config->limit_checkin);
+                    Log::warning('Failed to parse limit_checkin: ' . $config->limit_checkin);
                 }
             }
         }

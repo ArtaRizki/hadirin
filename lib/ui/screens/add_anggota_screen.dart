@@ -126,7 +126,7 @@ class _AddAnggotaScreenState extends State<AddAnggotaScreen> {
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.06),
+                    color: Colors.black.withValues(alpha: 0.06),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
                   ),
@@ -161,7 +161,7 @@ class _AddAnggotaScreenState extends State<AddAnggotaScreen> {
                 height: 200,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: context.primaryColor.withOpacity(0.06),
+                  color: context.primaryColor.withValues(alpha: 0.06),
                 ),
               ),
             ),
@@ -174,7 +174,7 @@ class _AddAnggotaScreenState extends State<AddAnggotaScreen> {
                 height: 250,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: const Color(0xFF7C3AED).withOpacity(0.05),
+                  color: const Color(0xFF7C3AED).withValues(alpha: 0.05),
                 ),
               ),
             ),
@@ -245,7 +245,7 @@ class _AddAnggotaScreenState extends State<AddAnggotaScreen> {
                         backgroundColor: context.primaryColor,
                         foregroundColor: Colors.white,
                         elevation: 4,
-                        shadowColor: context.primaryColor.withOpacity(0.4),
+                        shadowColor: context.primaryColor.withValues(alpha: 0.4),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(16),
                         ),
@@ -286,7 +286,7 @@ class _AddAnggotaScreenState extends State<AddAnggotaScreen> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withValues(alpha: 0.03),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -355,7 +355,7 @@ class _AddAnggotaScreenState extends State<AddAnggotaScreen> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withValues(alpha: 0.03),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
