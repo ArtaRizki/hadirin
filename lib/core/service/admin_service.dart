@@ -173,6 +173,40 @@ class AdminService extends ApiClient {
   }
 
   // =================================================================
+  // HAPUS ANGGOTA (DELETE KARYAWAN)
+  // =================================================================
+  Future<Map<String, dynamic>> hapusAnggota({
+    required String clientId,
+    required String idAnggotaTarget,
+  }) async {
+    if (clientId.isEmpty) throw Exception("Kode Instansi tidak boleh kosong.");
+    try {
+      final payload = {
+        'api_token': AppConfig.apiToken,
+        'action': 'delete_karyawan',
+        'client_id': clientId,
+        'target_id_karyawan': idAnggotaTarget,
+      };
+
+      final response = await sendRequest('delete_karyawan', payload);
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['code'] == 200) {
+          return {'success': true, 'message': data['message'] ?? 'Berhasil dihapus'};
+        }
+        throw Exception(data['message']);
+      }
+      throw Exception('Gagal terhubung ke server.');
+    } catch (e) {
+      d.log('==== ERROR HAPUS ANGGOTA ==== $e');
+      return {
+        'success': false,
+        'message': e.toString().replaceAll('Exception: ', ''),
+      };
+    }
+  }
+
+  // =================================================================
   // LAPORAN BULANAN (bisa semua anggota atau 1 anggota tertentu)
   // =================================================================
   Future<List<dynamic>> getMonthlyReport(
