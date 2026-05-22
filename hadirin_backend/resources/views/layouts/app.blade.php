@@ -6,6 +6,7 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     
     <title>@yield('title', 'Dashboard') - SDIT AL-FAHMI PALU</title>
+    <link rel="icon" type="image/png" href="{{ asset('images/logo.png') }}">
     
     <!-- PWA & Mobile Meta -->
     <meta name="apple-mobile-web-app-capable" content="yes" />
