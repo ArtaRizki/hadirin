@@ -118,9 +118,13 @@
         <div class="card glass" style="margin-top: 20px;">
             <h2 style="font-size: 1.2rem; font-weight: 800; margin-bottom: 20px;">Aksi Cepat</h2>
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
-                <a href="{{ route('attendances.create') }}" class="btn btn-primary" style="padding: 20px; flex-direction: column; gap: 8px;">
+                <a href="{{ route('attendances.create', ['type' => 'Masuk']) }}" class="btn btn-primary" style="padding: 20px; flex-direction: column; gap: 8px;">
                     <i data-lucide="scan-face" style="width: 32px; height: 32px;"></i>
-                    <span>Absen Sekarang</span>
+                    <span>Absen Masuk</span>
+                </a>
+                <a href="{{ route('attendances.create', ['type' => 'Pulang']) }}" class="btn" style="padding: 20px; flex-direction: column; gap: 8px; background: linear-gradient(135deg, #7c3aed, #6d28d9); color: white;">
+                    <i data-lucide="log-out" style="width: 32px; height: 32px;"></i>
+                    <span>Absen Pulang</span>
                 </a>
                 <a href="{{ route('leaves.personal') }}" class="btn" style="padding: 20px; flex-direction: column; gap: 8px; background: white; border: 1.5px solid #e2e8f0; color: var(--text-main);">
                     <i data-lucide="calendar-plus" style="width: 32px; height: 32px; color: var(--primary);"></i>
