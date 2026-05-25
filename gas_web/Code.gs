@@ -152,6 +152,9 @@ function getDashboardStats(clientId, id) {
       if (!logWaktu || logWaktu === "") continue;
       var rowDate = new Date(logWaktu);
       var rowStatus = String(data[i][7]);
+      if (rowStatus === "Valid" || rowStatus === "" || String(data[i][6]) === "Tepat Waktu" || String(data[i][6]) === "Terlambat" || String(data[i][6]).toLowerCase().indexOf("izin") !== -1 || ["Izin", "Sakit", "Cuti"].indexOf(String(data[i][6])) !== -1) {
+          rowStatus = String(data[i][6]);
+      }
       rowDate.setHours(0, 0, 0, 0);
       if (rowDate.getTime() === today.getTime()) {
         if (rowStatus === "Tepat Waktu") stats.present++;
@@ -177,9 +180,13 @@ function getDashboardStats(clientId, id) {
         if (!logW || logW === "") continue;
         var rDate = new Date(logW);
         rDate.setHours(0, 0, 0, 0);
+        var rStatus = String(data[j][7]);
+        if (rStatus === "Valid" || rStatus === "" || String(data[j][6]) === "Tepat Waktu" || String(data[j][6]) === "Terlambat") {
+            rStatus = String(data[j][6]);
+        }
         if (
           rDate.getTime() === date.getTime() &&
-          (data[j][7] === "Tepat Waktu" || data[j][7] === "Terlambat")
+          (rStatus === "Tepat Waktu" || rStatus === "Terlambat")
         )
           count++;
       }
@@ -218,16 +225,27 @@ function getAttendanceHistory(clientId, id) {
     var history = [];
     var searchId = String(id).trim().toLowerCase();
     for (var i = data.length - 1; i >= 1; i--) {
-      var rowId = String(data[i][2] || "")
-        .trim()
-        .toLowerCase();
+      var rawId = String(data[i][8] || data[i][2] || data[i][1] || "");
+      var rowId = rawId.trim().toLowerCase();
+      
+      var tStatus = String(data[i][7] || "");
+      var tTipe = String(data[i][3] || "");
+      var tTugas = String(data[i][8] || "");
+      
+      if (tStatus === "Valid" || tStatus === "" || String(data[i][6]) === "Tepat Waktu" || String(data[i][6]) === "Terlambat" || String(data[i][6]).indexOf("Disetujui") !== -1 || String(data[i][6]).indexOf("Menunggu") !== -1) {
+          tStatus = String(data[i][6] || "");
+          tTipe = String(data[i][2] || "");
+          tTugas = String(data[i][7] || "");
+      }
+      if (tTugas === "Valid") tTugas = "";
+
       if (rowId === searchId || searchId === "admin") {
         history.push({
           id: i,
           waktu: data[i][0],
-          tipe: data[i][3] || "-",
-          status: data[i][7] || "Tepat Waktu",
-          tugas: data[i][8] || "",
+          tipe: tTipe || "-",
+          status: tStatus || "Tepat Waktu",
+          tugas: tTugas || "",
         });
         if (history.length >= 50) break;
       }
@@ -394,14 +412,14 @@ function handleAbsensi(payload) {
 
   ss.getSheetByName("Log_Absensi").appendRow([
     Utilities.formatDate(new Date(), "GMT+7", "yyyy-MM-dd HH:mm:ss"), // A - Waktu
-    payload.nama, // B - Nama
-    payload.id_karyawan, // C - ID Karyawan
-    payload.tipe_absen, // D - Tipe Absen
-    payload.lat_long, // E - GPS
-    fotoUrl, // F - Foto
-    "Valid", // G - Biometrik
-    status, // H - Status
-    payload.tugas || "" // I - Tugas
+    namaKaryawan, // B - Nama
+    payload.tipe_absen, // C - Tipe Absen
+    payload.lat_long, // D - GPS
+    fotoUrl, // E - Foto
+    "Valid", // F - Biometrik
+    status, // G - Status
+    payload.tugas || "", // H - Tugas
+    payload.id_karyawan // I - ID Karyawan (dipindah ke akhir)
   ]);
 
   return { code: 200, status: "success", message: "Absen " + status + "!" };
@@ -440,13 +458,13 @@ function handleAjukanIzin(payload) {
   sheet.appendRow([
     Utilities.formatDate(new Date(), "GMT+7", "yyyy-MM-dd HH:mm:ss"), // A - Waktu
     namaKaryawan, // B - Nama
-    payload.id_karyawan, // C - ID Karyawan
-    payload.tipe_izin, // D - Tipe Izin
-    payload.rentang_tanggal, // E - Rentang Tanggal
-    fotoUrl, // F - Foto
-    payload.alasan, // G - Alasan
-    payload.is_admin ? "Disetujui" : "Menunggu Approval", // H - Status
-    payload.tugas || "" // I - Tugas
+    payload.tipe_izin, // C - Tipe Izin
+    payload.rentang_tanggal, // D - Rentang Tanggal
+    fotoUrl, // E - Foto
+    payload.alasan, // F - Alasan
+    payload.is_admin ? "Disetujui" : "Menunggu Approval", // G - Status
+    payload.tugas || "", // H - Tugas
+    payload.id_karyawan // I - ID Karyawan (dipindah ke akhir)
   ]);
   return { code: 200, status: "success", message: "Sent" };
 }
@@ -724,18 +742,20 @@ function handleGetAllApprovals(payload) {
   }
   var results = [];
   for (var i = logs.length - 1; i >= 1; i--) {
-    if (logs[i][7] === "Menunggu Approval") {
-      var idKry = String(logs[i][2]);
+    var statusApproval = String(logs[i][7] || logs[i][6]);
+    if (statusApproval === "Menunggu Approval") {
+      var idKry = String(logs[i][8] || logs[i][2] || logs[i][1]);
+      var tipeLog = String(logs[i][3] || logs[i][2]);
       results.push({
         waktu_pengajuan: logs[i][0],
         id_karyawan: idKry,
-        nama: logs[i][1] || namaMap[idKry] || "Unknown",
+        nama: namaMap[idKry] || "Unknown",
         no_hp: hpMap[idKry] || "",
-        tipe: logs[i][3],
-        rentang: logs[i][4],
-        foto: logs[i][5],
-        alasan: logs[i][6],
-        tugas: logs[i][8] || "",
+        tipe: tipeLog,
+        rentang: String(logs[i][4] || logs[i][3]),
+        foto: String(logs[i][5] || logs[i][4]),
+        alasan: String(logs[i][6] || logs[i][5]),
+        tugas: String(logs[i][8] ? logs[i][7] : (logs[i][7] || "")),
         row_index: i + 1,
       });
     }
@@ -751,14 +771,15 @@ function handleGetHistory(payload) {
     .getValues();
   var results = [];
   for (var i = 1; i < logs.length; i++) {
-    if (String(logs[i][2]) === String(payload.id_karyawan)) {
+    var rowIdKry = String(logs[i][8] || logs[i][2] || logs[i][1]);
+    if (rowIdKry === String(payload.id_karyawan) || String(logs[i][1]) === String(payload.id_karyawan) || String(logs[i][2]) === String(payload.id_karyawan)) {
       results.push({
         waktu: logs[i][0],
-        tipe: logs[i][3],
-        lat_long: logs[i][4],
-        foto: logs[i][5],
-        biometrik: logs[i][6],
-        status: logs[i][7],
+        tipe: String(logs[i][3] || logs[i][2]),
+        lat_long: String(logs[i][4] || logs[i][3]),
+        foto: String(logs[i][5] || logs[i][4]),
+        biometrik: String(logs[i][6] || logs[i][5]),
+        status: String(logs[i][7] || logs[i][6]),
       });
     }
   }
@@ -830,11 +851,12 @@ function handleCekStatusHariIni(payload) {
     try {
       var rowDate = new Date(logs[i][0]);
       rowDate.setHours(0, 0, 0, 0);
+      var rowIdKry = String(logs[i][8] || logs[i][2] || logs[i][1]);
       if (
         rowDate.getTime() === today.getTime() &&
-        String(logs[i][2]) === String(payload.id_karyawan)
+        (rowIdKry === String(payload.id_karyawan) || String(logs[i][1]) === String(payload.id_karyawan) || String(logs[i][2]) === String(payload.id_karyawan))
       ) {
-        res.status = logs[i][7];
+        res.status = logs[i][7] || logs[i][6];
         break;
       }
     } catch (e) {
@@ -863,9 +885,9 @@ function handleGetLeaveHistory(payload) {
   var results = [];
   var leaveKeywords = ["Sakit", "Izin", "Cuti"];
   for (var i = 1; i < logs.length; i++) {
-    var idLog = String(logs[i][2]);
-    var tipeLog = String(logs[i][3]);
-    if (payload.is_admin === true || idLog === String(payload.id_karyawan)) {
+    var idLog = String(logs[i][8] || logs[i][2] || logs[i][1]);
+    var tipeLog = String(logs[i][3] || logs[i][2]);
+    if (payload.is_admin === true || idLog === String(payload.id_karyawan) || String(logs[i][1]) === String(payload.id_karyawan) || String(logs[i][2]) === String(payload.id_karyawan)) {
       var isLeave = leaveKeywords.some(function (kw) {
         return tipeLog.indexOf(kw) !== -1;
       });
@@ -873,14 +895,14 @@ function handleGetLeaveHistory(payload) {
         results.push({
           waktu_pengajuan: logs[i][0],
           id_karyawan: idLog,
-          nama: logs[i][1] || namaMap[idLog] || "-",
+          nama: namaMap[idLog] || "-",
           no_hp: hpMap[idLog] || "",
-          tipe: logs[i][3],
-          rentang: logs[i][4],
-          foto: logs[i][5],
-          alasan: logs[i][6],
-          tugas: logs[i][8] || "",
-          status: logs[i][7],
+          tipe: tipeLog,
+          rentang: String(logs[i][4] || logs[i][3]),
+          foto: String(logs[i][5] || logs[i][4]),
+          alasan: String(logs[i][6] || logs[i][5]),
+          tugas: String(logs[i][8] ? logs[i][7] : (logs[i][7] || "")),
+          status: String(logs[i][7] || logs[i][6]),
         });
       }
     }
@@ -909,27 +931,30 @@ function handleGetMonthlyReport(payload) {
     if (!logWaktu || logWaktu === "") continue;
     try {
       var dateObj = new Date(logWaktu);
-      var mm = (dateObj.getMonth() + 1).toString().padLeft(2, "0");
-      var yyyy = dateObj.getFullYear();
-      var logBulan = mm + "-" + yyyy;
-      if (logBulan === targetBulan) {
-        var idKry = String(logs[i][2]);
-        if (
-          payload.id_karyawan_target === "SEMUA" ||
-          idKry === payload.id_karyawan_target
-        ) {
-          results.push({
-            waktu: Utilities.formatDate(
-              dateObj,
-              "GMT+7",
-              "yyyy-MM-dd HH:mm:ss",
-            ),
-            id_karyawan: idKry,
-            nama: logs[i][1] || namaMap[idKry] || "Unknown",
-            tipe: logs[i][3],
-            status: logs[i][7],
-            tugas: logs[i][8] || "",
-          });
+      if (!isNaN(dateObj.getTime())) {
+        var mm = ("0" + (dateObj.getMonth() + 1)).slice(-2);
+        var yyyy = dateObj.getFullYear();
+        var logBulan = mm + "-" + yyyy;
+
+        if (logBulan === targetBulan) {
+          var idKry = String(logs[i][8] || logs[i][2] || logs[i][1]);
+          if (
+            payload.id_karyawan_target === "SEMUA" ||
+            idKry === payload.id_karyawan_target || String(logs[i][1]) === payload.id_karyawan_target || String(logs[i][2]) === payload.id_karyawan_target
+          ) {
+            results.push({
+              waktu: Utilities.formatDate(
+                dateObj,
+                "GMT+7",
+                "yyyy-MM-dd HH:mm:ss",
+              ),
+              id_karyawan: idKry,
+              nama: namaMap[idKry] || "Unknown",
+              tipe: String(logs[i][3] || logs[i][2]),
+              status: String(logs[i][7] || logs[i][6]),
+              tugas: String(logs[i][8] ? logs[i][7] : (logs[i][7] || "")),
+            });
+          }
         }
       }
     } catch (e) {
@@ -962,8 +987,10 @@ function getTodayAttendanceAdmin(clientId) {
     var config = getSemuaConfig()[clientId];
     var ss = SpreadsheetApp.openById(config.spreadsheetId);
     var logs = ss.getSheetByName("Log_Absensi").getDataRange().getValues();
-    var employees = ss.getSheetByName("Master_Karyawan").getDataRange().getValues();
-    
+    var employees = ss
+      .getSheetByName("Master_Karyawan")
+      .getDataRange()
+      .getValues();
     var namaMap = {};
     var bagianMap = {};
     for (var j = 1; j < employees.length; j++) {
@@ -978,22 +1005,35 @@ function getTodayAttendanceAdmin(clientId) {
     var results = [];
     for (var i = 1; i < logs.length; i++) {
       var logWaktu = logs[i][0];
-      if (!logWaktu) continue;
+      if (!logWaktu || logWaktu === "") continue;
       
-      var rowDate = new Date(logWaktu);
-      rowDate.setHours(0, 0, 0, 0);
-      
-      if (rowDate.getTime() === today.getTime()) {
-        var idKry = String(logs[i][2]);
-        results.push({
-          id: idKry,
-          nama: logs[i][1] || namaMap[idKry] || "Tidak Dikenal",
-          bagian: bagianMap[idKry] || "-",
-          tipe: String(logs[i][3] || "-"),
-          masuk: Utilities.formatDate(new Date(logs[i][0]), "GMT+7", "HH:mm"),
-          status_absen: String(logs[i][7]),
-          keterangan: String(logs[i][8] || "")
-        });
+      var dateObj = new Date(logWaktu);
+      if (!isNaN(dateObj.getTime())) {
+        var rowDate = new Date(dateObj);
+        rowDate.setHours(0, 0, 0, 0);
+        
+        if (rowDate.getTime() === today.getTime()) {
+          var idKry = String(logs[i][8] || logs[i][2] || logs[i][1]);
+          var tStatus = String(logs[i][7] || "");
+          var tTipe = String(logs[i][3] || "");
+          var tTugas = String(logs[i][8] || "");
+          
+          if (tStatus === "Valid" || tStatus === "" || String(logs[i][6]) === "Tepat Waktu" || String(logs[i][6]) === "Terlambat" || String(logs[i][6]).indexOf("Disetujui") !== -1 || String(logs[i][6]).indexOf("Menunggu") !== -1) {
+              tStatus = String(logs[i][6] || "");
+              tTipe = String(logs[i][2] || "");
+              tTugas = String(logs[i][7] || "");
+          }
+          if (tTugas === "Valid") tTugas = "";
+
+          results.push({
+            id_karyawan: idKry,
+            nama: namaMap[idKry] || "Tidak Dikenal",
+            tipe: tTipe || "-",
+            masuk: Utilities.formatDate(dateObj, "GMT+7", "HH:mm"),
+            status_absen: tStatus,
+            keterangan: tTugas,
+          });
+        }
       }
     }
     return results;

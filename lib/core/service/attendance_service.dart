@@ -224,27 +224,18 @@ class AttendanceService extends ApiClient {
       }
 
       // 7. KOMPRESI & BASE64 FOTO
-      final targetPath = '${image.path}_compressed.jpg';
-      final compressedFile = await FlutterImageCompress.compressAndGetFile(
+      final imageBytes = await FlutterImageCompress.compressWithFile(
         image.path,
-        targetPath,
         quality: 30,
         minWidth: 600,
         minHeight: 600,
         format: CompressFormat.jpeg,
       );
-      if (compressedFile == null) {
+      if (imageBytes == null) {
         throw Exception('Gagal mengompres gambar sebelum upload.');
       }
 
-      final imageBytes = await compressedFile.readAsBytes();
       final base64Image = base64Encode(imageBytes);
-
-      try {
-        File(targetPath).deleteSync();
-      } catch (e) {
-        d.log('Gagal menghapus file temp: $e');
-      }
 
       // 8. KIRIM KE SERVER
       final payload = {

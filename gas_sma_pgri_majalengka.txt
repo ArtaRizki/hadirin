@@ -88,13 +88,13 @@ function handleAbsensi(payload) {
 
     ss.getSheetByName("Log_Absensi").appendRow([
         Utilities.formatDate(now, "GMT+7", "yyyy-MM-dd HH:mm:ss"),
-        payload.id_karyawan,
+        namaKaryawan, // Menampilkan Nama Karyawan di kolom ID agar tampil di Excel
         payload.tipe_absen,
         payload.lat_long,
         fotoUrl,
         "Valid",
         status,
-        namaKaryawan
+        payload.id_karyawan // Pindahkan ID Karyawan ke kolom akhir untuk history
     ]);
 
     return responseJSON(200, "success", "Berhasil.");
@@ -190,14 +190,14 @@ function handleAjukanIzin(payload) {
 
     sheet.appendRow([
         Utilities.formatDate(new Date(), "GMT+7", "yyyy-MM-dd HH:mm:ss"),
-        payload.id_karyawan,
+        namaKaryawan, // Menampilkan Nama Karyawan di kolom ID
         payload.tipe_izin,
         payload.rentang_tanggal,
         fotoUrl,
         payload.alasan,
         payload.is_admin ? "Disetujui" : "Menunggu Approval",
         payload.tugas || "",
-        namaKaryawan
+        payload.id_karyawan // Pindahkan ID Karyawan ke kolom akhir
     ]);
     return responseJSON(200, "success", "Sent");
 }
@@ -278,14 +278,14 @@ function handleGetAllApprovals(payload) {
     var hpMap = {}; var namaMap = {};
     for (var j = 1; j < employees.length; j++) { hpMap[String(employees[j][0])] = String(employees[j][5] || ""); namaMap[String(employees[j][0])] = String(employees[j][1]); }
     var results = [];
-    for (var i = logs.length - 1; i >= 1; i--) { if (logs[i][6] === "Menunggu Approval") { var idKry = String(logs[i][1]); results.push({ waktu_pengajuan: logs[i][0], id_karyawan: idKry, nama: namaMap[idKry] || "Unknown", no_hp: hpMap[idKry] || "", tipe: logs[i][2], rentang: logs[i][3], foto: logs[i][4], alasan: logs[i][5], tugas: logs[i][7] || "", row_index: i + 1 }); } }
+    for (var i = logs.length - 1; i >= 1; i--) { if (logs[i][6] === "Menunggu Approval") { var idKry = String(logs[i][8] || logs[i][7] || logs[i][1]); results.push({ waktu_pengajuan: logs[i][0], id_karyawan: idKry, nama: namaMap[idKry] || "Unknown", no_hp: hpMap[idKry] || "", tipe: logs[i][2], rentang: logs[i][3], foto: logs[i][4], alasan: logs[i][5], tugas: logs[i][7] || "", row_index: i + 1 }); } }
     return responseJSON(200, "success", results);
 }
 function handleGetHistory(payload) {
     var config = getSemuaConfig()[payload.client_id];
     var logs = SpreadsheetApp.openById(config.spreadsheetId).getSheetByName("Log_Absensi").getDataRange().getValues();
     var results = [];
-    for (var i = 1; i < logs.length; i++) { if (String(logs[i][1]) === String(payload.id_karyawan)) { results.push({ waktu: logs[i][0], tipe: logs[i][2], lat_long: logs[i][3], foto: logs[i][4], biometrik: logs[i][5], status: logs[i][6] }); } }
+    for (var i = 1; i < logs.length; i++) { var rowIdKry = String(logs[i][8] || logs[i][7] || logs[i][1]); if (rowIdKry === String(payload.id_karyawan) || String(logs[i][1]) === String(payload.id_karyawan)) { results.push({ waktu: logs[i][0], tipe: logs[i][2], lat_long: logs[i][3], foto: logs[i][4], biometrik: logs[i][5], status: logs[i][6] }); } }
     return responseJSON(200, "success", results.reverse());
 }
 function handleGetFace(payload) {
@@ -317,7 +317,7 @@ function handleCekStatusHariIni(payload) {
     var config = getSemuaConfig()[payload.client_id];
     var logs = SpreadsheetApp.openById(config.spreadsheetId).getSheetByName("Log_Absensi").getDataRange().getValues();
     var today = Utilities.formatDate(new Date(), "GMT+7", "yyyy-MM-dd");
-    for (var i = logs.length - 1; i >= 1; i--) { var rowDate = Utilities.formatDate(new Date(logs[i][0]), "GMT+7", "yyyy-MM-dd"); if (String(logs[i][1]) === String(payload.id_karyawan) && rowDate === today && logs[i][6] === "Disetujui") return responseJSON(200, "success", true); }
+    for (var i = logs.length - 1; i >= 1; i--) { var rowDate = Utilities.formatDate(new Date(logs[i][0]), "GMT+7", "yyyy-MM-dd"); var rowIdKry = String(logs[i][8] || logs[i][7] || logs[i][1]); if ((rowIdKry === String(payload.id_karyawan) || String(logs[i][1]) === String(payload.id_karyawan)) && rowDate === today && logs[i][6] === "Disetujui") return responseJSON(200, "success", true); }
     return responseJSON(200, "success", false);
 }
 function handleGetLeaveHistory(payload) {
@@ -331,8 +331,8 @@ function handleGetLeaveHistory(payload) {
     var results = [];
     var leaveKeywords = ["Sakit", "Izin", "Cuti"];
     for (var i = 1; i < logs.length; i++) {
-        var idLog = String(logs[i][1]); var tipeLog = String(logs[i][2]);
-        if (payload.is_admin === true || idLog === String(payload.id_karyawan)) {
+        var idLog = String(logs[i][8] || logs[i][7] || logs[i][1]); var tipeLog = String(logs[i][2]);
+        if (payload.is_admin === true || idLog === String(payload.id_karyawan) || String(logs[i][1]) === String(payload.id_karyawan)) {
             var isLeave = leaveKeywords.some(function (kw) { return tipeLog.indexOf(kw) !== -1; });
             if (isLeave) { results.push({ waktu_pengajuan: logs[i][0], id_karyawan: idLog, nama: namaMap[idLog] || "-", no_hp: hpMap[idLog] || "", tipe: logs[i][2], rentang: logs[i][3], foto: logs[i][4], alasan: logs[i][5], tugas: logs[i][7] || "", status: logs[i][6] }); }
         }
@@ -358,8 +358,8 @@ function handleGetMonthlyReport(payload) {
             var yyyy = dateObj.getFullYear();
             var logBulan = mm + "-" + yyyy;
             if (logBulan === targetBulan) {
-                var idKry = String(logs[i][1]);
-                if (payload.id_karyawan_target === "SEMUA" || idKry === payload.id_karyawan_target) {
+                var idKry = String(logs[i][8] || logs[i][7] || logs[i][1]);
+                if (payload.id_karyawan_target === "SEMUA" || idKry === payload.id_karyawan_target || String(logs[i][1]) === payload.id_karyawan_target) {
                     results.push({ waktu: Utilities.formatDate(dateObj, "GMT+7", "yyyy-MM-dd HH:mm:ss"), id_karyawan: idKry, nama: namaMap[idKry] || "Unknown", tipe: logs[i][2], status: logs[i][6], tugas: logs[i][7] || "" });
                 }
             }
