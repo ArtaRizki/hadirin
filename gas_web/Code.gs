@@ -152,8 +152,15 @@ function getDashboardStats(clientId, id) {
       if (!logWaktu || logWaktu === "") continue;
       var rowDate = new Date(logWaktu);
       var rowStatus = String(data[i][7]);
-      if (rowStatus === "Valid" || rowStatus === "" || String(data[i][6]) === "Tepat Waktu" || String(data[i][6]) === "Terlambat" || String(data[i][6]).toLowerCase().indexOf("izin") !== -1 || ["Izin", "Sakit", "Cuti"].indexOf(String(data[i][6])) !== -1) {
-          rowStatus = String(data[i][6]);
+      if (
+        rowStatus === "Valid" ||
+        rowStatus === "" ||
+        String(data[i][6]) === "Tepat Waktu" ||
+        String(data[i][6]) === "Terlambat" ||
+        String(data[i][6]).toLowerCase().indexOf("izin") !== -1 ||
+        ["Izin", "Sakit", "Cuti"].indexOf(String(data[i][6])) !== -1
+      ) {
+        rowStatus = String(data[i][6]);
       }
       rowDate.setHours(0, 0, 0, 0);
       if (rowDate.getTime() === today.getTime()) {
@@ -181,8 +188,13 @@ function getDashboardStats(clientId, id) {
         var rDate = new Date(logW);
         rDate.setHours(0, 0, 0, 0);
         var rStatus = String(data[j][7]);
-        if (rStatus === "Valid" || rStatus === "" || String(data[j][6]) === "Tepat Waktu" || String(data[j][6]) === "Terlambat") {
-            rStatus = String(data[j][6]);
+        if (
+          rStatus === "Valid" ||
+          rStatus === "" ||
+          String(data[j][6]) === "Tepat Waktu" ||
+          String(data[j][6]) === "Terlambat"
+        ) {
+          rStatus = String(data[j][6]);
         }
         if (
           rDate.getTime() === date.getTime() &&
@@ -227,15 +239,22 @@ function getAttendanceHistory(clientId, id) {
     for (var i = data.length - 1; i >= 1; i--) {
       var rawId = String(data[i][8] || data[i][2] || data[i][1] || "");
       var rowId = rawId.trim().toLowerCase();
-      
+
       var tStatus = String(data[i][7] || "");
       var tTipe = String(data[i][3] || "");
       var tTugas = String(data[i][8] || "");
-      
-      if (tStatus === "Valid" || tStatus === "" || String(data[i][6]) === "Tepat Waktu" || String(data[i][6]) === "Terlambat" || String(data[i][6]).indexOf("Disetujui") !== -1 || String(data[i][6]).indexOf("Menunggu") !== -1) {
-          tStatus = String(data[i][6] || "");
-          tTipe = String(data[i][2] || "");
-          tTugas = String(data[i][7] || "");
+
+      if (
+        tStatus === "Valid" ||
+        tStatus === "" ||
+        String(data[i][6]) === "Tepat Waktu" ||
+        String(data[i][6]) === "Terlambat" ||
+        String(data[i][6]).indexOf("Disetujui") !== -1 ||
+        String(data[i][6]).indexOf("Menunggu") !== -1
+      ) {
+        tStatus = String(data[i][6] || "");
+        tTipe = String(data[i][2] || "");
+        tTugas = String(data[i][7] || "");
       }
       if (tTugas === "Valid") tTugas = "";
 
@@ -408,7 +427,12 @@ function handleAbsensi(payload) {
   }
 
   var namaKaryawan = getNamaKaryawan(ss, payload.id_karyawan, payload.nama);
-  Logger.log("Absen - ID Karyawan: " + payload.id_karyawan + " | Nama Ditemukan: " + namaKaryawan);
+  Logger.log(
+    "Absen - ID Karyawan: " +
+      payload.id_karyawan +
+      " | Nama Ditemukan: " +
+      namaKaryawan,
+  );
 
   ss.getSheetByName("Log_Absensi").appendRow([
     Utilities.formatDate(new Date(), "GMT+7", "yyyy-MM-dd HH:mm:ss"), // A - Waktu
@@ -419,7 +443,7 @@ function handleAbsensi(payload) {
     "Valid", // F - Biometrik
     status, // G - Status
     payload.tugas || "", // H - Tugas
-    payload.id_karyawan // I - ID Karyawan (dipindah ke akhir)
+    payload.id_karyawan, // I - ID Karyawan (dipindah ke akhir)
   ]);
 
   return { code: 200, status: "success", message: "Absen " + status + "!" };
@@ -453,7 +477,12 @@ function handleAjukanIzin(payload) {
   }
 
   var namaKaryawan = getNamaKaryawan(ss, payload.id_karyawan, payload.nama);
-  Logger.log("Izin - ID Karyawan: " + payload.id_karyawan + " | Nama Ditemukan: " + namaKaryawan);
+  Logger.log(
+    "Izin - ID Karyawan: " +
+      payload.id_karyawan +
+      " | Nama Ditemukan: " +
+      namaKaryawan,
+  );
 
   sheet.appendRow([
     Utilities.formatDate(new Date(), "GMT+7", "yyyy-MM-dd HH:mm:ss"), // A - Waktu
@@ -464,7 +493,7 @@ function handleAjukanIzin(payload) {
     payload.alasan, // F - Alasan
     payload.is_admin ? "Disetujui" : "Menunggu Approval", // G - Status
     payload.tugas || "", // H - Tugas
-    payload.id_karyawan // I - ID Karyawan (dipindah ke akhir)
+    payload.id_karyawan, // I - ID Karyawan (dipindah ke akhir)
   ]);
   return { code: 200, status: "success", message: "Sent" };
 }
@@ -755,7 +784,7 @@ function handleGetAllApprovals(payload) {
         rentang: String(logs[i][4] || logs[i][3]),
         foto: String(logs[i][5] || logs[i][4]),
         alasan: String(logs[i][6] || logs[i][5]),
-        tugas: String(logs[i][8] ? logs[i][7] : (logs[i][7] || "")),
+        tugas: String(logs[i][8] ? logs[i][7] : logs[i][7] || ""),
         row_index: i + 1,
       });
     }
@@ -772,7 +801,11 @@ function handleGetHistory(payload) {
   var results = [];
   for (var i = 1; i < logs.length; i++) {
     var rowIdKry = String(logs[i][8] || logs[i][2] || logs[i][1]);
-    if (rowIdKry === String(payload.id_karyawan) || String(logs[i][1]) === String(payload.id_karyawan) || String(logs[i][2]) === String(payload.id_karyawan)) {
+    if (
+      rowIdKry === String(payload.id_karyawan) ||
+      String(logs[i][1]) === String(payload.id_karyawan) ||
+      String(logs[i][2]) === String(payload.id_karyawan)
+    ) {
       results.push({
         waktu: logs[i][0],
         tipe: String(logs[i][3] || logs[i][2]),
@@ -854,7 +887,9 @@ function handleCekStatusHariIni(payload) {
       var rowIdKry = String(logs[i][8] || logs[i][2] || logs[i][1]);
       if (
         rowDate.getTime() === today.getTime() &&
-        (rowIdKry === String(payload.id_karyawan) || String(logs[i][1]) === String(payload.id_karyawan) || String(logs[i][2]) === String(payload.id_karyawan))
+        (rowIdKry === String(payload.id_karyawan) ||
+          String(logs[i][1]) === String(payload.id_karyawan) ||
+          String(logs[i][2]) === String(payload.id_karyawan))
       ) {
         res.status = logs[i][7] || logs[i][6];
         break;
@@ -887,7 +922,12 @@ function handleGetLeaveHistory(payload) {
   for (var i = 1; i < logs.length; i++) {
     var idLog = String(logs[i][8] || logs[i][2] || logs[i][1]);
     var tipeLog = String(logs[i][3] || logs[i][2]);
-    if (payload.is_admin === true || idLog === String(payload.id_karyawan) || String(logs[i][1]) === String(payload.id_karyawan) || String(logs[i][2]) === String(payload.id_karyawan)) {
+    if (
+      payload.is_admin === true ||
+      idLog === String(payload.id_karyawan) ||
+      String(logs[i][1]) === String(payload.id_karyawan) ||
+      String(logs[i][2]) === String(payload.id_karyawan)
+    ) {
       var isLeave = leaveKeywords.some(function (kw) {
         return tipeLog.indexOf(kw) !== -1;
       });
@@ -901,7 +941,7 @@ function handleGetLeaveHistory(payload) {
           rentang: String(logs[i][4] || logs[i][3]),
           foto: String(logs[i][5] || logs[i][4]),
           alasan: String(logs[i][6] || logs[i][5]),
-          tugas: String(logs[i][8] ? logs[i][7] : (logs[i][7] || "")),
+          tugas: String(logs[i][8] ? logs[i][7] : logs[i][7] || ""),
           status: String(logs[i][7] || logs[i][6]),
         });
       }
@@ -940,7 +980,9 @@ function handleGetMonthlyReport(payload) {
           var idKry = String(logs[i][8] || logs[i][2] || logs[i][1]);
           if (
             payload.id_karyawan_target === "SEMUA" ||
-            idKry === payload.id_karyawan_target || String(logs[i][1]) === payload.id_karyawan_target || String(logs[i][2]) === payload.id_karyawan_target
+            idKry === payload.id_karyawan_target ||
+            String(logs[i][1]) === payload.id_karyawan_target ||
+            String(logs[i][2]) === payload.id_karyawan_target
           ) {
             results.push({
               waktu: Utilities.formatDate(
@@ -952,7 +994,7 @@ function handleGetMonthlyReport(payload) {
               nama: namaMap[idKry] || "Unknown",
               tipe: String(logs[i][3] || logs[i][2]),
               status: String(logs[i][7] || logs[i][6]),
-              tugas: String(logs[i][8] ? logs[i][7] : (logs[i][7] || "")),
+              tugas: String(logs[i][8] ? logs[i][7] : logs[i][7] || ""),
             });
           }
         }
@@ -994,7 +1036,7 @@ function getTodayAttendanceAdmin(clientId) {
     var namaMap = {};
     var bagianMap = {};
     for (var j = 1; j < employees.length; j++) {
-      var idEmp = String(employees[j][0]);
+      var idEmp = String(employees[j][0]).trim().toLowerCase();
       namaMap[idEmp] = String(employees[j][1]);
       bagianMap[idEmp] = String(employees[j][2] || "-");
     }
@@ -1006,28 +1048,58 @@ function getTodayAttendanceAdmin(clientId) {
     for (var i = 1; i < logs.length; i++) {
       var logWaktu = logs[i][0];
       if (!logWaktu || logWaktu === "") continue;
-      
+
       var dateObj = new Date(logWaktu);
       if (!isNaN(dateObj.getTime())) {
         var rowDate = new Date(dateObj);
         rowDate.setHours(0, 0, 0, 0);
-        
+
         if (rowDate.getTime() === today.getTime()) {
-          var idKry = String(logs[i][8] || logs[i][2] || logs[i][1]);
-          var tStatus = String(logs[i][7] || "");
-          var tTipe = String(logs[i][3] || "");
-          var tTugas = String(logs[i][8] || "");
-          
-          if (tStatus === "Valid" || tStatus === "" || String(logs[i][6]) === "Tepat Waktu" || String(logs[i][6]) === "Terlambat" || String(logs[i][6]).indexOf("Disetujui") !== -1 || String(logs[i][6]).indexOf("Menunggu") !== -1) {
-              tStatus = String(logs[i][6] || "");
-              tTipe = String(logs[i][2] || "");
-              tTugas = String(logs[i][7] || "");
+          // Deteksi format baru (9 kolom) vs format lama
+          // Format baru: [Waktu, Nama, Tipe, GPS, Foto, "Valid", Status, Tugas, ID]
+          var hasCol9 =
+            logs[i].length >= 9 &&
+            logs[i][8] !== "" &&
+            logs[i][8] !== undefined &&
+            logs[i][8] !== null;
+          var idKry, tStatus, tTipe, tTugas;
+
+          if (hasCol9 && String(logs[i][5]) === "Valid") {
+            // Format baru: kolom F = "Valid", G = Status, H = Tugas, I = ID
+            idKry = String(logs[i][8]);
+            tStatus = String(logs[i][6] || "");
+            tTipe = String(logs[i][2] || "");
+            tTugas = String(logs[i][7] || "");
+          } else {
+            // Format lama atau izin: coba ambil ID dari kolom yang masuk akal
+            idKry = String(logs[i][8] || "");
+            tStatus = String(logs[i][6] || "");
+            tTipe = String(logs[i][2] || logs[i][3] || "");
+            tTugas = String(logs[i][7] || "");
+
+            // Jika idKry kosong, coba dari nama di kolom B (fallback)
+            if (!idKry || idKry === "" || idKry === "undefined") {
+              idKry = String(logs[i][1] || "");
+            }
           }
+
           if (tTugas === "Valid") tTugas = "";
+
+          // Lookup nama dengan case-insensitive
+          var lookupKey = idKry.trim().toLowerCase();
+          var nama = namaMap[lookupKey] || "";
+          var bagian = bagianMap[lookupKey] || "-";
+
+          // Jika tidak ditemukan di namaMap, gunakan kolom Nama dari log (kolom B)
+          if (!nama) {
+            nama = String(logs[i][1] || "Tidak Dikenal");
+          }
 
           results.push({
             id_karyawan: idKry,
-            nama: namaMap[idKry] || "Tidak Dikenal",
+            id: idKry,
+            nama: nama,
+            bagian: bagian,
             tipe: tTipe || "-",
             masuk: Utilities.formatDate(dateObj, "GMT+7", "HH:mm"),
             status_absen: tStatus,
@@ -1051,7 +1123,12 @@ String.prototype.padLeft = function (size, char) {
 };
 
 function getNamaKaryawan(ss, idKaryawan, fallbackNama) {
-  Logger.log("getNamaKaryawan dipanggil untuk ID: " + idKaryawan + " | Fallback: " + fallbackNama);
+  Logger.log(
+    "getNamaKaryawan dipanggil untuk ID: " +
+      idKaryawan +
+      " | Fallback: " +
+      fallbackNama,
+  );
   if (!idKaryawan) return fallbackNama || "";
   try {
     var data = ss.getSheetByName("Master_Karyawan").getDataRange().getValues();
@@ -1060,14 +1137,18 @@ function getNamaKaryawan(ss, idKaryawan, fallbackNama) {
       var rowId = String(data[i][0]).trim().toLowerCase();
       if (rowId === searchId) {
         var foundName = data[i][1] || fallbackNama || "";
-        Logger.log("Ditemukan kecocokan di baris " + (i+1) + ": " + foundName);
+        Logger.log(
+          "Ditemukan kecocokan di baris " + (i + 1) + ": " + foundName,
+        );
         return foundName;
       }
     }
   } catch (e) {
     Logger.log("Error getNamaKaryawan: " + e.message);
   }
-  Logger.log("ID tidak ditemukan di Master_Karyawan, menggunakan fallback: " + fallbackNama);
+  Logger.log(
+    "ID tidak ditemukan di Master_Karyawan, menggunakan fallback: " +
+      fallbackNama,
+  );
   return fallbackNama || "";
 }
-
