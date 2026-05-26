@@ -426,11 +426,31 @@ function handleAbsensi(payload) {
     }
   }
 
-  var namaKaryawan = getNamaKaryawan(ss, payload.id_karyawan, payload.nama);
+  // Lookup nama langsung dari Master_Karyawan (inline, tanpa helper)
+  var namaKaryawan = "";
+  try {
+    var masterData = ss
+      .getSheetByName("Master_Karyawan")
+      .getDataRange()
+      .getValues();
+    var searchId = String(payload.id_karyawan || "")
+      .trim()
+      .toLowerCase();
+    for (var mk = 1; mk < masterData.length; mk++) {
+      if (String(masterData[mk][0]).trim().toLowerCase() === searchId) {
+        namaKaryawan = String(masterData[mk][1] || "").trim();
+        break;
+      }
+    }
+  } catch (e) {
+    Logger.log("Lookup nama error: " + e.message);
+  }
+  // Fallback ke nama dari client (sudah benar dari saat login/session)
+  if (!namaKaryawan) namaKaryawan = payload.nama || "";
   Logger.log(
     "Absen - ID Karyawan: " +
       payload.id_karyawan +
-      " | Nama Ditemukan: " +
+      " | Nama Final: " +
       namaKaryawan,
   );
 
@@ -476,11 +496,30 @@ function handleAjukanIzin(payload) {
     }
   }
 
-  var namaKaryawan = getNamaKaryawan(ss, payload.id_karyawan, payload.nama);
+  // Lookup nama langsung dari Master_Karyawan (inline)
+  var namaKaryawan = "";
+  try {
+    var masterData2 = ss
+      .getSheetByName("Master_Karyawan")
+      .getDataRange()
+      .getValues();
+    var searchId2 = String(payload.id_karyawan || "")
+      .trim()
+      .toLowerCase();
+    for (var mk2 = 1; mk2 < masterData2.length; mk2++) {
+      if (String(masterData2[mk2][0]).trim().toLowerCase() === searchId2) {
+        namaKaryawan = String(masterData2[mk2][1] || "").trim();
+        break;
+      }
+    }
+  } catch (e) {
+    Logger.log("Lookup nama izin error: " + e.message);
+  }
+  if (!namaKaryawan) namaKaryawan = payload.nama || "";
   Logger.log(
     "Izin - ID Karyawan: " +
       payload.id_karyawan +
-      " | Nama Ditemukan: " +
+      " | Nama Final: " +
       namaKaryawan,
   );
 
@@ -710,8 +749,9 @@ function handleEnrollDevice(payload) {
   var ss = SpreadsheetApp.openById(config.spreadsheetId);
   var data = ss.getSheetByName("Master_Karyawan").getDataRange().getValues();
   var adminPhone = data[1][5] || "";
+  var searchId = String(payload.id_karyawan).trim().toLowerCase();
   for (var i = 1; i < data.length; i++) {
-    if (String(data[i][0]) === String(payload.id_karyawan)) {
+    if (String(data[i][0]).trim().toLowerCase() === searchId) {
       if (data[i][3] === "" || data[i][3] === payload.device_id) {
         if (data[i][3] === "")
           ss.getSheetByName("Master_Karyawan")
