@@ -78,6 +78,7 @@
     if (viewId === 'approvals') loadApprovalsData();
     if (viewId === 'shifts') loadShiftData();
     if (viewId === 'reports') initReportView();
+    if (viewId === 'meal-report') loadMealReport();
     if (viewId === 'settings') loadOfficeSettings();
     if (viewId === 'today') loadTodayAttendanceData();
 
@@ -266,6 +267,28 @@
             statusEl.style.color = "#10B981";
           }
         }
+
+        // Load Leave Balance for Members
+        const role = (currentUser && currentUser.role) ? currentUser.role.toLowerCase() : "";
+        const isAdmin = role === 'admin' || role === 'superadmin' || role === 'super admin';
+        if (!isAdmin) {
+          google.script.run
+            .withSuccessHandler(function (leaveRes) {
+              if (leaveRes.status === "success" && leaveRes.message) {
+                const leaveData = leaveRes.message;
+                document.getElementById('leave-balance-card').style.display = 'block';
+                document.getElementById('leave-year').innerText = leaveData.tahun;
+                document.getElementById('leave-quota').innerText = leaveData.jatah_cuti;
+                document.getElementById('leave-used').innerText = leaveData.cuti_terpakai;
+                document.getElementById('leave-remaining').innerText = leaveData.sisa_cuti;
+                
+                const percent = (leaveData.cuti_terpakai / leaveData.jatah_cuti) * 100;
+                document.getElementById('leave-progress-bar').style.width = Math.min(percent, 100) + '%';
+              }
+            })
+            .getLeaveBalanceWeb(currentUser.clientId, currentUser.id);
+        }
+
       })
       .getDashboardDataWeb(currentUser.clientId, currentUser.id);
   }
@@ -572,6 +595,8 @@
           document.getElementById('set-jam-pulang').value = config.jam_pulang_mulai;
           document.getElementById('set-interval').value = config.tl_interval || 30;
           document.getElementById('set-max-tier').value = config.max_tier || 0;
+          document.getElementById('set-uang-makan').value = config.uang_makan || 50000;
+          document.getElementById('set-potongan-telat').value = config.potongan_telat_1jam || 10000;
         }
       })
       .handleGetOfficeConfig({ client_id: currentUser.clientId });
@@ -604,6 +629,110 @@
         tl_interval: parseInt(interval),
         max_tier: parseInt(maxTier)
       });
+  }
+
+  function saveMealConfig() {
+    const uangMakan = document.getElementById('set-uang-makan').value;
+    const potonganTelat = document.getElementById('set-potongan-telat').value;
+
+    google.script.run
+      .withSuccessHandler(() => Swal.fire('Berhasil', 'Konfigurasi uang makan diperbarui.', 'success'))
+      .withFailureHandler((err) => Swal.fire('Error', 'Gagal menyimpan.', 'error'))
+      .updateMealConfigWeb(currentUser.clientId, parseInt(uangMakan), parseInt(potonganTelat));
+  }
+
+  // LAPORAN UANG MAKAN
+  let currentMealData = [];
+
+  function loadMealReport() {
+    let monthPicker = document.getElementById('meal-month-picker').value;
+    if (!monthPicker) {
+      const now = new Date();
+      monthPicker = now.getFullYear() + "-" + String(now.getMonth() + 1).padStart(2, '0');
+      document.getElementById('meal-month-picker').value = monthPicker;
+    }
+    const [year, month] = monthPicker.split('-');
+    const bulanTahun = `${month}-${year}`;
+
+    const body = document.getElementById('meal-report-body');
+    body.innerHTML = '<tr><td colspan="7" style="text-align:center; padding: 40px; color: var(--text-muted);">Memuat data potongan...</td></tr>';
+
+    google.script.run
+      .withSuccessHandler(function (response) {
+        if (response.status === "success") {
+          currentMealData = response.message.data;
+          const config = response.message.config;
+          
+          document.getElementById('meal-nominal').innerText = `Rp ${config.uang_makan.toLocaleString('id-ID')}`;
+          document.getElementById('meal-potongan-kecil').innerText = `Rp ${config.potongan_telat_1jam.toLocaleString('id-ID')}`;
+          
+          let totalPotongan = 0;
+          let totalBersih = 0;
+          currentMealData.forEach(d => {
+            totalPotongan += d.total_potongan;
+            totalBersih += d.uang_makan_bersih;
+          });
+
+          document.getElementById('meal-total-potongan').innerText = `Rp ${totalPotongan.toLocaleString('id-ID')}`;
+          document.getElementById('meal-total-bersih').innerText = `Rp ${totalBersih.toLocaleString('id-ID')}`;
+
+          renderMealReport(currentMealData);
+        } else {
+          body.innerHTML = '<tr><td colspan="7" style="text-align:center; padding: 40px; color: #ef4444;">Gagal memuat data.</td></tr>';
+        }
+      })
+      .withFailureHandler(function (err) {
+        body.innerHTML = '<tr><td colspan="7" style="text-align:center; padding: 40px; color: #ef4444;">Koneksi error.</td></tr>';
+      })
+      .getMealReportWeb(currentUser.clientId, bulanTahun, "", "");
+  }
+
+  function renderMealReport(data) {
+    const body = document.getElementById('meal-report-body');
+    body.innerHTML = '';
+    
+    if (data.length === 0) {
+      body.innerHTML = '<tr><td colspan="7" style="text-align:center; padding: 40px; color: var(--text-muted);">Tidak ada data di bulan ini.</td></tr>';
+      return;
+    }
+
+    data.forEach(item => {
+      body.innerHTML += `
+        <tr>
+          <td><div style="font-weight: 700;">${item.nama}</div><div style="font-size: 0.75rem; color: var(--text-muted);">ID: ${item.id}</div></td>
+          <td><span class="badge" style="background: rgba(124,58,237,0.1); color: #7C3AED;">${item.bagian}</span></td>
+          <td><span style="font-weight: 700;">${item.hari_hadir}</span> hari</td>
+          <td><span style="color: ${item.hari_telat > 0 ? '#ef4444' : '#10B981'}; font-weight: 700;">${item.hari_telat}</span> kali</td>
+          <td>Rp ${item.uang_makan_kotor.toLocaleString('id-ID')}</td>
+          <td style="color: #ef4444; font-weight: 700;">Rp ${item.total_potongan.toLocaleString('id-ID')}</td>
+          <td style="color: #10B981; font-weight: 800; font-size: 1.1rem;">Rp ${item.uang_makan_bersih.toLocaleString('id-ID')}</td>
+        </tr>
+      `;
+    });
+  }
+
+  function downloadMealReportExcel() {
+    if (currentMealData.length === 0) {
+      alert("Tidak ada data untuk diekspor");
+      return;
+    }
+    
+    const exportData = currentMealData.map(d => ({
+      "ID Karyawan": d.id,
+      "Nama": d.nama,
+      "Bagian": d.bagian,
+      "Total Hadir": d.hari_hadir,
+      "Total Telat": d.hari_telat,
+      "Nominal Per Hari": `Rp ${d.uang_makan_per_hari.toLocaleString('id-ID')}`,
+      "Total Uang Makan (Kotor)": `Rp ${d.uang_makan_kotor.toLocaleString('id-ID')}`,
+      "Total Potongan": `Rp ${d.total_potongan.toLocaleString('id-ID')}`,
+      "Total Diterima (Bersih)": `Rp ${d.uang_makan_bersih.toLocaleString('id-ID')}`
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(exportData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Laporan Uang Makan");
+    XLSX.writeFile(wb, `Laporan_Uang_Makan_${document.getElementById('meal-month-picker').value}.xlsx`);
   }
 
   // ADMIN: SHIFT & PLOTTING

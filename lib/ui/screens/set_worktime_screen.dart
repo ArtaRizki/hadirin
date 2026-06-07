@@ -21,6 +21,8 @@ class _SetWorktimeScreenState extends State<SetWorktimeScreen> {
   String _jamPulangMulai = "13:00";
   int _tlInterval = 30;
   int _maxTier = 0; // 0 = Unlimited
+  int _uangMakan = 50000;
+  int _potonganTelat1Jam = 10000;
 
   @override
   void initState() {
@@ -38,6 +40,8 @@ class _SetWorktimeScreenState extends State<SetWorktimeScreen> {
         _jamPulangMulai = config['jam_pulang_mulai']?.toString() == "null" ? "-" : (config['jam_pulang_mulai']?.toString() ?? "-");
         _tlInterval = int.tryParse(config['tl_interval']?.toString() ?? "30") ?? 30;
         _maxTier = int.tryParse(config['max_tier']?.toString() ?? "0") ?? 0;
+        _uangMakan = config['uang_makan'] ?? 50000;
+        _potonganTelat1Jam = config['potongan_telat_1jam'] ?? 10000;
         _isLoading = false;
       });
     } else {
@@ -78,9 +82,15 @@ class _SetWorktimeScreenState extends State<SetWorktimeScreen> {
       maxTier: _maxTier,
     );
 
+    final suksesMeal = await AdminService().updateMealConfig(
+      auth.clientId ?? "", 
+      _uangMakan, 
+      _potonganTelat1Jam
+    );
+
     if (mounted) {
       setState(() => _isSaving = false);
-      if (sukses) {
+      if (sukses && suksesMeal) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text("Jam kerja berhasil diperbarui!"),
@@ -258,6 +268,36 @@ class _SetWorktimeScreenState extends State<SetWorktimeScreen> {
     );
   }
 
+  void _showInputDialog(String title, int current, Function(int) onPicked) {
+    final controller = TextEditingController(text: current.toString());
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+        content: TextField(
+          controller: controller,
+          keyboardType: TextInputType.number,
+          decoration: InputDecoration(
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+            prefixText: "Rp ",
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text("Batal")),
+          ElevatedButton(
+            onPressed: () {
+              final val = int.tryParse(controller.text) ?? current;
+              onPicked(val);
+              Navigator.pop(context);
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: context.primaryColor, foregroundColor: Colors.white),
+            child: const Text("Simpan"),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
@@ -385,6 +425,33 @@ class _SetWorktimeScreenState extends State<SetWorktimeScreen> {
               onTap: () => _showNumberPickerDialog("Batas Kategori", _maxTier, 0, 100, (val) => setState(() => _maxTier = val)),
               icon: Icons.format_list_numbered_rounded,
               accentColor: Colors.teal.shade700,
+            ),
+
+            const SizedBox(height: 32),
+            const Text(
+              "Konfigurasi Uang Makan",
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: Color(0xFF0F172A), letterSpacing: -0.5),
+            ),
+            const SizedBox(height: 16),
+
+            _buildSettingCard(
+              title: "Nominal Uang Makan",
+              description: "Besaran uang makan per hari (Rp).",
+              value: _uangMakan.toString(),
+              onTap: () => _showInputDialog("Nominal Uang Makan", _uangMakan, (val) => setState(() => _uangMakan = val)),
+              icon: Icons.payments_rounded,
+              accentColor: const Color(0xFFEAB308),
+            ),
+
+            const SizedBox(height: 16),
+
+            _buildSettingCard(
+              title: "Potongan Keterlambatan",
+              description: "Potongan uang makan jika telat 1 detik - 1 jam. Lebih dari 1 jam = Hangus.",
+              value: _potonganTelat1Jam.toString(),
+              onTap: () => _showInputDialog("Potongan Telat 1 Jam", _potonganTelat1Jam, (val) => setState(() => _potonganTelat1Jam = val)),
+              icon: Icons.money_off_rounded,
+              accentColor: const Color(0xFFEF4444),
             ),
 
             const SizedBox(height: 48),

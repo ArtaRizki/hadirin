@@ -7,6 +7,7 @@ import 'package:primkopasindo_labojon/core/service/face_service.dart';
 import 'package:primkopasindo_labojon/ui/screens/add_anggota_screen.dart';
 import 'package:primkopasindo_labojon/ui/screens/approval_screen.dart';
 import 'package:primkopasindo_labojon/ui/screens/login_screen.dart';
+import 'package:primkopasindo_labojon/ui/screens/meal_report_screen.dart';
 import 'package:primkopasindo_labojon/ui/screens/set_location_screen.dart';
 import 'package:primkopasindo_labojon/ui/widgets/custom_date_range_picker.dart';
 import 'package:provider/provider.dart';
@@ -43,6 +44,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
   List<dynamic> _listAnggotaStats = [];
   bool _isLoadingStats = false;
 
+  // Sisa Cuti
+  int _leaveQuota = 12;
+  int _leaveUsed = 0;
+  int _leaveRemaining = 12;
+  int _leaveYear = DateTime.now().year;
+
   @override
   void initState() {
     super.initState();
@@ -77,6 +84,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
         auth.idAnggota!,
         auth.clientId ?? "",
       );
+
+      // Fetch leave balance in background if member
+      if (!auth.isAdmin) {
+        AdminService()
+            .getLeaveBalance(auth.clientId ?? "", auth.idAnggota!)
+            .then((res) {
+          if (res != null && mounted) {
+            setState(() {
+              _leaveQuota = res['jatah_cuti'] ?? 12;
+              _leaveUsed = res['cuti_terpakai'] ?? 0;
+              _leaveRemaining = res['sisa_cuti'] ?? 12;
+              _leaveYear = res['tahun'] ?? DateTime.now().year;
+            });
+          }
+        }).catchError((e) => d.log('Leave balance error: $e'));
+      }
+
       setState(() {
         _allHistory = data;
         _isLoading = false;
@@ -883,7 +907,105 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
               ),
 
-              const SizedBox(height: 24),
+              const SizedBox(height: 16),
+
+              // ==========================================
+              // LEAVE BALANCE CARD (MEMBER ONLY)
+              // ==========================================
+              if (!auth.isAdmin)
+                Container(
+                  margin: const EdgeInsets.only(bottom: 24),
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.04),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            "Sisa Cuti Tahun $_leaveYear",
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                            ),
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: context.primaryColor.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(Icons.auto_awesome, size: 12, color: context.primaryColor),
+                                const SizedBox(width: 4),
+                                Text(
+                                  "Auto",
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold,
+                                    color: context.primaryColor,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _buildLeaveStat(
+                              title: "Jatah",
+                              value: _leaveQuota.toString(),
+                              color: const Color(0xFF10B981),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: _buildLeaveStat(
+                              title: "Terpakai",
+                              value: _leaveUsed.toString(),
+                              color: const Color(0xFFF59E0B),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: _buildLeaveStat(
+                              title: "Sisa",
+                              value: _leaveRemaining.toString(),
+                              color: const Color(0xFF3B82F6),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(4),
+                        child: LinearProgressIndicator(
+                          value: _leaveQuota > 0 ? _leaveUsed / _leaveQuota : 0,
+                          backgroundColor: Colors.grey.shade200,
+                          valueColor: AlwaysStoppedAnimation<Color>(context.primaryColor),
+                          minHeight: 6,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+              if (auth.isAdmin) const SizedBox(height: 8),
 
               // ==========================================
               // 2. GRID MENU
@@ -1003,6 +1125,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ),
                       ),
                       accentColor: const Color(0xFFEA580C), // Orange-ish
+                    ),
+                    _buildMenuCard(
+                      title: "Laporan\nUang Makan",
+                      icon: Icons.receipt_long_rounded,
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const MealReportScreen(), // Akan dibuat
+                        ),
+                      ),
+                      accentColor: const Color(0xFFEAB308), // Yellow
                     ),
                     _buildMenuCard(
                       title: "Manajemen\nShift",
@@ -1245,6 +1378,35 @@ class _ProfileScreenState extends State<ProfileScreen> {
       letterSpacing: 0.2,
     ),
   );
+
+  Widget _buildLeaveStat({
+    required String title,
+    required String value,
+    required Color color,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: TextStyle(
+            fontSize: 11,
+            color: Colors.grey.shade500,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w900,
+            color: color,
+          ),
+        ),
+      ],
+    );
+  }
 
   Widget _buildAdminStats() {
     if (_isLoadingStats) {

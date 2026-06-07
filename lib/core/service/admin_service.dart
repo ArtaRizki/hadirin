@@ -99,6 +99,8 @@ class AdminService extends ApiClient {
             ...msg,
             'tl_interval': int.tryParse(msg['tl_interval']?.toString() ?? "30") ?? 30,
             'max_tier': int.tryParse(msg['max_tier']?.toString() ?? "0") ?? 0,
+            'uang_makan': int.tryParse(msg['uang_makan']?.toString() ?? "50000") ?? 50000,
+            'potongan_telat_1jam': int.tryParse(msg['potongan_telat_1jam']?.toString() ?? "10000") ?? 10000,
           };
         }
       }

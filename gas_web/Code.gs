@@ -1,4 +1,4 @@
-﻿/**
+/**
  * HADIRIN UNIFIED BACKEND - v3.5 (Mobile API + Web Dashboard - Full Parity)
  *
  * Tanggung Jawab:
@@ -434,6 +434,9 @@ function doPost(e) {
       case "delete_karyawan": return responseJSON(200, "success", handleDeleteKaryawan(payload));
       case "update_karyawan": return responseJSON(200, "success", handleUpdateKaryawan(payload));
       case "get_today_attendance": return handleGetTodayAttendance(payload);
+      case "get_meal_deduction_report": return handleGetMealDeductionReport(payload);
+      case "get_leave_balance": return handleGetLeaveBalance(payload);
+      case "update_meal_config": return handleUpdateMealConfig(payload);
       default: return responseJSON(400, "error", "Action Unknown: " + action);
     }
   } catch (err) {
@@ -621,14 +624,17 @@ function handleAbsensi(payload) {
     return responseJSON(403, "error", "Anda belum mendaftarkan wajah. Silakan daftarkan wajah terlebih dahulu melalui tombol 'Update Wajah Web' di menu profil.");
   }
 
-  var configData = ss.getSheetByName("Config_Kantor").getRange("A2:I2").getValues()[0];
+  var configData = ss.getSheetByName("Config_Kantor").getRange("A2:K2").getValues()[0];
   var interval = parseInt(configData[7]) || 30;
   var maxTier = parseInt(configData[8]) || 0;
+  var uangMakan = parseInt(configData[9]) || 50000;
+  var potonganTelatKecil = parseInt(configData[10]) || 10000;
 
   var status = "Tepat Waktu";
   var masM = toMinutes(schedule.masuk);
   var pulM = toMinutes(schedule.pulang);
   var isOvernight = masM > pulM;
+  var telatMenit = 0;
 
   if (payload.tipe_absen === "Masuk") {
     var diff = currentMinutes - masM;
@@ -636,6 +642,7 @@ function handleAbsensi(payload) {
     if (isOvernight && currentMinutes < pulM) diff += 1440;
 
     if (diff > 0) {
+      telatMenit = diff;
       var tier = Math.ceil(diff / interval);
       if (maxTier > 0 && tier > maxTier) tier = maxTier;
       status = "TL" + tier;
@@ -649,6 +656,16 @@ function handleAbsensi(payload) {
       var tier = Math.ceil(diff / interval);
       if (maxTier > 0 && tier > maxTier) tier = maxTier;
       status = "PSW" + tier;
+    }
+  }
+
+  // Hitung potongan uang makan (hanya untuk absen Masuk yang telat)
+  var potongan = 0;
+  if (payload.tipe_absen === "Masuk" && telatMenit > 0) {
+    if (telatMenit <= 60) {
+      potongan = potonganTelatKecil;
+    } else {
+      potongan = uangMakan; // Telat > 1 jam = potong full uang makan
     }
   }
 
@@ -670,10 +687,16 @@ function handleAbsensi(payload) {
     payload.lat_long,
     fotoUrl,
     "Valid",
-    status
+    status,
+    potongan
   ]);
 
-  return responseJSON(200, "success", "Absen Berhasil (" + status + ")");
+  var responseMsg = "Absen Berhasil (" + status + ")";
+  if (potongan > 0) {
+    responseMsg += " | Potongan Uang Makan: Rp " + potongan.toLocaleString('id-ID');
+  }
+
+  return responseJSON(200, "success", responseMsg);
 }
 
 function handleGetAllAnggota(payload) {
@@ -901,8 +924,8 @@ function handleVerifySuperAdmin(payload) {
 function handleGetOfficeConfig(payload) {
   var config = getSemuaConfig()[payload.client_id];
   var ss = SpreadsheetApp.openById(config.spreadsheetId);
-  var raw = ss.getSheetByName("Config_Kantor").getRange("A2:I2").getValues()[0];
-  var resp = { nama: raw[0], lat: raw[1], lng: raw[2], radius: raw[3], jam_masuk_mulai: formatTime(raw[4], "04:00"), batas_jam_masuk: formatTime(raw[5], "07:00"), jam_pulang_mulai: formatTime(raw[6], "13:00"), tl_interval: parseInt(raw[7]) || 30, max_tier: parseInt(raw[8]) || 0 };
+  var raw = ss.getSheetByName("Config_Kantor").getRange("A2:K2").getValues()[0];
+  var resp = { nama: raw[0], lat: raw[1], lng: raw[2], radius: raw[3], jam_masuk_mulai: formatTime(raw[4], "04:00"), batas_jam_masuk: formatTime(raw[5], "07:00"), jam_pulang_mulai: formatTime(raw[6], "13:00"), tl_interval: parseInt(raw[7]) || 30, max_tier: parseInt(raw[8]) || 0, uang_makan: parseInt(raw[9]) || 50000, potongan_telat_1jam: parseInt(raw[10]) || 10000 };
   if (payload.id_karyawan) {
     var sch = getEffectiveSchedule(ss, config, payload.id_karyawan);
     if (sch.shifting || sch.is_khusus) {
@@ -959,7 +982,8 @@ function handleGetMonthlyReport(payload) {
         id_karyawan: String(r[1]),
         nama: namaMap[idKey] || "Tanpa Nama",
         tipe: r[2],
-        status: r[6]
+        status: r[6],
+        potongan: parseInt(r[7]) || 0
       });
     }
   });
@@ -1054,4 +1078,205 @@ function hitungKemiripanCosine(v1, v2) {
   }
   if (norm1 === 0 || norm2 === 0) return 0;
   return dotProduct / (Math.sqrt(norm1) * Math.sqrt(norm2));
+}
+
+// =============================================================================
+// FITUR BARU: POTONGAN UANG MAKAN & SISA CUTI
+// =============================================================================
+
+/**
+ * LAPORAN POTONGAN UANG MAKAN
+ * Menghitung rekap potongan uang makan per karyawan untuk periode tertentu.
+ */
+function handleGetMealDeductionReport(payload) {
+  var config = getSemuaConfig()[payload.client_id];
+  var ss = SpreadsheetApp.openById(config.spreadsheetId);
+  var logs = ss.getSheetByName("Log_Absensi").getDataRange().getValues();
+
+  var configData = ss.getSheetByName("Config_Kantor").getRange("A2:K2").getValues()[0];
+  var uangMakan = parseInt(configData[9]) || 50000;
+
+  var employees = ss.getSheetByName("Master_Karyawan").getDataRange().getValues();
+  var empMap = {};
+  for (var j = 1; j < employees.length; j++) {
+    if (employees[j][0] === "" || employees[j][0] === null) continue;
+    var empId = String(employees[j][0]).trim();
+    empMap[empId.toLowerCase()] = {
+      id: empId,
+      nama: String(employees[j][1]),
+      bagian: String(employees[j][2] || "-"),
+      hari_hadir: 0,
+      hari_telat: 0,
+      total_potongan: 0,
+      detail: []
+    };
+  }
+
+  // Filter berdasarkan scope: weekly atau monthly (bulan_tahun format MM-YYYY)
+  var targetMonth = payload.bulan_tahun; // "06-2026"
+  var weekStart = payload.week_start; // optional: "2026-06-01"
+  var weekEnd = payload.week_end; // optional: "2026-06-07"
+
+  for (var i = 1; i < logs.length; i++) {
+    if (!logs[i][0]) continue;
+    var d = new Date(logs[i][0]);
+    var logDateStr = Utilities.formatDate(d, "GMT+7", "yyyy-MM-dd");
+    var logMonth = (d.getMonth() + 1).toString().padStart(2, "0") + "-" + d.getFullYear();
+    var logTipe = String(logs[i][2]);
+    var logStatus = String(logs[i][6] || "");
+    var logPotongan = parseInt(logs[i][7]) || 0;
+    var logEmpId = String(logs[i][1]).trim().toLowerCase();
+
+    // Filter periode
+    var inPeriod = false;
+    if (weekStart && weekEnd) {
+      inPeriod = logDateStr >= weekStart && logDateStr <= weekEnd;
+    } else if (targetMonth) {
+      inPeriod = logMonth === targetMonth;
+    }
+    if (!inPeriod) continue;
+
+    if (!(logEmpId in empMap)) continue;
+
+    if (logTipe === "Masuk") {
+      empMap[logEmpId].hari_hadir++;
+      if (logStatus.startsWith("TL")) {
+        empMap[logEmpId].hari_telat++;
+      }
+      if (logPotongan > 0) {
+        empMap[logEmpId].total_potongan += logPotongan;
+        empMap[logEmpId].detail.push({
+          tanggal: logDateStr,
+          status: logStatus,
+          potongan: logPotongan
+        });
+      }
+    }
+  }
+
+  var result = [];
+  for (var key in empMap) {
+    var emp = empMap[key];
+    var uangMakanBersih = (emp.hari_hadir * uangMakan) - emp.total_potongan;
+    result.push({
+      id: emp.id,
+      nama: emp.nama,
+      bagian: emp.bagian,
+      hari_hadir: emp.hari_hadir,
+      hari_telat: emp.hari_telat,
+      total_potongan: emp.total_potongan,
+      uang_makan_kotor: emp.hari_hadir * uangMakan,
+      uang_makan_bersih: uangMakanBersih,
+      uang_makan_per_hari: uangMakan,
+      detail: emp.detail
+    });
+  }
+
+  return responseJSON(200, "success", { data: result, config: { uang_makan: uangMakan, potongan_telat_1jam: parseInt(configData[10]) || 10000 } });
+}
+
+/**
+ * SISA CUTI KARYAWAN
+ * Menghitung sisa cuti berdasarkan log Cuti yang Disetujui di tahun berjalan.
+ */
+function handleGetLeaveBalance(payload) {
+  var config = getSemuaConfig()[payload.client_id];
+  var ss = SpreadsheetApp.openById(config.spreadsheetId);
+  var logs = ss.getSheetByName("Log_Absensi").getDataRange().getValues();
+  var employees = ss.getSheetByName("Master_Karyawan").getDataRange().getValues();
+
+  var targetId = String(payload.id_karyawan || "").trim().toLowerCase();
+  var targetYear = parseInt(payload.tahun) || new Date().getFullYear();
+  var jatahCuti = 12; // Default jatah cuti per tahun
+
+  // Cek jatah cuti dari Master_Karyawan Kolom I jika ada
+  for (var k = 1; k < employees.length; k++) {
+    if (String(employees[k][0]).trim().toLowerCase() === targetId) {
+      if (employees[k][8] !== "" && employees[k][8] !== null && employees[k][8] !== undefined) {
+        jatahCuti = parseInt(employees[k][8]) || 12;
+      }
+      break;
+    }
+  }
+
+  var cutiTerpakai = 0;
+  var detailCuti = [];
+
+  for (var i = 1; i < logs.length; i++) {
+    if (!logs[i][0]) continue;
+    var d = new Date(logs[i][0]);
+    if (d.getFullYear() !== targetYear) continue;
+
+    var logId = String(logs[i][1]).trim().toLowerCase();
+    var logTipe = String(logs[i][2]);
+    var logStatus = String(logs[i][6] || "");
+
+    if (logId === targetId && logTipe === "Cuti" && logStatus === "Disetujui") {
+      cutiTerpakai++;
+      detailCuti.push({
+        waktu: Utilities.formatDate(d, "GMT+7", "yyyy-MM-dd"),
+        rentang: logs[i][3] || "-",
+        alasan: logs[i][5] || "-"
+      });
+    }
+  }
+
+  return responseJSON(200, "success", {
+    jatah_cuti: jatahCuti,
+    cuti_terpakai: cutiTerpakai,
+    sisa_cuti: jatahCuti - cutiTerpakai,
+    tahun: targetYear,
+    detail: detailCuti
+  });
+}
+
+/**
+ * UPDATE KONFIGURASI UANG MAKAN (Admin)
+ */
+function handleUpdateMealConfig(payload) {
+  var config = getSemuaConfig()[payload.client_id];
+  var ss = SpreadsheetApp.openById(config.spreadsheetId);
+  var sheet = ss.getSheetByName("Config_Kantor");
+  sheet.getRange("J2").setValue(parseInt(payload.uang_makan) || 50000);
+  sheet.getRange("K2").setValue(parseInt(payload.potongan_telat_1jam) || 10000);
+  return responseJSON(200, "success", "Konfigurasi uang makan berhasil disimpan.");
+}
+
+/**
+ * AMBIL SISA CUTI (Web Dashboard)
+ */
+function getLeaveBalanceWeb(clientId, id) {
+  try {
+    var payload = { client_id: clientId, id_karyawan: id };
+    var result = handleGetLeaveBalance(payload);
+    return JSON.parse(result.getContent());
+  } catch(e) {
+    return { code: 500, status: "error", message: e.toString() };
+  }
+}
+
+/**
+ * AMBIL LAPORAN POTONGAN UANG MAKAN (Web Dashboard)
+ */
+function getMealReportWeb(clientId, bulanTahun, weekStart, weekEnd) {
+  try {
+    var payload = { client_id: clientId, bulan_tahun: bulanTahun, week_start: weekStart || "", week_end: weekEnd || "" };
+    var result = handleGetMealDeductionReport(payload);
+    return JSON.parse(result.getContent());
+  } catch(e) {
+    return { code: 500, status: "error", message: e.toString() };
+  }
+}
+
+/**
+ * UPDATE CONFIG UANG MAKAN (Web Dashboard)
+ */
+function updateMealConfigWeb(clientId, uangMakan, potonganTelat) {
+  try {
+    var payload = { client_id: clientId, uang_makan: uangMakan, potongan_telat_1jam: potonganTelat };
+    var result = handleUpdateMealConfig(payload);
+    return JSON.parse(result.getContent());
+  } catch(e) {
+    return { code: 500, status: "error", message: e.toString() };
+  }
 }
