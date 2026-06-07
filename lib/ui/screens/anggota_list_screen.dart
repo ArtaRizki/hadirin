@@ -660,8 +660,8 @@ class _AnggotaListScreenState extends State<AnggotaListScreen> {
                                                 children: [
                                                   _buildStatusBadge(
                                                     isRegistered:
-                                                        emp['wajah_terdaftar'] ==
-                                                        true,
+                                                        emp['wajah_terdaftar'] == true || 
+                                                        emp['wajah_web_terdaftar'] == true,
                                                     activeLabel:
                                                         "Wajah Terdaftar",
                                                     inactiveLabel:
