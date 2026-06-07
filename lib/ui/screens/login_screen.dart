@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:primkopasindo_labojon/core/providers/auth_provider.dart';
-import 'package:primkopasindo_labojon/core/service/admin_service.dart';
+import 'package:hadirin/core/providers/auth_provider.dart';
+import 'package:hadirin/core/service/admin_service.dart';
 import 'package:provider/provider.dart';
-import 'package:primkopasindo_labojon/core/theme/fluid_theme.dart';
-import 'package:primkopasindo_labojon/ui/screens/admin_register_screen.dart';
-import 'package:primkopasindo_labojon/ui/screens/attendance_screen.dart';
+import 'package:hadirin/core/theme/fluid_theme.dart';
+import 'package:hadirin/ui/screens/admin_register_screen.dart';
+import 'package:hadirin/ui/screens/attendance_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -33,7 +33,7 @@ class _LoginScreenState extends State<LoginScreen> {
       if (superResult['success']) {
         await context.read<AuthProvider>().login(
           "SUPER_ADMIN",
-          "Owner Primkopasindo Labojon",
+          "Owner Hadir.in",
           LoginRole.superAdmin,
           "MASTER",
         );
@@ -224,7 +224,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                         ),
                         const Text(
-                          "Primkopasindo Labojon",
+                          "Hadir.in",
                           style: TextStyle(
                             fontSize: 32,
                             fontWeight: FontWeight.w900,

@@ -40,12 +40,12 @@
             ]
         },
         {
-            "name": "LABOJON",
+            "name": "Hadir.in",
             "request": "launch",
             "type": "dart",
             "args": [
                 "--dart-define=GAS_ENDPOINT=https://script.google.com/macros/s/AKfycbzKcTu27OdGesb3j1jrcxOApbCHdUSao_TCw_Fpah10-mfTZYfR8e0aUXQA9HEDuq2sXA/exec",
-                "--dart-define=API_TOKEN=LABOJON"
+                "--dart-define=API_TOKEN=Hadir.in"
             ]
         },
         {

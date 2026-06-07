@@ -1,4 +1,4 @@
-name: primkopasindo_labojon
+name: hadirin
 description: "A new Flutter project."
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
@@ -117,7 +117,7 @@ flutter_launcher_icons:
     image_path: "assets/logo.png"
 
 flutter_native_splash:
-  color: "#F9F9F8" # Warna background khas Primkopasindo Labojon
+  color: "#F9F9F8" # Warna background khas Hadir.in
   image: "assets/logo.png"
   android: true
   ios: true

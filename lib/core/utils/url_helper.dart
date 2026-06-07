@@ -7,7 +7,7 @@ class UrlHelper {
   static Future<void> launchWhatsApp({
     required String phone,
     String message =
-        "Halo, saya menghubungi Anda dari aplikasi Primkopasindo Labojon",
+        "Halo, saya menghubungi Anda dari aplikasi Hadir.in",
   }) async {
     if (phone.isEmpty) return;
 

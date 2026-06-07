@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:primkopasindo_labojon/core/providers/auth_provider.dart';
-import 'package:primkopasindo_labojon/core/service/admin_service.dart';
-import 'package:primkopasindo_labojon/core/theme/fluid_theme.dart';
-import 'package:primkopasindo_labojon/ui/widgets/skeleton_loader.dart';
+import 'package:hadirin/core/providers/auth_provider.dart';
+import 'package:hadirin/core/service/admin_service.dart';
+import 'package:hadirin/core/theme/fluid_theme.dart';
+import 'package:hadirin/ui/widgets/skeleton_loader.dart';
 import 'package:provider/provider.dart';
-import 'package:primkopasindo_labojon/ui/screens/add_anggota_screen.dart';
-import 'package:primkopasindo_labojon/core/utils/url_helper.dart';
+import 'package:hadirin/ui/screens/add_anggota_screen.dart';
+import 'package:hadirin/core/utils/url_helper.dart';
 
 class AnggotaListScreen extends StatefulWidget {
   const AnggotaListScreen({super.key});
@@ -752,7 +752,7 @@ class _AnggotaListScreenState extends State<AnggotaListScreen> {
                                                   UrlHelper.launchWhatsApp(
                                                 phone: emp['no_hp'].toString(),
                                                 message:
-                                                    "Halo ${emp['nama']}, saya dari Admin Primkopasindo Labojon ingin menghubungi Anda.",
+                                                    "Halo ${emp['nama']}, saya dari Admin Hadir.in ingin menghubungi Anda.",
                                               ),
                                               icon: const Icon(
                                                 Icons.phone,

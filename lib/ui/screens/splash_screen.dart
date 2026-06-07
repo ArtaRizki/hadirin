@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:primkopasindo_labojon/core/providers/auth_provider.dart';
-import 'package:primkopasindo_labojon/core/theme/fluid_theme.dart';
+import 'package:hadirin/core/providers/auth_provider.dart';
+import 'package:hadirin/core/theme/fluid_theme.dart';
 import 'package:provider/provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 
@@ -153,7 +153,7 @@ class _SplashScreenState extends State<SplashScreen>
 
                   // NAMA BRAND
                   const Text(
-                    "Primkopasindo Labojon",
+                    "Hadir.in",
                     style: TextStyle(
                       fontSize: 36,
                       fontWeight: FontWeight.w900,
