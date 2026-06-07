@@ -10,13 +10,18 @@ void main() async {
   // 1. Test update_meal_config
   print('\n[1] Testing update_meal_config...');
   try {
-    var response = await http.post(Uri.parse(endpoint), body: {
-      'action': 'update_meal_config',
-      'api_token': apiToken,
-      'late_1h_deduction': '10000',
-      'late_more_deduction': '50000',
-      'meal_allowance': '50000',
-    });
+    var response = await http.post(
+      Uri.parse(endpoint), 
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'action': 'update_meal_config',
+        'api_token': apiToken,
+        'client_id': 'HADIRINJUNE',
+        'late_1h_deduction': '10000',
+        'late_more_deduction': '50000',
+        'meal_allowance': '50000',
+      })
+    );
     
     // Handle redirect
     if (response.statusCode == 302 || response.statusCode == 303) {
@@ -34,12 +39,17 @@ void main() async {
   // 2. Test get_meal_deduction_report
   print('\n[2] Testing get_meal_deduction_report...');
   try {
-    var response = await http.post(Uri.parse(endpoint), body: {
-      'action': 'get_meal_deduction_report',
-      'api_token': apiToken,
-      'start_date': '2023-01-01',
-      'end_date': '2026-12-31',
-    });
+    var response = await http.post(
+      Uri.parse(endpoint), 
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'action': 'get_meal_deduction_report',
+        'api_token': apiToken,
+        'client_id': 'HADIRINJUNE',
+        'start_date': '2023-01-01',
+        'end_date': '2026-12-31',
+      })
+    );
     
     // Handle redirect
     if (response.statusCode == 302 || response.statusCode == 303) {
@@ -57,11 +67,16 @@ void main() async {
   // 3. Test get_leave_balance
   print('\n[3] Testing get_leave_balance...');
   try {
-    var response = await http.post(Uri.parse(endpoint), body: {
-      'action': 'get_leave_balance',
-      'api_token': apiToken,
-      'email': 'test@example.com',
-    });
+    var response = await http.post(
+      Uri.parse(endpoint), 
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'action': 'get_leave_balance',
+        'api_token': apiToken,
+        'client_id': 'HADIRINJUNE',
+        'id_karyawan': 'admin',
+      })
+    );
     
     // Handle redirect
     if (response.statusCode == 302 || response.statusCode == 303) {
