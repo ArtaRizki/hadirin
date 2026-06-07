@@ -576,4 +576,76 @@ class AdminService extends ApiClient {
       throw Exception('Gagal mengambil data absensi hari ini: $e');
     }
   }
+
+  // =================================================================
+  // GET MEAL DEDUCTION REPORT
+  // =================================================================
+  Future<Map<String, dynamic>?> getMealDeductionReport(String clientId, String bulanTahun) async {
+    try {
+      final payload = {
+        'api_token': AppConfig.apiToken,
+        'action': 'get_meal_deduction_report',
+        'client_id': clientId,
+        'bulan_tahun': bulanTahun,
+      };
+
+      final response = await sendRequest('get_meal_deduction_report', payload, timeout: const Duration(seconds: 60));
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['code'] == 200) return data['message'];
+      }
+      return null;
+    } catch (e) {
+      d.log('==== ERROR GET MEAL REPORT ==== $e');
+      return null;
+    }
+  }
+
+  // =================================================================
+  // GET LEAVE BALANCE
+  // =================================================================
+  Future<Map<String, dynamic>?> getLeaveBalance(String clientId, String idKaryawan) async {
+    try {
+      final payload = {
+        'api_token': AppConfig.apiToken,
+        'action': 'get_leave_balance',
+        'client_id': clientId,
+        'id_karyawan': idKaryawan,
+      };
+
+      final response = await sendRequest('get_leave_balance', payload);
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['code'] == 200) return data['message'];
+      }
+      return null;
+    } catch (e) {
+      d.log('==== ERROR GET LEAVE BALANCE ==== $e');
+      return null;
+    }
+  }
+
+  // =================================================================
+  // UPDATE MEAL CONFIG
+  // =================================================================
+  Future<bool> updateMealConfig(String clientId, int uangMakan, int potongan) async {
+    try {
+      final payload = {
+        'api_token': AppConfig.apiToken,
+        'action': 'update_meal_config',
+        'client_id': clientId,
+        'uang_makan': uangMakan,
+        'potongan_telat_1jam': potongan,
+      };
+
+      final response = await sendRequest('update_meal_config', payload);
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body)['code'] == 200;
+      }
+      return false;
+    } catch (e) {
+      d.log('==== ERROR UPDATE MEAL CONFIG ==== $e');
+      return false;
+    }
+  }
 }
