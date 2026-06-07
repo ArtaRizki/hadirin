@@ -47,6 +47,15 @@
                 "--dart-define=GAS_ENDPOINT=https://script.google.com/macros/s/AKfycbzKcTu27OdGesb3j1jrcxOApbCHdUSao_TCw_Fpah10-mfTZYfR8e0aUXQA9HEDuq2sXA/exec",
                 "--dart-define=API_TOKEN=LABOJON"
             ]
+        },
+        {
+            "name": "HADIRINJUNE",
+            "request": "launch",
+            "type": "dart",
+            "args": [
+                "--dart-define=GAS_ENDPOINT=https://script.google.com/macros/s/AKfycbwSdR27-09J6nRF_cWvClFJDS6ZsLId81r_UjfGttSoT_UgLdKlRIWcidoayT_0J3hlWw/exec",
+                "--dart-define=API_TOKEN=HADIRIN"
+            ]
         }
     ]
 }

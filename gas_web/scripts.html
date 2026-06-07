@@ -996,7 +996,7 @@
             hideProcessing();
             Swal.fire('Gagal', err.toString(), 'error');
           }).submitAbsenWeb({
-            api_token: 'LABOJON',
+            api_token: '<?= MASTER_API_TOKEN ?>',
             client_id: currentUser.clientId,
             action: 'absen',
             id_karyawan: currentUser.id,

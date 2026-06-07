@@ -10,10 +10,10 @@
 // =============================================================================
 // KONFIGURASI MASTER
 // =============================================================================
-const MASTER_API_TOKEN = "LABOJON";
+const MASTER_API_TOKEN = "HADIRIN";
 const MASTER_REGISTRY_ID = "1hTh660vp0AbPn8D37Yg7XE-5HBRDXYA2xSJErORfZ3w";
-const ID_TEMPLATE_SS = "1M-G3CZYfkQ95boRs2OGTovkN27iy8SCraN1a1XlZZ3c";
-const ID_MASTER_FOLDER = "1kDBpUX844CpAY3WScFd1VYlY8oCt6OjM";
+const ID_TEMPLATE_SS = "19WvCNQSKEN2g7Ks9dhUfVp2aKH1E6ENt2ItVzHsndG8";
+const ID_MASTER_FOLDER = "1Vyi1eW1dykNnP5CiXG1Ry4ebQpCnlmSv";
 const SUPER_ADMIN_PASSWORD = "HADIRIN_MASTER_2026_AHHH";
 
 // =============================================================================
@@ -24,7 +24,7 @@ function doGet(e) {
   var template = HtmlService.createTemplateFromFile("Index");
   return template
     .evaluate()
-    .setTitle("LABOJON Dashboard v3.5")
+    .setTitle("HADIRIN Dashboard v3.5")
     .addMetaTag("viewport", "width=device-width, initial-scale=1")
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
 }
