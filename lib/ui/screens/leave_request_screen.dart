@@ -1,12 +1,12 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:hadirin/core/providers/auth_provider.dart';
-import 'package:hadirin/core/service/leave_service.dart';
-import 'package:hadirin/core/theme/fluid_theme.dart';
+import 'package:primkopasindo_labojon/core/providers/auth_provider.dart';
+import 'package:primkopasindo_labojon/core/service/leave_service.dart';
+import 'package:primkopasindo_labojon/core/theme/fluid_theme.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
-import 'package:hadirin/ui/widgets/custom_date_range_picker.dart';
+import 'package:primkopasindo_labojon/ui/widgets/custom_date_range_picker.dart';
 
 class LeaveRequestScreen extends StatefulWidget {
   const LeaveRequestScreen({super.key});
@@ -135,7 +135,7 @@ class _LeaveRequestScreenState extends State<LeaveRequestScreen> {
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.06),
+                    color: Colors.black.withValues(alpha: 0.06),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
                   ),
@@ -170,7 +170,7 @@ class _LeaveRequestScreenState extends State<LeaveRequestScreen> {
                 height: 200,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: context.primaryColor.withOpacity(0.06),
+                  color: context.primaryColor.withValues(alpha: 0.06),
                 ),
               ),
             ),
@@ -183,7 +183,7 @@ class _LeaveRequestScreenState extends State<LeaveRequestScreen> {
                 height: 250,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: const Color(0xFF7C3AED).withOpacity(0.05),
+                  color: const Color(0xFF7C3AED).withValues(alpha: 0.05),
                 ),
               ),
             ),
@@ -228,7 +228,7 @@ class _LeaveRequestScreenState extends State<LeaveRequestScreen> {
                       borderRadius: BorderRadius.circular(16),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.03),
+                          color: Colors.black.withValues(alpha: 0.03),
                           blurRadius: 10,
                           offset: const Offset(0, 4),
                         ),
@@ -286,7 +286,7 @@ class _LeaveRequestScreenState extends State<LeaveRequestScreen> {
                       borderRadius: BorderRadius.circular(16),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.03),
+                          color: Colors.black.withValues(alpha: 0.03),
                           blurRadius: 10,
                           offset: const Offset(0, 4),
                         ),
@@ -344,7 +344,7 @@ class _LeaveRequestScreenState extends State<LeaveRequestScreen> {
                       borderRadius: BorderRadius.circular(16),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.03),
+                          color: Colors.black.withValues(alpha: 0.03),
                           blurRadius: 10,
                           offset: const Offset(0, 4),
                         ),
@@ -405,10 +405,10 @@ class _LeaveRequestScreenState extends State<LeaveRequestScreen> {
                         height: 140,
                         width: double.infinity,
                         decoration: BoxDecoration(
-                          color: context.primaryColor.withOpacity(0.04),
+                          color: context.primaryColor.withValues(alpha: 0.04),
                           borderRadius: BorderRadius.circular(16),
                           border: Border.all(
-                            color: context.primaryColor.withOpacity(0.3),
+                            color: context.primaryColor.withValues(alpha: 0.3),
                             width: 1.5,
                           ),
                         ),
@@ -419,8 +419,8 @@ class _LeaveRequestScreenState extends State<LeaveRequestScreen> {
                                   Container(
                                     padding: const EdgeInsets.all(12),
                                     decoration: BoxDecoration(
-                                      color: context.primaryColor.withOpacity(
-                                        0.1,
+                                      color: context.primaryColor.withValues(
+                                        alpha: 0.1,
                                       ),
                                       shape: BoxShape.circle,
                                     ),
@@ -465,7 +465,7 @@ class _LeaveRequestScreenState extends State<LeaveRequestScreen> {
                         backgroundColor: context.primaryColor,
                         foregroundColor: Colors.white,
                         elevation: 4,
-                        shadowColor: context.primaryColor.withOpacity(0.4),
+                        shadowColor: context.primaryColor.withValues(alpha: 0.4),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(16),
                         ),

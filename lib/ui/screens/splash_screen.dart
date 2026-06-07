@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:hadirin/core/providers/auth_provider.dart';
-import 'package:hadirin/core/theme/fluid_theme.dart';
+import 'package:primkopasindo_labojon/core/providers/auth_provider.dart';
+import 'package:primkopasindo_labojon/core/theme/fluid_theme.dart';
 import 'package:provider/provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 
@@ -92,7 +92,7 @@ class _SplashScreenState extends State<SplashScreen>
                 height: 300,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: context.primaryColor.withOpacity(0.06),
+                  color: context.primaryColor.withValues(alpha: 0.06),
                 ),
               ),
             ),
@@ -105,7 +105,7 @@ class _SplashScreenState extends State<SplashScreen>
                 height: 250,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: const Color(0xFF7C3AED).withOpacity(0.05),
+                  color: const Color(0xFF7C3AED).withValues(alpha: 0.05),
                 ),
               ),
             ),
@@ -127,7 +127,7 @@ class _SplashScreenState extends State<SplashScreen>
                         shape: BoxShape.circle,
                         boxShadow: [
                           BoxShadow(
-                            color: context.primaryColor.withOpacity(0.15),
+                            color: context.primaryColor.withValues(alpha: 0.15),
                             blurRadius: 30,
                             spreadRadius: 10,
                             offset: const Offset(0, 10),
@@ -137,7 +137,7 @@ class _SplashScreenState extends State<SplashScreen>
                       child: Container(
                         padding: const EdgeInsets.all(20),
                         decoration: BoxDecoration(
-                          color: context.primaryColor.withOpacity(0.1),
+                          color: context.primaryColor.withValues(alpha: 0.1),
                           shape: BoxShape.circle,
                         ),
                         child: Icon(
@@ -153,7 +153,7 @@ class _SplashScreenState extends State<SplashScreen>
 
                   // NAMA BRAND
                   const Text(
-                    "Hadir.in",
+                    "Primkopasindo Labojon",
                     style: TextStyle(
                       fontSize: 36,
                       fontWeight: FontWeight.w900,
@@ -163,7 +163,7 @@ class _SplashScreenState extends State<SplashScreen>
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    "Sistem Absensi & HRIS Terintegrasi",
+                    "Absensi Digital Anggota & Karyawan",
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w500,

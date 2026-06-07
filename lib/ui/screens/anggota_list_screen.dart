@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:hadirin/core/providers/auth_provider.dart';
-import 'package:hadirin/core/service/admin_service.dart';
-import 'package:hadirin/core/theme/fluid_theme.dart';
-import 'package:hadirin/ui/widgets/skeleton_loader.dart';
+import 'package:primkopasindo_labojon/core/providers/auth_provider.dart';
+import 'package:primkopasindo_labojon/core/service/admin_service.dart';
+import 'package:primkopasindo_labojon/core/theme/fluid_theme.dart';
+import 'package:primkopasindo_labojon/ui/widgets/skeleton_loader.dart';
 import 'package:provider/provider.dart';
-import 'package:hadirin/core/utils/url_helper.dart';
+import 'package:primkopasindo_labojon/ui/screens/add_anggota_screen.dart';
+import 'package:primkopasindo_labojon/core/utils/url_helper.dart';
 
 class AnggotaListScreen extends StatefulWidget {
   const AnggotaListScreen({super.key});
@@ -19,7 +20,8 @@ class _AnggotaListScreenState extends State<AnggotaListScreen> {
   List<dynamic> _anggota = [];
   List<dynamic> _filteredAnggota = []; // NEW
   String _errorMsg = "";
-  final TextEditingController _searchController = TextEditingController(); // NEW
+  final TextEditingController _searchController =
+      TextEditingController(); // NEW
 
   @override
   void initState() {
@@ -59,7 +61,7 @@ class _AnggotaListScreenState extends State<AnggotaListScreen> {
       final data = await _adminService.getAllAnggota(clientId);
       setState(() {
         _anggota = data;
-        _filteredAnggota = data; // Initialize filtered list
+        _filteredAnggota = data;
         _isLoading = false;
       });
     } catch (e) {
@@ -72,6 +74,278 @@ class _AnggotaListScreenState extends State<AnggotaListScreen> {
     }
   }
 
+  Future<void> _showMemberActionDialog(Map<String, dynamic> emp) async {
+    final auth = context.read<AuthProvider>();
+    final clientId = auth.clientId ?? "";
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+        ),
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey.shade300,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 20),
+            Text(
+              "Kelola ${emp['nama']}",
+              style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 18),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              "ID: ${emp['id']} • ${emp['bagian']}",
+              style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
+            ),
+            const SizedBox(height: 24),
+            ListTile(
+              leading: Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: Colors.indigo.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(Icons.edit_note_rounded, color: Colors.indigo),
+              ),
+              title: const Text(
+                "Edit Profil",
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              subtitle: const Text("Ubah Nama, Bagian, atau No. HP"),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => AddAnggotaScreen(initialData: emp),
+                  ),
+                ).then((_) => _fetchEmployees());
+              },
+            ),
+            ListTile(
+              leading: Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: Colors.blue.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(Icons.history_rounded, color: Colors.blue),
+              ),
+              title: const Text(
+                "Atur Shift Default",
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              subtitle: Text(
+                "Saat ini: ${emp['id_shift_default'] ?? 'Standar Kantor'}",
+              ),
+              onTap: () {
+                Navigator.pop(context);
+                _showSetShiftDialog(emp);
+              },
+            ),
+            ListTile(
+              leading: Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: Colors.orange.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(
+                  Icons.phonelink_erase_rounded,
+                  color: Colors.orange,
+                ),
+              ),
+              title: const Text(
+                "Reset Device ID",
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              subtitle: const Text("Gunakan jika anggota ganti HP"),
+              onTap: () async {
+                Navigator.pop(context);
+                final confirm = await showDialog<bool>(
+                  context: context,
+                  builder: (c) => AlertDialog(
+                    title: const Text("Konfirmasi Reset"),
+                    content: const Text("Yakin ingin mereset HP anggota ini?"),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(c, false),
+                        child: const Text("Batal"),
+                      ),
+                      TextButton(
+                        onPressed: () => Navigator.pop(c, true),
+                        child: const Text("Reset"),
+                      ),
+                    ],
+                  ),
+                );
+                if (confirm == true) {
+                  setState(() => _isLoading = true);
+                  final res = await _adminService.resetDeviceID(
+                    clientId,
+                    emp['id'].toString(),
+                  );
+                  setState(() => _isLoading = false);
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text(res['message'] ?? "Berhasil")),
+                    );
+                    _fetchEmployees();
+                  }
+                }
+              },
+            ),
+            const Divider(height: 32),
+            ListTile(
+              leading: Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: Colors.red.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(Icons.delete_forever_rounded, color: Colors.red),
+              ),
+              title: const Text(
+                "Hapus Anggota",
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.red,
+                ),
+              ),
+              subtitle: const Text("Data absen & akun akan dihapus permanen"),
+              onTap: () async {
+                Navigator.pop(context);
+                final confirm = await showDialog<bool>(
+                  context: context,
+                  builder: (c) => AlertDialog(
+                    title: const Text("Hapus Anggota?"),
+                    content: Text(
+                      "Apakah Anda yakin ingin menghapus ${emp['nama']}? Tindakan ini tidak dapat dibatalkan.",
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(c, false),
+                        child: const Text("Batal"),
+                      ),
+                      TextButton(
+                        onPressed: () => Navigator.pop(c, true),
+                        style: TextButton.styleFrom(foregroundColor: Colors.red),
+                        child: const Text("Hapus Permanen"),
+                      ),
+                    ],
+                  ),
+                );
+
+                if (confirm == true) {
+                  setState(() => _isLoading = true);
+                  final res = await _adminService.hapusAnggota(
+                    clientId: clientId,
+                    idAnggotaTarget: emp['id'].toString(),
+                  );
+                  setState(() => _isLoading = false);
+
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(res['message'] ?? "Anggota berhasil dihapus"),
+                        backgroundColor: res['success'] ? Colors.green : Colors.red,
+                      ),
+                    );
+                    _fetchEmployees();
+                  }
+                }
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _showSetShiftDialog(Map<String, dynamic> emp) async {
+    setState(() => _isLoading = true);
+    final auth = context.read<AuthProvider>();
+    final clientId = auth.clientId ?? "";
+    final res = await _adminService.getShiftList(clientId);
+    setState(() => _isLoading = false);
+
+    if (res['success'] != true) return;
+    final List shifts = res['data']['shifts'] ?? [];
+
+    if (!mounted) return;
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("Pilih Shift Default"),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: ListView.builder(
+            shrinkWrap: true,
+            itemCount: shifts.length + 1,
+            itemBuilder: (c, i) {
+              if (i == shifts.length) {
+                return ListTile(
+                  title: const Text("KEMBALIKAN KE STANDAR"),
+                  subtitle: const Text("Mengikuti jam kantor utama"),
+                  onTap: () async {
+                    Navigator.pop(c);
+                    _doUpdateShift(emp['id'].toString(), "");
+                  },
+                );
+              }
+              final s = shifts[i];
+              return ListTile(
+                title: Text(s['nama']),
+                subtitle: Text("${s['jam_masuk']} - ${s['pulang']}"),
+                onTap: () {
+                  Navigator.pop(c);
+                  _doUpdateShift(emp['id'].toString(), s['id'].toString());
+                },
+              );
+            },
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _doUpdateShift(String targetId, String shiftId) async {
+    setState(() => _isLoading = true);
+    final auth = context.read<AuthProvider>();
+    final clientId = auth.clientId ?? "";
+    final res = await _adminService.updateDefaultShift(
+      clientId,
+      targetId,
+      shiftId,
+    );
+    setState(() => _isLoading = false);
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            res['success']
+                ? "Shift Default Diperbarui"
+                : (res['message'] ?? "Gagal"),
+          ),
+        ),
+      );
+      _fetchEmployees();
+    }
+  }
+
   Widget _buildStatusBadge({
     required bool isRegistered,
     required String activeLabel,
@@ -81,7 +355,7 @@ class _AnggotaListScreenState extends State<AnggotaListScreen> {
   }) {
     final color = isRegistered ? const Color(0xFF16A34A) : Colors.red.shade600;
     final bgColor = isRegistered
-        ? const Color(0xFF16A34A).withOpacity(0.08)
+        ? const Color(0xFF16A34A).withValues(alpha: 0.08)
         : Colors.red.shade50;
 
     return Container(
@@ -89,7 +363,7 @@ class _AnggotaListScreenState extends State<AnggotaListScreen> {
       decoration: BoxDecoration(
         color: bgColor,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withOpacity(0.3)),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -133,7 +407,7 @@ class _AnggotaListScreenState extends State<AnggotaListScreen> {
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.06),
+                    color: Colors.black.withValues(alpha: 0.06),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
                   ),
@@ -168,7 +442,7 @@ class _AnggotaListScreenState extends State<AnggotaListScreen> {
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
+                      color: Colors.black.withValues(alpha: 0.05),
                       blurRadius: 10,
                       offset: const Offset(0, 4),
                     ),
@@ -179,8 +453,14 @@ class _AnggotaListScreenState extends State<AnggotaListScreen> {
                   onChanged: (_) => _onSearchChanged(),
                   decoration: InputDecoration(
                     hintText: "Cari nama atau ID anggota...",
-                    hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 14),
-                    prefixIcon: Icon(Icons.search_rounded, color: context.primaryColor),
+                    hintStyle: TextStyle(
+                      color: Colors.grey.shade400,
+                      fontSize: 14,
+                    ),
+                    prefixIcon: Icon(
+                      Icons.search_rounded,
+                      color: context.primaryColor,
+                    ),
                     suffixIcon: _searchController.text.isNotEmpty
                         ? IconButton(
                             icon: const Icon(Icons.clear_rounded, size: 20),
@@ -209,7 +489,7 @@ class _AnggotaListScreenState extends State<AnggotaListScreen> {
                       height: 230,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: context.primaryColor.withOpacity(0.04),
+                        color: context.primaryColor.withValues(alpha: 0.04),
                       ),
                     ),
                   ),
@@ -221,7 +501,7 @@ class _AnggotaListScreenState extends State<AnggotaListScreen> {
                       height: 200,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: const Color(0xFF7C3AED).withOpacity(0.03),
+                        color: const Color(0xFF7C3AED).withValues(alpha: 0.03),
                       ),
                     ),
                   ),
@@ -236,245 +516,285 @@ class _AnggotaListScreenState extends State<AnggotaListScreen> {
                               vertical: 16,
                             ),
                             itemCount: 5,
-                            itemBuilder: (context, index) => const CardSkeleton(),
+                            itemBuilder: (context, index) =>
+                                const CardSkeleton(),
                           )
                         : _errorMsg.isNotEmpty
-                            ? ListView(
-                                children: [
-                                  SizedBox(
-                                    height: MediaQuery.of(context).size.height * 0.3,
+                        ? ListView(
+                            children: [
+                              SizedBox(
+                                height:
+                                    MediaQuery.of(context).size.height * 0.3,
+                              ),
+                              Center(
+                                child: Text(
+                                  _errorMsg,
+                                  style: TextStyle(
+                                    color: Colors.red.shade600,
+                                    fontSize: 14,
                                   ),
-                                  Center(
-                                    child: Text(
-                                      _errorMsg,
-                                      style: TextStyle(
-                                        color: Colors.red.shade600,
-                                        fontSize: 14,
-                                      ),
-                                      textAlign: TextAlign.center,
+                                  textAlign: TextAlign.center,
+                                ),
+                              ),
+                            ],
+                          )
+                        : _filteredAnggota.isEmpty
+                        ? ListView(
+                            children: [
+                              SizedBox(
+                                height:
+                                    MediaQuery.of(context).size.height * 0.25,
+                              ),
+                              Center(
+                                child: Column(
+                                  children: [
+                                    Icon(
+                                      Icons.search_off_rounded,
+                                      size: 64,
+                                      color: Colors.grey.shade400,
                                     ),
-                                  ),
-                                ],
-                              )
-                            : _filteredAnggota.isEmpty
-                                ? ListView(
-                                    children: [
-                                      SizedBox(
-                                        height: MediaQuery.of(context).size.height * 0.25,
+                                    const SizedBox(height: 16),
+                                    Text(
+                                      _searchController.text.isEmpty
+                                          ? "Belum ada anggota."
+                                          : "Tidak ditemukan hasil.",
+                                      style: const TextStyle(
+                                        color: Color(0xFF0F172A),
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.w800,
                                       ),
-                                      Center(
-                                        child: Column(
-                                          children: [
-                                            Icon(
-                                              Icons.search_off_rounded,
-                                              size: 64,
-                                              color: Colors.grey.shade400,
-                                            ),
-                                            const SizedBox(height: 16),
-                                            Text(
-                                              _searchController.text.isEmpty
-                                                  ? "Belum ada anggota."
-                                                  : "Tidak ditemukan hasil.",
-                                              style: const TextStyle(
-                                                color: Color(0xFF0F172A),
-                                                fontSize: 18,
-                                                fontWeight: FontWeight.w800,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          )
+                        : ListView.builder(
+                            padding: const EdgeInsets.fromLTRB(20, 0, 20, 40),
+                            itemCount: _filteredAnggota.length,
+                            itemBuilder: (context, index) {
+                              final emp = _filteredAnggota[index];
+                              final isSuperAdmin =
+                                  emp['nama'].toString().toLowerCase().contains(
+                                    "admin",
+                                  ) ||
+                                  emp['bagian']
+                                      .toString()
+                                      .toLowerCase()
+                                      .contains("pemilik");
+
+                              return InkWell(
+                                onTap: () => _showMemberActionDialog(emp),
+                                borderRadius: BorderRadius.circular(20),
+                                child: Container(
+                                  margin: const EdgeInsets.only(bottom: 16),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(20),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withValues(alpha: 0.04),
+                                        blurRadius: 10,
+                                        offset: const Offset(0, 4),
                                       ),
                                     ],
-                                  )
-                                : ListView.builder(
-                                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 40),
-                                    itemCount: _filteredAnggota.length,
-                                    itemBuilder: (context, index) {
-                                      final emp = _filteredAnggota[index];
-                                      final isSuperAdmin = emp['nama']
-                                              .toString()
-                                              .toLowerCase()
-                                              .contains("admin") ||
-                                          emp['bagian']
-                                              .toString()
-                                              .toLowerCase()
-                                              .contains("pemilik");
-
-                                      return Container(
-                                        margin: const EdgeInsets.only(bottom: 16),
-                                        decoration: BoxDecoration(
-                                          color: Colors.white,
-                                          borderRadius: BorderRadius.circular(20),
-                                          boxShadow: [
-                                            BoxShadow(
-                                              color: Colors.black.withOpacity(0.04),
-                                              blurRadius: 10,
-                                              offset: const Offset(0, 4),
-                                            ),
-                                          ],
-                                        ),
-                                        padding: const EdgeInsets.all(16),
-                                        child: Row(
+                                  ),
+                                  padding: const EdgeInsets.all(16),
+                                  child: Row(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      CircleAvatar(
+                                        radius: 24,
+                                        backgroundColor: isSuperAdmin
+                                            ? Colors.amber.withValues(alpha: 0.15)
+                                            : context.primaryColor.withValues(alpha: 
+                                                0.1,
+                                              ),
+                                        child: isSuperAdmin
+                                            ? const Icon(
+                                                Icons.shield_rounded,
+                                                color: Colors.amber,
+                                                size: 24,
+                                              )
+                                            : Text(
+                                                emp['nama']
+                                                    .toString()
+                                                    .substring(0, 1)
+                                                    .toUpperCase(),
+                                                style: TextStyle(
+                                                  color: context.primaryColor,
+                                                  fontWeight: FontWeight.bold,
+                                                  fontSize: 18,
+                                                ),
+                                              ),
+                                      ),
+                                      const SizedBox(width: 16),
+                                      Expanded(
+                                        child: Column(
                                           crossAxisAlignment:
                                               CrossAxisAlignment.start,
                                           children: [
-                                            CircleAvatar(
-                                              radius: 24,
-                                              backgroundColor: isSuperAdmin
-                                                  ? Colors.amber.withOpacity(0.15)
-                                                  : context.primaryColor
-                                                      .withOpacity(0.1),
-                                              child: isSuperAdmin
-                                                  ? const Icon(
-                                                      Icons.shield_rounded,
-                                                      color: Colors.amber,
-                                                      size: 24,
-                                                    )
-                                                  : Text(
-                                                      emp['nama']
-                                                          .toString()
-                                                          .substring(0, 1)
-                                                          .toUpperCase(),
-                                                      style: TextStyle(
-                                                        color: context.primaryColor,
-                                                        fontWeight:
-                                                            FontWeight.bold,
-                                                        fontSize: 18,
-                                                      ),
-                                                    ),
-                                            ),
-                                            const SizedBox(width: 16),
-                                            Expanded(
-                                              child: Column(
-                                                crossAxisAlignment:
-                                                    CrossAxisAlignment.start,
-                                                children: [
-                                                  Text(
-                                                    emp['nama'] ?? "-",
-                                                    style: const TextStyle(
-                                                      fontWeight: FontWeight.w800,
-                                                      fontSize: 16,
-                                                      color: Color(0xFF0F172A),
-                                                    ),
-                                                  ),
-                                                  const SizedBox(height: 4),
-                                                  Text(
-                                                    "${emp['id']}  •  ${emp['bagian'] ?? '-'}",
-                                                    style: TextStyle(
-                                                      color:
-                                                          Colors.grey.shade600,
-                                                      fontSize: 12,
-                                                      fontWeight:
-                                                          FontWeight.w600,
-                                                    ),
-                                                  ),
-                                                  const SizedBox(height: 12),
-                                                  if (!isSuperAdmin)
-                                                    Wrap(
-                                                      spacing: 8,
-                                                      runSpacing: 8,
-                                                      children: [
-                                                        _buildStatusBadge(
-                                                          isRegistered:
-                                                              emp['wajah_terdaftar'] ==
-                                                                  true,
-                                                          activeLabel:
-                                                              "Wajah Terdaftar",
-                                                          inactiveLabel:
-                                                              "Belum Ada Wajah",
-                                                          activeIcon: Icons
-                                                              .face_retouching_natural,
-                                                          inactiveIcon: Icons
-                                                              .sentiment_dissatisfied,
-                                                        ),
-                                                        _buildStatusBadge(
-                                                          isRegistered:
-                                                              emp['sudah_enroll'] ==
-                                                                  true,
-                                                          activeLabel:
-                                                              "HP Terdaftar",
-                                                          inactiveLabel:
-                                                              "Belum Ada HP",
-                                                          activeIcon: Icons
-                                                              .phonelink_setup,
-                                                          inactiveIcon: Icons
-                                                              .phonelink_erase,
-                                                        ),
-                                                      ],
-                                                    )
-                                                  else
-                                                    Container(
-                                                      padding: const EdgeInsets
-                                                          .symmetric(
-                                                        horizontal: 8,
-                                                        vertical: 4,
-                                                      ),
-                                                      decoration: BoxDecoration(
-                                                        color:
-                                                            Colors.amber.shade50,
-                                                        borderRadius:
-                                                            BorderRadius.circular(
-                                                          8,
-                                                        ),
-                                                        border: Border.all(
-                                                          color: Colors
-                                                              .amber.shade200,
-                                                        ),
-                                                      ),
-                                                      child: Text(
-                                                        "Role Hak Akses Admin",
-                                                        style: TextStyle(
-                                                          fontSize: 10,
-                                                          fontWeight:
-                                                              FontWeight.w800,
-                                                          color: Colors
-                                                              .amber.shade800,
-                                                        ),
-                                                      ),
-                                                    ),
-                                                ],
+                                            Text(
+                                              emp['nama'] ?? "-",
+                                              style: const TextStyle(
+                                                fontWeight: FontWeight.w800,
+                                                fontSize: 16,
+                                                color: Color(0xFF0F172A),
                                               ),
                                             ),
-                                            if (emp['no_hp'] != null &&
-                                                emp['no_hp']
-                                                    .toString()
-                                                    .isNotEmpty &&
-                                                emp['no_hp'].toString() !=
-                                                    "null")
-                                              Padding(
-                                                padding: const EdgeInsets.only(
-                                                    left: 8.0),
-                                                child: IconButton(
-                                                  onPressed: () =>
-                                                      UrlHelper.launchWhatsApp(
-                                                    phone:
-                                                        emp['no_hp'].toString(),
-                                                    message:
-                                                        "Halo ${emp['nama']}, saya dari Admin Hadir.in ingin menghubungi Anda.",
+                                            const SizedBox(height: 4),
+                                            Text(
+                                              "${emp['id']}  •  ${emp['bagian'] ?? '-'}",
+                                              style: TextStyle(
+                                                color: Colors.grey.shade600,
+                                                fontSize: 12,
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 12),
+                                            if (!isSuperAdmin)
+                                              Wrap(
+                                                spacing: 8,
+                                                runSpacing: 8,
+                                                children: [
+                                                  _buildStatusBadge(
+                                                    isRegistered:
+                                                        emp['wajah_terdaftar'] ==
+                                                            true ||
+                                                        emp['wajah_web_terdaftar'] ==
+                                                            true,
+                                                    activeLabel:
+                                                        "Wajah Terdaftar",
+                                                    inactiveLabel:
+                                                        "Belum Ada Wajah",
+                                                    activeIcon: Icons
+                                                        .face_retouching_natural,
+                                                    inactiveIcon: Icons
+                                                        .sentiment_dissatisfied,
                                                   ),
-                                                  icon: const Icon(
-                                                    Icons.phone,
-                                                    color: Color(0xFF25D366),
-                                                    size: 28,
+                                                  _buildStatusBadge(
+                                                    isRegistered:
+                                                        emp['sudah_enroll'] ==
+                                                        true,
+                                                    activeLabel: "HP Terdaftar",
+                                                    inactiveLabel:
+                                                        "Belum Ada HP",
+                                                    activeIcon:
+                                                        Icons.phonelink_setup,
+                                                    inactiveIcon:
+                                                        Icons.phonelink_erase,
                                                   ),
-                                                  style: IconButton.styleFrom(
-                                                    backgroundColor:
-                                                        const Color(0xFF25D366)
-                                                            .withOpacity(0.1),
-                                                    shape:
-                                                        RoundedRectangleBorder(
-                                                      borderRadius:
-                                                          BorderRadius.circular(
-                                                              12),
+                                                ],
+                                              )
+                                            else
+                                              Container(
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                      horizontal: 8,
+                                                      vertical: 4,
                                                     ),
+                                                decoration: BoxDecoration(
+                                                  color: Colors.amber.shade50,
+                                                  borderRadius:
+                                                      BorderRadius.circular(8),
+                                                  border: Border.all(
+                                                    color:
+                                                        Colors.amber.shade200,
+                                                  ),
+                                                ),
+                                                child: Text(
+                                                  "Role Hak Akses Admin",
+                                                  style: TextStyle(
+                                                    fontSize: 10,
+                                                    fontWeight: FontWeight.w800,
+                                                    color:
+                                                        Colors.amber.shade800,
+                                                  ),
+                                                ),
+                                              ),
+                                            const SizedBox(height: 8),
+                                            if (emp['id_shift_default'] !=
+                                                    null &&
+                                                emp['id_shift_default'] != "")
+                                              Container(
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                      horizontal: 8,
+                                                      vertical: 2,
+                                                    ),
+                                                decoration: BoxDecoration(
+                                                  color: Colors.blue.shade50,
+                                                  borderRadius:
+                                                      BorderRadius.circular(6),
+                                                ),
+                                                child: Text(
+                                                  "Default: ${emp['id_shift_default']}",
+                                                  style: TextStyle(
+                                                    fontSize: 10,
+                                                    color: Colors.blue.shade800,
+                                                    fontWeight: FontWeight.bold,
                                                   ),
                                                 ),
                                               ),
                                           ],
                                         ),
-                                      );
-                                    },
+                                      ),
+                                      Column(
+                                        children: [
+                                          if (emp['no_hp'] != null &&
+                                              emp['no_hp']
+                                                  .toString()
+                                                  .isNotEmpty &&
+                                              emp['no_hp'].toString() != "null")
+                                            IconButton(
+                                              onPressed: () =>
+                                                  UrlHelper.launchWhatsApp(
+                                                phone: emp['no_hp'].toString(),
+                                                message:
+                                                    "Halo ${emp['nama']}, saya dari Admin Primkopasindo Labojon ingin menghubungi Anda.",
+                                              ),
+                                              icon: const Icon(
+                                                Icons.phone,
+                                                color: Color(0xFF25D366),
+                                                size: 24,
+                                              ),
+                                              style: IconButton.styleFrom(
+                                                backgroundColor: const Color(
+                                                  0xFF25D366,
+                                                ).withValues(alpha: 0.1),
+                                                shape: RoundedRectangleBorder(
+                                                  borderRadius:
+                                                      BorderRadius.circular(12),
+                                                ),
+                                              ),
+                                            ),
+                                          const SizedBox(height: 8),
+                                          IconButton(
+                                            onPressed: () =>
+                                                _showMemberActionDialog(emp),
+                                            icon: const Icon(
+                                              Icons.settings_rounded,
+                                              size: 20,
+                                              color: Colors.blueGrey,
+                                            ),
+                                            style: IconButton.styleFrom(
+                                              backgroundColor: Colors.blueGrey
+                                                  .withValues(alpha: 0.1),
+                                              shape: RoundedRectangleBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(12),
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
                                   ),
+                                ),
+                              );
+                            },
+                          ),
                   ),
                 ],
               ),

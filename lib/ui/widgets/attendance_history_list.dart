@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:hadirin/core/theme/fluid_theme.dart';
-import 'package:hadirin/ui/widgets/skeleton_loader.dart';
+import 'package:primkopasindo_labojon/core/theme/fluid_theme.dart';
+import 'package:primkopasindo_labojon/ui/widgets/skeleton_loader.dart';
 
 class AttendanceHistoryList extends StatelessWidget {
   final List<dynamic> history;
@@ -74,7 +74,7 @@ class AttendanceHistoryList extends StatelessWidget {
   Widget _buildHistoryItem(BuildContext context, Map log) {
     final dt =
         DateTime.tryParse(log['waktu'].toString())?.toLocal() ?? DateTime.now();
-    final isTerlambat = log['status'] == "Terlambat";
+    final status = log['status']?.toString() ?? "";
     final isMasuk = log['tipe'] == "Masuk";
     final isCuti =
         log['tipe'] == "Cuti" ||
@@ -84,23 +84,16 @@ class AttendanceHistoryList extends StatelessWidget {
     Color accentColor = isMasuk ? context.primaryColor : Colors.orange.shade600;
     if (isCuti) accentColor = Colors.grey.shade500;
 
-    String statusLabel = "";
-    Color statusColor = context.primaryColor;
-    Color statusBg = context.primaryColor.withOpacity(0.08);
+    String statusLabel = status;
+    Color statusColor = const Color(0xFF16A34A);
+    Color statusBg = const Color(0xFF16A34A).withValues(alpha: 0.08);
 
-    if (isMasuk) {
-      statusLabel = log['status'] ?? "";
-      statusColor = isTerlambat ? Colors.red.shade700 : const Color(0xFF16A34A);
-      statusBg = isTerlambat
-          ? Colors.red.shade50
-          : const Color(0xFF16A34A).withOpacity(0.08);
-    } else if (isCuti) {
-      statusLabel = log['status'] ?? "";
+    if (isCuti) {
       statusColor = log['status'] == 'Disetujui'
           ? const Color(0xFF16A34A)
           : Colors.orange.shade700;
       statusBg = log['status'] == 'Disetujui'
-          ? const Color(0xFF16A34A).withOpacity(0.08)
+          ? const Color(0xFF16A34A).withValues(alpha: 0.08)
           : Colors.orange.shade50;
     }
 
@@ -112,7 +105,7 @@ class AttendanceHistoryList extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 10,
             offset: const Offset(0, 3),
           ),
@@ -123,7 +116,7 @@ class AttendanceHistoryList extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: accentColor.withOpacity(0.1),
+              color: accentColor.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(

@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:hadirin/core/providers/auth_provider.dart';
-import 'package:hadirin/core/service/leave_service.dart';
-import 'package:hadirin/core/theme/fluid_theme.dart';
-import 'package:hadirin/ui/widgets/skeleton_loader.dart';
-import 'package:hadirin/core/utils/url_helper.dart'; // NEW
+import 'package:primkopasindo_labojon/core/providers/auth_provider.dart';
+import 'package:primkopasindo_labojon/core/service/leave_service.dart';
+import 'package:primkopasindo_labojon/core/theme/fluid_theme.dart';
+import 'package:primkopasindo_labojon/ui/widgets/skeleton_loader.dart';
+import 'package:primkopasindo_labojon/core/utils/url_helper.dart'; // NEW
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
@@ -181,7 +181,7 @@ class _LeaveHistoryScreenState extends State<LeaveHistoryScreen> {
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.06),
+                    color: Colors.black.withValues(alpha: 0.06),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
                   ),
@@ -216,7 +216,7 @@ class _LeaveHistoryScreenState extends State<LeaveHistoryScreen> {
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
+                      color: Colors.black.withValues(alpha: 0.05),
                       blurRadius: 10,
                       offset: const Offset(0, 4),
                     ),
@@ -339,7 +339,7 @@ class _LeaveHistoryScreenState extends State<LeaveHistoryScreen> {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -366,7 +366,7 @@ class _LeaveHistoryScreenState extends State<LeaveHistoryScreen> {
                               vertical: 4,
                             ),
                             decoration: BoxDecoration(
-                              color: color.withOpacity(0.1),
+                              color: color.withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Text(
@@ -416,7 +416,7 @@ class _LeaveHistoryScreenState extends State<LeaveHistoryScreen> {
                                 onPressed: () => UrlHelper.launchWhatsApp(
                                   phone: item['no_hp'].toString(),
                                   message:
-                                      "Halo ${item['nama']}, ini Admin Hadir.in. Saya ingin menanyakan terkait pengajuan ${item['tipe']} Anda pada tanggal ${item['rentang']}.",
+                                      "Halo ${item['nama']}, ini Admin Primkopasindo Labojon. Saya ingin menanyakan terkait pengajuan ${item['tipe']} Anda pada tanggal ${item['rentang']}.",
                                 ),
                                 icon: const Icon(
                                   Icons.phone,
@@ -428,7 +428,7 @@ class _LeaveHistoryScreenState extends State<LeaveHistoryScreen> {
                                 style: IconButton.styleFrom(
                                   backgroundColor: const Color(
                                     0xFF25D366,
-                                  ).withOpacity(0.08),
+                                  ).withValues(alpha: 0.08),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(6),
                                   ),
@@ -502,10 +502,10 @@ class _LeaveHistoryScreenState extends State<LeaveHistoryScreen> {
                               vertical: 8,
                             ),
                             decoration: BoxDecoration(
-                              color: context.primaryColor.withOpacity(0.06),
+                              color: context.primaryColor.withValues(alpha: 0.06),
                               borderRadius: BorderRadius.circular(10),
                               border: Border.all(
-                                color: context.primaryColor.withOpacity(0.15),
+                                color: context.primaryColor.withValues(alpha: 0.15),
                               ),
                             ),
                             child: Row(

@@ -1,8 +1,8 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:hadirin/core/providers/auth_provider.dart';
-import 'package:hadirin/core/service/admin_service.dart';
-import 'package:hadirin/core/theme/fluid_theme.dart';
+import 'package:primkopasindo_labojon/core/providers/auth_provider.dart';
+import 'package:primkopasindo_labojon/core/service/admin_service.dart';
+import 'package:primkopasindo_labojon/core/theme/fluid_theme.dart';
 import 'package:provider/provider.dart';
 
 class SetWorktimeScreen extends StatefulWidget {
@@ -19,6 +19,10 @@ class _SetWorktimeScreenState extends State<SetWorktimeScreen> {
   String _jamMasukMulai = "04:00";
   String _batasJamMasuk = "07:00";
   String _jamPulangMulai = "13:00";
+  int _tlInterval = 30;
+  int _maxTier = 0; // 0 = Unlimited
+  int _uangMakan = 50000;
+  int _potonganTelat1Jam = 10000;
 
   @override
   void initState() {
@@ -31,9 +35,19 @@ class _SetWorktimeScreenState extends State<SetWorktimeScreen> {
     final config = await AdminService().getOfficeConfig(auth.clientId ?? "");
     if (config != null && mounted) {
       setState(() {
+<<<<<<< HEAD
         _jamMasukMulai = _safeTime(config['jam_masuk_mulai'], "04:00");
         _batasJamMasuk = _safeTime(config['batas_jam_masuk'], "07:00");
         _jamPulangMulai = _safeTime(config['jam_pulang_mulai'], "13:00");
+=======
+        _jamMasukMulai = config['jam_masuk_mulai']?.toString() == "null" ? "-" : (config['jam_masuk_mulai']?.toString() ?? "-");
+        _batasJamMasuk = config['batas_jam_masuk']?.toString() == "null" ? "-" : (config['batas_jam_masuk']?.toString() ?? "-");
+        _jamPulangMulai = config['jam_pulang_mulai']?.toString() == "null" ? "-" : (config['jam_pulang_mulai']?.toString() ?? "-");
+        _tlInterval = int.tryParse(config['tl_interval']?.toString() ?? "30") ?? 30;
+        _maxTier = int.tryParse(config['max_tier']?.toString() ?? "0") ?? 0;
+        _uangMakan = config['uang_makan'] ?? 50000;
+        _potonganTelat1Jam = config['potongan_telat_1jam'] ?? 10000;
+>>>>>>> dev_arta
         _isLoading = false;
       });
     } else {
@@ -57,6 +71,7 @@ class _SetWorktimeScreenState extends State<SetWorktimeScreen> {
   }
 
   int _timeToTotalMinutes(String time) {
+    if (time == "-") return 0;
     final parts = time.split(':');
     return (int.parse(parts[0]) * 60) + int.parse(parts[1]);
   }
@@ -84,11 +99,19 @@ class _SetWorktimeScreenState extends State<SetWorktimeScreen> {
       jamMasukMulai: _jamMasukMulai,
       batasJamMasuk: _batasJamMasuk,
       jamPulangMulai: _jamPulangMulai,
+      tlInterval: _tlInterval,
+      maxTier: _maxTier,
+    );
+
+    final suksesMeal = await AdminService().updateMealConfig(
+      auth.clientId ?? "", 
+      _uangMakan, 
+      _potonganTelat1Jam
     );
 
     if (mounted) {
       setState(() => _isSaving = false);
-      if (sukses) {
+      if (sukses && suksesMeal) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text("Jam kerja berhasil diperbarui!"),
@@ -104,7 +127,8 @@ class _SetWorktimeScreenState extends State<SetWorktimeScreen> {
   }
 
   void _showTimePicker(String current, Function(String) onPicked) {
-    final parts = current.split(':');
+    final validTime = (current == "-" || current.isEmpty) ? "00:00" : current;
+    final parts = validTime.split(':');
     DateTime initial = DateTime(2026, 1, 1, int.parse(parts[0]), int.parse(parts[1]));
     DateTime tempDateTime = initial;
 
@@ -129,7 +153,7 @@ class _SetWorktimeScreenState extends State<SetWorktimeScreen> {
                 width: 40,
                 height: 5,
                 decoration: BoxDecoration(
-                  color: Colors.grey.withOpacity(0.2),
+                  color: Colors.grey.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(10),
                 ),
               ),
@@ -209,12 +233,88 @@ class _SetWorktimeScreenState extends State<SetWorktimeScreen> {
     );
   }
 
+  void _showNumberPickerDialog(String title, int current, int min, int max, Function(int) onPicked) {
+    int tempValue = current;
+    showCupertinoModalPopup(
+      context: context,
+      builder: (context) => Material(
+        color: Colors.transparent,
+        child: Container(
+          height: 320,
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.only(topLeft: Radius.circular(32), topRight: Radius.circular(32)),
+          ),
+          child: Column(
+            children: [
+              const SizedBox(height: 12),
+              Container(width: 40, height: 5, decoration: BoxDecoration(color: Colors.grey.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(10))),
+              Container(
+                padding: const EdgeInsets.all(24),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    TextButton(onPressed: () => Navigator.pop(context), child: const Text("Batal")),
+                    Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                    ElevatedButton(
+                      onPressed: () { onPicked(tempValue); Navigator.pop(context); },
+                      style: ElevatedButton.styleFrom(backgroundColor: context.primaryColor, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+                      child: const Text("Pilih", style: TextStyle(color: Colors.white)),
+                    ),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: CupertinoPicker(
+                  itemExtent: 40,
+                  onSelectedItemChanged: (index) { tempValue = min + index; },
+                  scrollController: FixedExtentScrollController(initialItem: current - min),
+                  children: List.generate(max - min + 1, (index) => Center(child: Text("${min + index}"))),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   void _showErrorSnackBar(String msg) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(msg),
         backgroundColor: Colors.red.shade600,
         behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  void _showInputDialog(String title, int current, Function(int) onPicked) {
+    final controller = TextEditingController(text: current.toString());
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+        content: TextField(
+          controller: controller,
+          keyboardType: TextInputType.number,
+          decoration: InputDecoration(
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+            prefixText: "Rp ",
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text("Batal")),
+          ElevatedButton(
+            onPressed: () {
+              final val = int.tryParse(controller.text) ?? current;
+              onPicked(val);
+              Navigator.pop(context);
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: context.primaryColor, foregroundColor: Colors.white),
+            child: const Text("Simpan"),
+          ),
+        ],
       ),
     );
   }
@@ -251,7 +351,7 @@ class _SetWorktimeScreenState extends State<SetWorktimeScreen> {
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.06),
+                    color: Colors.black.withValues(alpha: 0.06),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
                   ),
@@ -321,6 +421,60 @@ class _SetWorktimeScreenState extends State<SetWorktimeScreen> {
               accentColor: const Color(0xFF7C3AED),
             ),
 
+            const SizedBox(height: 32),
+            const Text(
+              "Aturan Keterlambatan",
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: Color(0xFF0F172A), letterSpacing: -0.5),
+            ),
+            const SizedBox(height: 16),
+
+            _buildSettingCard(
+              title: "Interval Kategori",
+              description: "Tiap berapa menit kategori TL/PSW berubah (TL1, TL2, dst).",
+              value: "$_tlInterval Menit",
+              onTap: () => _showNumberPickerDialog("Interval (Menit)", _tlInterval, 1, 120, (val) => setState(() => _tlInterval = val)),
+              icon: Icons.history_rounded,
+              accentColor: Colors.blue.shade700,
+            ),
+
+            const SizedBox(height: 16),
+
+            _buildSettingCard(
+              title: "Batas Kategori (Tier)",
+              description: "Maksimal angka TL/PSW. Set 0 untuk Tak Terbatas.",
+              value: _maxTier == 0 ? "Unlimited" : "Max Tier $_maxTier",
+              onTap: () => _showNumberPickerDialog("Batas Kategori", _maxTier, 0, 100, (val) => setState(() => _maxTier = val)),
+              icon: Icons.format_list_numbered_rounded,
+              accentColor: Colors.teal.shade700,
+            ),
+
+            const SizedBox(height: 32),
+            const Text(
+              "Konfigurasi Uang Makan",
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: Color(0xFF0F172A), letterSpacing: -0.5),
+            ),
+            const SizedBox(height: 16),
+
+            _buildSettingCard(
+              title: "Nominal Uang Makan",
+              description: "Besaran uang makan per hari (Rp).",
+              value: _uangMakan.toString(),
+              onTap: () => _showInputDialog("Nominal Uang Makan", _uangMakan, (val) => setState(() => _uangMakan = val)),
+              icon: Icons.payments_rounded,
+              accentColor: const Color(0xFFEAB308),
+            ),
+
+            const SizedBox(height: 16),
+
+            _buildSettingCard(
+              title: "Potongan Keterlambatan",
+              description: "Potongan uang makan jika telat 1 detik - 1 jam. Lebih dari 1 jam = Hangus.",
+              value: _potonganTelat1Jam.toString(),
+              onTap: () => _showInputDialog("Potongan Telat 1 Jam", _potonganTelat1Jam, (val) => setState(() => _potonganTelat1Jam = val)),
+              icon: Icons.money_off_rounded,
+              accentColor: const Color(0xFFEF4444),
+            ),
+
             const SizedBox(height: 48),
 
             SizedBox(
@@ -332,7 +486,7 @@ class _SetWorktimeScreenState extends State<SetWorktimeScreen> {
                   backgroundColor: context.primaryColor,
                   foregroundColor: Colors.white,
                   elevation: 4,
-                  shadowColor: context.primaryColor.withOpacity(0.4),
+                  shadowColor: context.primaryColor.withValues(alpha: 0.4),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(16),
                   ),
@@ -380,7 +534,7 @@ class _SetWorktimeScreenState extends State<SetWorktimeScreen> {
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.03),
+              color: Colors.black.withValues(alpha: 0.03),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
@@ -394,7 +548,7 @@ class _SetWorktimeScreenState extends State<SetWorktimeScreen> {
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: accentColor.withOpacity(0.1),
+                    color: accentColor.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Icon(icon, color: accentColor, size: 24),

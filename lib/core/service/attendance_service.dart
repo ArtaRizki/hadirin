@@ -9,13 +9,14 @@ import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:safe_device/safe_device.dart';
-import 'package:hadirin/core/config/app_config.dart';
-import 'package:hadirin/core/service/api_client.dart';
-import 'package:hadirin/core/service/face_service.dart';
+import 'package:primkopasindo_labojon/core/config/app_config.dart';
+import 'package:primkopasindo_labojon/core/service/api_client.dart';
+import 'package:primkopasindo_labojon/core/service/admin_service.dart';
+import 'package:primkopasindo_labojon/core/service/face_service.dart';
 
 /// Tanggung jawab: Absen masuk/pulang & riwayat absensi karyawan.
 class AttendanceService extends ApiClient {
-  static const _platform = MethodChannel('com.mobile.hadirin/face_recognition');
+  static const _platform = MethodChannel('com.primkopasindo.labojon/face_recognition');
 
   final _auth = LocalAuthentication();
   final _picker = ImagePicker();
@@ -123,9 +124,36 @@ class AttendanceService extends ApiClient {
 
       // Proteksi Tambahan Fake GPS bawaan Android (Geolocator)
       if (position.isMocked) {
-          throw Exception(
+        throw Exception(
           'Lokasi Palsu Terdeteksi: Anda terindikasi menggunakan Fake GPS. Absensi ditolak.',
         );
+      }
+
+      // VALIDASI RADIUS KANTOR
+      final adminService = AdminService();
+      final officeConfig = await adminService.getOfficeConfig(clientId);
+      if (officeConfig != null) {
+        final officeLat = double.tryParse(officeConfig['lat']?.toString() ?? '') ?? 0.0;
+        final officeLng = double.tryParse(officeConfig['lng']?.toString() ?? '') ?? 0.0;
+        final officeRadius = double.tryParse(officeConfig['radius']?.toString() ?? '100') ?? 100.0;
+
+        final distance = Geolocator.distanceBetween(
+          position.latitude,
+          position.longitude,
+          officeLat,
+          officeLng,
+        );
+
+        d.log('Jarak ke kantor: ${distance.toStringAsFixed(1)} meter (radius: $officeRadius m)');
+
+        if (distance > officeRadius) {
+          final distText = distance < 1000
+              ? '${distance.toStringAsFixed(0)} meter'
+              : '${(distance / 1000).toStringAsFixed(2)} km';
+          throw Exception(
+            'Di Luar Area Kantor: Anda berada $distText dari kantor. Absen hanya bisa dilakukan dalam radius ${officeRadius.toStringAsFixed(0)} meter.',
+          );
+        }
       }
 
       // 4. IZIN KAMERA
@@ -164,6 +192,14 @@ class AttendanceService extends ApiClient {
         );
       }
 
+      // CEK ZERO VECTOR: Jika isinya nol semua, berarti model AI gagal atau wajah tidak terdeteksi benar.
+      double sum = wajahHariIni.fold(0, (prev, element) => prev + element.abs());
+      if (sum < 0.0001) {
+        throw Exception(
+          'Pola wajah tidak valid. Harap bersihkan kamera dan pastikan cahaya cukup.',
+        );
+      }
+
       d.log('Mengambil wajah master dari server...');
       final wajahMaster = await _faceService.getWajahMasterDariServer(
         idAnggota,
@@ -175,24 +211,15 @@ class AttendanceService extends ApiClient {
         );
       }
 
-      final jarak = _faceService.hitungKemiripan(wajahHariIni, wajahMaster);
-      d.log('Jarak Kemiripan Wajah: $jarak');
+      final kemiripan = _faceService.hitungKemiripan(wajahHariIni, wajahMaster);
+      d.log('Nilai Kemiripan Wajah: $kemiripan');
 
       // ================================================================
-      // THRESHOLD KEMIRIPAN WAJAH (Nilai: 1.0)
+      // THRESHOLD KEMIRIPAN WAJAH (Nilai: 0.8)
       // ================================================================
-      // Nilai ini didapat dari hasil eksperimen/benchmarking menggunakan model TFLite (vggface2.tflite).
-      // Data benchmark internal terhadap dua embedding yang sudah di-L2-normalize menunjukkan:
-      // - Wajah SAMA     : rata-rata jarak Euclidean 0.42 (Maks: 0.78)
-      // - Wajah BERBEDA  : rata-rata jarak Euclidean 1.31 (Min: 1.05)
-      // Titik optimal (Threshold) dipilih 1.0 untuk menekan:
-      //   * False Accept Rate (salah kenal orang) menjadi ~2%
-      //   * False Reject Rate (gagal kenal diri sendiri) menjadi ~3%
-      // JANGAN MAINKAN angka ini (misalnya jadi 1.5) karena sistem bisa di-bypass dengan foto orang lain.
-      // ================================================================
-      if (jarak > 1.0) {
+      if (kemiripan < 0.8) {
         throw Exception(
-          'Wajah tidak cocok! (Jarak: ${jarak.toStringAsFixed(2)}). Pastikan Anda absen sendiri.',
+          'Wajah tidak cocok! (Kemiripan: ${kemiripan.toStringAsFixed(2)}). Pastikan Anda absen sendiri.',
         );
       }
 
@@ -232,6 +259,7 @@ class AttendanceService extends ApiClient {
         'lat_long': '${position.latitude}, ${position.longitude}',
         'biometric_passed': biometricPassed,
         'foto_base64': base64Image,
+        'face_embedding': jsonEncode(wajahHariIni),
       };
 
       final response = await sendRequest('absen', payload);

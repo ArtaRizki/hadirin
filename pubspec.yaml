@@ -1,4 +1,4 @@
-name: hadirin
+name: primkopasindo_labojon
 description: "A new Flutter project."
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
@@ -110,18 +110,18 @@ flutter:
 flutter_launcher_icons:
   android: true
   ios: true
-  image_path: "assets/icons/hadirin.png"
+  image_path: "assets/logo.png"
   min_sdk_size: 21
   web:
     generate: true
-    image_path: "assets/icons/hadirin.png" # Disamakan dengan yang atas
+    image_path: "assets/logo.png"
 
 flutter_native_splash:
-  color: "#F9F9F8" # Warna background khas Hadir.in
-  image: "assets/icons/hadirin.png"
+  color: "#F9F9F8" # Warna background khas Primkopasindo Labojon
+  image: "assets/logo.png"
   android: true
   ios: true
   # Pengaturan khusus untuk HP Android keluaran terbaru (Android 12 ke atas)
   android_12:
-    image: "assets/icons/hadirin.png"
+    image: "assets/logo.png"
     icon_background_color: "#F9F9F8"

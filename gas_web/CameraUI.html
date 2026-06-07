@@ -1,11 +1,13 @@
 <!DOCTYPE html>
 <html>
+
 <head>
   <base target="_top">
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Verifikasi Wajah</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap"
+    rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
   <style>
     :root {
@@ -104,9 +106,17 @@
     }
 
     @keyframes scan {
-      0% { top: 20%; }
-      50% { top: 80%; }
-      100% { top: 20%; }
+      0% {
+        top: 20%;
+      }
+
+      50% {
+        top: 80%;
+      }
+
+      100% {
+        top: 20%;
+      }
     }
 
     .status {
@@ -119,9 +129,19 @@
       backdrop-filter: blur(10px);
     }
 
-    .status.loading { color: #aaa; }
-    .status.success { background: #10B981; color: #fff; }
-    .status.error { background: #EF4444; color: #fff; }
+    .status.loading {
+      color: #aaa;
+    }
+
+    .status.success {
+      background: #10B981;
+      color: #fff;
+    }
+
+    .status.error {
+      background: #EF4444;
+      color: #fff;
+    }
 
     .btn-group {
       margin-top: 30px;
@@ -142,8 +162,16 @@
       transition: all 0.2s;
     }
 
-    .btn-close { background: rgba(255, 255, 255, 0.1); color: #fff; }
-    .btn-action { background: var(--primary-gradient); color: white; display: none; }
+    .btn-close {
+      background: rgba(255, 255, 255, 0.1);
+      color: #fff;
+    }
+
+    .btn-action {
+      background: var(--primary-gradient);
+      color: white;
+      display: none;
+    }
 
     canvas {
       position: absolute;
@@ -153,6 +181,7 @@
     }
   </style>
 </head>
+
 <body>
   <div class="container">
     <div class="title" id="title">Verifikasi Wajah</div>
@@ -208,8 +237,8 @@
     async function startCamera() {
       try {
         const video = document.getElementById('video');
-        const stream = await navigator.mediaDevices.getUserMedia({ 
-          video: { facingMode: "user" } 
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: "user" }
         });
         video.srcObject = stream;
         video.onplay = () => startScanning();
@@ -222,7 +251,7 @@
     function startScanning() {
       const video = document.getElementById('video');
       const status = document.getElementById('status');
-      
+
       status.innerText = "Memindai...";
       status.className = "status loading";
 
@@ -240,16 +269,16 @@
 
       scanInterval = setInterval(async () => {
         const detection = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions({ inputSize: 224 }))
-                                      .withFaceLandmarks()
-                                      .withFaceDescriptor();
-        
+          .withFaceLandmarks()
+          .withFaceDescriptor();
+
         if (detection && faceMatcher) {
           const match = faceMatcher.findBestMatch(detection.descriptor);
           if (match.label !== 'unknown') {
             clearInterval(scanInterval);
             status.innerText = "WAJAH COCOK!";
             status.className = "status success";
-            
+
             // Ambil Foto & GPS
             processFinalResult(video);
           } else {
@@ -262,7 +291,7 @@
 
     async function processFinalResult(video) {
       document.getElementById('status').innerText = "Cek Lokasi GPS...";
-      
+
       navigator.geolocation.getCurrentPosition((pos) => {
         // Ambil Snapshot
         const canvas = document.createElement('canvas');
@@ -274,7 +303,7 @@
         const dashboardUrl = window.location.href.split('?')[0];
 
         google.script.run
-          .withSuccessHandler(function(res) {
+          .withSuccessHandler(function (res) {
             if (res.code === 200) {
               window.top.location.href = dashboardUrl + "?msg=" + encodeURIComponent("Absen " + userData.tipe + " Berhasil!");
             } else {
@@ -304,20 +333,20 @@
       status.innerText = "Mendaftarkan...";
 
       const detection = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions({ inputSize: 224 }))
-                                    .withFaceLandmarks()
-                                    .withFaceDescriptor();
-      
+        .withFaceLandmarks()
+        .withFaceDescriptor();
+
       if (detection) {
         const descriptor = JSON.stringify(Array.from(detection.descriptor));
         const dashboardUrl = window.location.href.split('?')[0];
 
         google.script.run
-          .withSuccessHandler(function(res) {
-             if (res.success) {
-               window.top.location.href = dashboardUrl + "?msg=" + encodeURIComponent("Pendaftaran Wajah Berhasil! Silakan Absen Sekarang.");
-             } else {
-               alert("Gagal: " + res.message);
-             }
+          .withSuccessHandler(function (res) {
+            if (res.success) {
+              window.top.location.href = dashboardUrl + "?msg=" + encodeURIComponent("Pendaftaran Wajah Berhasil! Silakan Absen Sekarang.");
+            } else {
+              alert("Gagal: " + res.message);
+            }
           })
           .registerFaceWeb(userData.clientId, userData.id, descriptor);
       } else {
@@ -328,4 +357,5 @@
     init();
   </script>
 </body>
+
 </html>

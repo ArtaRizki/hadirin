@@ -1,13 +1,15 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
-import 'package:hadirin/core/providers/auth_provider.dart';
-import 'package:hadirin/core/service/attendance_service.dart';
-import 'package:hadirin/core/service/admin_service.dart';
-import 'package:hadirin/core/service/notification_service.dart';
+import 'package:primkopasindo_labojon/core/providers/auth_provider.dart';
+import 'package:primkopasindo_labojon/core/service/attendance_service.dart';
+import 'package:primkopasindo_labojon/core/service/admin_service.dart';
+import 'package:primkopasindo_labojon/core/service/notification_service.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:hadirin/ui/screens/profile_screen.dart';
+import 'package:primkopasindo_labojon/ui/screens/profile_screen.dart';
+import 'package:primkopasindo_labojon/ui/screens/today_attendance_screen.dart';
 import 'package:provider/provider.dart';
-import 'package:hadirin/core/theme/fluid_theme.dart';
+import 'package:primkopasindo_labojon/core/theme/fluid_theme.dart';
 import 'package:intl/intl.dart';
 
 class AttendanceScreen extends StatefulWidget {
@@ -21,6 +23,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
     with SingleTickerProviderStateMixin {
   bool _isLoading = false;
   final AttendanceService _attendanceService = AttendanceService();
+  final GlobalKey<RefreshIndicatorState> _refreshIndicatorKey = GlobalKey<RefreshIndicatorState>();
 
   late Timer _timer;
   DateTime _currentTime = DateTime.now();
@@ -30,9 +33,11 @@ class _AttendanceScreenState extends State<AttendanceScreen>
 
   // Variabel Jam Kerja Dinamis (Default sesuai req)
   String _jamMasukMulai = "04:00";
-  String _batasJamMasuk = "07:00";
   String _jamPulangMulai = "13:00";
+  String _shiftName = "Normal";
+  bool _isOff = false;
   bool _isConfigLoaded = false;
+  bool _hasNotifiedProximity = false;
 
   @override
   void initState() {
@@ -48,9 +53,13 @@ class _AttendanceScreenState extends State<AttendanceScreen>
       CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
     );
 
-    // Mulai pantau lokasi & fetch config jam
-    _fetchOfficeConfig();
+    // Mulai pantau lokasi
     _startProximityListener();
+
+    // Ambil konfigurasi kantor saat layar dibuka dengan visual refresh
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _refreshIndicatorKey.currentState?.show();
+    });
   }
 
   String _safeTime(dynamic raw, String defaultVal) {
@@ -70,28 +79,31 @@ class _AttendanceScreenState extends State<AttendanceScreen>
   Future<void> _fetchOfficeConfig() async {
     try {
       final auth = context.read<AuthProvider>();
-      final config = await AdminService().getOfficeConfig(auth.clientId ?? "");
+      final config = await AdminService().getOfficeConfig(
+        auth.clientId ?? "",
+        idKaryawan: auth.idAnggota,
+      );
       if (config != null && mounted) {
         setState(() {
+<<<<<<< HEAD
           _jamMasukMulai = _safeTime(config['jam_masuk_mulai'], "04:00");
           _batasJamMasuk = _safeTime(config['batas_jam_masuk'], "07:00");
           _jamPulangMulai = _safeTime(config['jam_pulang_mulai'], "13:00");
+=======
+          _jamMasukMulai = config['jam_masuk_mulai']?.toString() == "null" ? "-" : (config['jam_masuk_mulai']?.toString() ?? "-");
+          _jamPulangMulai = config['jam_pulang_mulai']?.toString() == "null" ? "-" : (config['jam_pulang_mulai']?.toString() ?? "-");
+          _shiftName = config['shift_name'] ?? "Normal";
+          _isOff = config['is_off'] ?? false;
+>>>>>>> dev_arta
           _isConfigLoaded = true;
+          
+          if (config.containsKey('wajah_terdaftar')) {
+            auth.setFaceRegistered(config['wajah_terdaftar'] == true);
+          }
         });
       }
     } catch (e) {
       debugPrint("Gagal fetch config jam: $e");
-    }
-  }
-
-  bool _hasNotifiedProximity = false;
-
-  int _timeToMinutes(String s) {
-    try {
-      final parts = s.split(':');
-      return (int.parse(parts[0]) * 60) + int.parse(parts[1]);
-    } catch (e) {
-      return 0;
     }
   }
 
@@ -107,9 +119,11 @@ class _AttendanceScreenState extends State<AttendanceScreen>
         return;
 
       final auth = context.read<AuthProvider>();
-      if (!auth.isLoggedIn || !auth.isAnggota) return;
 
-      final config = await AdminService().getOfficeConfig(auth.clientId ?? "");
+      final config = await AdminService().getOfficeConfig(
+        auth.clientId ?? "",
+        idKaryawan: auth.idAnggota,
+      );
       if (config == null) return;
 
       double offLat = double.parse(config['lat'].toString());
@@ -184,12 +198,23 @@ class _AttendanceScreenState extends State<AttendanceScreen>
     final now = DateTime.now();
     final currentMinutes = (now.hour * 60) + now.minute;
 
+    final startMin = _timeToMinutes(_jamMasukMulai);
+    final endMin = _timeToMinutes(_jamPulangMulai);
+    final isOvernight = startMin > endMin;
+
     // --- VALIDASI JAM OPERASIONAL (TIME-FENCING DINAMIS) ---
     if (tipeAbsen == "Masuk") {
-      final startMin = _timeToMinutes(_jamMasukMulai);
-      final endMin = _timeToMinutes(_jamPulangMulai);
+      bool isValid = false;
+      if (isOvernight) {
+        // Shift Malam: Misal 17:00 - 05:00
+        // Valid jika jam >= 17:00 ATAU jam < 05:00
+        isValid = (currentMinutes >= startMin || currentMinutes < endMin);
+      } else {
+        // Shift Normal: Misal 08:00 - 16:00
+        isValid = (currentMinutes >= startMin && currentMinutes < endMin);
+      }
 
-      if (currentMinutes < startMin || currentMinutes >= endMin) {
+      if (!isValid) {
         _showSnackBar(
           "Gagal! Absen Masuk hanya tersedia pukul $_jamMasukMulai - $_jamPulangMulai.",
           isError: true,
@@ -197,8 +222,12 @@ class _AttendanceScreenState extends State<AttendanceScreen>
         return;
       }
     } else {
-      final pulangMin = _timeToMinutes(_jamPulangMulai);
-      if (currentMinutes < pulangMin) {
+      // LOGIKA PULANG
+
+
+      // Khusus Pulang: Biasanya hanya dicek apakah sudah melewati jam pulang mulai
+      // Di sini kita pakai logika sederhana agar user bisa klik tombolnya dulu.
+      if (currentMinutes < endMin && !isOvernight) {
         _showSnackBar(
           "Belum saatnya pulang! Absen Pulang dibuka mulai pukul $_jamPulangMulai.",
           isError: true,
@@ -357,7 +386,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                 height: 230,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: context.primaryColor.withOpacity(0.09),
+                  color: context.primaryColor.withValues(alpha: 0.09),
                 ),
               ),
             ),
@@ -369,18 +398,27 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                 height: 200,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: const Color(0xFF7C3AED).withOpacity(0.06),
+                  color: const Color(0xFF7C3AED).withValues(alpha: 0.06),
                 ),
               ),
             ),
 
-            SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 24.0,
-                  vertical: 20.0,
-                ),
-                child: Column(
+            RefreshIndicator(
+              key: _refreshIndicatorKey,
+              onRefresh: _fetchOfficeConfig,
+              color: context.primaryColor,
+              child: CustomScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                slivers: [
+                  SliverFillRemaining(
+                    hasScrollBody: false,
+                    child: SafeArea(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 24.0,
+                          vertical: 20.0,
+                        ),
+                        child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // HEADER PROFILE
@@ -406,7 +444,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                                             BoxShadow(
                                               color: const Color(
                                                 0xFF16A34A,
-                                              ).withOpacity(0.4),
+                                              ).withValues(alpha: 0.4),
                                               blurRadius: 6,
                                               spreadRadius: 2,
                                             ),
@@ -458,7 +496,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                                 gradient: LinearGradient(
                                   colors: [
                                     context.primaryColor,
-                                    context.primaryColor.withOpacity(0.5),
+                                    context.primaryColor.withValues(alpha: 0.5),
                                   ],
                                 ),
                               ),
@@ -499,7 +537,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                               borderRadius: BorderRadius.circular(16),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.orange.withOpacity(0.3),
+                                  color: Colors.orange.withValues(alpha: 0.3),
                                   blurRadius: 12,
                                   offset: const Offset(0, 4),
                                 ),
@@ -510,7 +548,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                                 Container(
                                   padding: const EdgeInsets.all(8),
                                   decoration: BoxDecoration(
-                                    color: Colors.white.withOpacity(0.2),
+                                    color: Colors.white.withValues(alpha: 0.2),
                                     shape: BoxShape.circle,
                                   ),
                                   child: Icon(
@@ -568,7 +606,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                         borderRadius: BorderRadius.circular(28),
                         boxShadow: [
                           BoxShadow(
-                            color: context.primaryColor.withOpacity(0.32),
+                            color: context.primaryColor.withValues(alpha: 0.32),
                             blurRadius: 32,
                             offset: const Offset(0, 16),
                           ),
@@ -601,7 +639,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                                   style: TextStyle(
                                     fontSize: 26,
                                     fontWeight: FontWeight.w700,
-                                    color: Colors.white.withOpacity(0.45),
+                                    color: Colors.white.withValues(alpha: 0.45),
                                     fontFeatures: const [
                                       FontFeature.tabularFigures(),
                                     ],
@@ -611,7 +649,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                             ],
                           ),
                           const SizedBox(height: 18),
-                          Divider(color: Colors.white.withOpacity(0.2)),
+                          Divider(color: Colors.white.withValues(alpha: 0.2)),
                           const SizedBox(height: 16),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.center,
@@ -619,7 +657,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                               Icon(
                                 Icons.calendar_today_rounded,
                                 size: 14,
-                                color: Colors.white.withOpacity(0.65),
+                                color: Colors.white.withValues(alpha: 0.65),
                               ),
                               const SizedBox(width: 8),
                               Text(
@@ -628,7 +666,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                                   'id_ID',
                                 ).format(_currentTime),
                                 style: TextStyle(
-                                  color: Colors.white.withOpacity(0.75),
+                                  color: Colors.white.withValues(alpha: 0.75),
                                   fontSize: 14,
                                   fontWeight: FontWeight.w600,
                                 ),
@@ -643,16 +681,29 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                                 vertical: 6,
                               ),
                               decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.15),
+                                color: Colors.white.withValues(alpha: 0.15),
                                 borderRadius: BorderRadius.circular(12),
                               ),
-                              child: Text(
-                                "Masuk: $_jamMasukMulai | Batas: $_batasJamMasuk | Pulang: $_jamPulangMulai",
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.bold,
-                                ),
+                              child: Column(
+                                children: [
+                                  Text(
+                                    "Shift: $_shiftName",
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w900,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    "Masuk: $_jamMasukMulai | Pulang: $_jamPulangMulai",
+                                    style: TextStyle(
+                                      color: Colors.white.withValues(alpha: 0.9),
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                           ],
@@ -670,6 +721,43 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                           strokeWidth: 3,
                         ),
                       )
+                    else if (_isOff)
+                      // OFF STATE UI
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(24),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(24),
+                          border: Border.all(color: Colors.orange.shade100),
+                        ),
+                        child: Column(
+                          children: [
+                            Icon(
+                              Icons.beach_access_rounded,
+                              size: 48,
+                              color: Colors.orange.shade400,
+                            ),
+                            const SizedBox(height: 16),
+                            const Text(
+                              "Selamat Beristirahat!✨",
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w900,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              "Hari ini jadwal Anda LIBUR / OFF. Tidak perlu melakukan absensi.",
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: Colors.grey.shade600,
+                                fontSize: 13,
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
                     else ...[
                       GestureDetector(
                         onTap: () => _konfirmasiAbsen("Masuk"),
@@ -681,7 +769,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                             borderRadius: BorderRadius.circular(18),
                             boxShadow: [
                               BoxShadow(
-                                color: context.primaryColor.withOpacity(0.35),
+                                color: context.primaryColor.withValues(alpha: 0.35),
                                 blurRadius: 20,
                                 offset: const Offset(0, 8),
                               ),
@@ -726,14 +814,96 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                         ),
                       ),
                     ],
+
+                    // --- ADMIN SHORTCUT: ABSENSI HARI INI ---
+                    if (auth.isAdmin) ...[
+                      const SizedBox(height: 20),
+                      GestureDetector(
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const TodayAttendanceScreen(),
+                          ),
+                        ),
+                        child: Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(20),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(20),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.04),
+                                blurRadius: 10,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(10),
+                                decoration: BoxDecoration(
+                                  color: context.primaryColor.withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Icon(
+                                  Icons.assessment_rounded,
+                                  color: context.primaryColor,
+                                  size: 24,
+                                ),
+                              ),
+                              const SizedBox(width: 16),
+                              const Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      "Absensi Hari Ini",
+                                      style: TextStyle(
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.w800,
+                                        color: Color(0xFF0F172A),
+                                      ),
+                                    ),
+                                    Text(
+                                      "Pantau kehadiran anggota hari ini",
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: Colors.grey,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Icon(
+                                Icons.chevron_right_rounded,
+                                color: Colors.grey.shade400,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+
                     const SizedBox(height: 24),
                   ],
                 ),
+              ),
+            ),
+                  ),
+                ],
               ),
             ),
           ],
         ),
       ),
     );
+  }
+
+  int _timeToMinutes(String time) {
+    if (time == "-" || !time.contains(":")) return 0;
+    final parts = time.split(':');
+    return int.parse(parts[0]) * 60 + int.parse(parts[1]);
   }
 }

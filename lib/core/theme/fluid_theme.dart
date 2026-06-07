@@ -7,7 +7,7 @@ class FluidColors {
   static const Color surfaceContainerLow = Color(0xFFF3F4F3);
   static const Color onSurface = Color(0xFF1A1C1A);
 
-  Color get primaryGhost => primary.withOpacity(0.2);
+  Color get primaryGhost => primary.withValues(alpha: 0.2);
 
   FluidColors({required this.primary});
 }
@@ -80,5 +80,5 @@ class FluidTheme {
 
 extension FluidThemeExtension on BuildContext {
   Color get primaryColor => Theme.of(this).colorScheme.primary;
-  Color get primaryGhost => primaryColor.withOpacity(0.2);
+  Color get primaryGhost => primaryColor.withValues(alpha: 0.2);
 }

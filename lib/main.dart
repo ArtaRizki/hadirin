@@ -1,21 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:hadirin/core/service/notification_service.dart';
-import 'package:hadirin/core/service/sync_service.dart';
+import 'package:primkopasindo_labojon/core/service/notification_service.dart';
+import 'package:primkopasindo_labojon/core/service/sync_service.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
-import 'package:hadirin/core/config/app_config.dart';
+import 'package:primkopasindo_labojon/core/config/app_config.dart';
 
 // Import Provider
-import 'package:hadirin/core/providers/auth_provider.dart';
+import 'package:primkopasindo_labojon/core/providers/auth_provider.dart';
 
 // Import Screens
-import 'package:hadirin/ui/screens/splash_screen.dart';
-import 'package:hadirin/ui/screens/login_screen.dart';
-import 'package:hadirin/ui/screens/admin_register_screen.dart';
-import 'package:hadirin/ui/screens/attendance_screen.dart';
-import 'package:hadirin/core/theme/fluid_theme.dart';
+import 'package:primkopasindo_labojon/ui/screens/splash_screen.dart';
+import 'package:primkopasindo_labojon/ui/screens/login_screen.dart';
+import 'package:primkopasindo_labojon/ui/screens/admin_register_screen.dart';
+import 'package:primkopasindo_labojon/ui/screens/attendance_screen.dart';
+import 'package:primkopasindo_labojon/core/theme/fluid_theme.dart';
 
 void main() async {
   WidgetsBinding widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
@@ -57,7 +57,7 @@ class MyApp extends StatelessWidget {
     return Consumer<AuthProvider>(
       builder: (context, auth, _) {
         return MaterialApp(
-          title: 'Hadir.in',
+          title: 'Primkopasindo Labojon',
           debugShowCheckedModeBanner: false,
           theme: FluidTheme.getTheme(auth.themeColor),
           // 2. Jadikan AuthWrapper sebagai home (halaman pertama yang dimuat)

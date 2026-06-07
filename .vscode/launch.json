@@ -26,7 +26,7 @@
             "request": "launch",
             "type": "dart",
             "args": [
-                "--dart-define=GAS_ENDPOINT=https://script.google.com/macros/s/AKfycbx7ZUuvd4jKKIKBwc1yUy5rYN3gFvoJElTQCKJ2aSt9XdlMyQEML7DRKAkcr1fDUaLa/exec",
+                "--dart-define=GAS_ENDPOINT=https://script.google.com/macros/s/AKfycbzG4Y6KPvMjKkcuB6OmUwqXGNmcg9d0x3riZlEpFGT5R7af2IgkBVLppbYR7KCP14Xq/exec",
                 "--dart-define=API_TOKEN=SUPER_SECRET_UMKM001_8xZ2"
             ]
         },
@@ -40,6 +40,7 @@
             ]
         },
         {
+<<<<<<< HEAD
             "name": "Hadir.in - ANTARMOBIL.ID",
             "request": "launch",
             "type": "dart",
@@ -57,5 +58,24 @@
                 "--dart-define=API_TOKEN=SUPER_SECRET_SIPARJO_8xZ2"
             ]
         },
+=======
+            "name": "LABOJON",
+            "request": "launch",
+            "type": "dart",
+            "args": [
+                "--dart-define=GAS_ENDPOINT=https://script.google.com/macros/s/AKfycbzKcTu27OdGesb3j1jrcxOApbCHdUSao_TCw_Fpah10-mfTZYfR8e0aUXQA9HEDuq2sXA/exec",
+                "--dart-define=API_TOKEN=LABOJON"
+            ]
+        },
+        {
+            "name": "HADIRINJUNE",
+            "request": "launch",
+            "type": "dart",
+            "args": [
+                "--dart-define=GAS_ENDPOINT=https://script.google.com/macros/s/AKfycbwSdR27-09J6nRF_cWvClFJDS6ZsLId81r_UjfGttSoT_UgLdKlRIWcidoayT_0J3hlWw/exec",
+                "--dart-define=API_TOKEN=HADIRIN"
+            ]
+        }
+>>>>>>> dev_arta
     ]
 }

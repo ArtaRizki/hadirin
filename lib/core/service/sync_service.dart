@@ -1,8 +1,8 @@
 import 'dart:convert';
-import 'package:hadirin/core/providers/auth_provider.dart';
-import 'package:hadirin/core/service/admin_service.dart';
-import 'package:hadirin/core/service/attendance_service.dart';
-import 'package:hadirin/core/service/notification_service.dart';
+import 'package:primkopasindo_labojon/core/providers/auth_provider.dart';
+import 'package:primkopasindo_labojon/core/service/admin_service.dart';
+import 'package:primkopasindo_labojon/core/service/attendance_service.dart';
+import 'package:primkopasindo_labojon/core/service/notification_service.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -11,7 +11,6 @@ class SyncService {
   factory SyncService() => _instance;
   SyncService._internal();
 
-  final AttendanceService _api = AttendanceService();
   final NotificationService _notify = NotificationService();
 
   /// Menjalankan sinkronisasi status izin dan setup pengingat
@@ -53,13 +52,6 @@ class SyncService {
     }
   }
 
-  String _getTodayString() {
-    final now = DateTime.now();
-    // Sesuaikan dengan format 'dd/MM/yyyy' atau 'yyyy-MM-dd' dari server.
-    // GAS biasanya mengembalikan string yang mengandung tanggal.
-    return "${now.day.toString().padLeft(2, '0')}/${now.month.toString().padLeft(2, '0')}/${now.year}";
-  }
-
   Future<void> _checkLeaveStatusChangesFromHistory(
     String idAnggota,
     List<dynamic> history,
@@ -76,7 +68,7 @@ class SyncService {
         cache = Map<String, String>.from(json.decode(rawCache));
       }
 
-      bool hasChanges = false;
+      // bool hasChanges = false; // Unused
       Map<String, String> newCache = {};
 
       for (var item in history) {
@@ -99,7 +91,6 @@ class SyncService {
                   ? "Kabar baik! Pengajuan $tipe Anda telah disetujui. ✅"
                   : "Pengajuan $tipe Anda telah diproses dengan status: $status.",
             );
-            hasChanges = true;
           }
         }
       }

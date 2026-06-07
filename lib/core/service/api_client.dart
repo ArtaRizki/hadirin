@@ -1,7 +1,7 @@
 import 'dart:developer' as d;
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:hadirin/core/config/app_config.dart';
+import 'package:primkopasindo_labojon/core/config/app_config.dart';
 
 /// Kelas dasar yang menyimpan logika HTTP bersama.
 /// Semua service mewarisi kelas ini — tidak perlu duplikasi kode.

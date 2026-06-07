@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:hadirin/core/providers/auth_provider.dart';
-import 'package:hadirin/core/service/admin_service.dart';
+import 'package:primkopasindo_labojon/core/providers/auth_provider.dart';
+import 'package:primkopasindo_labojon/core/service/admin_service.dart';
 import 'package:provider/provider.dart';
-import 'package:hadirin/core/theme/fluid_theme.dart';
-import 'package:hadirin/ui/screens/admin_register_screen.dart';
-import 'package:hadirin/ui/screens/attendance_screen.dart';
+import 'package:primkopasindo_labojon/core/theme/fluid_theme.dart';
+import 'package:primkopasindo_labojon/ui/screens/admin_register_screen.dart';
+import 'package:primkopasindo_labojon/ui/screens/attendance_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -33,7 +33,7 @@ class _LoginScreenState extends State<LoginScreen> {
       if (superResult['success']) {
         await context.read<AuthProvider>().login(
           "SUPER_ADMIN",
-          "Owner Hadir.in",
+          "Owner Primkopasindo Labojon",
           LoginRole.superAdmin,
           "MASTER",
         );
@@ -73,20 +73,22 @@ class _LoginScreenState extends State<LoginScreen> {
 
       if (result['success']) {
         final dataAnggota = result['message'];
-        final clientIdDariServer = dataAnggota['client_id'];
+        final clientIdDariServer = (dataAnggota['client_id'] ?? "").toString();
         final divisi = (dataAnggota['divisi'] ?? "").toString().toUpperCase();
-        final nama = (dataAnggota['nama_karyawan'] ?? "").toString().toUpperCase();
+        final nama = (dataAnggota['nama_karyawan'] ?? "ANGGOTA").toString();
 
-        // Logika penentuan role: 
+        // Logika penentuan role:
         // Admin jika ID diawali INST-/ADM-/ADMIN- ATAU Divisi/Nama mengandung kata ADMIN/PEMILIK
-        bool isIdAdmin = inputId.toUpperCase().startsWith("INST-") || 
-                         inputId.toUpperCase().startsWith("ADM-") ||
-                         inputId.toUpperCase().startsWith("ADMIN-");
-        
-        bool isRoleAdmin = divisi.contains("ADMIN") || 
-                          divisi.contains("PEMILIK") ||
-                          nama.contains("ADMIN") ||
-                          nama.contains("PEMILIK");
+        bool isIdAdmin =
+            inputId.toUpperCase().startsWith("INST-") ||
+            inputId.toUpperCase().startsWith("ADM-") ||
+            inputId.toUpperCase().startsWith("ADMIN-");
+
+        bool isRoleAdmin =
+            divisi.contains("ADMIN") ||
+            divisi.contains("PEMILIK") ||
+            nama.toUpperCase().contains("ADMIN") ||
+            nama.toUpperCase().contains("PEMILIK");
 
         LoginRole assignedRole = (isIdAdmin || isRoleAdmin)
             ? LoginRole.admin
@@ -94,11 +96,12 @@ class _LoginScreenState extends State<LoginScreen> {
 
         await context.read<AuthProvider>().login(
           inputId,
-          dataAnggota['nama_karyawan'],
+          nama,
           assignedRole,
           clientIdDariServer,
           userPhone: (dataAnggota['no_hp'] ?? "").toString(),
           adminPhone: (dataAnggota['admin_phone'] ?? "").toString(),
+          isFaceRegistered: dataAnggota['wajah_terdaftar'] == true,
         );
 
         if (!mounted) return;
@@ -109,15 +112,19 @@ class _LoginScreenState extends State<LoginScreen> {
         );
       } else {
         String serverMsg = result['message'].toString();
-        if (serverMsg.contains("Kode Instansi") && inputKodeInstansi.contains("MASTER")) {
-          serverMsg += "\n\nPetunjuk: Kosongkan kotak pertama untuk login Super Admin.";
+        if (serverMsg.contains("Kode Instansi") &&
+            inputKodeInstansi.contains("MASTER")) {
+          serverMsg +=
+              "\n\nPetunjuk: Kosongkan kotak pertama untuk login Super Admin.";
         }
         _showError(serverMsg);
       }
     } catch (e) {
       String errorMsg = e.toString().replaceAll('Exception: ', '');
-      if (errorMsg.contains("Kode Instansi") && inputKodeInstansi.contains("MASTER")) {
-        errorMsg += "\n\nPetunjuk: Kosongkan kotak pertama untuk login Super Admin.";
+      if (errorMsg.contains("Kode Instansi") &&
+          inputKodeInstansi.contains("MASTER")) {
+        errorMsg +=
+            "\n\nPetunjuk: Kosongkan kotak pertama untuk login Super Admin.";
       }
       _showError("Gagal terhubung ke server: $errorMsg");
     } finally {
@@ -159,7 +166,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 height: 250,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: context.primaryColor.withOpacity(0.06),
+                  color: context.primaryColor.withValues(alpha: 0.06),
                 ),
               ),
             ),
@@ -172,7 +179,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 height: 200,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: const Color(0xFF7C3AED).withOpacity(0.05),
+                  color: const Color(0xFF7C3AED).withValues(alpha: 0.05),
                 ),
               ),
             ),
@@ -194,7 +201,9 @@ class _LoginScreenState extends State<LoginScreen> {
                           child: Container(
                             padding: const EdgeInsets.all(16),
                             decoration: BoxDecoration(
-                              color: context.primaryColor.withOpacity(0.1),
+                              color: context.primaryColor.withValues(
+                                alpha: 0.1,
+                              ),
                               shape: BoxShape.circle,
                             ),
                             child: Icon(
@@ -215,9 +224,9 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                         ),
                         const Text(
-                          "Hadir.in",
+                          "Primkopasindo Labojon",
                           style: TextStyle(
-                            fontSize: 42,
+                            fontSize: 32,
                             fontWeight: FontWeight.w900,
                             color: Color(0xFF0F172A),
                             letterSpacing: -1,
@@ -240,7 +249,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             borderRadius: BorderRadius.circular(16),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.03),
+                                color: Colors.black.withValues(alpha: 0.03),
                                 blurRadius: 10,
                                 offset: const Offset(0, 4),
                               ),
@@ -284,7 +293,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             borderRadius: BorderRadius.circular(16),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.03),
+                                color: Colors.black.withValues(alpha: 0.03),
                                 blurRadius: 10,
                                 offset: const Offset(0, 4),
                               ),
@@ -331,8 +340,8 @@ class _LoginScreenState extends State<LoginScreen> {
                               backgroundColor: context.primaryColor,
                               foregroundColor: Colors.white,
                               elevation: 4,
-                              shadowColor: context.primaryColor.withOpacity(
-                                0.4,
+                              shadowColor: context.primaryColor.withValues(
+                                alpha: 0.4,
                               ),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(16),

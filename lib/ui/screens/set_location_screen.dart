@@ -3,15 +3,15 @@ import 'dart:convert';
 import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
-import 'package:hadirin/core/service/admin_service.dart';
+import 'package:primkopasindo_labojon/core/service/admin_service.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:hadirin/core/theme/fluid_theme.dart';
+import 'package:primkopasindo_labojon/core/theme/fluid_theme.dart';
 import 'package:provider/provider.dart';
-import 'package:hadirin/core/providers/auth_provider.dart';
+import 'package:primkopasindo_labojon/core/providers/auth_provider.dart';
 
 class SetLocationScreen extends StatefulWidget {
   final bool isSelectionMode;
@@ -42,7 +42,7 @@ class _SetLocationScreenState extends State<SetLocationScreen> {
 
   String _currentAddress = "Mencari alamat...";
   Timer? _debounce;
-  bool _isSearching = false;
+
   bool _isGettingLocation = false;
   bool _isMapReady = false;
   double _currentRotation = 0.0;
@@ -83,8 +83,10 @@ class _SetLocationScreenState extends State<SetLocationScreen> {
     if (remoteConfig != null && mounted) {
       setState(() {
         _pickedLocation = LatLng(
-          double.tryParse(remoteConfig['lat'].toString()) ?? _pickedLocation.latitude,
-          double.tryParse(remoteConfig['lng'].toString()) ?? _pickedLocation.longitude,
+          double.tryParse(remoteConfig['lat'].toString()) ??
+              _pickedLocation.latitude,
+          double.tryParse(remoteConfig['lng'].toString()) ??
+              _pickedLocation.longitude,
         );
         _radius = double.tryParse(remoteConfig['radius'].toString()) ?? _radius;
         _isMapReady = true;
@@ -128,27 +130,25 @@ class _SetLocationScreenState extends State<SetLocationScreen> {
     if (query.trim().isEmpty) {
       setState(() {
         _searchResults.clear();
-        _isSearching = false;
+        _searchResults.clear();
       });
       return;
     }
-    setState(() => _isSearching = true);
+
     try {
       final url = Uri.parse(
         'https://nominatim.openstreetmap.org/search?q=$query&format=json&limit=5&addressdetails=1',
       );
       final response = await http.get(
         url,
-        headers: {'User-Agent': 'com.mobile.hadirin'},
+        headers: {'User-Agent': 'com.primkopasindo.labojon'},
       );
       if (response.statusCode == 200 && mounted) {
         setState(() => _searchResults = json.decode(response.body) as List);
       }
     } catch (e) {
       log("Search error: $e");
-    } finally {
-      if (mounted) setState(() => _isSearching = false);
-    }
+    } finally {}
   }
 
   void _onLocationSelected(double lat, double lon, String displayName) {
@@ -280,14 +280,14 @@ class _SetLocationScreenState extends State<SetLocationScreen> {
                       urlTemplate:
                           'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png',
                       subdomains: const ['a', 'b', 'c', 'd'],
-                      userAgentPackageName: 'com.mobile.hadirin',
+                      userAgentPackageName: 'com.primkopasindo.labojon',
                       maxZoom: 19,
                     ),
                     CircleLayer(
                       circles: [
                         CircleMarker(
                           point: _pickedLocation,
-                          color: context.primaryColor.withOpacity(0.15),
+                          color: context.primaryColor.withValues(alpha: 0.15),
                           borderStrokeWidth: 2,
                           borderColor: context.primaryColor,
                           useRadiusInMeter: true,
@@ -308,7 +308,7 @@ class _SetLocationScreenState extends State<SetLocationScreen> {
                       vertical: 2,
                     ),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.7),
+                      color: Colors.white.withValues(alpha: 0.7),
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: const Text(
@@ -552,7 +552,7 @@ class _SetLocationScreenState extends State<SetLocationScreen> {
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.08),
+                    color: Colors.black.withValues(alpha: 0.08),
                     blurRadius: 20,
                     offset: const Offset(0, -5),
                   ),
@@ -646,7 +646,7 @@ class _SetLocationScreenState extends State<SetLocationScreen> {
                           vertical: 4,
                         ),
                         decoration: BoxDecoration(
-                          color: context.primaryColor.withOpacity(0.1),
+                          color: context.primaryColor.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(
@@ -665,9 +665,11 @@ class _SetLocationScreenState extends State<SetLocationScreen> {
                     data: SliderTheme.of(context).copyWith(
                       trackHeight: 4,
                       activeTrackColor: context.primaryColor,
-                      inactiveTrackColor: context.primaryColor.withOpacity(0.1),
+                      inactiveTrackColor: context.primaryColor.withValues(
+                        alpha: 0.1,
+                      ),
                       thumbColor: context.primaryColor,
-                      overlayColor: context.primaryColor.withOpacity(0.2),
+                      overlayColor: context.primaryColor.withValues(alpha: 0.2),
                       thumbShape: const RoundSliderThumbShape(
                         enabledThumbRadius: 10,
                         elevation: 4,
@@ -692,7 +694,9 @@ class _SetLocationScreenState extends State<SetLocationScreen> {
                           borderRadius: BorderRadius.circular(18),
                         ),
                         elevation: 4,
-                        shadowColor: context.primaryColor.withOpacity(0.3),
+                        shadowColor: context.primaryColor.withValues(
+                          alpha: 0.3,
+                        ),
                       ),
                       onPressed: _isSaving ? null : _simpanLokasi,
                       child: _isSaving
