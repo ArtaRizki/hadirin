@@ -13,7 +13,7 @@
 const MASTER_API_TOKEN = "HADIRIN";
 const MASTER_REGISTRY_ID = "1hTh660vp0AbPn8D37Yg7XE-5HBRDXYA2xSJErORfZ3w";
 const ID_TEMPLATE_SS = "19WvCNQSKEN2g7Ks9dhUfVp2aKH1E6ENt2ItVzHsndG8";
-const ID_MASTER_FOLDER = "1Vyi1eW1dykNnP5CiXG1Ry4ebQpCnlmSv";
+const ID_MASTER_FOLDER = "1gzRFl5Qwro80-u7tl0R81tem1t-fkrT3";
 const SUPER_ADMIN_PASSWORD = "HADIRIN_MASTER_2026_AHHH";
 
 // =============================================================================

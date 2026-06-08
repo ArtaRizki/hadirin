@@ -58,7 +58,7 @@ class _AddAnggotaScreenState extends State<AddAnggotaScreen> {
 
     // BACA ID ADMIN INSTANSI YANG SEDANG LOGIN
     final auth = context.read<AuthProvider>();
-    final clientId = auth.idUser ?? "";
+    final clientId = auth.clientId ?? "";
 
     String phone = _hpController.text.trim();
     if (phone.isNotEmpty) {
