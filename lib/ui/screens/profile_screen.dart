@@ -98,7 +98,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               _leaveYear = res['tahun'] ?? DateTime.now().year;
             });
           }
-        }).catchError((e) => d.log('Leave balance error: $e'));
+        }).catchError((e) => debugPrint('Leave balance error: $e'));
       }
 
       setState(() {
