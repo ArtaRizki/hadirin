@@ -973,12 +973,27 @@ function handleGetMonthlyReport(payload) {
   var res = [];
   logs.slice(1).forEach(r => {
     if (!r[0]) return;
-    var d = new Date(r[0]);
-    var b = (d.getMonth() + 1).toString().padStart(2, "0") + "-" + d.getFullYear();
+    
+    var b = "";
+    var formattedWaktu = "";
+    
+    if (r[0] instanceof Date) {
+      var d = r[0];
+      b = (d.getMonth() + 1).toString().padStart(2, "0") + "-" + d.getFullYear();
+      formattedWaktu = Utilities.formatDate(d, "GMT+7", "yyyy-MM-dd HH:mm:ss");
+    } else {
+      var dateStr = String(r[0]).trim();
+      var parts = dateStr.split(" ")[0].split("-");
+      if (parts.length === 3) {
+        b = parts[1] + "-" + parts[0]; // MM-YYYY
+      }
+      formattedWaktu = dateStr;
+    }
+
     if (b === payload.bulan_tahun && (payload.id_karyawan_target === "SEMUA" || String(r[1]) === payload.id_karyawan_target)) {
       var idKey = String(r[1]).trim().toLowerCase();
       res.push({
-        waktu: Utilities.formatDate(d, "GMT+7", "yyyy-MM-dd HH:mm:ss"),
+        waktu: formattedWaktu,
         id_karyawan: String(r[1]),
         nama: namaMap[idKey] || "Tanpa Nama",
         tipe: r[2],
@@ -1275,6 +1290,45 @@ function updateMealConfigWeb(clientId, uangMakan, potonganTelat) {
   try {
     var payload = { client_id: clientId, uang_makan: uangMakan, potongan_telat_1jam: potonganTelat };
     var result = handleUpdateMealConfig(payload);
+    return JSON.parse(result.getContent());
+  } catch(e) {
+    return { code: 500, status: "error", message: e.toString() };
+  }
+}
+
+/**
+ * TAMBAH ANGGOTA (Web Dashboard)
+ */
+function addAnggotaWeb(clientId, idBaru, namaBaru, divisiBaru, noHp, defaultShift) {
+  try {
+    var payload = { client_id: clientId, id_karyawan_baru: idBaru, nama_karyawan_baru: namaBaru, divisi_baru: divisiBaru, no_hp: noHp, default_shift: defaultShift };
+    var result = handleAddAnggota(payload);
+    return JSON.parse(result.getContent());
+  } catch(e) {
+    return { code: 500, status: "error", message: e.toString() };
+  }
+}
+
+/**
+ * AJUKAN IZIN (Web Dashboard)
+ */
+function ajukanIzinWeb(clientId, idKaryawan, tipe, rentang, alasan, foto, isAdmin) {
+  try {
+    var payload = { client_id: clientId, id_karyawan: idKaryawan, tipe_izin: tipe, rentang_tanggal: rentang, alasan: alasan, foto_base64: foto, is_admin: isAdmin };
+    var result = handleAjukanIzin(payload);
+    return JSON.parse(result.getContent());
+  } catch(e) {
+    return { code: 500, status: "error", message: e.toString() };
+  }
+}
+
+/**
+ * LAPORAN BULANAN (Web Dashboard)
+ */
+function getMonthlyReportWeb(clientId, bulanTahun, idKaryawanTarget) {
+  try {
+    var payload = { client_id: clientId, bulan_tahun: bulanTahun, id_karyawan_target: idKaryawanTarget || "SEMUA" };
+    var result = handleGetMonthlyReport(payload);
     return JSON.parse(result.getContent());
   } catch(e) {
     return { code: 500, status: "error", message: e.toString() };

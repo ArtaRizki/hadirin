@@ -461,11 +461,18 @@
     tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 40px;">Mengambil data anggota...</td></tr>';
 
     // Fetch shifts first to populate dropdowns
+    const now = new Date();
     google.script.run
+      .withFailureHandler(function(err) {
+         tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 40px; color: #ef4444;">Gagal mengambil data shift: ' + err.message + '</td></tr>';
+      })
       .withSuccessHandler(function (shiftRes) {
         allShifts = (shiftRes.message && shiftRes.message.shifts) ? shiftRes.message.shifts : (shiftRes.shifts || []);
 
         google.script.run
+          .withFailureHandler(function(err) {
+             tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 40px; color: #ef4444;">Gagal mengambil data anggota: ' + err.message + '</td></tr>';
+          })
           .withSuccessHandler(function (response) {
             tbody.innerHTML = '';
             const members = response.message || response;
@@ -505,7 +512,7 @@
           })
           .handleGetAllAnggota({ client_id: currentUser.clientId });
       })
-      .getShiftList(currentUser.clientId);
+      .getShiftSettings(currentUser.clientId, now.getFullYear(), now.getMonth() + 1);
   }
 
   function updateMemberShift(targetId, shiftId) {
@@ -833,6 +840,7 @@
   }
 
   function saveShiftDefinitions() {
+    Swal.fire({ title: 'Menyimpan Master Shift...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
     const rows = document.querySelectorAll('#shift-list-body tr');
     const shiftList = Array.from(rows).map(row => {
       const inputs = row.querySelectorAll('input');
@@ -847,11 +855,13 @@
     });
 
     google.script.run
+      .withFailureHandler(err => Swal.fire('Gagal', err.message, 'error'))
       .withSuccessHandler(() => { Swal.fire('Berhasil', 'Definisi shift diperbarui.', 'success'); loadShiftData(); })
       .saveShiftDefinitions(currentUser.clientId, shiftList);
   }
 
   function saveActivePlotting() {
+    Swal.fire({ title: 'Menyimpan Plotting...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
     const selects = document.querySelectorAll('.shift-select');
     const plottingList = Array.from(selects).map(s => ({
       key_id: s.dataset.key,
@@ -861,6 +871,7 @@
     }));
 
     google.script.run
+      .withFailureHandler(err => Swal.fire('Gagal', err.message, 'error'))
       .withSuccessHandler(() => Swal.fire('Berhasil', 'Plotting jadwal disimpan.', 'success'))
       .savePlottingAssignments(currentUser.clientId, plottingList);
   }
@@ -878,24 +889,47 @@
     body.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 20px;">Memuat data...</td></tr>';
 
     google.script.run
+      .withFailureHandler(function(err) {
+        body.innerHTML = '<tr><td colspan="5" style="text-align:center; color:red; padding: 20px;">Error koneksi: ' + err.message + '</td></tr>';
+      })
       .withSuccessHandler(function (res) {
         body.innerHTML = '';
         if (res.status === "success") {
+          if (!res.message || res.message.length === 0) {
+            body.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 20px; font-weight: bold; color: var(--text-muted);">Tidak ada absensi di bulan ini</td></tr>';
+            return;
+          }
           res.message.forEach(row => {
             const tr = document.createElement('tr');
             tr.innerHTML = `<td>${row.waktu}</td><td>${row.id_karyawan}</td><td>${row.nama}</td><td>${row.tipe}</td><td>${row.status}</td>`;
             body.appendChild(tr);
           });
+        } else {
+          body.innerHTML = '<tr><td colspan="5" style="text-align:center; color:red; padding: 20px;">Error server: ' + res.message + '</td></tr>';
         }
       })
-      .handleGetMonthlyReport({ client_id: currentUser.clientId, bulan_tahun: picker.value.split('-').reverse().join('-') });
+      .getMonthlyReportWeb(currentUser.clientId, picker.value.split('-').reverse().join('-'));
   }
 
   function downloadReport() {
     const picker = document.getElementById('report-month-picker');
+    if (!picker.value) {
+      alert("Pilih bulan terlebih dahulu!");
+      return;
+    }
+    showProcessing("Menyiapkan Data...");
     google.script.run
+      .withFailureHandler(function (err) {
+        hideProcessing();
+        alert("Gagal mengunduh: " + err.message);
+      })
       .withSuccessHandler(function (res) {
+        hideProcessing();
         if (res.status === "success") {
+          if (!res.message || res.message.length === 0) {
+            alert("Tidak ada data absensi di bulan ini.");
+            return;
+          }
           const data = res.message.map(r => ({
             Waktu: r.waktu,
             ID: r.id_karyawan,
@@ -907,9 +941,11 @@
           const wb = XLSX.utils.book_new();
           XLSX.utils.book_append_sheet(wb, ws, "Laporan");
           XLSX.writeFile(wb, `Laporan_Hadirin_${picker.value}.xlsx`);
+        } else {
+          alert("Gagal: " + res.message);
         }
       })
-      .handleGetMonthlyReport({ client_id: currentUser.clientId, bulan_tahun: picker.value.split('-').reverse().join('-'), id_karyawan_target: "SEMUA" });
+      .getMonthlyReportWeb(currentUser.clientId, picker.value.split('-').reverse().join('-'), "SEMUA");
   }
 
   // HELPERS
@@ -1172,4 +1208,117 @@
       Swal.fire('Error', err.message, 'error'); 
     }
   });
+
+  // --- MODAL FUNCTIONS (TAMBAH ANGGOTA & IZIN) ---
+  function openAddMemberModal() {
+    document.getElementById('add-member-modal').style.display = 'flex';
+  }
+
+  function closeAddMemberModal() {
+    document.getElementById('add-member-modal').style.display = 'none';
+  }
+
+  function submitAddMember() {
+    const id = document.getElementById('add-m-id').value;
+    const nama = document.getElementById('add-m-nama').value;
+    const divisi = document.getElementById('add-m-divisi').value;
+    const hp = document.getElementById('add-m-hp').value;
+    const shift = document.getElementById('add-m-shift').value;
+
+    if(!id || !nama) {
+      alert("ID dan Nama wajib diisi!");
+      return;
+    }
+
+    showProcessing("Menambahkan Anggota...");
+    google.script.run
+      .withFailureHandler(function(err) {
+         hideProcessing();
+         alert("Error: " + err.message);
+      })
+      .withSuccessHandler(function(res) {
+        hideProcessing();
+        if(res.code == 200 || res.status == "success") {
+           Swal.fire('Berhasil', 'Anggota berhasil ditambahkan.', 'success');
+           closeAddMemberModal();
+           loadMembersData(); // Refresh list
+           // Reset form
+           document.getElementById('add-m-id').value = '';
+           document.getElementById('add-m-nama').value = '';
+           document.getElementById('add-m-divisi').value = '';
+           document.getElementById('add-m-hp').value = '';
+        } else {
+           Swal.fire('Gagal', res.message, 'error');
+        }
+      })
+      .addAnggotaWeb(currentUser.clientId, id, nama, divisi, hp, shift);
+  }
+
+  function openLeaveModal() {
+    document.getElementById('leave-modal').style.display = 'flex';
+  }
+
+  function closeLeaveModal() {
+    document.getElementById('leave-modal').style.display = 'none';
+  }
+
+  function submitLeaveRequest() {
+    const tipe = document.getElementById('leave-type').value;
+    const rentang = document.getElementById('leave-range').value;
+    const alasan = document.getElementById('leave-reason').value;
+
+    if(!rentang || !alasan) {
+      alert("Rentang tanggal dan alasan wajib diisi!");
+      return;
+    }
+
+    const fileInput = document.getElementById('leave-file');
+    let fotoData = "";
+    
+    showProcessing("Mengirim Pengajuan...");
+
+    if (fileInput.files.length > 0) {
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        fotoData = e.target.result.split(',')[1];
+        sendLeaveRequest(tipe, rentang, alasan, fotoData);
+      };
+      reader.readAsDataURL(fileInput.files[0]);
+    } else {
+      sendLeaveRequest(tipe, rentang, alasan, "");
+    }
+  }
+
+  function sendLeaveRequest(tipe, rentang, alasan, foto) {
+    google.script.run
+      .withFailureHandler(function(err) {
+        hideProcessing();
+        alert("Error: " + err.message);
+      })
+      .withSuccessHandler(function(res) {
+        hideProcessing();
+        if(res.code == 200 || res.status == "success") {
+          Swal.fire('Berhasil', 'Pengajuan berhasil dikirim.', 'success');
+          closeLeaveModal();
+          // Reset form
+          document.getElementById('leave-range').value = '';
+          document.getElementById('leave-reason').value = '';
+          document.getElementById('leave-file').value = '';
+          document.getElementById('leave-preview').style.display = 'none';
+        } else {
+          Swal.fire('Gagal', res.message, 'error');
+        }
+      })
+      .ajukanIzinWeb(currentUser.clientId, currentUser.id, tipe, rentang, alasan, foto, false);
+  }
+
+  function previewLeaveFile(event) {
+    const preview = document.getElementById('leave-preview');
+    if(event.target.files.length > 0) {
+       preview.src = URL.createObjectURL(event.target.files[0]);
+       preview.style.display = 'block';
+    } else {
+       preview.style.display = 'none';
+    }
+  }
 </script>

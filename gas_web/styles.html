@@ -149,7 +149,8 @@
     top: 0;
     border-right: 1px solid var(--glass-border);
     transition: width 0.3s ease, padding 0.3s ease, opacity 0.3s ease;
-    overflow: hidden;
+    overflow-y: auto;
+    overflow-x: hidden;
   }
 
   #sidebar.sidebar-collapsed {
@@ -165,6 +166,7 @@
     max-width: 1400px;
     margin: 0 auto;
     width: 100%;
+    min-width: 0; /* Prevent flex item from blowing out its container */
   }
 
   /* NAV ITEMS */
