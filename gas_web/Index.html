@@ -54,6 +54,13 @@
         <input type="password" id="login-password" placeholder="••••••••">
       </div>
 
+      <div id="branch-select-group" class="input-group" style="display: none;">
+        <label>Pilih Cabang</label>
+        <select id="login-branch" style="width: 100%; padding: 12px; border-radius: 12px; border: 1px solid var(--glass-border); background: rgba(255, 255, 255, 0.7); outline: none;">
+          <option value="">-- Sedang Memuat Data... --</option>
+        </select>
+      </div>
+
       <button class="btn btn-primary" id="btn-login" style="width: 100%; margin-top: 10px; display: flex;" onclick="handleLogin()">
         Masuk Dashboard
       </button>

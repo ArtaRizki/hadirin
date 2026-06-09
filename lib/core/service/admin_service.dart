@@ -435,6 +435,36 @@ class AdminService extends ApiClient {
   }
 
   // =================================================================
+  // GET BRANCH LIST DARI MASTER REGISTRY
+  // =================================================================
+  Future<List<Map<String, String>>> getBranchList() async {
+    try {
+      final payload = {
+        'api_token': AppConfig.apiToken,
+        'action': 'get_branch_list',
+      };
+
+      final response = await sendRequest('get_branch_list', payload);
+      
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['code'] == 200 && data['data'] != null) {
+          final List<dynamic> branches = data['data'];
+          return branches.map((b) => {
+            'name': b['name'].toString(),
+            'endpoint': b['endpoint'].toString(),
+            'token': b['token'].toString(),
+          }).toList();
+        }
+      }
+      return []; // Return list kosong jika gagal / belum ada data
+    } catch (e) {
+      d.log('==== ERROR GET BRANCH LIST ==== $e');
+      return [];
+    }
+  }
+
+  // =================================================================
   // GET SHIFT LIST & PLOTTING SETTINGS
   // =================================================================
   Future<Map<String, dynamic>> getShiftList(

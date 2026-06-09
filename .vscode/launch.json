@@ -56,6 +56,15 @@
                 "--dart-define=GAS_ENDPOINT=https://script.google.com/macros/s/AKfycbwSdR27-09J6nRF_cWvClFJDS6ZsLId81r_UjfGttSoT_UgLdKlRIWcidoayT_0J3hlWw/exec",
                 "--dart-define=API_TOKEN=HADIRIN"
             ]
+        },
+        {
+            "name": "HADIRINJUNE2",
+            "request": "launch",
+            "type": "dart",
+            "args": [
+                "--dart-define=GAS_ENDPOINT=https://script.google.com/macros/s/AKfycbxjYsolh-WRyMbhkXNy63pHaZhiggu871sG-T8w8bMIpf9fUEs3MUgWnXCBedONaCIh/exec",
+                "--dart-define=API_TOKEN=HADIRIN2"
+            ]
         }
     ]
 }

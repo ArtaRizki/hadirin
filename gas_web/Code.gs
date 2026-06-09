@@ -34,6 +34,29 @@ function include(filename) {
 }
 
 /**
+ * GET BRANCH LIST (Untuk Web Dropdown)
+ */
+function getBranchListWeb() {
+  try {
+    var rows = SpreadsheetApp.openById(MASTER_REGISTRY_ID).getSheetByName("Klien").getDataRange().getValues();
+    var branches = [];
+    for (var i = 1; i < rows.length; i++) {
+      var clientId = String(rows[i][0] || "").trim();
+      var name = String(rows[i][1] || "").trim();
+      var endpoint = String(rows[i][6] || "").trim();
+      var token = String(rows[i][7] || "").trim();
+      
+      if (clientId && endpoint && token) {
+        branches.push({ client_id: clientId, name: name, endpoint: endpoint, token: token });
+      }
+    }
+    return { success: true, data: branches };
+  } catch (e) {
+    return { success: false, message: e.toString() };
+  }
+}
+
+/**
  * LOGIKA LOGIN WEB DASHBOARD
  */
 function loginWeb(clientId, id, pin) {
@@ -437,6 +460,7 @@ function doPost(e) {
       case "get_meal_deduction_report": return handleGetMealDeductionReport(payload);
       case "get_leave_balance": return handleGetLeaveBalance(payload);
       case "update_meal_config": return handleUpdateMealConfig(payload);
+      case "get_branch_list": return handleGetBranchList(payload);
       default: return responseJSON(400, "error", "Action Unknown: " + action);
     }
   } catch (err) {
@@ -919,6 +943,31 @@ function handleGetHistory(payload) {
 
 function handleVerifySuperAdmin(payload) {
   return payload.password === SUPER_ADMIN_PASSWORD ? responseJSON(200, "success", "OK") : responseJSON(401, "error", "Fail");
+}
+
+function handleGetBranchList(payload) {
+  try {
+    var rows = SpreadsheetApp.openById(MASTER_REGISTRY_ID).getSheetByName("Klien").getDataRange().getValues();
+    var branches = [];
+    for (var i = 1; i < rows.length; i++) {
+      var clientId = String(rows[i][0] || "").trim();
+      var name = String(rows[i][1] || "").trim();
+      var endpoint = String(rows[i][6] || "").trim(); // Kolom G
+      var token = String(rows[i][7] || "").trim(); // Kolom H
+      
+      if (clientId && endpoint && token) {
+        branches.push({
+          client_id: clientId,
+          name: name,
+          endpoint: endpoint,
+          token: token
+        });
+      }
+    }
+    return responseJSON(200, "success", branches);
+  } catch (e) {
+    return responseJSON(500, "error", "Gagal membaca Master Registry: " + e.toString());
+  }
 }
 
 function handleGetOfficeConfig(payload) {

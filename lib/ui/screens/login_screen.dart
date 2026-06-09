@@ -4,8 +4,8 @@ import 'package:hadirin/core/service/admin_service.dart';
 import 'package:provider/provider.dart';
 import 'package:hadirin/core/theme/fluid_theme.dart';
 import 'package:hadirin/ui/screens/admin_register_screen.dart';
+import 'package:hadirin/core/config/app_config.dart';
 import 'package:hadirin/ui/screens/attendance_screen.dart';
-
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
@@ -37,12 +37,18 @@ class _LoginScreenState extends State<LoginScreen> {
           LoginRole.superAdmin,
           "MASTER",
         );
+        
+        final dynamicCabangs = await AdminService().getBranchList();
+        
         setState(() => _isLoading = false);
         if (!mounted) return;
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => const AdminRegisterScreen()),
-        );
+        
+        if (dynamicCabangs.isNotEmpty) {
+          _showBranchSelectionDialog(dynamicCabangs);
+        } else {
+          // Fallback ke local cabangs jika gagal API
+          _showBranchSelectionDialog(AppConfig.cabangs);
+        }
         return;
       }
 
@@ -147,6 +153,41 @@ class _LoginScreenState extends State<LoginScreen> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         margin: const EdgeInsets.all(16),
       ),
+    );
+  }
+
+  void _showBranchSelectionDialog(List<Map<String, String>> listCabangs) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text(
+            'Pilih Cabang',
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: listCabangs.map((cabang) {
+              return ListTile(
+                leading: Icon(Icons.business, color: context.primaryColor),
+                title: Text(cabang['name']!),
+                onTap: () {
+                  // Update AppConfig
+                  AppConfig.gasEndpoint = cabang['endpoint']!;
+                  AppConfig.apiToken = cabang['token']!;
+                  
+                  Navigator.pop(context); // Tutup dialog
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(builder: (_) => const AdminRegisterScreen()),
+                  );
+                },
+              );
+            }).toList(),
+          ),
+        );
+      },
     );
   }
 

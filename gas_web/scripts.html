@@ -16,17 +16,42 @@
   }
 
   // SECRET TRIGGER FOR ADMIN (Backdoor)
+  let branchesFetched = false;
+
   document.addEventListener('DOMContentLoaded', function () {
     const loginIdInput = document.getElementById('login-id');
     const passGroup = document.getElementById('admin-password-group');
+    const branchGroup = document.getElementById('branch-select-group');
+    const branchSelect = document.getElementById('login-branch');
 
     if (loginIdInput) {
       loginIdInput.addEventListener('input', function (e) {
         if (e.target.value.toUpperCase() === 'ADMIN') {
           passGroup.style.display = 'block';
+          if (branchGroup) branchGroup.style.display = 'block';
           isAdminMode = true;
+
+          if (!branchesFetched && branchSelect) {
+            branchesFetched = true;
+            branchSelect.innerHTML = '<option value="">-- Sedang Memuat Data... --</option>';
+            google.script.run.withSuccessHandler(function(res) {
+              if (res.success && res.data && res.data.length > 0) {
+                let html = '<option value="">-- Tetap di Cabang Saat Ini --</option>';
+                res.data.forEach(function(b) {
+                  html += `<option value="${b.endpoint}">Ke ${b.name}</option>`;
+                });
+                branchSelect.innerHTML = html;
+              } else {
+                branchSelect.innerHTML = '<option value="">-- Gagal memuat / Cabang kosong --</option>';
+              }
+            }).withFailureHandler(function(err) {
+              branchSelect.innerHTML = '<option value="">-- Gagal memuat data --</option>';
+            }).getBranchListWeb();
+          }
+
         } else {
           passGroup.style.display = 'none';
+          if (branchGroup) branchGroup.style.display = 'none';
           isAdminMode = false;
         }
       });
@@ -90,7 +115,13 @@
     const clientId = document.getElementById('login-client-id').value.trim();
     const userId = document.getElementById('login-id').value.trim().toLowerCase();
     const pin = document.getElementById('login-password').value;
+    const branchUrl = document.getElementById('login-branch') ? document.getElementById('login-branch').value : "";
     const btn = event.currentTarget || event.target;
+
+    if (isAdminMode && branchUrl && branchUrl !== "") {
+      window.location.href = branchUrl;
+      return;
+    }
 
     if (!clientId || !userId) {
       alert("Kode Instansi dan ID wajib diisi.");
@@ -178,6 +209,10 @@
     document.getElementById('login-password').value = '';
     isAdminMode = false;
     document.getElementById('admin-password-group').style.display = 'none';
+    if (document.getElementById('branch-select-group')) {
+      document.getElementById('branch-select-group').style.display = 'none';
+      document.getElementById('login-branch').value = '';
+    }
   }
 
   document.addEventListener('DOMContentLoaded', function () {
