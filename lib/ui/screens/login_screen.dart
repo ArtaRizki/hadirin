@@ -78,7 +78,10 @@ class _LoginScreenState extends State<LoginScreen> {
         final nama = (dataAnggota['nama_karyawan'] ?? "").toString().toUpperCase();
 
         // Logika penentuan role: 
-        // Admin jika ID diawali INST-/ADM-/ADMIN- ATAU Divisi/Nama mengandung kata ADMIN/PEMILIK
+        // 1. Cek dari server (jika server eksplisit mengirim role admin, spt kasus Kalinggo)
+        final serverRole = (dataAnggota['role'] ?? "").toString().toLowerCase();
+        
+        // 2. Fallback deteksi lokal: ID diawali INST-/ADM-/ADMIN- ATAU Divisi/Nama mengandung kata ADMIN/PEMILIK
         bool isIdAdmin = inputId.toUpperCase().startsWith("INST-") || 
                          inputId.toUpperCase().startsWith("ADM-") ||
                          inputId.toUpperCase().startsWith("ADMIN-");
@@ -88,12 +91,14 @@ class _LoginScreenState extends State<LoginScreen> {
                           nama.contains("ADMIN") ||
                           nama.contains("PEMILIK");
 
-        LoginRole assignedRole = (isIdAdmin || isRoleAdmin)
+        LoginRole assignedRole = (serverRole == "admin" || isIdAdmin || isRoleAdmin)
             ? LoginRole.admin
             : LoginRole.anggota;
 
+        final realId = (dataAnggota['id_karyawan'] ?? inputId).toString();
+
         await context.read<AuthProvider>().login(
-          inputId,
+          realId,
           dataAnggota['nama_karyawan'],
           assignedRole,
           clientIdDariServer,

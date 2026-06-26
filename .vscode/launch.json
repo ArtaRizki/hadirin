@@ -53,7 +53,7 @@
             "request": "launch",
             "type": "dart",
             "args": [
-                "--dart-define=GAS_ENDPOINT=https://script.google.com/macros/s/AKfycbypAYdaJ2mA85u8kB3WoQm3GvmmlHsIkp_dwnrhfYBWRXwcKt25rjTshyKa-2wkEKml/exec",
+                "--dart-define=GAS_ENDPOINT=https://script.google.com/macros/s/AKfycbzZRRuQqZBOdQCT2agZQQzLokb332R5K-ARh9-NtYuH82xmYVPD5cr0gsSEgK_Htp4r/exec",
                 "--dart-define=API_TOKEN=SUPER_SECRET_SIPARJO_8xZ2"
             ]
         },

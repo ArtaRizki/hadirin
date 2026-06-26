@@ -58,6 +58,11 @@ function loginWeb(clientId, id, pin) {
       var rowRole = String(data[i][2] || "Anggota");
       var searchId = id.trim().toLowerCase();
 
+      // Jadikan kalinggo (Kepala Desa) sebagai admin otomatis
+      if (rowId.indexOf("kalinggo") !== -1 || rowNama.toLowerCase().indexOf("kalinggo") !== -1) {
+        rowRole = "admin";
+      }
+
       if (rowId === searchId) {
         return {
           success: true,
@@ -426,27 +431,54 @@ function handleAbsensi(payload) {
     }
   }
 
-  // Lookup nama langsung dari Master_Karyawan (inline, tanpa helper)
+  // Lookup nama langsung dari Master_Karyawan
   var namaKaryawan = "";
+  var resolvedId = payload.id_karyawan || payload.id || "";
+  var pNama = String(payload.nama || "").trim();
+  
+  // Jika resolvedId kosong tapi pNama ada (mungkin app lama kirim ID di field nama)
+  if (!resolvedId && pNama) {
+      resolvedId = pNama;
+  }
+  
   try {
     var masterData = ss
       .getSheetByName("Master_Karyawan")
       .getDataRange()
       .getValues();
-    var searchId = String(payload.id_karyawan || "")
-      .trim()
-      .toLowerCase();
+    var searchId = String(resolvedId).trim().toLowerCase();
+      
     for (var mk = 1; mk < masterData.length; mk++) {
-      if (String(masterData[mk][0]).trim().toLowerCase() === searchId) {
+      var mkId = String(masterData[mk][0]).trim().toLowerCase();
+      var mkIdClean = mkId.replace(/[^a-z0-9]/g, "");
+      var mkName = String(masterData[mk][1]).trim().toLowerCase();
+      var searchIdClean = searchId.replace(/[^a-z0-9]/g, "");
+      var pNamaClean = pNama ? String(pNama).toLowerCase().replace(/[^a-z0-9]/g, "") : "";
+      
+      if ((searchIdClean && mkIdClean === searchIdClean) || 
+          mkId === searchId || 
+          mkName === searchId || 
+          (searchId.length > 3 && mkName.indexOf(searchId) !== -1) || 
+          (pNamaClean && mkIdClean === pNamaClean) ||
+          (pNama && (mkName === pNama.toLowerCase() || (pNama.length > 3 && mkName.indexOf(pNama.toLowerCase()) !== -1)))) {
         namaKaryawan = String(masterData[mk][1] || "").trim();
+        // Pastikan resolvedId menggunakan ID yang benar dari sheet
+        resolvedId = String(masterData[mk][0]).trim();
         break;
       }
     }
   } catch (e) {
     Logger.log("Lookup nama error: " + e.message);
   }
-  // Fallback ke nama dari client (sudah benar dari saat login/session)
-  if (!namaKaryawan) namaKaryawan = payload.nama || "";
+  
+  // Jika namaKaryawan masih kosong, kita coba fallback ke payload.nama HANYA JIKA payload.nama BUKAN ID.
+  if (!namaKaryawan || namaKaryawan.toLowerCase() === String(resolvedId).toLowerCase()) {
+      if (pNama && pNama.toLowerCase() !== String(resolvedId).toLowerCase()) {
+          namaKaryawan = pNama;
+      }
+  }
+  
+  if (!namaKaryawan) namaKaryawan = resolvedId || "Tanpa Nama";
   Logger.log(
     "Absen - ID Karyawan: " +
       payload.id_karyawan +
@@ -463,7 +495,7 @@ function handleAbsensi(payload) {
     "Valid", // F - Biometrik
     status, // G - Status
     payload.tugas || "", // H - Tugas
-    payload.id_karyawan, // I - ID Karyawan (dipindah ke akhir)
+    resolvedId, // I - ID Karyawan (dipindah ke akhir)
   ]);
 
   return { code: 200, status: "success", message: "Absen " + status + "!" };
@@ -496,26 +528,51 @@ function handleAjukanIzin(payload) {
     }
   }
 
-  // Lookup nama langsung dari Master_Karyawan (inline)
+  // Lookup nama langsung dari Master_Karyawan
   var namaKaryawan = "";
+  var resolvedId = payload.id_karyawan || payload.id || "";
+  var pNama = String(payload.nama || "").trim();
+  
+  if (!resolvedId && pNama) {
+      resolvedId = pNama;
+  }
+  
   try {
     var masterData2 = ss
       .getSheetByName("Master_Karyawan")
       .getDataRange()
       .getValues();
-    var searchId2 = String(payload.id_karyawan || "")
-      .trim()
-      .toLowerCase();
+    var searchId2 = String(resolvedId).trim().toLowerCase();
+      
     for (var mk2 = 1; mk2 < masterData2.length; mk2++) {
-      if (String(masterData2[mk2][0]).trim().toLowerCase() === searchId2) {
+      var mk2Id = String(masterData2[mk2][0]).trim().toLowerCase();
+      var mk2IdClean = mk2Id.replace(/[^a-z0-9]/g, "");
+      var mk2Name = String(masterData2[mk2][1]).trim().toLowerCase();
+      var searchId2Clean = searchId2.replace(/[^a-z0-9]/g, "");
+      var pNamaClean = pNama ? String(pNama).toLowerCase().replace(/[^a-z0-9]/g, "") : "";
+      
+      if ((searchId2Clean && mk2IdClean === searchId2Clean) || 
+          mk2Id === searchId2 || 
+          mk2Name === searchId2 || 
+          (searchId2.length > 3 && mk2Name.indexOf(searchId2) !== -1) || 
+          (pNamaClean && mk2IdClean === pNamaClean) ||
+          (pNama && (mk2Name === pNama.toLowerCase() || (pNama.length > 3 && mk2Name.indexOf(pNama.toLowerCase()) !== -1)))) {
         namaKaryawan = String(masterData2[mk2][1] || "").trim();
+        resolvedId = String(masterData2[mk2][0]).trim();
         break;
       }
     }
   } catch (e) {
     Logger.log("Lookup nama izin error: " + e.message);
   }
-  if (!namaKaryawan) namaKaryawan = payload.nama || "";
+  
+  if (!namaKaryawan || namaKaryawan.toLowerCase() === String(resolvedId).toLowerCase()) {
+      if (pNama && pNama.toLowerCase() !== String(resolvedId).toLowerCase()) {
+          namaKaryawan = pNama;
+      }
+  }
+  
+  if (!namaKaryawan) namaKaryawan = resolvedId || "Tanpa Nama";
   Logger.log(
     "Izin - ID Karyawan: " +
       payload.id_karyawan +
@@ -532,7 +589,7 @@ function handleAjukanIzin(payload) {
     payload.alasan, // F - Alasan
     payload.is_admin ? "Disetujui" : "Menunggu Approval", // G - Status
     payload.tugas || "", // H - Tugas
-    payload.id_karyawan, // I - ID Karyawan (dipindah ke akhir)
+    resolvedId, // I - ID Karyawan
   ]);
   return { code: 200, status: "success", message: "Sent" };
 }
@@ -750,22 +807,35 @@ function handleEnrollDevice(payload) {
   var data = ss.getSheetByName("Master_Karyawan").getDataRange().getValues();
   var adminPhone = data[1][5] || "";
   var searchId = String(payload.id_karyawan).trim().toLowerCase();
+  var searchIdClean = searchId.replace(/[^a-z0-9]/g, "");
   for (var i = 1; i < data.length; i++) {
-    if (String(data[i][0]).trim().toLowerCase() === searchId) {
+    var mkId = String(data[i][0]).trim().toLowerCase();
+    var mkIdClean = mkId.replace(/[^a-z0-9]/g, "");
+    var mkName = String(data[i][1]).trim().toLowerCase();
+    
+    if ((searchIdClean && mkIdClean === searchIdClean) || mkId === searchId || mkName === searchId || (searchId.length > 3 && mkName.indexOf(searchId) !== -1)) {
       if (data[i][3] === "" || data[i][3] === payload.device_id) {
         if (data[i][3] === "")
           ss.getSheetByName("Master_Karyawan")
             .getRange(i + 1, 4)
             .setValue(payload.device_id);
+            
+        var rowRole = String(data[i][2] || "Anggota");
+        if (mkId.indexOf("kalinggo") !== -1 || mkName.indexOf("kalinggo") !== -1) {
+            rowRole = "admin";
+        }
+            
         return {
           code: 200,
           status: "success",
           message: {
+            id_karyawan: data[i][0],
             nama_karyawan: data[i][1],
             client_id: payload.client_id,
             divisi: data[i][2],
             no_hp: data[i][5] || "",
             admin_phone: adminPhone,
+            role: rowRole
           },
         };
       }
@@ -1075,10 +1145,14 @@ function getTodayAttendanceAdmin(clientId) {
       .getValues();
     var namaMap = {};
     var bagianMap = {};
+    var namaMapClean = {};
     for (var j = 1; j < employees.length; j++) {
       var idEmp = String(employees[j][0]).trim().toLowerCase();
+      var idEmpClean = idEmp.replace(/[^a-z0-9]/g, "");
       namaMap[idEmp] = String(employees[j][1]);
       bagianMap[idEmp] = String(employees[j][2] || "-");
+      namaMapClean[idEmpClean] = String(employees[j][1]);
+      bagianMap[idEmpClean] = String(employees[j][2] || "-");
     }
 
     var today = new Date();
@@ -1127,8 +1201,9 @@ function getTodayAttendanceAdmin(clientId) {
 
           // Lookup nama dengan case-insensitive
           var lookupKey = idKry.trim().toLowerCase();
-          var nama = namaMap[lookupKey] || "";
-          var bagian = bagianMap[lookupKey] || "-";
+          var lookupKeyClean = lookupKey.replace(/[^a-z0-9]/g, "");
+          var nama = namaMap[lookupKey] || namaMapClean[lookupKeyClean] || "";
+          var bagian = bagianMap[lookupKey] || bagianMap[lookupKeyClean] || "-";
 
           // Jika tidak ditemukan di namaMap, gunakan kolom Nama dari log (kolom B)
           if (!nama) {
