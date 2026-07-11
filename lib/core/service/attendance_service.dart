@@ -16,7 +16,7 @@ import 'package:hadirin/core/service/face_service.dart';
 
 /// Tanggung jawab: Absen masuk/pulang & riwayat absensi karyawan.
 class AttendanceService extends ApiClient {
-  static const _platform = MethodChannel('com.mobile.siparjo/face_recognition');
+  static const _platform = MethodChannel('com.ptderambo.hadir/face_recognition');
 
   final _auth = LocalAuthentication();
   final _picker = ImagePicker();

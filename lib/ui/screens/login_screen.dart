@@ -33,7 +33,7 @@ class _LoginScreenState extends State<LoginScreen> {
       if (superResult['success']) {
         await context.read<AuthProvider>().login(
           "SUPER_ADMIN",
-          "Owner Siparjo",
+          "Owner PT DERAMBO",
           LoginRole.superAdmin,
           "MASTER",
         );
@@ -203,9 +203,10 @@ class _LoginScreenState extends State<LoginScreen> {
                               shape: BoxShape.circle,
                             ),
                             child: Image.asset(
-                              'assets/siparjo.png',
+                              'assets/PT DERAMBO LOGO.jpeg',
                               width: 48,
                               height: 48,
+                              fit: BoxFit.contain,
                             ),
                           ),
                         ),
@@ -220,11 +221,11 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                         ),
                         const Text(
-                          "Siparjo",
+                          "PT DERAMBO",
                           style: TextStyle(
-                            fontSize: 42,
+                            fontSize: 32,
                             fontWeight: FontWeight.w900,
-                            color: Color(0xFF0F172A),
+                            color: Color(0xFF2B2B2B),
                             letterSpacing: -1,
                           ),
                         ),

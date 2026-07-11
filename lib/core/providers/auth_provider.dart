@@ -13,7 +13,7 @@ class AuthProvider extends ChangeNotifier {
   LoginRole _role = LoginRole.none; // Ubah default jadi none
   bool _isInitialized = false;
   bool _isFaceRegistered = false;
-  Color _themeColor = const Color(0xFF005147); // Default Emerald Green
+  Color _themeColor = const Color(0xFFE8922A); // PT DERAMBO Orange
   String? _userPhone; // Nomor WA karyawan
   String? _adminPhone; // Nomor WA Admin Utama
 

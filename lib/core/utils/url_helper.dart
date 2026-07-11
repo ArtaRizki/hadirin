@@ -6,7 +6,7 @@ class UrlHelper {
   /// Format nomor: "08123...", "628123...", atau "8123..."
   static Future<void> launchWhatsApp({
     required String phone,
-    String message = "Halo, saya menghubungi Anda dari aplikasi Siparjo",
+    String message = "Halo, saya menghubungi Anda dari aplikasi PT DERAMBO",
   }) async {
     if (phone.isEmpty) return;
 

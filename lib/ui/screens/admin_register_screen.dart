@@ -258,7 +258,7 @@ class _AdminRegisterScreenState extends State<AdminRegisterScreen> {
         ),
         const SizedBox(height: 6),
         Text(
-          "Masukkan nama instansi / kantor yang akan didaftarkan ke dalam sistem Siparjo.",
+          "Masukkan nama instansi / kantor yang akan didaftarkan ke dalam sistem PT DERAMBO.",
           style: TextStyle(
             color: Colors.grey.shade600,
             fontSize: 13,

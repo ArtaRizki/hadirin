@@ -1,4 +1,4 @@
-package com.mobile.siparjo // Sesuaikan
+package com.ptderambo.hadir // PT DERAMBO
 
 import android.content.Context
 import android.graphics.Bitmap
@@ -52,12 +52,9 @@ class FaceRecognitionHelper(context: Context) {
         val model = loadModelFile(context, MODEL_FILENAME)
         val options = Interpreter.Options().apply {
             setNumThreads(4)
-            // Aktifkan GPU delegate jika perangkat mendukung (opsional, perlu dependency tambahan)
-            // addDelegate(GpuDelegate())
         }
         interpreter = Interpreter(model, options)
 
-        // Baca dimensi input/output model secara otomatis agar tidak hardcode
         interpreter?.getInputTensor(0)?.shape()?.let { shape ->
             if (shape.size >= 2) inputImageSize = shape[1]
         }
@@ -66,47 +63,25 @@ class FaceRecognitionHelper(context: Context) {
         }
     }
 
-    // ================================================================
-    // FUNGSI UTAMA: Ambil embedding wajah dari Bitmap
-    //
-    // Output sudah di-L2-normalize → wajib untuk hasil threshold
-    // yang konsisten. Jangan hapus normalisasi ini.
-    // ================================================================
     fun getFaceEmbedding(bitmap: Bitmap?): FloatArray {
         if (bitmap == null) {
             throw IllegalArgumentException("Bitmap null — foto gagal dibaca dari penyimpanan.")
         }
 
-        // Resize ke ukuran yang dibutuhkan model
-        // Buat variabel terpisah agar bitmap asli tidak ikut di-recycle
         val resizedBitmap = Bitmap.createScaledBitmap(bitmap, inputImageSize, inputImageSize, true)
 
         return try {
             val inputBuffer = preprocessBitmap(resizedBitmap)
             val output = Array(1) { FloatArray(outputArraySize) }
             interpreter?.run(inputBuffer, output)
-
-            // ⚠️  L2 Normalisasi WAJIB dilakukan sebelum hitung jarak Euclidean.
-            //     Tanpa ini, embedding dari dua gambar yang pencahayaannya berbeda
-            //     bisa menghasilkan jarak yang tidak konsisten meski orangnya sama.
             l2Normalize(output[0])
         } finally {
-            // Bebaskan memori bitmap hasil resize agar tidak bocor (memory leak)
-            // Hanya recycle jika berbeda objek dari bitmap asli
             if (resizedBitmap != bitmap) {
                 resizedBitmap.recycle()
             }
         }
     }
 
-    // ================================================================
-    // PREPROCESSING: Ubah Bitmap → ByteBuffer ternormalisasi
-    //
-    // Formula: (pixel - 127.5) / 128.0  →  rentang output: [-1.0, 1.0]
-    // Ini adalah standar normalisasi VGGFace2 & MobileFaceNet.
-    // Jika kamu pakai model lain (FaceNet Google), gunakan:
-    //   (pixel / 255.0) - 0.5  →  rentang: [-0.5, 0.5]  ← berbeda!
-    // ================================================================
     private fun preprocessBitmap(bitmap: Bitmap): ByteBuffer {
         val byteBuffer = ByteBuffer
             .allocateDirect(1 * inputImageSize * inputImageSize * 3 * 4)
@@ -128,27 +103,12 @@ class FaceRecognitionHelper(context: Context) {
         return byteBuffer
     }
 
-    // ================================================================
-    // L2 NORMALISASI
-    //
-    // Mengubah vektor embedding menjadi unit vector (panjang = 1.0).
-    // Setelah normalisasi, jarak Euclidean antara dua wajah yang sama
-    // akan selalu berada di rentang [0, 2] terlepas dari brightness foto.
-    //
-    // Rumus: v_normalized = v / ||v||
-    //        di mana ||v|| = sqrt(sum(v_i^2))
-    // ================================================================
     private fun l2Normalize(embedding: FloatArray): FloatArray {
         val norm = sqrt(embedding.sumOf { (it * it).toDouble() }.toFloat())
-        // Hindari pembagian dengan nol jika embedding kosong/corrupt
         if (norm == 0f) return embedding
         return FloatArray(embedding.size) { i -> embedding[i] / norm }
     }
 
-    // ================================================================
-    // HITUNG JARAK EUCLIDEAN (opsional, bisa dipakai dari sisi Kotlin)
-    // Gunakan SIMILARITY_THRESHOLD sebagai batas tolak/terima.
-    // ================================================================
     fun euclideanDistance(embedding1: FloatArray, embedding2: FloatArray): Float {
         require(embedding1.size == embedding2.size) {
             "Ukuran embedding berbeda: ${embedding1.size} vs ${embedding2.size}"
@@ -166,9 +126,6 @@ class FaceRecognitionHelper(context: Context) {
         interpreter = null
     }
 
-    // ================================================================
-    // MEMBUKA FILE MODEL DARI ASSETS
-    // ================================================================
     private fun loadModelFile(context: Context, modelName: String): MappedByteBuffer {
         val fileDescriptor = context.assets.openFd(modelName)
         val inputStream = FileInputStream(fileDescriptor.fileDescriptor)

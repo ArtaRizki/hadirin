@@ -1,4 +1,4 @@
-package com.mobile.siparjo // Sesuaikan
+package com.ptderambo.hadir // PT DERAMBO
 
 import android.graphics.BitmapFactory
 import io.flutter.embedding.android.FlutterFragmentActivity
@@ -6,7 +6,7 @@ import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 
 class MainActivity : FlutterFragmentActivity() {
-    private val CHANNEL = "com.mobile.siparjo/face_recognition"
+    private val CHANNEL = "com.ptderambo.hadir/face_recognition"
     private lateinit var faceHelper: FaceRecognitionHelper
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {

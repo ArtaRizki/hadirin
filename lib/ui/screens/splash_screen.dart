@@ -141,9 +141,10 @@ class _SplashScreenState extends State<SplashScreen>
                           shape: BoxShape.circle,
                         ),
                         child: Image.asset(
-                          'assets/siparjo.png',
+                          'assets/PT DERAMBO LOGO.jpeg',
                           width: 72,
                           height: 72,
+                          fit: BoxFit.contain,
                         ),
                       ),
                     ),
@@ -153,11 +154,11 @@ class _SplashScreenState extends State<SplashScreen>
 
                   // NAMA BRAND
                   const Text(
-                    "Siparjo",
+                    "PT DERAMBO",
                     style: TextStyle(
-                      fontSize: 36,
+                      fontSize: 28,
                       fontWeight: FontWeight.w900,
-                      color: Color(0xFF0F172A),
+                      color: Color(0xFF2B2B2B),
                       letterSpacing: -1,
                     ),
                   ),
