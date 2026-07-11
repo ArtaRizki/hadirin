@@ -6,7 +6,7 @@ plugins {
 }
 
 android {
-    namespace = "com.mobile.siparjo"
+    namespace = "com.ptderambo.hadir"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -26,7 +26,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.mobile.siparjo"
+        applicationId = "com.ptderambo.hadir"
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode

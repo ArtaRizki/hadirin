@@ -110,18 +110,17 @@ flutter:
 flutter_launcher_icons:
   android: true
   ios: true
-  image_path: "assets/siparjo.png"
+  image_path: "assets/PT DERAMBO LOGO.jpeg"
   min_sdk_size: 21
   web:
     generate: true
-    image_path: "assets/siparjo.png" # Disamakan dengan yang atas
+    image_path: "assets/PT DERAMBO LOGO.jpeg"
 
 flutter_native_splash:
-  color: "#F9F9F8" # Warna background khas Siparjo
-  image: "assets/siparjo.png"
+  color: "#FFFFFF"
+  image: "assets/PT DERAMBO LOGO.jpeg"
   android: true
   ios: true
-  # Pengaturan khusus untuk HP Android keluaran terbaru (Android 12 ke atas)
   android_12:
-    image: "assets/siparjo.png"
-    icon_background_color: "#F9F9F8"
+    image: "assets/PT DERAMBO LOGO.jpeg"
+    icon_background_color: "#FFFFFF"
