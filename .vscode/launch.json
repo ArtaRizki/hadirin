@@ -22,40 +22,59 @@
             "flutterMode": "release"
         },
         {
-            "name": "Hadir.in - Dev",
+            "name": "Hadir.in - SDIT",
             "request": "launch",
             "type": "dart",
             "args": [
-                "--dart-define=GAS_ENDPOINT=https://script.google.com/macros/s/AKfycbx7ZUuvd4jKKIKBwc1yUy5rYN3gFvoJElTQCKJ2aSt9XdlMyQEML7DRKAkcr1fDUaLa/exec",
-                "--dart-define=API_TOKEN=SUPER_SECRET_UMKM001_8xZ2"
+                "--dart-define=GAS_ENDPOINT=https://script.google.com/macros/s/AKfycbxGo_73e45A7mvtCcmzSvqOxI-DffrAvWIFhUmXczYbkBpgSjNUD8NvR65VSlePNMLlzg/exec",
+                "--dart-define=API_TOKEN=sdit-palu",
+                "--dart-define=APP_LOGO=assets/icons/sdit.png",
+                "--dart-define=APP_NAME=SDIT AL-FAHMI PALU"
             ]
         },
         {
-            "name": "Hadir.in - SMAPGRIMAJALENGKA",
+            "name": "Hadir.in - SMPIT",
             "request": "launch",
             "type": "dart",
             "args": [
-                "--dart-define=GAS_ENDPOINT=https://script.google.com/macros/s/AKfycby7JOsxqE9BndQq5Vf45WrtEBnMyO1GYRQYgSSfdA4giOP117le8OWJAGPNkw8y_zl20w/exec",
-                "--dart-define=API_TOKEN=SUPER_SECRET_SMAPGRIMAJALENGKA_8xZ2"
+                "--dart-define=GAS_ENDPOINT=https://script.google.com/macros/s/AKfycbwXV9KJJOXRXESvxT6Nkmcix0DMwOVVuy_AR_gfQW0Njc2QRKApQCQWvo_6xe6laklK/exec",
+                "--dart-define=API_TOKEN=smpit-palu",
+                "--dart-define=APP_LOGO=assets/icons/smpit.png",
+                "--dart-define=APP_NAME=SMPIT"
             ]
         },
         {
-            "name": "Hadir.in - ANTARMOBIL.ID",
+            "name": "Hadir.in - SMAIT",
             "request": "launch",
             "type": "dart",
             "args": [
-                "--dart-define=GAS_ENDPOINT=https://script.google.com/macros/s/AKfycbw1N7bFm754MWk0H5pD70umMNWTfVD1bh0ek3dD_311F4lnLGYV5Tvks_gAUnZrM9xx/exec",
-                "--dart-define=API_TOKEN=SUPER_SECRET_ANTARMOBIL_ID_8xZ2"
+                "--dart-define=GAS_ENDPOINT=https://script.google.com/macros/s/AKfycbx3ZbrSm3gFoCkCsD12clhcPSHi74i1Oz7SjcJMO4TZ7NPVM91Rpy1ZX-pNUhjEV-4ERw/exec",
+                "--dart-define=API_TOKEN=smait-palu",
+                "--dart-define=APP_LOGO=assets/icons/smait.png",
+                "--dart-define=APP_NAME=SMAIT"
             ]
         },
         {
-            "name": "SIPARJO",
+            "name": "Hadir.in - Local Laravel",
             "request": "launch",
             "type": "dart",
             "args": [
-                "--dart-define=GAS_ENDPOINT=https://script.google.com/macros/s/AKfycbzZRRuQqZBOdQCT2agZQQzLokb332R5K-ARh9-NtYuH82xmYVPD5cr0gsSEgK_Htp4r/exec",
-                "--dart-define=API_TOKEN=SUPER_SECRET_SIPARJO_8xZ2"
+                "--dart-define=GAS_ENDPOINT=http://10.0.2.2:8000/api",
+                "--dart-define=API_TOKEN=SDIT-PALU",
+                "--dart-define=APP_LOGO=assets/icons/sdit.png",
+                "--dart-define=APP_NAME=SDIT Local"
             ]
         },
+        {
+            "name": "Hadir.in - SDIT (Live Laravel)",
+            "request": "launch",
+            "type": "dart",
+            "args": [
+                "--dart-define=GAS_ENDPOINT=https://sditalfahmipalu.great-site.net/api",
+                "--dart-define=API_TOKEN=sdit-palu",
+                "--dart-define=APP_LOGO=assets/icons/sdit.png",
+                "--dart-define=APP_NAME=SDIT AL-FAHMI PALU"
+            ]
+        }
     ]
 }

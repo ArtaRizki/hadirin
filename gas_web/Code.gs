@@ -1,10 +1,8 @@
 // =============================================================================
-// BACKEND HADIRIN - v2.5 (Fixed Drive Access & Folder Permissions - SIPARJO)
+// BACKEND HADIRIN - v2.5 (Fixed Drive Access & Folder Permissions - PT DERAMBO)
 // =============================================================================
-const MASTER_API_TOKEN = "SUPER_SECRET_SIPARJO_8xZ2";
+const MASTER_API_TOKEN = "SUPER_SECRET_PTDERAMBO_8xZ2";
 const MASTER_REGISTRY_ID = "1hTh660vp0AbPn8D37Yg7XE-5HBRDXYA2xSJErORfZ3w";
-const ID_TEMPLATE_SS = "16EIwrw5nEvghKfc_jX52Vo76hXpU0YyBc3pQHVRsU_Q";
-const ID_MASTER_FOLDER = "1IJcGNoOF7WQZAaHiA9flJ2C-1Bm6gVOU";
 const SUPER_ADMIN_PASSWORD = "HADIRIN_MASTER_2026_AHHH";
 
 // =============================================================================
@@ -15,7 +13,7 @@ function doGet(e) {
   var template = HtmlService.createTemplateFromFile("Index");
   return template
     .evaluate()
-    .setTitle("Siparjo Dashboard v3.5")
+    .setTitle("PT DERAMBO Dashboard v3.5")
     .addMetaTag("viewport", "width=device-width, initial-scale=1")
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
 }
@@ -318,8 +316,6 @@ function processAction(payload) {
   switch (payload.action) {
     case "absen":
       return handleAbsensi(payload);
-    case "register_klien":
-      return handleRegisterInstansi(payload);
     case "get_history":
       return handleGetHistory(payload);
     case "get_office_config":
@@ -592,49 +588,6 @@ function handleAjukanIzin(payload) {
     resolvedId, // I - ID Karyawan
   ]);
   return { code: 200, status: "success", message: "Sent" };
-}
-
-function handleRegisterInstansi(payload) {
-  var sheetRegistry =
-    SpreadsheetApp.openById(MASTER_REGISTRY_ID).getSheetByName("Klien");
-  var newInstansiId = "INST-" + Math.floor(Math.random() * 900000 + 100000);
-
-  var ssId = DriveApp.getFileById(ID_TEMPLATE_SS)
-    .makeCopy("DB - " + payload.nama_umkm)
-    .getId();
-  var folderId = DriveApp.getFolderById(ID_MASTER_FOLDER)
-    .createFolder("Assets - " + payload.nama_umkm)
-    .getId();
-
-  var ss = SpreadsheetApp.openById(ssId);
-  ss.getSheetByName("Config_Kantor")
-    .getRange("A2:D2")
-    .setValues([
-      [payload.nama_umkm, payload.lat, payload.lng, payload.radius || 100],
-    ]);
-
-  ss.getSheetByName("Master_Karyawan").appendRow([
-    newInstansiId,
-    "Admin " + payload.nama_umkm,
-    "ADMIN",
-    "",
-    "",
-    payload.admin_phone || "",
-  ]);
-  sheetRegistry.appendRow([
-    newInstansiId,
-    payload.nama_umkm,
-    ssId,
-    folderId,
-    payload.batas_jam || 8,
-    payload.radius || 100,
-  ]);
-
-  return {
-    code: 200,
-    status: "success",
-    message: { client_id: newInstansiId },
-  };
 }
 
 function handleUpdateLokasi(payload) {
