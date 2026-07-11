@@ -373,24 +373,35 @@ function handleAbsensi(payload) {
   var officeRadius = officeData[3] || config.radius;
   var batasMasuk = officeData[5] || "08:00"; // Format HH:mm
 
-  // 1. Validasi Radius (Jika koordinat tersedia)
+  // 1A. Validasi GPS aktif
+  if (!payload.lat_long || payload.lat_long === "GPS_OFF") {
+    return {
+      code: 400,
+      status: "error",
+      message: "GPS tidak aktif. Harap izinkan akses lokasi (GPS) pada perangkat Anda sebelum absen.",
+    };
+  }
+
+  // 1B. Validasi Radius (Jika koordinat tersedia)
   if (payload.lat_long && payload.lat_long.indexOf(",") !== -1) {
     var coords = payload.lat_long.split(",");
     var userLat = parseFloat(coords[0]);
     var userLng = parseFloat(coords[1]);
 
-    var distance = getDistance(userLat, userLng, officeLat, officeLng);
-    if (distance > officeRadius) {
-      return {
-        code: 400,
-        status: "error",
-        message:
-          "Gagal! Anda berada di luar radius (" +
-          Math.round(distance) +
-          "m). Maksimal radius: " +
-          officeRadius +
-          "m.",
-      };
+    if (officeLat && officeLng && !isNaN(parseFloat(officeLat)) && !isNaN(parseFloat(officeLng))) {
+      var distance = getDistance(userLat, userLng, officeLat, officeLng);
+      if (distance > officeRadius) {
+        return {
+          code: 400,
+          status: "error",
+          message:
+            "Gagal! Anda berada di luar radius (" +
+            Math.round(distance) +
+            "m). Maksimal radius: " +
+            officeRadius +
+            "m.",
+        };
+      }
     }
   }
 
