@@ -86,21 +86,21 @@ class AttendanceHistoryList extends StatelessWidget {
 
     String statusLabel = "";
     Color statusColor = context.primaryColor;
-    Color statusBg = context.primaryColor.withOpacity(0.08);
+    Color statusBg = context.primaryColor.withValues(alpha: 0.08);
 
     if (isMasuk) {
       statusLabel = log['status'] ?? "";
       statusColor = isTerlambat ? Colors.red.shade700 : const Color(0xFF16A34A);
       statusBg = isTerlambat
           ? Colors.red.shade50
-          : const Color(0xFF16A34A).withOpacity(0.08);
+          : const Color(0xFF16A34A).withValues(alpha: 0.08);
     } else if (isCuti) {
       statusLabel = log['status'] ?? "";
       statusColor = log['status'] == 'Disetujui'
           ? const Color(0xFF16A34A)
           : Colors.orange.shade700;
       statusBg = log['status'] == 'Disetujui'
-          ? const Color(0xFF16A34A).withOpacity(0.08)
+          ? const Color(0xFF16A34A).withValues(alpha: 0.08)
           : Colors.orange.shade50;
     }
 
@@ -112,7 +112,7 @@ class AttendanceHistoryList extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 10,
             offset: const Offset(0, 3),
           ),
@@ -123,7 +123,7 @@ class AttendanceHistoryList extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: accentColor.withOpacity(0.1),
+              color: accentColor.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(

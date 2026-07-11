@@ -129,7 +129,7 @@ class _SetWorktimeScreenState extends State<SetWorktimeScreen> {
                 width: 40,
                 height: 5,
                 decoration: BoxDecoration(
-                  color: Colors.grey.withOpacity(0.2),
+                  color: Colors.grey.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(10),
                 ),
               ),
@@ -251,7 +251,7 @@ class _SetWorktimeScreenState extends State<SetWorktimeScreen> {
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.06),
+                    color: Colors.black.withValues(alpha: 0.06),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
                   ),
@@ -332,7 +332,7 @@ class _SetWorktimeScreenState extends State<SetWorktimeScreen> {
                   backgroundColor: context.primaryColor,
                   foregroundColor: Colors.white,
                   elevation: 4,
-                  shadowColor: context.primaryColor.withOpacity(0.4),
+                  shadowColor: context.primaryColor.withValues(alpha: 0.4),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(16),
                   ),
@@ -380,7 +380,7 @@ class _SetWorktimeScreenState extends State<SetWorktimeScreen> {
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.03),
+              color: Colors.black.withValues(alpha: 0.03),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
@@ -394,7 +394,7 @@ class _SetWorktimeScreenState extends State<SetWorktimeScreen> {
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: accentColor.withOpacity(0.1),
+                    color: accentColor.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Icon(icon, color: accentColor, size: 24),

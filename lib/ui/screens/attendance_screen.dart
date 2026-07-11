@@ -339,6 +339,11 @@ class _AttendanceScreenState extends State<AttendanceScreen>
     );
   }
 
+  Future<void> _refreshData() async {
+    await _fetchOfficeConfig();
+    await Future.delayed(const Duration(milliseconds: 600));
+  }
+
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
@@ -357,7 +362,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                 height: 230,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: context.primaryColor.withOpacity(0.09),
+                  color: context.primaryColor.withValues(alpha: 0.09),
                 ),
               ),
             ),
@@ -369,373 +374,415 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                 height: 200,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: const Color(0xFF7C3AED).withOpacity(0.06),
+                  color: const Color(0xFF7C3AED).withValues(alpha: 0.06),
                 ),
               ),
             ),
 
             SafeArea(
-              child: CustomScrollView(
-                slivers: [
-                  SliverFillRemaining(
-                    hasScrollBody: false,
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 24.0,
-                        vertical: 20.0,
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // HEADER PROFILE
-                          Row(
-                            children: [
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Row(
-                                      children: [
-                                        AnimatedBuilder(
-                                          animation: _pulseAnimation,
-                                          builder: (_, __) => Transform.scale(
-                                            scale: _pulseAnimation.value,
-                                            child: Container(
-                                              width: 8,
-                                              height: 8,
-                                              decoration: BoxDecoration(
-                                                shape: BoxShape.circle,
-                                                color: const Color(0xFF16A34A),
-                                                boxShadow: [
-                                                  BoxShadow(
-                                                    color: const Color(
-                                                      0xFF16A34A,
-                                                    ).withOpacity(0.4),
-                                                    blurRadius: 6,
-                                                    spreadRadius: 2,
+              child: RefreshIndicator(
+                color: context.primaryColor,
+                backgroundColor: Colors.white,
+                onRefresh: _refreshData,
+                child: CustomScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  slivers: [
+                    SliverFillRemaining(
+                      hasScrollBody: false,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 24.0,
+                          vertical: 20.0,
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // HEADER PROFILE
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          AnimatedBuilder(
+                                            animation: _pulseAnimation,
+                                            builder: (_, __) => Transform.scale(
+                                              scale: _pulseAnimation.value,
+                                              child: Container(
+                                                width: 8,
+                                                height: 8,
+                                                decoration: BoxDecoration(
+                                                  shape: BoxShape.circle,
+                                                  color: const Color(
+                                                    0xFF16A34A,
                                                   ),
-                                                ],
+                                                  boxShadow: [
+                                                    BoxShadow(
+                                                      color: const Color(
+                                                        0xFF16A34A,
+                                                      ).withValues(alpha: 0.4),
+                                                      blurRadius: 6,
+                                                      spreadRadius: 2,
+                                                    ),
+                                                  ],
+                                                ),
                                               ),
                                             ),
                                           ),
-                                        ),
-                                        const SizedBox(width: 8),
-                                        Text(
-                                          _getGreeting(),
-                                          style: TextStyle(
-                                            fontSize: 13,
-                                            color: Colors.grey.shade500,
-                                            fontWeight: FontWeight.w500,
+                                          const SizedBox(width: 8),
+                                          Text(
+                                            _getGreeting(),
+                                            style: TextStyle(
+                                              fontSize: 13,
+                                              color: Colors.grey.shade500,
+                                              fontWeight: FontWeight.w500,
+                                            ),
                                           ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 5),
+                                      Text(
+                                        auth.namaAnggota ?? "Anggota",
+                                        style: TextStyle(
+                                          fontSize: 24,
+                                          fontWeight: FontWeight.w900,
+                                          color: Color(0xFF0F172A),
+                                          letterSpacing: -0.5,
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                GestureDetector(
+                                  onTap: () => Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => const ProfileScreen(),
+                                    ),
+                                  ),
+                                  child: Hero(
+                                    tag: 'profile-avatar',
+                                    child: Container(
+                                      padding: const EdgeInsets.all(3),
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        gradient: LinearGradient(
+                                          colors: [
+                                            context.primaryColor,
+                                            context.primaryColor.withValues(
+                                              alpha: 0.5,
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      child: CircleAvatar(
+                                        radius: 24,
+                                        backgroundColor: Colors.white,
+                                        child: Icon(
+                                          Icons.person_rounded,
+                                          color: context.primaryColor,
+                                          size: 24,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+
+                            if (auth.isAnggota && !auth.isFaceRegistered)
+                              Padding(
+                                padding: const EdgeInsets.only(top: 20),
+                                child: GestureDetector(
+                                  onTap: () => Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => const ProfileScreen(),
+                                    ),
+                                  ),
+                                  child: Container(
+                                    padding: const EdgeInsets.all(16),
+                                    decoration: BoxDecoration(
+                                      gradient: LinearGradient(
+                                        colors: [
+                                          Colors.orange.shade400,
+                                          Colors.orange.shade600,
+                                        ],
+                                      ),
+                                      borderRadius: BorderRadius.circular(16),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.orange.withValues(
+                                            alpha: 0.3,
+                                          ),
+                                          blurRadius: 12,
+                                          offset: const Offset(0, 4),
                                         ),
                                       ],
                                     ),
-                                    const SizedBox(height: 5),
-                                    Text(
-                                      auth.namaAnggota ?? "Anggota",
-                                      style: TextStyle(
-                                        fontSize: 24,
-                                        fontWeight: FontWeight.w900,
-                                        color: Color(0xFF0F172A),
-                                        letterSpacing: -0.5,
-                                      ),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
+                                    child: Row(
+                                      children: [
+                                        Container(
+                                          padding: const EdgeInsets.all(8),
+                                          decoration: BoxDecoration(
+                                            color: Colors.white.withValues(
+                                              alpha: 0.2,
+                                            ),
+                                            shape: BoxShape.circle,
+                                          ),
+                                          child: Icon(
+                                            Icons
+                                                .face_retouching_natural_rounded,
+                                            color: Colors.white,
+                                            size: 20,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 12),
+                                        const Expanded(
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                "Wajah Belum Terdaftar",
+                                                style: TextStyle(
+                                                  color: Colors.white,
+                                                  fontWeight: FontWeight.bold,
+                                                  fontSize: 14,
+                                                ),
+                                              ),
+                                              Text(
+                                                "Klik untuk daftarkan wajah agar bisa absen.",
+                                                style: TextStyle(
+                                                  color: Colors.white,
+                                                  fontSize: 12,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                        Icon(
+                                          Icons.chevron_right_rounded,
+                                          color: Colors.white,
+                                        ),
+                                      ],
                                     ),
-                                  ],
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              GestureDetector(
-                                onTap: () => Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) => const ProfileScreen(),
                                   ),
                                 ),
-                                child: Hero(
-                                  tag: 'profile-avatar',
-                                  child: Container(
-                                    padding: const EdgeInsets.all(3),
-                                    decoration: BoxDecoration(
-                                      shape: BoxShape.circle,
-                                      gradient: LinearGradient(
-                                        colors: [
-                                          context.primaryColor,
-                                          context.primaryColor.withOpacity(0.5),
-                                        ],
+                              ),
+
+                            const Spacer(flex: 1),
+
+                            // CLOCK CARD
+                            Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.fromLTRB(
+                                28,
+                                40,
+                                28,
+                                36,
+                              ),
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  colors: [
+                                    auth.themeColor,
+                                    const Color(0xFF7C3AED),
+                                  ],
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                ),
+                                borderRadius: BorderRadius.circular(28),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: context.primaryColor.withValues(
+                                      alpha: 0.32,
+                                    ),
+                                    blurRadius: 32,
+                                    offset: const Offset(0, 16),
+                                  ),
+                                ],
+                              ),
+                              child: Column(
+                                children: [
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    crossAxisAlignment: CrossAxisAlignment.end,
+                                    children: [
+                                      Text(
+                                        DateFormat(
+                                          'HH:mm',
+                                        ).format(_currentTime),
+                                        style: TextStyle(
+                                          fontSize: 76,
+                                          fontWeight: FontWeight.w900,
+                                          color: Colors.white,
+                                          letterSpacing: -4,
+                                          height: 1.0,
+                                          fontFeatures: [
+                                            FontFeature.tabularFigures(),
+                                          ],
+                                        ),
+                                      ),
+                                      Padding(
+                                        padding: const EdgeInsets.only(
+                                          bottom: 10,
+                                          left: 6,
+                                        ),
+                                        child: Text(
+                                          DateFormat('ss').format(_currentTime),
+                                          style: TextStyle(
+                                            fontSize: 26,
+                                            fontWeight: FontWeight.w700,
+                                            color: Colors.white.withValues(
+                                              alpha: 0.45,
+                                            ),
+                                            fontFeatures: const [
+                                              FontFeature.tabularFigures(),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 18),
+                                  Divider(
+                                    color: Colors.white.withValues(alpha: 0.2),
+                                  ),
+                                  const SizedBox(height: 16),
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(
+                                        Icons.calendar_today_rounded,
+                                        size: 14,
+                                        color: Colors.white.withValues(
+                                          alpha: 0.65,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        DateFormat(
+                                          'EEEE, d MMMM yyyy',
+                                          'id_ID',
+                                        ).format(_currentTime),
+                                        style: TextStyle(
+                                          color: Colors.white.withValues(
+                                            alpha: 0.75,
+                                          ),
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  if (_isConfigLoaded) ...[
+                                    const SizedBox(height: 12),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 12,
+                                        vertical: 6,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: Colors.white.withValues(
+                                          alpha: 0.15,
+                                        ),
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: Text(
+                                        "Masuk: $_jamMasukMulai | Batas: $_batasJamMasuk | Pulang: $_jamPulangMulai",
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.bold,
+                                        ),
                                       ),
                                     ),
-                                    child: CircleAvatar(
-                                      radius: 24,
-                                      backgroundColor: Colors.white,
-                                      child: Icon(
-                                        Icons.person_rounded,
-                                        color: context.primaryColor,
-                                        size: 24,
+                                  ],
+                                ],
+                              ),
+                            ),
+
+                            const Spacer(flex: 2),
+
+                            // TOMBOL ABSEN
+                            if (_isLoading)
+                              Center(
+                                child: CircularProgressIndicator(
+                                  color: context.primaryColor,
+                                  strokeWidth: 3,
+                                ),
+                              )
+                            else ...[
+                              GestureDetector(
+                                onTap: () => _konfirmasiAbsen("Masuk"),
+                                child: Container(
+                                  width: double.infinity,
+                                  height: 62,
+                                  decoration: BoxDecoration(
+                                    color: context.primaryColor,
+                                    borderRadius: BorderRadius.circular(18),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: context.primaryColor.withValues(
+                                          alpha: 0.35,
+                                        ),
+                                        blurRadius: 20,
+                                        offset: const Offset(0, 8),
+                                      ),
+                                    ],
+                                  ),
+                                  child: const Center(
+                                    child: Text(
+                                      "Absen Masuk",
+                                      style: TextStyle(
+                                        fontSize: 17,
+                                        fontWeight: FontWeight.w800,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              GestureDetector(
+                                onTap: () => _konfirmasiAbsen("Pulang"),
+                                child: Container(
+                                  width: double.infinity,
+                                  height: 62,
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(18),
+                                    border: Border.all(
+                                      color: Colors.red.shade200,
+                                      width: 1.5,
+                                    ),
+                                  ),
+                                  child: Center(
+                                    child: Text(
+                                      "Absen Pulang",
+                                      style: TextStyle(
+                                        fontSize: 17,
+                                        fontWeight: FontWeight.w800,
+                                        color: Colors.red.shade600,
                                       ),
                                     ),
                                   ),
                                 ),
                               ),
                             ],
-                          ),
-
-                          if (auth.isAnggota && !auth.isFaceRegistered)
-                            Padding(
-                              padding: const EdgeInsets.only(top: 20),
-                              child: GestureDetector(
-                                onTap: () => Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) => const ProfileScreen(),
-                                  ),
-                                ),
-                                child: Container(
-                                  padding: const EdgeInsets.all(16),
-                                  decoration: BoxDecoration(
-                                    gradient: LinearGradient(
-                                      colors: [
-                                        Colors.orange.shade400,
-                                        Colors.orange.shade600,
-                                      ],
-                                    ),
-                                    borderRadius: BorderRadius.circular(16),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: Colors.orange.withOpacity(0.3),
-                                        blurRadius: 12,
-                                        offset: const Offset(0, 4),
-                                      ),
-                                    ],
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      Container(
-                                        padding: const EdgeInsets.all(8),
-                                        decoration: BoxDecoration(
-                                          color: Colors.white.withOpacity(0.2),
-                                          shape: BoxShape.circle,
-                                        ),
-                                        child: Icon(
-                                          Icons.face_retouching_natural_rounded,
-                                          color: Colors.white,
-                                          size: 20,
-                                        ),
-                                      ),
-                                      const SizedBox(width: 12),
-                                      const Expanded(
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              "Wajah Belum Terdaftar",
-                                              style: TextStyle(
-                                                color: Colors.white,
-                                                fontWeight: FontWeight.bold,
-                                                fontSize: 14,
-                                              ),
-                                            ),
-                                            Text(
-                                              "Klik untuk daftarkan wajah agar bisa absen.",
-                                              style: TextStyle(
-                                                color: Colors.white,
-                                                fontSize: 12,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                      Icon(
-                                        Icons.chevron_right_rounded,
-                                        color: Colors.white,
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ),
-
-                          const Spacer(flex: 1),
-
-                          // CLOCK CARD
-                          Container(
-                            width: double.infinity,
-                            padding: const EdgeInsets.fromLTRB(28, 40, 28, 36),
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                colors: [auth.themeColor, const Color(0xFF7C3AED)],
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                              ),
-                              borderRadius: BorderRadius.circular(28),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: context.primaryColor.withOpacity(0.32),
-                                  blurRadius: 32,
-                                  offset: const Offset(0, 16),
-                                ),
-                              ],
-                            ),
-                            child: Column(
-                              children: [
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  crossAxisAlignment: CrossAxisAlignment.end,
-                                  children: [
-                                    Text(
-                                      DateFormat('HH:mm').format(_currentTime),
-                                      style: TextStyle(
-                                        fontSize: 76,
-                                        fontWeight: FontWeight.w900,
-                                        color: Colors.white,
-                                        letterSpacing: -4,
-                                        height: 1.0,
-                                        fontFeatures: [FontFeature.tabularFigures()],
-                                      ),
-                                    ),
-                                    Padding(
-                                      padding: const EdgeInsets.only(
-                                        bottom: 10,
-                                        left: 6,
-                                      ),
-                                      child: Text(
-                                        DateFormat('ss').format(_currentTime),
-                                        style: TextStyle(
-                                          fontSize: 26,
-                                          fontWeight: FontWeight.w700,
-                                          color: Colors.white.withOpacity(0.45),
-                                          fontFeatures: const [
-                                            FontFeature.tabularFigures(),
-                                          ],
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 18),
-                                Divider(color: Colors.white.withOpacity(0.2)),
-                                const SizedBox(height: 16),
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(
-                                      Icons.calendar_today_rounded,
-                                      size: 14,
-                                      color: Colors.white.withOpacity(0.65),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Text(
-                                      DateFormat(
-                                        'EEEE, d MMMM yyyy',
-                                        'id_ID',
-                                      ).format(_currentTime),
-                                      style: TextStyle(
-                                        color: Colors.white.withOpacity(0.75),
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                if (_isConfigLoaded) ...[
-                                  const SizedBox(height: 12),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 12,
-                                      vertical: 6,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: Colors.white.withOpacity(0.15),
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    child: Text(
-                                      "Masuk: $_jamMasukMulai | Batas: $_batasJamMasuk | Pulang: $_jamPulangMulai",
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ],
-                            ),
-                          ),
-
-                          const Spacer(flex: 2),
-
-                          // TOMBOL ABSEN
-                          if (_isLoading)
-                            Center(
-                              child: CircularProgressIndicator(
-                                color: context.primaryColor,
-                                strokeWidth: 3,
-                              ),
-                            )
-                          else ...[
-                            GestureDetector(
-                              onTap: () => _konfirmasiAbsen("Masuk"),
-                              child: Container(
-                                width: double.infinity,
-                                height: 62,
-                                decoration: BoxDecoration(
-                                  color: context.primaryColor,
-                                  borderRadius: BorderRadius.circular(18),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: context.primaryColor.withOpacity(0.35),
-                                      blurRadius: 20,
-                                      offset: const Offset(0, 8),
-                                    ),
-                                  ],
-                                ),
-                                child: const Center(
-                                  child: Text(
-                                    "Absen Masuk",
-                                    style: TextStyle(
-                                      fontSize: 17,
-                                      fontWeight: FontWeight.w800,
-                                      color: Colors.white,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 12),
-                            GestureDetector(
-                              onTap: () => _konfirmasiAbsen("Pulang"),
-                              child: Container(
-                                width: double.infinity,
-                                height: 62,
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(18),
-                                  border: Border.all(
-                                    color: Colors.red.shade200,
-                                    width: 1.5,
-                                  ),
-                                ),
-                                child: Center(
-                                  child: Text(
-                                    "Absen Pulang",
-                                    style: TextStyle(
-                                      fontSize: 17,
-                                      fontWeight: FontWeight.w800,
-                                      color: Colors.red.shade600,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
+                            const SizedBox(height: 24),
                           ],
-                          const SizedBox(height: 24),
-                        ],
+                        ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ],

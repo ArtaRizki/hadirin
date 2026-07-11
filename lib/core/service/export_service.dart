@@ -55,6 +55,7 @@ class ExportService {
     await file.writeAsBytes(fileBytes!);
 
     // 5. Bagikan (Share) ke WhatsApp/Email
+    // ignore: deprecated_member_use
     await Share.shareXFiles([
       XFile(file.path),
     ], text: 'Laporan Absensi $namaInstansi Bulan $bulan');

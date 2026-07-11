@@ -200,7 +200,7 @@ class _AnggotaListScreenState extends State<AnggotaListScreen> {
   }) {
     final color = isRegistered ? const Color(0xFF16A34A) : Colors.red.shade600;
     final bgColor = isRegistered
-        ? const Color(0xFF16A34A).withOpacity(0.08)
+        ? const Color(0xFF16A34A).withValues(alpha: 0.08)
         : Colors.red.shade50;
 
     return Container(
@@ -208,7 +208,7 @@ class _AnggotaListScreenState extends State<AnggotaListScreen> {
       decoration: BoxDecoration(
         color: bgColor,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withOpacity(0.3)),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -252,7 +252,7 @@ class _AnggotaListScreenState extends State<AnggotaListScreen> {
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.06),
+                    color: Colors.black.withValues(alpha: 0.06),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
                   ),
@@ -287,7 +287,7 @@ class _AnggotaListScreenState extends State<AnggotaListScreen> {
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
+                      color: Colors.black.withValues(alpha: 0.05),
                       blurRadius: 10,
                       offset: const Offset(0, 4),
                     ),
@@ -328,7 +328,7 @@ class _AnggotaListScreenState extends State<AnggotaListScreen> {
                       height: 230,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: context.primaryColor.withOpacity(0.04),
+                        color: context.primaryColor.withValues(alpha: 0.04),
                       ),
                     ),
                   ),
@@ -340,7 +340,7 @@ class _AnggotaListScreenState extends State<AnggotaListScreen> {
                       height: 200,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: const Color(0xFF7C3AED).withOpacity(0.03),
+                        color: const Color(0xFF7C3AED).withValues(alpha: 0.03),
                       ),
                     ),
                   ),
@@ -426,7 +426,7 @@ class _AnggotaListScreenState extends State<AnggotaListScreen> {
                                           borderRadius: BorderRadius.circular(20),
                                           boxShadow: [
                                             BoxShadow(
-                                              color: Colors.black.withOpacity(0.04),
+                                              color: Colors.black.withValues(alpha: 0.04),
                                               blurRadius: 10,
                                               offset: const Offset(0, 4),
                                             ),
@@ -440,9 +440,9 @@ class _AnggotaListScreenState extends State<AnggotaListScreen> {
                                             CircleAvatar(
                                               radius: 24,
                                               backgroundColor: isSuperAdmin
-                                                  ? Colors.amber.withOpacity(0.15)
+                                                  ? Colors.amber.withValues(alpha: 0.15)
                                                   : context.primaryColor
-                                                      .withOpacity(0.1),
+                                                      .withValues(alpha: 0.1),
                                               child: isSuperAdmin
                                                   ? const Icon(
                                                       Icons.shield_rounded,

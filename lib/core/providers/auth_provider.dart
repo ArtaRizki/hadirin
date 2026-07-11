@@ -112,7 +112,7 @@ class AuthProvider extends ChangeNotifier {
   void updateThemeColor(String? hexString) async {
     if (hexString == null) return;
     final newColor = ColorUtils.fromHex(hexString);
-    if (newColor.value != _themeColor.value) {
+    if (newColor.toARGB32() != _themeColor.toARGB32()) {
       _themeColor = newColor;
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('theme_color', hexString);
